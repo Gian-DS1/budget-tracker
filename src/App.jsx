@@ -4,6 +4,8 @@ import { useEffect } from 'react';
 
 import Layout from './components/layout/Layout';
 import useThemeStore from './stores/useThemeStore';
+import { useAuth } from './contexts/AuthContext';
+import AuthPage from './pages/AuthPage';
 
 import DashboardPage from './pages/DashboardPage';
 import TransactionsPage from './pages/TransactionsPage';
@@ -17,10 +19,35 @@ import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { theme } = useThemeStore();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  if (loading) {
+    return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Cargando aplicación...</div>;
+  }
+
+  if (!user) {
+    return (
+      <BrowserRouter>
+        <Toaster 
+          position="top-right" 
+          toastOptions={{
+            style: {
+              background: 'var(--bg-card)',
+              color: 'var(--text-primary)',
+              border: '1px solid var(--border-primary)',
+            }
+          }} 
+        />
+        <Routes>
+          <Route path="*" element={<AuthPage />} />
+        </Routes>
+      </BrowserRouter>
+    );
+  }
 
   return (
     <BrowserRouter>
