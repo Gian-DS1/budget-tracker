@@ -9,22 +9,19 @@ import {
   AlertTriangle
 } from 'lucide-react';
 import {
-  LineChart,
-  Line,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip as RechartsTooltip,
   ResponsiveContainer,
-  BarChart,
-  Bar,
-  Legend,
-  ReferenceLine
+  Legend
 } from 'recharts';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
-import { formatCurrency, MONTHS_SHORT_ES } from '../utils/formatters';
+import { formatCurrency, formatCurrencyCompact, MONTHS_SHORT_ES } from '../utils/formatters';
 import { detectAnomalies, movingAverage } from '../utils/calculations';
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -220,36 +217,7 @@ export default function ReportsPage() {
       {/* ─── TAB: Projections ─── */}
       {activeTab === 'projections' && (
         <div className="space-y-6">
-          <div className="card">
-            <div className="card-header">
-              <div>
-                <h3 className="card-title">Proyección de Ingresos y Gastos</h3>
-                <p className="text-sm text-muted">Basado en la media móvil de los últimos meses</p>
-              </div>
-            </div>
-            
-            <div style={{ height: 400 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={projectionData} margin={{ top: 20, right: 20, left: 20, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-secondary)" />
-                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-                  <YAxis tickFormatter={(val) => `$${val/1000}k`} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} />
-                  <RechartsTooltip content={<CustomTooltip />} />
-                  <Legend />
-                  
-                  {/* Historical Data */}
-                  <Line type="monotone" dataKey="Ingresos" stroke="var(--color-income)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="Gastos" stroke="var(--color-expense)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                  
-                  {/* Projected Data */}
-                  <Line type="monotone" dataKey="IngresosEstimados" name="Proyección Ingresos" stroke="var(--color-income)" strokeWidth={3} strokeDasharray="5 5" dot={{ r: 4 }} />
-                  <Line type="monotone" dataKey="GastosEstimados" name="Proyección Gastos" stroke="var(--color-expense)" strokeWidth={3} strokeDasharray="5 5" dot={{ r: 4 }} />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
-
-          <div className="grid-2">
+          <div className="grid-2 mb-6">
             <div className="card" style={{ background: 'var(--color-income-bg)' }}>
               <h4 className="font-bold mb-2 flex items-center gap-2 text-success">
                 <TrendingUp size={18} /> Forecast de Ingresos
@@ -257,7 +225,7 @@ export default function ReportsPage() {
               <p className="text-sm">
                 Basado en tu historial, se estima que tus ingresos el próximo mes serán de{' '}
                 <strong className="text-lg amount-positive">
-                  {formatCurrency(projectionData[projectionData.length - 1].IngresosEstimados || 0)}
+                  {formatCurrency(projectionData[projectionData.length - 1]?.IngresosEstimados || 0)}
                 </strong>
               </p>
             </div>
@@ -268,9 +236,48 @@ export default function ReportsPage() {
               <p className="text-sm">
                 Se proyecta que tus gastos alcancen{' '}
                 <strong className="text-lg amount-negative">
-                  {formatCurrency(projectionData[projectionData.length - 1].GastosEstimados || 0)}
+                  {formatCurrency(projectionData[projectionData.length - 1]?.GastosEstimados || 0)}
                 </strong>. ¡Ajusta tu presupuesto de antemano!
               </p>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3 className="card-title">Proyección de Ingresos y Gastos</h3>
+                <p className="text-sm text-muted">Evolución histórica y estimaciones para el próximo mes</p>
+              </div>
+            </div>
+            
+            <div style={{ height: 400 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={projectionData} margin={{ top: 20, right: 20, left: 10, bottom: 20 }}>
+                  <defs>
+                    <linearGradient id="colorIncome" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-income)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--color-income)" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorExpense" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="var(--color-expense)" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="var(--color-expense)" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border-secondary)" />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} dy={10} />
+                  <YAxis tickFormatter={(val) => formatCurrencyCompact(val)} tick={{ fontSize: 12, fill: 'var(--text-tertiary)' }} axisLine={false} tickLine={false} dx={-10} />
+                  <RechartsTooltip content={<CustomTooltip />} />
+                  <Legend verticalAlign="top" height={36} wrapperStyle={{ paddingBottom: '20px' }} />
+                  
+                  {/* Historical Data */}
+                  <Area type="monotone" dataKey="Ingresos" stroke="var(--color-income)" fillOpacity={1} fill="url(#colorIncome)" strokeWidth={3} activeDot={{ r: 6 }} />
+                  <Area type="monotone" dataKey="Gastos" stroke="var(--color-expense)" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={3} activeDot={{ r: 6 }} />
+                  
+                  {/* Projected Data */}
+                  <Area type="monotone" dataKey="IngresosEstimados" name="Proyección Ingresos" stroke="var(--color-income)" fill="none" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 6 }} />
+                  <Area type="monotone" dataKey="GastosEstimados" name="Proyección Gastos" stroke="var(--color-expense)" fill="none" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 6 }} />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
         </div>
