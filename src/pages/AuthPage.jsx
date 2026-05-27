@@ -78,7 +78,7 @@ export default function AuthPage() {
                   toast.error(error.message || 'Error con Google');
                 }
               }}
-              className="btn w-full flex items-center justify-center gap-2"
+              className="btn auth-btn-google w-full flex items-center justify-center gap-2"
               style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-secondary)' }}
             >
               <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
@@ -132,7 +132,7 @@ export default function AuthPage() {
             <div className="text-right mt-1">
               <button 
                 type="button" 
-                className="text-xs text-accent bg-transparent border-none cursor-pointer hover:underline"
+                className="auth-link text-xs"
                 onClick={() => setMode('forgot_password')}
               >
                 ¿Olvidaste tu contraseña?
@@ -143,7 +143,7 @@ export default function AuthPage() {
           <div className="flex justify-center mt-6">
             <button 
               type="submit" 
-              className="btn btn-primary"
+              className="btn btn-primary auth-btn"
               disabled={loading}
             >
               {loading ? 'Cargando...' : 
@@ -160,7 +160,7 @@ export default function AuthPage() {
             {currentMode === 'forgot_password' ? (
               <button 
                 type="button"
-                className="text-accent font-bold hover:underline bg-transparent border-none cursor-pointer"
+                className="auth-link"
                 onClick={() => setMode('login')}
               >
                 Volver a Iniciar Sesión
@@ -170,7 +170,7 @@ export default function AuthPage() {
                 {currentMode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes una cuenta?'}{' '}
                 <button 
                   type="button"
-                  className="text-accent font-bold hover:underline bg-transparent border-none cursor-pointer"
+                  className="auth-link"
                   onClick={() => setMode(currentMode === 'login' ? 'signup' : 'login')}
                 >
                   {currentMode === 'login' ? 'Regístrate aquí' : 'Inicia Sesión'}
