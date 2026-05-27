@@ -35,10 +35,10 @@ const navItems = [
 ];
 
 export default function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar } = useThemeStore();
+  const { sidebarCollapsed, toggleSidebar, mobileMenuOpen, closeMobileMenu } = useThemeStore();
 
   return (
-    <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+    <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon">
@@ -63,6 +63,7 @@ export default function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              onClick={closeMobileMenu}
               className={({ isActive }) =>
                 `sidebar-link ${isActive ? 'active' : ''}`
               }

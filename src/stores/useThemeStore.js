@@ -8,6 +8,7 @@ const useThemeStore = create(
     (set) => ({
       theme: window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark',
       sidebarCollapsed: false,
+      mobileMenuOpen: false,
 
       toggleTheme: () =>
         set((state) => ({
@@ -20,6 +21,14 @@ const useThemeStore = create(
         set((state) => ({
           sidebarCollapsed: !state.sidebarCollapsed,
         })),
+        
+      toggleMobileMenu: () =>
+        set((state) => ({
+          mobileMenuOpen: !state.mobileMenuOpen,
+        })),
+        
+      closeMobileMenu: () =>
+        set({ mobileMenuOpen: false }),
     }),
     {
       name: 'fintrack-theme',

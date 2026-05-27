@@ -468,6 +468,10 @@ table {
   background: var(--accent-primary-subtle);
 }
 
+.mobile-menu-btn {
+  display: none;
+}
+
 /* ── Badges ────────────────────────────────────────────────── */
 
 .badge {
@@ -1345,13 +1349,13 @@ table {
 }
 
 @media (max-width: 768px) {
-  .sidebar {
+  .sidebar:not(.mobile-open) {
     width: var(--sidebar-collapsed-width);
   }
 
-  .sidebar .sidebar-logo-text,
-  .sidebar .sidebar-link-text,
-  .sidebar .sidebar-section-label {
+  .sidebar:not(.mobile-open) .sidebar-logo-text,
+  .sidebar:not(.mobile-open) .sidebar-link-text,
+  .sidebar:not(.mobile-open) .sidebar-section-label {
     opacity: 0;
     width: 0;
   }
@@ -1366,6 +1370,10 @@ table {
 
   .header {
     left: var(--sidebar-collapsed-width);
+  }
+
+  .mobile-menu-btn {
+    display: inline-flex;
   }
 
   .page-container {

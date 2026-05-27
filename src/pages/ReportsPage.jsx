@@ -27,6 +27,25 @@ import useDebtStore from '../stores/useDebtStore';
 import { formatCurrency, MONTHS_SHORT_ES } from '../utils/formatters';
 import { detectAnomalies, movingAverage } from '../utils/calculations';
 
+const CustomTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="card-glass" style={{ padding: 'var(--space-3)' }}>
+        <p className="font-semibold mb-2">{label}</p>
+        {payload.map((entry, index) => (
+          <div key={index} className="flex justify-between items-center text-sm mb-1 gap-4">
+            <span style={{ color: entry.color }}>
+              {entry.name}:
+            </span>
+            <span className="font-bold">{formatCurrency(entry.value)}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export default function ReportsPage() {
   const { transactions } = useTransactionStore();
   const { categories } = useCategoryStore();
@@ -168,25 +187,6 @@ export default function ReportsPage() {
   }, [debts]);
 
   // ─── Render ─────────────────────────────────────────────────────
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="card-glass" style={{ padding: 'var(--space-3)' }}>
-          <p className="font-semibold mb-2">{label}</p>
-          {payload.map((entry, index) => (
-            <div key={index} className="flex justify-between items-center text-sm mb-1 gap-4">
-              <span style={{ color: entry.color }}>
-                {entry.name}:
-              </span>
-              <span className="font-bold">{formatCurrency(entry.value)}</span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="page-container">
