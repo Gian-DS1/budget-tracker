@@ -63,9 +63,11 @@ export default function PlanPage() {
             {plans.filter((p) => p.status === 'completed').length} de {plans.length} metas cumplidas
           </p>
         </div>
-        <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
-          <Plus size={18} /> Nueva Meta
-        </button>
+        {plans.length > 0 && (
+          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+            <Plus size={18} /> Nueva Meta
+          </button>
+        )}
       </div>
 
       {plans.length === 0 ? (

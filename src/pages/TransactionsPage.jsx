@@ -214,19 +214,16 @@ export default function TransactionsPage() {
       <div className="page-header flex items-center justify-between">
         <div>
           <h1 className="page-title">Transacciones</h1>
-          <p className="page-subtitle">
-            {transactions.length} transacciones registradas
-          </p>
+          <p className="page-subtitle">Gestiona tus ingresos y gastos</p>
         </div>
-        <button
-          className="btn btn-primary btn-lg"
-          onClick={() => {
+        {transactions.length > 0 && (
+          <button className="btn btn-primary btn-lg" onClick={() => {
             resetForm();
             setShowForm(true);
-          }}
-        >
-          <Plus size={18} /> Nueva Transacción
-        </button>
+          }}>
+            <Plus size={18} /> Nueva Transacción
+          </button>
+        )}
       </div>
 
       {/* Search & Filter Bar */}

@@ -123,9 +123,11 @@ export default function SavingsPage() {
             Ahorro total acumulado: <span className="amount-positive">{formatCurrency(totalSaved)}</span>
           </p>
         </div>
-        <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
-          <Plus size={18} /> Nueva Meta
-        </button>
+        {goals.length > 0 && (
+          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+            <Plus size={18} /> Nueva Meta
+          </button>
+        )}
       </div>
 
       {goals.length === 0 ? (

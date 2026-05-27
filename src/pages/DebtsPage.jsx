@@ -98,9 +98,11 @@ export default function DebtsPage() {
             Deuda total: <span className="amount-negative">{formatCurrency(totalDebt)}</span>
           </p>
         </div>
-        <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
-          <Plus size={18} /> Nueva Deuda
-        </button>
+        {debts.length > 0 && (
+          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+            <Plus size={18} /> Nueva Deuda
+          </button>
+        )}
       </div>
 
       {/* Summary */}
