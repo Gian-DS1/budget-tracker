@@ -11,6 +11,7 @@ import BudgetPage from './pages/BudgetPage';
 import SavingsPage from './pages/SavingsPage';
 import DebtsPage from './pages/DebtsPage';
 import PlanPage from './pages/PlanPage';
+import ReportsPage from './pages/ReportsPage';
 
 function App() {
   const { theme } = useThemeStore();
@@ -39,9 +40,9 @@ function App() {
           <Route path="ahorros" element={<SavingsPage />} />
           <Route path="deudas" element={<DebtsPage />} />
           <Route path="plan" element={<PlanPage />} />
+          <Route path="reportes" element={<ReportsPage />} />
           {/* Placeholder routes for next phases */}
           <Route path="calendario" element={<div className="page-container"><h2>Calendario en construcción</h2></div>} />
-          <Route path="reportes" element={<div className="page-container"><h2>Reportes en construcción</h2></div>} />
           <Route path="ajustes" element={<div className="page-container"><h2>Ajustes en construcción</h2></div>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

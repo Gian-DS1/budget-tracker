@@ -1,16 +1,53 @@
-# React + Vite
+# FinTrack RD — Presupuesto Inteligente
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Aplicación web de gestión financiera personal diseñada para reemplazar y superar trackers de hojas de cálculo, automatizando el presupuesto base cero con análisis inteligente, visualizaciones interactivas y proyecciones predictivas.
 
-Currently, two official plugins are available:
+## Características Principales
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+*   **Presupuesto Base Cero:** Planificación mensual detallada (Estimado vs Actual) con barras de progreso por categoría.
+*   **Gestión de Transacciones:** Registro rápido de ingresos y gastos, con auto-categorización inteligente y soporte para transacciones recurrentes.
+*   **Metas de Ahorro:** Control visual del progreso hacia tus metas financieras, con cálculos de proyección y fechas estimadas.
+*   **Control de Deudas:** Seguimiento de saldos, historial de pagos, y estimación de meses restantes para liquidación.
+*   **Plan Financiero:** Organización de metas a corto, mediano y largo plazo estilo Kanban.
+*   **Dashboard Interactivo:** Resumen visual de tu salud financiera usando gráficos avanzados (tendencias de 6 meses, distribución de gastos) y un mini-calendario de actividad.
+*   **Dark Mode Premium:** Interfaz de usuario moderna con soporte nativo para temas oscuros y claros usando *glassmorphism* y micro-animaciones.
+*   **Privacidad Local:** Actualmente los datos se almacenan de forma segura en el navegador (`localStorage`) sin necesidad de un backend o servidor.
 
-## React Compiler
+## Stack Tecnológico
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+*   **Frontend:** React 19 + Vite 6
+*   **Enrutamiento:** React Router v7
+*   **Estado:** Zustand (con persistencia local)
+*   **Estilos:** Vanilla CSS (CSS Custom Properties)
+*   **Gráficos:** Recharts
+*   **Iconos:** Lucide React
 
-## Expanding the ESLint configuration
+## Cómo Ejecutar en Local
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+1.  **Instalar dependencias:**
+    ```bash
+    npm install
+    ```
+2.  **Iniciar servidor de desarrollo:**
+    ```bash
+    npm run dev
+    ```
+3.  Abre `http://localhost:5173` en tu navegador.
+
+## Estructura del Proyecto
+
+El código está organizado en `src/`:
+*   `/components`: Componentes reutilizables de UI y layout.
+*   `/pages`: Vistas principales de la aplicación.
+*   `/stores`: Gestión del estado global y persistencia con Zustand.
+*   `/utils`: Funciones de formato (moneda, fechas) y cálculos financieros.
+*   `/data`: Datos predeterminados, incluyendo las categorías iniciales adaptadas a RD.
+
+## Siguientes Pasos (Roadmap)
+*   [x] Fase 1: Setup inicial, diseño base, stores y layout.
+*   [x] Fase 2: Transacciones y Presupuesto (CRUD principal).
+*   [x] Fase 3: Módulos de Ahorro, Deudas y Plan Financiero.
+*   [x] Fase 4: Dashboard analítico con gráficos.
+*   [ ] Fase 5: Analytics avanzados (Proyecciones, anomalías).
+*   [ ] Fase 6: Importación y Exportación de CSV/PDF.
+*   [ ] Fase 7: Pulido UX final y ajustes.
