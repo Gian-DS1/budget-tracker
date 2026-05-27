@@ -1390,11 +1390,12 @@ table {
 
   .form-row {
     display: flex !important;
+    flex-wrap: wrap;
     gap: var(--space-3);
   }
 
   .form-row > * {
-    flex: 1 1 0;
+    flex: 1 1 40%;
     min-width: 0;
     overflow: hidden;
   }

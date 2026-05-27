@@ -79,7 +79,7 @@ export default function AuthPage() {
                 }
               }}
               className="btn w-full flex items-center justify-center gap-2"
-              style={{ backgroundColor: 'white', color: '#333', border: '1px solid #ddd' }}
+              style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border-secondary)' }}
             >
               <svg viewBox="0 0 24 24" width="20" height="20" xmlns="http://www.w3.org/2000/svg">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
