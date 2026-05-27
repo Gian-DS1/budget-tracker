@@ -25,7 +25,7 @@ import SettingsPage from './pages/SettingsPage';
 
 function App() {
   const { theme } = useThemeStore();
-  const { user, loading } = useAuth();
+  const { user, loading, isRecoveringPassword } = useAuth();
   
   const fetchCategories = useCategoryStore((state) => state.fetchCategories);
   const fetchTransactions = useTransactionStore((state) => state.fetchTransactions);
@@ -53,7 +53,7 @@ function App() {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Cargando aplicación...</div>;
   }
 
-  if (!user) {
+  if (!user || isRecoveringPassword) {
     return (
       <BrowserRouter>
         <Toaster 

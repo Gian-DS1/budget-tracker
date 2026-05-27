@@ -4,38 +4,43 @@ import toast from 'react-hot-toast';
 import { TrendingUp } from 'lucide-react';
 
 export default function AuthPage() {
-  const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, resetPassword, updatePassword, isRecoveringPassword } = useAuth();
+  const [mode, setMode] = useState('login'); // 'login' | 'signup' | 'forgot_password'
+  
+  const currentMode = isRecoveringPassword ? 'update_password' : mode;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error('Por favor, completa todos los campos.');
+    if (currentMode !== 'forgot_password' && !password) {
+      toast.error('Por favor, ingresa una contraseña.');
       return;
     }
 
-    if (password.length < 6) {
+    if ((currentMode === 'signup' || currentMode === 'update_password') && password.length < 6) {
       toast.error('La contraseña debe tener al menos 6 caracteres.');
       return;
     }
 
     setLoading(true);
     try {
-      if (isLogin) {
+      if (currentMode === 'login') {
         await signIn(email, password);
         toast.success('¡Bienvenido de vuelta!');
-      } else {
+      } else if (currentMode === 'signup') {
         await signUp(email, password);
         toast.success('Cuenta creada exitosamente. Revisa tu correo o inicia sesión.');
-        // Auto-switch to login after signup
-        setIsLogin(true);
+        setMode('login');
+      } else if (currentMode === 'forgot_password') {
+        await resetPassword(email);
+        toast.success('Correo de recuperación enviado. Revisa tu bandeja de entrada.');
+        setMode('login');
+      } else if (currentMode === 'update_password') {
+        await updatePassword(password);
+        toast.success('Contraseña actualizada exitosamente.');
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.message || 'Ocurrió un error al autenticar.');
+      toast.error(error.message || 'Ocurrió un error.');
     } finally {
       setLoading(false);
     }
@@ -60,29 +65,47 @@ export default function AuthPage() {
         </div>
 
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-          <div className="form-group">
-            <label className="form-label">Correo Electrónico</label>
-            <input 
-              type="email" 
-              className="form-control" 
-              placeholder="tu@correo.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
+          {currentMode !== 'update_password' && (
+            <div className="form-group">
+              <label className="form-label">Correo Electrónico</label>
+              <input 
+                type="email" 
+                className="form-control" 
+                placeholder="tu@correo.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+          )}
 
-          <div className="form-group">
-            <label className="form-label">Contraseña</label>
-            <input 
-              type="password" 
-              className="form-control" 
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-          </div>
+          {currentMode !== 'forgot_password' && (
+            <div className="form-group">
+              <label className="form-label">
+                {currentMode === 'update_password' ? 'Nueva Contraseña' : 'Contraseña'}
+              </label>
+              <input 
+                type="password" 
+                className="form-control" 
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+          )}
+
+          {currentMode === 'login' && (
+            <div className="text-right mt-1">
+              <button 
+                type="button" 
+                className="text-xs text-accent bg-transparent border-none cursor-pointer hover:underline"
+                onClick={() => setMode('forgot_password')}
+              >
+                ¿Olvidaste tu contraseña?
+              </button>
+            </div>
+          )}
 
           <div className="flex justify-center mt-6">
             <button 
@@ -90,21 +113,39 @@ export default function AuthPage() {
               className="btn btn-primary"
               disabled={loading}
             >
-              {loading ? 'Cargando...' : isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+              {loading ? 'Cargando...' : 
+               currentMode === 'login' ? 'Iniciar Sesión' : 
+               currentMode === 'signup' ? 'Crear Cuenta' : 
+               currentMode === 'forgot_password' ? 'Enviar Enlace' :
+               'Guardar Contraseña'}
             </button>
           </div>
         </form>
 
-        <div className="mt-6 text-center text-sm text-muted">
-          {isLogin ? '¿No tienes cuenta?' : '¿Ya tienes una cuenta?'}{' '}
-          <button 
-            type="button"
-            className="text-accent font-bold hover:underline bg-transparent border-none cursor-pointer"
-            onClick={() => setIsLogin(!isLogin)}
-          >
-            {isLogin ? 'Regístrate aquí' : 'Inicia Sesión'}
-          </button>
-        </div>
+        {!isRecoveringPassword && (
+          <div className="mt-6 text-center text-sm text-muted flex flex-col gap-2">
+            {currentMode === 'forgot_password' ? (
+              <button 
+                type="button"
+                className="text-accent font-bold hover:underline bg-transparent border-none cursor-pointer"
+                onClick={() => setMode('login')}
+              >
+                Volver a Iniciar Sesión
+              </button>
+            ) : (
+              <div>
+                {currentMode === 'login' ? '¿No tienes cuenta?' : '¿Ya tienes una cuenta?'}{' '}
+                <button 
+                  type="button"
+                  className="text-accent font-bold hover:underline bg-transparent border-none cursor-pointer"
+                  onClick={() => setMode(currentMode === 'login' ? 'signup' : 'login')}
+                >
+                  {currentMode === 'login' ? 'Regístrate aquí' : 'Inicia Sesión'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
