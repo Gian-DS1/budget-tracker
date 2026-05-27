@@ -506,7 +506,7 @@ export default function TransactionsPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Categoría</label>
+            <label className="form-label">Categoría (Total: {categories.length})</label>
             <select
               value={form.categoryId}
               onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
