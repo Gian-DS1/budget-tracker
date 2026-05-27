@@ -106,7 +106,7 @@ export default function CalendarPage() {
         </div>
 
         {/* Grid Header */}
-        <div className="grid grid-cols-7 gap-2 mb-2 text-center text-sm font-bold text-muted">
+        <div className="mb-2 text-center text-sm font-bold text-muted" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 'var(--space-2)' }}>
           {DAYS_SHORT_ES.map(day => (
             <div key={day}>{day}</div>
           ))}
