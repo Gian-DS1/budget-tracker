@@ -1,12 +1,12 @@
 // FinTrack RD — Savings Page
 
 import { useState, useMemo } from 'react';
-import { Plus, PiggyBank, Pause, Play, TrendingUp, Gift } from 'lucide-react';
+import { Plus, PiggyBank, Pause, Play } from 'lucide-react';
 import useSavingsStore from '../stores/useSavingsStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
-import { formatCurrency, formatDate, todayISO, generateId } from '../utils/formatters';
+import { formatCurrency, formatPercent, formatDate, todayISO } from '../utils/formatters';
 import { monthsToGoal } from '../utils/calculations';
 import toast from 'react-hot-toast';
 
@@ -44,8 +44,7 @@ function CircularProgress({ percentage, size = 120, strokeWidth = 8, color = 'va
 }
 
 export default function SavingsPage() {
-  const { goals, addGoal, updateGoal, deleteGoal, addContribution, togglePause, getTotalSaved } =
-    useSavingsStore();
+  const { goals, addGoal, addContribution, togglePause, getTotalSaved } = useSavingsStore();
   const { addTransaction } = useTransactionStore();
 
   const [showForm, setShowForm] = useState(false);
@@ -63,7 +62,7 @@ export default function SavingsPage() {
     currency: 'DOP',
   });
 
-  const totalSaved = useMemo(() => getTotalSaved(), [goals]);
+  const totalSaved = useMemo(() => getTotalSaved(), [getTotalSaved, goals]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -23,11 +23,11 @@ export default function BudgetPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
 
-  const { budgets, setBudget, getBudgetsByMonth, copyBudgetFromPreviousMonth } = useBudgetStore();
+  const { setBudget, getBudgetsByMonth, copyBudgetFromPreviousMonth } = useBudgetStore();
   const { transactions } = useTransactionStore();
   const { categories } = useCategoryStore();
 
-  const monthBudgets = useMemo(() => getBudgetsByMonth(year, month), [budgets, year, month]);
+  const monthBudgets = useMemo(() => getBudgetsByMonth(year, month), [getBudgetsByMonth, year, month]);
 
   const monthTransactions = useMemo(
     () =>
@@ -115,7 +115,7 @@ export default function BudgetPage() {
   const renderSection = (title, icon, rows) => {
     if (rows.length === 0) return null;
 
-    const filteredRows = rows.filter(r => r.estimated > 0 || r.actual > 0);
+
     const allRows = rows;
 
     return (

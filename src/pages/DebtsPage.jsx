@@ -1,7 +1,7 @@
 // FinTrack RD — Debts Page
 
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, TrendingDown, DollarSign, Calendar } from 'lucide-react';
+import { Plus, CreditCard, TrendingDown, DollarSign } from 'lucide-react';
 import useDebtStore from '../stores/useDebtStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
@@ -13,9 +13,7 @@ import toast from 'react-hot-toast';
 export default function DebtsPage() {
   const {
     debts,
-    payments,
     addDebt,
-    deleteDebt,
     addPayment,
     getPaymentsByDebt,
     getTotalDebt,
@@ -38,8 +36,8 @@ export default function DebtsPage() {
     startDate: todayISO(),
   });
 
-  const totalDebt = useMemo(() => getTotalDebt(), [debts]);
-  const totalMonthly = useMemo(() => getTotalMonthlyPayment(), [debts]);
+  const totalDebt = useMemo(() => getTotalDebt(), [getTotalDebt]);
+  const totalMonthly = useMemo(() => getTotalMonthlyPayment(), [getTotalMonthlyPayment]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

@@ -8,7 +8,6 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useThemeStore from '../stores/useThemeStore';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
-import { formatCurrency, formatDate } from '../utils/formatters';
 import { autoCategorize } from '../data/defaultCategories';
 
 export default function SettingsPage() {
@@ -95,7 +94,7 @@ export default function SettingsPage() {
             if (!isNaN(d.getTime())) {
               formattedDate = d.toISOString().split('T')[0];
             }
-          } catch(err) {}
+          } catch (err) { console.error(err); }
 
           // Auto-categorize: First try to match the CSV's Category column, fallback to Description parsing
           let categoryMatch = null;

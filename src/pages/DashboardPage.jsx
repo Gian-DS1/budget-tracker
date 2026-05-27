@@ -20,8 +20,6 @@ import {
   PieChart,
   Pie,
   Cell,
-  LineChart,
-  Line,
   Legend,
 } from 'recharts';
 import useTransactionStore from '../stores/useTransactionStore';
@@ -32,7 +30,6 @@ import useCategoryStore from '../stores/useCategoryStore';
 import {
   formatCurrency,
   formatPercent,
-  todayISO,
   formatDate,
   MONTHS_SHORT_ES,
 } from '../utils/formatters';
@@ -61,7 +58,7 @@ export default function DashboardPage() {
   const { categories } = useCategoryStore();
   const { getTotalSaved } = useSavingsStore();
   const { getTotalDebt } = useDebtStore();
-  const { getBudgetsByMonth } = useBudgetStore();
+
 
   const now = new Date();
   const currentMonth = now.getMonth();

@@ -30,7 +30,7 @@ const useBudgetStore = create((set, get) => ({
     }
   },
 
-  setBudget: async (categoryId, year, month, estimatedAmount, currency = 'DOP') => {
+  setBudget: async (categoryId, year, month, estimatedAmount) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 

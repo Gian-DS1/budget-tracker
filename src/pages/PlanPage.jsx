@@ -6,7 +6,7 @@ import usePlanStore from '../stores/usePlanStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
-import { formatDate, todayISO } from '../utils/formatters';
+import { formatCurrency, formatPercent, formatDate } from '../utils/formatters';
 
 const HORIZON_CONFIG = {
   short: { label: 'Corto Plazo', subtitle: '1-3 meses', emoji: '⚡', color: '#f59e0b' },
@@ -21,7 +21,7 @@ const STATUS_CONFIG = {
 };
 
 export default function PlanPage() {
-  const { plans, addPlan, updatePlan, deletePlan, updateStatus } = usePlanStore();
+  const { plans, addPlan, deletePlan, updateStatus } = usePlanStore();
   const [showForm, setShowForm] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 

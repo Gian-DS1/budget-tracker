@@ -1,7 +1,7 @@
 // FinTrack RD — Calendar Page
 
 import { useState, useMemo } from 'react';
-import { ChevronLeft, ChevronRight, ArrowLeftRight, Calendar as CalendarIcon } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar as CalendarIcon } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import { formatCurrency, MONTHS_ES, DAYS_SHORT_ES } from '../utils/formatters';

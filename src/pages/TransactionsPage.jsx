@@ -1,33 +1,14 @@
 // FinTrack RD — Transactions Page
 
 import { useState, useMemo } from 'react';
-import {
-  Plus,
-  Search,
-  Filter,
-  ArrowUpDown,
-  Edit3,
-  Trash2,
-  ArrowLeftRight,
-  ArrowDownLeft,
-  ArrowUpRight,
-  X,
-  ChevronDown,
-} from 'lucide-react';
+import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3 } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import { autoCategorize } from '../data/defaultCategories';
-import {
-  formatCurrency,
-  formatDate,
-  getTypeLabel,
-  getTypeBadgeClass,
-  generateId,
-  todayISO,
-} from '../utils/formatters';
+import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel } from '../utils/formatters';
 
 export default function TransactionsPage() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction } =
