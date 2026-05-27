@@ -274,8 +274,8 @@ export default function ReportsPage() {
                   <Area type="monotone" dataKey="Gastos" stroke="var(--color-expense)" fillOpacity={1} fill="url(#colorExpense)" strokeWidth={3} activeDot={{ r: 6 }} />
                   
                   {/* Projected Data */}
-                  <Area type="monotone" dataKey="IngresosEstimados" name="Proyección Ingresos" stroke="var(--color-income)" fill="none" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 6 }} />
-                  <Area type="monotone" dataKey="GastosEstimados" name="Proyección Gastos" stroke="var(--color-expense)" fill="none" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 6 }} />
+                  <Area type="monotone" dataKey="IngresosEstimados" name="Proyección Ingresos" stroke="var(--accent-secondary)" fill="none" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 6 }} />
+                  <Area type="monotone" dataKey="GastosEstimados" name="Proyección Gastos" stroke="var(--color-variable)" fill="none" strokeWidth={3} strokeDasharray="5 5" activeDot={{ r: 6 }} />
                 </AreaChart>
               </ResponsiveContainer>
             </div>
