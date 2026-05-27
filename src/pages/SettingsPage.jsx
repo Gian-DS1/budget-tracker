@@ -71,6 +71,7 @@ export default function SettingsPage() {
           const desc = row['Descripción'] || row['Description'] || row['Concepto'] || row['descripcion'];
           const rawAmount = row['Monto'] || row['Amount'] || row['monto'] || '0';
           const typeStr = row['Tipo'] || row['Type'] || '';
+          const catStr = row['Categoría'] || row['Categoria'] || row['Category'] || row['categoría'] || row['categoria'] || '';
           
           if (!date || !rawAmount) return null;
 
@@ -96,8 +97,17 @@ export default function SettingsPage() {
             }
           } catch(err) {}
 
-          // Auto-categorize
-          const categoryMatch = autoCategorize(desc, categories);
+          // Auto-categorize: First try to match the CSV's Category column, fallback to Description parsing
+          let categoryMatch = null;
+          if (catStr) {
+            // Remove emojis and trim spaces to find a clean match
+            const cleanCatStr = catStr.replace(/[\u1000-\uFFFF]/g, '').trim().toLowerCase();
+            categoryMatch = categories.find(c => c.name.toLowerCase() === cleanCatStr || c.name.toLowerCase().includes(cleanCatStr));
+          }
+          
+          if (!categoryMatch) {
+            categoryMatch = autoCategorize(desc, categories);
+          }
 
           importedCount++;
           return {
