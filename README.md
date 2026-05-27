@@ -48,6 +48,6 @@ El código está organizado en `src/`:
 *   [x] Fase 2: Transacciones y Presupuesto (CRUD principal).
 *   [x] Fase 3: Módulos de Ahorro, Deudas y Plan Financiero.
 *   [x] Fase 4: Dashboard analítico con gráficos.
-*   [ ] Fase 5: Analytics avanzados (Proyecciones, anomalías).
-*   [ ] Fase 6: Importación y Exportación de CSV/PDF.
-*   [ ] Fase 7: Pulido UX final y ajustes.
+*   [x] Fase 5: Analytics avanzados (Proyecciones, anomalías).
+*   [x] Fase 6: Importación y Exportación de CSV/PDF.
+*   [x] Fase 7: Pulido UX final y ajustes.
