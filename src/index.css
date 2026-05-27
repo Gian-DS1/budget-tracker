@@ -1389,7 +1389,13 @@ table {
   }
 
   .form-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-3);
+  }
+
+  .form-group {
+    margin-bottom: var(--space-3);
+    min-width: 0;
   }
 
   .header-search {
@@ -1397,8 +1403,27 @@ table {
   }
 
   .modal-content {
-    padding: var(--space-5);
+    padding: var(--space-4);
     width: 95%;
+    max-height: 92vh;
+  }
+  
+  .modal-header {
+    margin-bottom: var(--space-3);
+  }
+  
+  .modal-footer {
+    margin-top: var(--space-3);
+    padding-top: var(--space-3);
+  }
+  
+  .form-group {
+    margin-bottom: var(--space-3);
+  }
+  
+  input, select, textarea {
+    padding: var(--space-2);
+    min-width: 0;
   }
 }
 
