@@ -42,9 +42,9 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen" style={{ background: 'var(--bg-primary)' }}>
-      <div className="card w-full max-w-md p-8" style={{ borderTop: '4px solid var(--accent-primary)' }}>
-        <div className="flex flex-col items-center mb-8">
+    <div style={{ minHeight: '100vh', background: 'var(--bg-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 'var(--space-4)' }}>
+      <div className="card" style={{ width: '100%', maxWidth: '420px', padding: 'var(--space-8)', borderTop: '4px solid var(--accent-primary)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: '2.5rem' }}>
           <div 
             className="flex items-center justify-center mb-4" 
             style={{ 
@@ -57,12 +57,9 @@ export default function AuthPage() {
             <TrendingUp size={28} />
           </div>
           <h1 className="text-2xl font-bold">FinTrack RD</h1>
-          <p className="text-muted text-sm text-center mt-2">
-            Control financiero inteligente y predictivo
-          </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           <div className="form-group">
             <label className="form-label">Correo Electrónico</label>
             <input 
@@ -87,13 +84,15 @@ export default function AuthPage() {
             />
           </div>
 
-          <button 
-            type="submit" 
-            className="btn btn-primary w-full justify-center mt-6"
-            disabled={loading}
-          >
-            {loading ? 'Cargando...' : isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
-          </button>
+          <div className="flex justify-center mt-6">
+            <button 
+              type="submit" 
+              className="btn btn-primary"
+              disabled={loading}
+            >
+              {loading ? 'Cargando...' : isLogin ? 'Iniciar Sesión' : 'Crear Cuenta'}
+            </button>
+          </div>
         </form>
 
         <div className="mt-6 text-center text-sm text-muted">
