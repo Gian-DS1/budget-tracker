@@ -256,7 +256,7 @@ export default function TransactionsPage() {
               marginTop: 'var(--space-4)',
               paddingTop: 'var(--space-4)',
               borderTop: '1px solid var(--border-primary)',
-              gridTemplateColumns: 'repeat(4, 1fr)',
+              gridTemplateColumns: 'repeat(2, 1fr)',
             }}
           >
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -422,20 +422,22 @@ export default function TransactionsPage() {
       >
         <form onSubmit={handleSubmit}>
           <div className="form-row">
-            <div className="form-group">
+            <div className="form-group" style={{ minWidth: 0 }}>
               <label className="form-label">Fecha *</label>
               <input
                 type="date"
                 value={form.date}
                 onChange={(e) => setForm({ ...form, date: e.target.value })}
                 required
+                style={{ width: '100%' }}
               />
             </div>
-            <div className="form-group">
+            <div className="form-group" style={{ minWidth: 0 }}>
               <label className="form-label">Tipo</label>
               <select
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
+                style={{ width: '100%' }}
               >
                 <option value="income">💰 Ingreso</option>
                 <option value="expense">💸 Gasto</option>
@@ -480,8 +482,8 @@ export default function TransactionsPage() {
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
-                <option value="DOP">RD$ (Peso Dominicano)</option>
-                <option value="USD">US$ (Dólar)</option>
+                <option value="DOP">RD$</option>
+                <option value="USD">US$</option>
               </select>
             </div>
           </div>
