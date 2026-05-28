@@ -1,9 +1,12 @@
 import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { driver } from 'driver.js';
 import 'driver.js/dist/driver.css';
-import { tourSteps } from '../../utils/tourConfig';
+import { getTourSteps } from '../../utils/tourConfig';
 
 export default function TourGuide() {
+  const navigate = useNavigate();
+
   useEffect(() => {
     const hasSeenTour = localStorage.getItem('fintrack-tour-seen');
     
@@ -17,7 +20,7 @@ export default function TourGuide() {
           doneBtnText: '¡Empezar!',
           allowClose: false,
           overlayColor: 'rgba(0, 0, 0, 0.7)',
-          steps: tourSteps,
+          steps: getTourSteps(navigate),
           onDestroyStarted: () => {
             if (!driverObj.hasNextStep() || window.confirm("¿Seguro que quieres saltar el tutorial?")) {
               localStorage.setItem('fintrack-tour-seen', 'true');
