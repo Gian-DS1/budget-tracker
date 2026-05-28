@@ -101,7 +101,6 @@ const useCategoryStore = create(
 
         if (!insertError && insertedMissing) {
           finalCategories = [...finalCategories, ...insertedMissing];
-          console.log(`Auto-added ${insertedMissing.length} missing default categories for user:`, missingCategories.map(c => c.name));
         } else if (insertError) {
           console.error("Failed to auto-insert missing categories:", insertError);
         }

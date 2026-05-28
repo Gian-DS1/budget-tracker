@@ -8,8 +8,7 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import CurrencyInput from '../components/ui/CurrencyInput';
-import { formatCurrency, formatPercent, formatDate, todayISO } from '../utils/formatters';
-import { monthsToGoal } from '../utils/calculations';
+import { formatCurrency, formatDate, todayISO } from '../utils/formatters';
 import toast from 'react-hot-toast';
 
 function CircularProgress({ percentage, size = 120, strokeWidth = 8, color = 'var(--accent-primary)' }) {
@@ -66,7 +65,7 @@ export default function SavingsPage() {
     currency: 'DOP',
   });
 
-  const totalSaved = useMemo(() => getTotalSaved(), [getTotalSaved, goals]);
+  const totalSaved = useMemo(() => getTotalSaved(), [getTotalSaved]);
 
   const openEditForm = (goal) => {
     setForm({
@@ -208,11 +207,6 @@ export default function SavingsPage() {
                 : 0;
 
             const remaining = Number(goal.targetAmount) - Number(goal.currentAmount);
-            const monthsLeft = monthsToGoal(
-              Number(goal.currentAmount),
-              Number(goal.targetAmount),
-              remaining > 0 ? remaining / 12 : 0
-            );
 
             const statusColor =
               goal.status === 'completed'

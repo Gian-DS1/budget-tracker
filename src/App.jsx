@@ -47,7 +47,6 @@ function App() {
     const keepAlive = async () => {
       try {
         await supabase.from('categories').select('id').limit(1);
-        console.log('Supabase keep-alive ping successful');
       } catch (err) {
         console.warn('Supabase keep-alive ping failed', err);
       }

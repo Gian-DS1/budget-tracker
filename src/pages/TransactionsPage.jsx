@@ -38,6 +38,7 @@ export default function TransactionsPage() {
   // Sync global search query from header
   useEffect(() => {
     if (globalSearchQuery) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSearchQuery(globalSearchQuery);
       clearGlobalSearch();
     }
@@ -176,11 +177,6 @@ export default function TransactionsPage() {
   const getCategoryName = (categoryId) => {
     const cat = categories.find((c) => c.id === categoryId);
     return cat ? `${cat.icon} ${cat.name}` : '—';
-  };
-
-  const getCategoryIcon = (categoryId) => {
-    const cat = categories.find((c) => c.id === categoryId);
-    return cat?.icon || '❓';
   };
 
   const clearFilters = () => {

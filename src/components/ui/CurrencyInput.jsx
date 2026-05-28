@@ -30,7 +30,6 @@ export default function CurrencyInput({
   onBlurCallback,
   placeholder = '0.00',
   required = false,
-  min,
   style = {},
   autoFocus = false,
   id,
@@ -43,6 +42,7 @@ export default function CurrencyInput({
   useEffect(() => {
     if (!isFocused) {
       if (value === '' || value === null || value === undefined) {
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setDisplayValue('');
       } else {
         setDisplayValue(formatDisplay(value));

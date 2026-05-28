@@ -62,7 +62,6 @@ export default function SettingsPage() {
       skipEmptyLines: true,
       complete: async (results) => {
         const rows = results.data;
-        let importedCount = 0;
         
         const newTransactions = rows.map(row => {
           // Flexible column matching to help migrate from Google Sheets
@@ -111,7 +110,6 @@ export default function SettingsPage() {
             categoryMatch = autoCategorize(desc, categories);
           }
 
-          importedCount++;
           return {
             date: formattedDate,
             amount,

@@ -1,14 +1,10 @@
 // FinTrack RD — Header Component
 
-import { useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { Bell, Moon, Sun, Menu } from 'lucide-react';
 import useThemeStore from '../../stores/useThemeStore';
 
 export default function Header() {
   const { theme, toggleTheme, sidebarCollapsed, toggleMobileMenu } = useThemeStore();
-  const navigate = useNavigate();
-  const location = useLocation();
 
   return (
     <header className={`header ${sidebarCollapsed ? 'collapsed' : ''}`}>

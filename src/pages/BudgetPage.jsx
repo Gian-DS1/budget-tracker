@@ -15,7 +15,7 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent } from '../utils/formatters';
-import { calculateBudgetProgress, getProgressStatus, sumAmounts } from '../utils/calculations';
+import { calculateBudgetProgress, sumAmounts } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
 import toast from 'react-hot-toast';
 
@@ -84,43 +84,12 @@ export default function BudgetPage() {
       const actual = sumAmounts(catTransactions);
 
       const progress = calculateBudgetProgress(actual, estimated);
-      
-      // Determine status based on type and progress
-      let status = 'good';
-      if (cat.type === 'income' || cat.type === 'savings') {
-        if (estimated > 0) {
-          if (progress >= 100) status = 'good';
-          else if (progress >= 80) status = 'warning';
-          else status = 'danger';
-        } else {
-          status = actual > 0 ? 'good' : 'danger';
-        }
-      } else {
-        // Expenses
-        if (estimated > 0) {
-          if (progress <= 80) status = 'good';
-          else if (progress <= 100) status = 'warning';
-          else status = 'danger';
-        } else {
-          status = actual > 0 ? 'danger' : 'good';
-        }
-      }
-
-      // Difference based on type
-      let difference = 0;
-      if (cat.type === 'income') {
-        difference = actual - estimated; // Earning more is a positive difference
-      } else {
-        difference = estimated - actual; // Spending less is a positive difference (saved money)
-      }
 
       return {
         category: cat,
         estimated,
         actual,
-        difference,
         progress,
-        status,
         budgetId: budget?.id,
       };
     });

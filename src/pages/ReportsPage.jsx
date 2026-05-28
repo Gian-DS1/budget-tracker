@@ -118,7 +118,7 @@ export default function ReportsPage() {
         IngresosEstimados: nextMonthInc
       }
     ];
-  }, [monthlyData]);
+  }, [monthlyData, currentMonth]);
 
 
   // ─── Anomaly Detection ──────────────────────────────────────────

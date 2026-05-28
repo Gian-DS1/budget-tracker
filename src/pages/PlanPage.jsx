@@ -6,7 +6,7 @@ import usePlanStore from '../stores/usePlanStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
-import { formatCurrency, formatPercent, formatDate } from '../utils/formatters';
+import { formatCurrency, formatDate } from '../utils/formatters';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import toast from 'react-hot-toast';
 
@@ -70,11 +70,7 @@ export default function PlanPage() {
     setShowForm(false);
   };
 
-  const cycleStatus = (id, currentStatus) => {
-    const order = ['pending', 'in_progress', 'completed'];
-    const nextIndex = (order.indexOf(currentStatus) + 1) % order.length;
-    updateStatus(id, order[nextIndex]);
-  };
+
 
   const getDaysRemaining = (targetDate) => {
     if (!targetDate) return null;
