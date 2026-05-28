@@ -767,17 +767,15 @@ table {
   text-transform: uppercase;
   letter-spacing: 0.06em;
   margin-bottom: var(--space-2);
-  padding-right: 48px; /* Prevent overlap with absolute icon */
 }
 
 .kpi-value {
-  font-size: clamp(1.25rem, 3vw, 1.6rem); /* Scales down slightly to fit JetBrains Mono */
+  font-size: clamp(1.1rem, 2vw, 1.4rem);
   font-weight: 800;
   color: var(--text-primary);
   letter-spacing: -0.02em;
   line-height: 1.1;
-  padding-right: 48px; /* Prevent overlap with absolute icon */
-  word-break: break-word; /* Wrap long numbers if necessary */
+  white-space: nowrap;
 }
 
 .kpi-change {
