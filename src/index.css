@@ -1603,33 +1603,35 @@ table {
 .percentage,
 .currency,
 .total,
-.date,
-.badge,
 .metric,
 .progress-percentage,
-.text-xs.text-muted,
-td,
-input,
-select {
+.font-mono {
   font-family: var(--font-mono), monospace;
   font-variant-numeric: tabular-nums;
-  letter-spacing: -0.02em;
+  letter-spacing: 0 !important; /* Avoid character overlap in monospace */
 }
 
-/* Ensure clean sans-serif spacing for descriptions and labels inside tables */
-td.description,
-.description,
-td.category,
-.category,
+/* Ensure clean sans-serif spacing for descriptions, inputs, selects, sidebars, charts and labels */
+html,
+body,
+th,
+td,
+input,
+select,
+textarea,
+button,
 .kpi-label,
 .card-title,
 .page-title,
 .page-subtitle,
 .sidebar-link,
 .btn,
-button,
-label,
-th {
+.description,
+.category,
+.text-xs,
+.text-muted,
+.kpi-change,
+label {
   font-family: var(--font-family);
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
 }
