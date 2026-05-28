@@ -46,7 +46,7 @@ function CircularProgress({ percentage, size = 120, strokeWidth = 8, color = 'va
 }
 
 export default function SavingsPage() {
-  const { goals, addGoal, updateGoal, deleteGoal, getTotalSaved } = useSavingsStore();
+  const { goals, addGoal, updateGoal, deleteGoal, addContribution, getTotalSaved } = useSavingsStore();
   const { addTransaction } = useTransactionStore();
 
   const [showForm, setShowForm] = useState(false);

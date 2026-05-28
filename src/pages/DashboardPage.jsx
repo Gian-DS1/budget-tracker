@@ -331,17 +331,21 @@ export default function DashboardPage() {
               {recentTransactions.map((t) => {
                 const cat = categories.find(c => c.id === t.categoryId);
                 return (
-                  <div key={t.id} className="flex items-center justify-between p-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)' }}>
-                    <div className="flex items-center gap-3">
-                      <div style={{ fontSize: '1.5rem', background: 'var(--bg-card)', padding: '8px', borderRadius: 'var(--radius-md)' }}>
+                  <div key={t.id} className="flex items-center justify-between gap-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', minWidth: 0, padding: 'var(--space-3) var(--space-6)' }}>
+                    <div className="flex items-center gap-3" style={{ minWidth: 0, flex: 1 }}>
+                      <div style={{ fontSize: '1.5rem', background: 'var(--bg-card)', padding: '8px', borderRadius: 'var(--radius-md)', flexShrink: 0 }}>
                         {cat?.icon || '💸'}
                       </div>
-                      <div>
-                        <div className="font-semibold">{t.description || 'Sin descripción'}</div>
-                        <div className="text-xs text-muted">{formatDate(t.date)} • {cat?.name || 'Sin categoría'}</div>
+                      <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                        <div className="font-semibold" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={t.description || 'Sin descripción'}>
+                          {t.description || 'Sin descripción'}
+                        </div>
+                        <div className="text-xs text-muted" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {formatDate(t.date)} • {cat?.name || 'Sin categoría'}
+                        </div>
                       </div>
                     </div>
-                    <div className={`font-bold ${t.type === 'income' ? 'amount-positive' : 'amount-negative'}`}>
+                    <div className={`font-bold ${t.type === 'income' ? 'amount-positive' : 'amount-negative'}`} style={{ flexShrink: 0, whiteSpace: 'nowrap', textAlign: 'right' }}>
                       {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
                     </div>
                   </div>
