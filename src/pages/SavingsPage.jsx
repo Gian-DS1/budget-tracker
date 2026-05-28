@@ -1,10 +1,11 @@
 // FinTrack RD — Savings Page
 
 import { useState, useMemo } from 'react';
-import { Plus, PiggyBank, Pause, Play } from 'lucide-react';
+import { Plus, PiggyBank, Edit2, Trash2 } from 'lucide-react';
 import useSavingsStore from '../stores/useSavingsStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent, formatDate, todayISO } from '../utils/formatters';
@@ -45,10 +46,12 @@ function CircularProgress({ percentage, size = 120, strokeWidth = 8, color = 'va
 }
 
 export default function SavingsPage() {
-  const { goals, addGoal, addContribution, togglePause, getTotalSaved } = useSavingsStore();
+  const { goals, addGoal, updateGoal, deleteGoal, getTotalSaved } = useSavingsStore();
   const { addTransaction } = useTransactionStore();
 
   const [showForm, setShowForm] = useState(false);
+  const [editingGoal, setEditingGoal] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showContribute, setShowContribute] = useState(null);
   const [contributeAmount, setContributeAmount] = useState('');
 
@@ -65,10 +68,39 @@ export default function SavingsPage() {
 
   const totalSaved = useMemo(() => getTotalSaved(), [getTotalSaved, goals]);
 
+  const openEditForm = (goal) => {
+    setForm({
+      title: goal.title,
+      targetAmount: goal.targetAmount.toString(),
+      currentAmount: goal.currentAmount.toString(),
+      deadline: goal.deadline || '',
+      priority: goal.priority || 'medium',
+      icon: goal.icon || '🎯',
+      color: goal.color || '#10b981',
+      currency: goal.currency || 'DOP',
+    });
+    setEditingGoal(goal.id);
+    setShowForm(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.title || !form.targetAmount) return;
-    addGoal(form);
+
+    const goalData = {
+      ...form,
+      targetAmount: Number(form.targetAmount),
+      currentAmount: Number(form.currentAmount) || 0,
+    };
+
+    if (editingGoal) {
+      updateGoal(editingGoal, goalData);
+      toast.success('Meta de ahorro actualizada');
+    } else {
+      addGoal(goalData);
+      toast.success('Meta de ahorro creada');
+    }
+
     setForm({
       title: '',
       targetAmount: '',
@@ -79,8 +111,8 @@ export default function SavingsPage() {
       color: '#10b981',
       currency: 'DOP',
     });
+    setEditingGoal(null);
     setShowForm(false);
-    toast.success('Meta de ahorro creada');
   };
 
   const handleContribute = (goalId) => {
@@ -124,7 +156,20 @@ export default function SavingsPage() {
           </p>
         </div>
         {goals.length > 0 && (
-          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+          <button className="btn btn-primary btn-lg" onClick={() => {
+            setEditingGoal(null);
+            setForm({
+              title: '',
+              targetAmount: '',
+              currentAmount: '0',
+              deadline: '',
+              priority: 'medium',
+              icon: '🎯',
+              color: '#10b981',
+              currency: 'DOP',
+            });
+            setShowForm(true);
+          }}>
             <Plus size={18} /> Nueva Meta
           </button>
         )}
@@ -136,7 +181,20 @@ export default function SavingsPage() {
           title="Sin metas de ahorro"
           description="Crea tu primera meta y empieza a ahorrar para lo que más importa."
           action={
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+            <button className="btn btn-primary" onClick={() => {
+              setEditingGoal(null);
+              setForm({
+                title: '',
+                targetAmount: '',
+                currentAmount: '0',
+                deadline: '',
+                priority: 'medium',
+                icon: '🎯',
+                color: '#10b981',
+                currency: 'DOP',
+              });
+              setShowForm(true);
+            }}>
               <Plus size={16} /> Crear Meta
             </button>
           }
@@ -176,20 +234,34 @@ export default function SavingsPage() {
                   <div className="flex items-center gap-3">
                     <span style={{ fontSize: 'var(--font-2xl)' }}>{goal.icon}</span>
                     <div>
-                      <h3 className="font-bold">{goal.title}</h3>
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-bold">{goal.title}</h3>
+                        <button
+                          className="btn-icon"
+                          onClick={() => openEditForm(goal)}
+                          style={{ padding: '2px', color: 'var(--text-secondary)' }}
+                          title="Editar"
+                        >
+                          <Edit2 size={13} />
+                        </button>
+                        <button
+                          className="btn-icon"
+                          onClick={() => setShowDeleteConfirm(goal.id)}
+                          style={{ padding: '2px', color: 'var(--color-danger)' }}
+                          title="Eliminar"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
                       <span
                         className={`badge ${
                           goal.status === 'completed'
                             ? 'badge-income'
-                            : goal.status === 'paused'
-                            ? 'badge-variable'
                             : 'badge-savings'
                         }`}
                       >
                         {goal.status === 'completed'
                           ? '✅ Completada'
-                          : goal.status === 'paused'
-                          ? '⏸️ Pausada'
                           : '🔄 Activa'}
                       </span>
                     </div>
@@ -234,20 +306,12 @@ export default function SavingsPage() {
                 <div className="flex gap-2">
                   {goal.status === 'active' && (
                     <button
-                      className="btn btn-primary btn-sm"
-                      style={{ flex: 1 }}
+                      className="btn btn-primary btn-sm w-full"
                       onClick={() => setShowContribute(goal.id)}
                     >
                       <Plus size={14} /> Abonar
                     </button>
                   )}
-                  <button
-                    className="btn btn-secondary btn-sm"
-                    onClick={() => togglePause(goal.id)}
-                    title={goal.status === 'paused' ? 'Reanudar' : 'Pausar'}
-                  >
-                    {goal.status === 'paused' ? <Play size={14} /> : <Pause size={14} />}
-                  </button>
                 </div>
               </div>
             );
@@ -255,8 +319,8 @@ export default function SavingsPage() {
         </div>
       )}
 
-      {/* New Goal Form */}
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Nueva Meta de Ahorro">
+      {/* Form Modal */}
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingGoal(null); }} title={editingGoal ? "Editar Meta de Ahorro" : "Nueva Meta de Ahorro"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Nombre *</label>
@@ -339,11 +403,11 @@ export default function SavingsPage() {
           </div>
 
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setEditingGoal(null); }}>
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              Crear Meta
+              {editingGoal ? "Guardar Cambios" : "Crear Meta"}
             </button>
           </div>
         </form>
@@ -385,6 +449,17 @@ export default function SavingsPage() {
           </button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => {
+          deleteGoal(showDeleteConfirm);
+          toast.success('Meta de ahorro eliminada');
+        }}
+        title="Eliminar Meta de Ahorro"
+        message="¿Seguro que quieres eliminar esta meta de ahorro?"
+      />
     </div>
   );
 }

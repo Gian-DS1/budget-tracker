@@ -1,13 +1,14 @@
 // FinTrack RD — Plan Page
 
 import { useState } from 'react';
-import { Plus, Target, Trash2, Clock, CheckCircle2, Circle } from 'lucide-react';
+import { Plus, Target, Trash2, Clock, CheckCircle2, Circle, Edit2 } from 'lucide-react';
 import usePlanStore from '../stores/usePlanStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import { formatCurrency, formatPercent, formatDate } from '../utils/formatters';
 import CurrencyInput from '../components/ui/CurrencyInput';
+import toast from 'react-hot-toast';
 
 const HORIZON_CONFIG = {
   short: { label: 'Corto Plazo', subtitle: '1-3 meses', emoji: '⚡', color: '#f59e0b' },
@@ -22,8 +23,9 @@ const STATUS_CONFIG = {
 };
 
 export default function PlanPage() {
-  const { plans, addPlan, deletePlan, updateStatus } = usePlanStore();
+  const { plans, addPlan, updatePlan, deletePlan, updateStatus } = usePlanStore();
   const [showForm, setShowForm] = useState(false);
+  const [editingPlan, setEditingPlan] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   const [form, setForm] = useState({
@@ -34,11 +36,37 @@ export default function PlanPage() {
     deadline: '',
   });
 
+  const openEditForm = (plan) => {
+    setForm({
+      title: plan.title,
+      description: plan.description || '',
+      horizon: plan.horizon || 'short',
+      targetAmount: plan.targetAmount ? plan.targetAmount.toString() : '',
+      deadline: plan.deadline || '',
+    });
+    setEditingPlan(plan.id);
+    setShowForm(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.title) return;
-    addPlan(form);
+    
+    const planData = {
+      ...form,
+      targetAmount: Number(form.targetAmount) || 0,
+    };
+
+    if (editingPlan) {
+      updatePlan(editingPlan, planData);
+      toast.success('Meta actualizada');
+    } else {
+      addPlan(planData);
+      toast.success('Meta creada');
+    }
+
     setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
+    setEditingPlan(null);
     setShowForm(false);
   };
 
@@ -66,7 +94,11 @@ export default function PlanPage() {
           </p>
         </div>
         {plans.length > 0 && (
-          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+          <button className="btn btn-primary btn-lg" onClick={() => {
+            setEditingPlan(null);
+            setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
+            setShowForm(true);
+          }}>
             <Plus size={18} /> Nueva Meta
           </button>
         )}
@@ -78,7 +110,11 @@ export default function PlanPage() {
           title="Sin metas planificadas"
           description="Define tus metas financieras a corto, mediano y largo plazo."
           action={
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+            <button className="btn btn-primary" onClick={() => {
+              setEditingPlan(null);
+              setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
+              setShowForm(true);
+            }}>
               <Plus size={16} /> Crear Meta
             </button>
           }
@@ -122,20 +158,15 @@ export default function PlanPage() {
                           opacity: plan.status === 'completed' ? 0.75 : 1,
                         }}
                       >
-                        {/* Status Toggle */}
-                        <button
-                          className="btn-icon"
-                          onClick={() => cycleStatus(plan.id, plan.status)}
-                          style={{ color: statusConfig.color }}
-                          title="Cambiar estado"
-                        >
-                          <StatusIcon size={24} />
-                        </button>
+                        {/* Status Icon */}
+                        <div style={{ color: statusConfig.color, display: 'flex', alignItems: 'center' }}>
+                          <StatusIcon size={22} />
+                        </div>
 
                         {/* Content */}
                         <div style={{ flex: 1 }}>
                           <h3
-                            className="font-semibold"
+                            className="font-semibold text-base"
                             style={{
                               textDecoration:
                                 plan.status === 'completed' ? 'line-through' : 'none',
@@ -143,9 +174,16 @@ export default function PlanPage() {
                           >
                             {plan.title}
                           </h3>
-                          {plan.description && (
-                            <p className="text-sm text-muted">{plan.description}</p>
-                          )}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted mt-1">
+                            {plan.targetAmount > 0 && (
+                              <span className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
+                                {formatCurrency(plan.targetAmount)}
+                              </span>
+                            )}
+                            {plan.description && (
+                              <span>{plan.description}</span>
+                            )}
+                          </div>
                         </div>
 
                         {/* Date & Days */}
@@ -172,19 +210,48 @@ export default function PlanPage() {
                           </div>
                         )}
 
-                        {/* Badge */}
-                        <span className={`badge ${statusConfig.badge}`}>
-                          {statusConfig.label}
-                        </span>
+                        {/* Status Dropdown */}
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <select
+                            value={plan.status}
+                            onChange={(e) => updateStatus(plan.id, e.target.value)}
+                            className={`badge ${statusConfig.badge}`}
+                            style={{
+                              border: 'none',
+                              cursor: 'pointer',
+                              outline: 'none',
+                              padding: 'var(--space-1) var(--space-6) var(--space-1) var(--space-3)',
+                              fontWeight: 600,
+                              fontSize: 'var(--font-xs)',
+                              backgroundPosition: 'right var(--space-2) center',
+                              backgroundSize: '10px',
+                            }}
+                          >
+                            <option value="pending" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>🔴 Pendiente</option>
+                            <option value="in_progress" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>🟡 En Proceso</option>
+                            <option value="completed" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>✅ Cumplida</option>
+                          </select>
+                        </div>
 
-                        {/* Delete */}
-                        <button
-                          className="btn-icon"
-                          onClick={() => setShowDeleteConfirm(plan.id)}
-                          style={{ color: 'var(--color-danger)' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                        {/* Actions */}
+                        <div className="flex items-center gap-1">
+                          <button
+                            className="btn-icon"
+                            onClick={() => openEditForm(plan)}
+                            style={{ padding: '4px', color: 'var(--text-secondary)' }}
+                            title="Editar"
+                          >
+                            <Edit2 size={15} />
+                          </button>
+                          <button
+                            className="btn-icon"
+                            onClick={() => setShowDeleteConfirm(plan.id)}
+                            style={{ padding: '4px', color: 'var(--color-danger)' }}
+                            title="Eliminar"
+                          >
+                            <Trash2 size={15} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}
@@ -196,7 +263,7 @@ export default function PlanPage() {
       )}
 
       {/* Form Modal */}
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Nueva Meta del Plan">
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingPlan(null); }} title={editingPlan ? "Editar Meta del Plan" : "Nueva Meta del Plan"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Título *</label>
@@ -247,11 +314,11 @@ export default function PlanPage() {
             />
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setEditingPlan(null); }}>
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              Crear Meta
+              {editingPlan ? "Guardar Cambios" : "Crear Meta"}
             </button>
           </div>
         </form>

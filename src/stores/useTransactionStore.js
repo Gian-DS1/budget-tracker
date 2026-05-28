@@ -2,6 +2,34 @@ import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
+export async function fetchUSDRate(dateStr) {
+  try {
+    const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${dateStr}/v1/currencies/usd.json`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.usd && typeof data.usd.dop === 'number') {
+        return data.usd.dop;
+      }
+    }
+  } catch (e) {
+    console.warn("Error fetching historical rate for USD:", e);
+  }
+
+  try {
+    const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`);
+    if (response.ok) {
+      const data = await response.json();
+      if (data && data.usd && typeof data.usd.dop === 'number') {
+        return data.usd.dop;
+      }
+    }
+  } catch (e) {
+    console.warn("Error fetching latest rate for USD:", e);
+  }
+
+  return USD_TO_DOP_RATE;
+}
+
 const useTransactionStore = create((set, get) => ({
   transactions: [],
   loading: false,
@@ -42,11 +70,16 @@ const useTransactionStore = create((set, get) => ({
     let amount = Number(transaction.amount);
     let notes = transaction.notes || null;
     if (currency === 'USD') {
-      // Append conversion info to notes
+      const rate = await fetchUSDRate(transaction.date);
       const originalAmount = amount;
-      amount = Math.round(amount * USD_TO_DOP_RATE * 100) / 100;
-      const conversionNote = `[USD ${originalAmount.toFixed(2)} → RD$ ${amount.toFixed(2)} @ tasa ${USD_TO_DOP_RATE}]`;
-      notes = notes ? `${notes} ${conversionNote}` : conversionNote;
+      amount = Math.round(amount * rate * 100) / 100;
+
+      const formattedOriginal = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(originalAmount);
+      const formattedConverted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
+      const formattedRate = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate);
+
+      const conversionNote = `US$ ${formattedOriginal} → RD$ ${formattedConverted} - Tasa del día: ${formattedRate}`;
+      notes = notes ? `${notes} (${conversionNote})` : conversionNote;
     }
 
     const dbTx = {

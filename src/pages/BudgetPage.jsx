@@ -29,8 +29,8 @@ function BudgetEstimatedInput({ initialValue, onSave }) {
     setLocalValue(val);
   };
 
-  const handleBlur = () => {
-    onSave(localValue);
+  const handleBlur = (finalVal) => {
+    onSave(finalVal !== undefined && finalVal !== null ? finalVal : localValue);
   };
 
   return (
@@ -81,8 +81,35 @@ export default function BudgetPage() {
       const actual = sumAmounts(catTransactions);
 
       const progress = calculateBudgetProgress(actual, estimated);
-      const status = getProgressStatus(progress);
-      const difference = estimated - actual;
+      
+      // Determine status based on type and progress
+      let status = 'good';
+      if (cat.type === 'income' || cat.type === 'savings') {
+        if (estimated > 0) {
+          if (progress >= 100) status = 'good';
+          else if (progress >= 80) status = 'warning';
+          else status = 'danger';
+        } else {
+          status = actual > 0 ? 'good' : 'danger';
+        }
+      } else {
+        // Expenses
+        if (estimated > 0) {
+          if (progress <= 80) status = 'good';
+          else if (progress <= 100) status = 'warning';
+          else status = 'danger';
+        } else {
+          status = actual > 0 ? 'danger' : 'good';
+        }
+      }
+
+      // Difference based on type
+      let difference = 0;
+      if (cat.type === 'income') {
+        difference = actual - estimated; // Earning more is a positive difference
+      } else {
+        difference = estimated - actual; // Spending less is a positive difference (saved money)
+      }
 
       return {
         category: cat,
@@ -199,7 +226,7 @@ export default function BudgetPage() {
                         : 'text-muted'
                     }
                   >
-                    {row.estimated > 0 ? formatCurrency(row.difference) : '—'}
+                    {row.estimated > 0 || row.actual > 0 ? formatCurrency(row.difference) : '—'}
                   </td>
                   <td>
                     {row.estimated > 0 ? (
@@ -219,6 +246,25 @@ export default function BudgetPage() {
                           }}
                         >
                           {formatPercent(row.progress, 0)}
+                        </span>
+                      </div>
+                    ) : row.actual > 0 ? (
+                      <div className="flex items-center gap-2">
+                        <div className={`progress-bar progress-${row.status}`} style={{ flex: 1 }}>
+                          <div
+                            className="progress-bar-fill"
+                            style={{ width: '100%' }}
+                          />
+                        </div>
+                        <span
+                          className="text-xs font-semibold"
+                          style={{
+                            color: `var(--progress-${row.status})`,
+                            minWidth: 40,
+                            textAlign: 'right',
+                          }}
+                        >
+                          {row.category.type === 'income' ? '100%' : '>100%'}
                         </span>
                       </div>
                     ) : (

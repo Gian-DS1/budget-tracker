@@ -14,8 +14,10 @@ import {
   ChevronLeft,
   ChevronRight,
   TrendingUp,
+  LogOut,
 } from 'lucide-react';
 import useThemeStore from '../../stores/useThemeStore';
+import { useAuth } from '../../contexts/AuthContext';
 
 const navItems = [
   { section: 'Principal' },
@@ -36,6 +38,7 @@ const navItems = [
 
 export default function Sidebar() {
   const { sidebarCollapsed, toggleSidebar, mobileMenuOpen, closeMobileMenu } = useThemeStore();
+  const { signOut } = useAuth();
 
   return (
     <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
@@ -78,6 +81,15 @@ export default function Sidebar() {
 
       {/* Footer with collapse toggle */}
       <div className="sidebar-footer">
+        <button
+          className="sidebar-link"
+          onClick={signOut}
+          style={{ width: '100%', marginBottom: 'var(--space-2)', color: 'var(--color-danger)' }}
+          title="Cerrar sesión"
+        >
+          <LogOut className="sidebar-link-icon" size={20} />
+          <span className="sidebar-link-text">Cerrar sesión</span>
+        </button>
         <button
           className="sidebar-link"
           onClick={toggleSidebar}

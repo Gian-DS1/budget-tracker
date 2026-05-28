@@ -68,15 +68,17 @@ export default function CurrencyInput({
     // Format on blur
     const raw = stripFormat(displayValue);
     const num = parseFloat(raw);
+    let finalVal = '';
     if (!isNaN(num)) {
+      finalVal = num.toString();
       setDisplayValue(formatDisplay(num));
-      onChange(num.toString());
+      onChange(finalVal);
     } else {
       setDisplayValue('');
       onChange('');
     }
     // Notify parent of blur event
-    if (onBlurCallback) onBlurCallback();
+    if (onBlurCallback) onBlurCallback(finalVal);
   };
 
   const handleChange = (e) => {

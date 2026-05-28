@@ -1,10 +1,11 @@
 // FinTrack RD — Debts Page
 
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, TrendingDown, DollarSign } from 'lucide-react';
+import { Plus, CreditCard, TrendingDown, DollarSign, Edit2, Trash2 } from 'lucide-react';
 import useDebtStore from '../stores/useDebtStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import { formatCurrency, formatDate, todayISO, formatPercent } from '../utils/formatters';
 import { calculateAmortization } from '../utils/calculations';
@@ -14,6 +15,8 @@ export default function DebtsPage() {
   const {
     debts,
     addDebt,
+    updateDebt,
+    deleteDebt,
     addPayment,
     getPaymentsByDebt,
     getTotalDebt,
@@ -22,6 +25,8 @@ export default function DebtsPage() {
   const { addTransaction } = useTransactionStore();
 
   const [showForm, setShowForm] = useState(false);
+  const [editingDebt, setEditingDebt] = useState(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [showPayment, setShowPayment] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(todayISO());
@@ -39,13 +44,40 @@ export default function DebtsPage() {
   const totalDebt = useMemo(() => getTotalDebt(), [getTotalDebt]);
   const totalMonthly = useMemo(() => getTotalMonthlyPayment(), [getTotalMonthlyPayment]);
 
+  const openEditForm = (debt) => {
+    setForm({
+      creditorName: debt.creditorName,
+      originalAmount: debt.originalAmount,
+      currentBalance: debt.currentBalance,
+      interestRate: debt.interestRate,
+      monthlyPayment: debt.monthlyPayment,
+      currency: debt.currency || 'DOP',
+      startDate: debt.startDate || todayISO(),
+    });
+    setEditingDebt(debt.id);
+    setShowForm(true);
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.creditorName || !form.originalAmount || !form.monthlyPayment) return;
-    addDebt({
+    
+    const debtData = {
       ...form,
-      currentBalance: form.currentBalance || form.originalAmount,
-    });
+      originalAmount: Number(form.originalAmount),
+      currentBalance: Number(form.currentBalance || form.originalAmount),
+      interestRate: Number(form.interestRate) || 0,
+      monthlyPayment: Number(form.monthlyPayment) || 0,
+    };
+
+    if (editingDebt) {
+      updateDebt(editingDebt, debtData);
+      toast.success('Deuda actualizada');
+    } else {
+      addDebt(debtData);
+      toast.success('Deuda registrada');
+    }
+
     setForm({
       creditorName: '',
       originalAmount: '',
@@ -55,8 +87,8 @@ export default function DebtsPage() {
       currency: 'DOP',
       startDate: todayISO(),
     });
+    setEditingDebt(null);
     setShowForm(false);
-    toast.success('Deuda registrada');
   };
 
   const handlePayment = (debtId) => {
@@ -97,7 +129,19 @@ export default function DebtsPage() {
           </p>
         </div>
         {debts.length > 0 && (
-          <button className="btn btn-primary btn-lg" onClick={() => setShowForm(true)}>
+          <button className="btn btn-primary btn-lg" onClick={() => {
+            setEditingDebt(null);
+            setForm({
+              creditorName: '',
+              originalAmount: '',
+              currentBalance: '',
+              interestRate: '',
+              monthlyPayment: '',
+              currency: 'DOP',
+              startDate: todayISO(),
+            });
+            setShowForm(true);
+          }}>
             <Plus size={18} /> Nueva Deuda
           </button>
         )}
@@ -142,7 +186,19 @@ export default function DebtsPage() {
           title="Sin deudas registradas"
           description="¡Excelente! O registra tus deudas para hacer un seguimiento inteligente."
           action={
-            <button className="btn btn-primary" onClick={() => setShowForm(true)}>
+            <button className="btn btn-primary" onClick={() => {
+              setEditingDebt(null);
+              setForm({
+                creditorName: '',
+                originalAmount: '',
+                currentBalance: '',
+                interestRate: '',
+                monthlyPayment: '',
+                currency: 'DOP',
+                startDate: todayISO(),
+              });
+              setShowForm(true);
+            }}>
               <Plus size={16} /> Registrar Deuda
             </button>
           }
@@ -180,7 +236,25 @@ export default function DebtsPage() {
               >
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="font-bold">{debt.creditorName}</h3>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold">{debt.creditorName}</h3>
+                      <button
+                        className="btn-icon"
+                        onClick={() => openEditForm(debt)}
+                        style={{ padding: '2px', color: 'var(--text-secondary)' }}
+                        title="Editar"
+                      >
+                        <Edit2 size={13} />
+                      </button>
+                      <button
+                        className="btn-icon"
+                        onClick={() => setShowDeleteConfirm(debt.id)}
+                        style={{ padding: '2px', color: 'var(--color-danger)' }}
+                        title="Eliminar"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
                     <span
                       className={`badge ${
                         debt.status === 'paid_off' ? 'badge-income' : 'badge-debt'
@@ -285,8 +359,8 @@ export default function DebtsPage() {
         </div>
       )}
 
-      {/* New Debt Form */}
-      <Modal isOpen={showForm} onClose={() => setShowForm(false)} title="Nueva Deuda">
+      {/* New/Edit Debt Form */}
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingDebt(null); }} title={editingDebt ? "Editar Deuda" : "Nueva Deuda"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label">Acreedor / Nombre *</label>
@@ -369,11 +443,11 @@ export default function DebtsPage() {
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setEditingDebt(null); }}>
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              Registrar Deuda
+              {editingDebt ? "Guardar Cambios" : "Registrar Deuda"}
             </button>
           </div>
         </form>
@@ -425,6 +499,17 @@ export default function DebtsPage() {
           </button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={!!showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(null)}
+        onConfirm={() => {
+          deleteDebt(showDeleteConfirm);
+          toast.success('Deuda eliminada');
+        }}
+        title="Eliminar Deuda"
+        message="¿Seguro que quieres eliminar esta deuda? Se borrarán todos los pagos asociados."
+      />
     </div>
   );
 }

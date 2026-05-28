@@ -18,7 +18,7 @@ const useBudgetStore = create((set, get) => ({
           id: b.id,
           categoryId: b.category_id,
           year: parseInt(y, 10),
-          month: parseInt(m, 10),
+          month: parseInt(m, 10) - 1,
           estimatedAmount: Number(b.amount),
           currency: 'DOP',
           createdAt: b.created_at
@@ -34,7 +34,7 @@ const useBudgetStore = create((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const dbMonth = `${year}-${month}`;
+    const dbMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
     const dbPayload = {
       user_id: user.id,
       category_id: categoryId,
@@ -117,7 +117,7 @@ const useBudgetStore = create((set, get) => ({
       user_id: user.id,
       category_id: pb.categoryId,
       amount: pb.estimatedAmount,
-      month: `${year}-${month}`
+      month: `${year}-${String(month + 1).padStart(2, '0')}`
     }));
 
     const { data, error } = await supabase.from('budgets').insert(dbPayload).select();
@@ -128,7 +128,7 @@ const useBudgetStore = create((set, get) => ({
           id: b.id,
           categoryId: b.category_id,
           year: parseInt(y, 10),
-          month: parseInt(m, 10),
+          month: parseInt(m, 10) - 1,
           estimatedAmount: Number(b.amount),
           currency: 'DOP',
           createdAt: b.created_at
