@@ -88,7 +88,14 @@ export function formatDateShort(dateStr) {
 export function toISODate(date) {
   if (!date) return '';
   const d = new Date(date);
-  return d.toISOString().split('T')[0];
+  if (isNaN(d.getTime())) return '';
+  // Use local calendar components (not toISOString, which is UTC and would
+  // roll over to the next day during the evening in negative-offset zones
+  // like República Dominicana, GMT-4).
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
 }
 
 /**

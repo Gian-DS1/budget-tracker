@@ -15,10 +15,14 @@ export function calculateIncome(transactions) {
 }
 
 /**
- * Calculate expenses for a period
+ * Calculate expenses for a period (includes fixed and variable expense types)
  */
 export function calculateExpenses(transactions) {
-  return sumAmounts(transactions.filter(t => t.type === 'expense'));
+  return sumAmounts(
+    transactions.filter(
+      t => t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense'
+    )
+  );
 }
 
 /**

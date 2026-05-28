@@ -114,20 +114,30 @@ const useTransactionStore = create(
   },
 
   updateTransaction: async (id, updates) => {
-    const dbUpdates = { ...updates };
-    if (updates.categoryId !== undefined) {
-      dbUpdates.category_id = updates.categoryId;
-      delete dbUpdates.categoryId;
-    }
+    // Whitelist only real DB columns. The edit form carries extra fields
+    // (id, createdAt, currency, isRecurring, ...) that would make Supabase
+    // reject the update with an "unknown column" error.
+    const dbUpdates = {};
+    if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId || null;
+    if (updates.amount !== undefined) dbUpdates.amount = Number(updates.amount);
+    if (updates.type !== undefined) dbUpdates.type = updates.type;
+    if (updates.description !== undefined) dbUpdates.description = updates.description;
+    if (updates.date !== undefined) dbUpdates.date = updates.date;
+    if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
 
     const { error } = await supabase.from('transactions').update(dbUpdates).eq('id', id);
-    if (!error) {
-      set((state) => ({
-        transactions: state.transactions.map((t) =>
-          t.id === id ? { ...t, ...updates } : t
-        ),
-      }));
+    if (error) {
+      console.error('Transaction update error:', error);
+      toast.error('Error al actualizar: ' + error.message);
+      return;
     }
+
+    set((state) => ({
+      transactions: state.transactions.map((t) =>
+        t.id === id ? { ...t, ...updates } : t
+      ),
+    }));
+    toast.success('Transacción actualizada');
   },
 
   deleteTransaction: async (id) => {

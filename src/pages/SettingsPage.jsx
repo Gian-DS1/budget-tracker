@@ -2,8 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet } from 'lucide-react';
-import Papa from 'papaparse';
-import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
@@ -32,7 +30,7 @@ export default function SettingsPage() {
 
   // ─── Data Export ──────────────────────────────────────────────
 
-  const exportData = (format = 'xlsx') => {
+  const exportData = async (format = 'xlsx') => {
     if (transactions.length === 0) {
       toast.error('No hay transacciones para exportar');
       return;
@@ -52,6 +50,7 @@ export default function SettingsPage() {
     });
 
     if (format === 'csv') {
+      const { default: Papa } = await import('papaparse');
       const csv = Papa.unparse(data);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
@@ -61,8 +60,10 @@ export default function SettingsPage() {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      URL.revokeObjectURL(url);
       toast.success('Archivo CSV exportado exitosamente');
     } else {
+      const XLSX = await import('xlsx');
       const worksheet = XLSX.utils.json_to_sheet(data);
       const workbook = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(workbook, worksheet, "Transacciones");
@@ -148,16 +149,19 @@ export default function SettingsPage() {
     };
 
     if (fileExt === 'csv') {
-      Papa.parse(file, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => processData(results.data),
-        error: () => toast.error('Error leyendo el archivo CSV')
+      import('papaparse').then(({ default: Papa }) => {
+        Papa.parse(file, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => processData(results.data),
+          error: () => toast.error('Error leyendo el archivo CSV')
+        });
       });
     } else if (fileExt === 'xlsx' || fileExt === 'xls') {
       const reader = new FileReader();
-      reader.onload = (evt) => {
+      reader.onload = async (evt) => {
         try {
+          const XLSX = await import('xlsx');
           const bstr = evt.target.result;
           const workbook = XLSX.read(bstr, { type: 'binary' });
           const worksheet = workbook.Sheets[workbook.SheetNames[0]];
@@ -172,7 +176,7 @@ export default function SettingsPage() {
     } else {
       toast.error('Formato no soportado. Usa .csv o .xlsx');
     }
-    
+
     e.target.value = null;
   };
 
@@ -192,11 +196,13 @@ export default function SettingsPage() {
       ]);
     }
 
-    localStorage.removeItem('fintrack-transactions');
-    localStorage.removeItem('fintrack-budgets');
-    localStorage.removeItem('fintrack-savings');
-    localStorage.removeItem('fintrack-debts');
-    localStorage.removeItem('fintrack-plans');
+    // Must match the persist `name` of each zustand store, otherwise the
+    // cached data is rehydrated on reload and "deleted" data reappears.
+    localStorage.removeItem('fintrack-transactions-cache');
+    localStorage.removeItem('fintrack-budgets-cache');
+    localStorage.removeItem('fintrack-savings-cache');
+    localStorage.removeItem('fintrack-debts-cache');
+    localStorage.removeItem('fintrack-plans-cache');
     
     toast.success('Datos borrados exitosamente', { id: 'clear-data' });
     setTimeout(() => {

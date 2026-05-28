@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
-import { formatCurrency, MONTHS_ES, DAYS_SHORT_ES } from '../utils/formatters';
+import { formatCurrency, MONTHS_ES, DAYS_SHORT_ES, todayISO } from '../utils/formatters';
 import Modal from '../components/ui/Modal';
 
 export default function CalendarPage() {
@@ -106,7 +106,7 @@ export default function CalendarPage() {
   const getCategoryIcon = (id) => categories.find(c => c.id === id)?.icon || '💸';
   const getCategoryName = (id) => categories.find(c => c.id === id)?.name || 'Sin categoría';
 
-  const todayStr = now.toISOString().split('T')[0];
+  const todayStr = todayISO();
 
   return (
     <div className="page-container">

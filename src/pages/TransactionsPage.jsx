@@ -1,10 +1,9 @@
 // FinTrack RD — Transactions Page
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3 } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
-import useThemeStore from '../stores/useThemeStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -22,9 +21,6 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
-  // Global search integration
-  const { globalSearchQuery, clearGlobalSearch } = useThemeStore();
-
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -34,15 +30,6 @@ export default function TransactionsPage() {
   const [sortField, setSortField] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
   const [showFilters, setShowFilters] = useState(false);
-
-  // Sync global search query from header
-  useEffect(() => {
-    if (globalSearchQuery) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setSearchQuery(globalSearchQuery);
-      clearGlobalSearch();
-    }
-  }, [globalSearchQuery, clearGlobalSearch]);
 
   // Form state
   const [form, setForm] = useState({

@@ -74,7 +74,9 @@ export default function TourGuide() {
     }, 800);
 
     return () => clearTimeout(timer);
-  }, []); // Dependencia vacia, solo se ejecuta al montar
+    // Solo se inicializa al montar; `navigate` es estable en react-router.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return null;
 }

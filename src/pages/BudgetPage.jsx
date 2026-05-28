@@ -15,7 +15,7 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent } from '../utils/formatters';
-import { calculateBudgetProgress, sumAmounts } from '../utils/calculations';
+import { calculateBudgetProgress, getProgressStatus, sumAmounts } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
 import toast from 'react-hot-toast';
 
@@ -85,11 +85,21 @@ export default function BudgetPage() {
 
       const progress = calculateBudgetProgress(actual, estimated);
 
+      // For income, exceeding the target is good (more money in); for
+      // expenses/savings, staying under budget is good.
+      const isIncome = cat.type === 'income';
+      const difference = isIncome ? actual - estimated : estimated - actual;
+      const status = isIncome
+        ? getProgressStatus(progress >= 100 ? 0 : 100 - progress)
+        : getProgressStatus(progress);
+
       return {
         category: cat,
         estimated,
         actual,
         progress,
+        difference,
+        status,
         budgetId: budget?.id,
       };
     });
@@ -128,8 +138,8 @@ export default function BudgetPage() {
     setYear(newYear);
   };
 
-  const handleCopyPrevious = () => {
-    const success = copyBudgetFromPreviousMonth(year, month);
+  const handleCopyPrevious = async () => {
+    const success = await copyBudgetFromPreviousMonth(year, month);
     if (success) {
       toast.success('Presupuesto copiado del mes anterior');
     } else {

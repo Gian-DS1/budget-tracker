@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
-import { useEffect } from 'react';
+import { useEffect, lazy, Suspense } from 'react';
 
 import Layout from './components/layout/Layout';
 import useThemeStore from './stores/useThemeStore';
@@ -14,17 +14,25 @@ import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import AuthPage from './pages/AuthPage';
 
-import DashboardPage from './pages/DashboardPage';
-import TransactionsPage from './pages/TransactionsPage';
-import BudgetPage from './pages/BudgetPage';
-import SavingsPage from './pages/SavingsPage';
-import DebtsPage from './pages/DebtsPage';
-import PlanPage from './pages/PlanPage';
-import ReportsPage from './pages/ReportsPage';
-import CalendarPage from './pages/CalendarPage';
-import SettingsPage from './pages/SettingsPage';
-import FeedbackPage from './pages/FeedbackPage';
+// Lazy-loaded routes: keeps heavy deps (recharts, xlsx) out of the initial
+// bundle so each page loads its own chunk on demand.
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const TransactionsPage = lazy(() => import('./pages/TransactionsPage'));
+const BudgetPage = lazy(() => import('./pages/BudgetPage'));
+const SavingsPage = lazy(() => import('./pages/SavingsPage'));
+const DebtsPage = lazy(() => import('./pages/DebtsPage'));
+const PlanPage = lazy(() => import('./pages/PlanPage'));
+const ReportsPage = lazy(() => import('./pages/ReportsPage'));
+const CalendarPage = lazy(() => import('./pages/CalendarPage'));
+const SettingsPage = lazy(() => import('./pages/SettingsPage'));
+const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 import TourGuide from './components/ui/TourGuide';
+
+const PageLoader = () => (
+  <div style={{ minHeight: '60vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-tertiary)' }}>
+    Cargando...
+  </div>
+);
 
 function App() {
   const { theme } = useThemeStore();
@@ -110,21 +118,23 @@ function App() {
         }} 
       />
       {user && !loading && <TourGuide />}
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<DashboardPage />} />
-          <Route path="transacciones" element={<TransactionsPage />} />
-          <Route path="presupuesto" element={<BudgetPage />} />
-          <Route path="ahorros" element={<SavingsPage />} />
-          <Route path="deudas" element={<DebtsPage />} />
-          <Route path="plan" element={<PlanPage />} />
-          <Route path="reportes" element={<ReportsPage />} />
-          <Route path="calendario" element={<CalendarPage />} />
-          <Route path="ajustes" element={<SettingsPage />} />
-          <Route path="feedback" element={<FeedbackPage />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<DashboardPage />} />
+            <Route path="transacciones" element={<TransactionsPage />} />
+            <Route path="presupuesto" element={<BudgetPage />} />
+            <Route path="ahorros" element={<SavingsPage />} />
+            <Route path="deudas" element={<DebtsPage />} />
+            <Route path="plan" element={<PlanPage />} />
+            <Route path="reportes" element={<ReportsPage />} />
+            <Route path="calendario" element={<CalendarPage />} />
+            <Route path="ajustes" element={<SettingsPage />} />
+            <Route path="feedback" element={<FeedbackPage />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </Suspense>
     </BrowserRouter>
   );
 }
