@@ -24,6 +24,7 @@ import ReportsPage from './pages/ReportsPage';
 import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
 import FeedbackPage from './pages/FeedbackPage';
+import TourGuide from './components/ui/TourGuide';
 
 function App() {
   const { theme } = useThemeStore();
@@ -108,6 +109,7 @@ function App() {
           }
         }} 
       />
+      {user && !loading && <TourGuide />}
       <Routes>
         <Route path="/" element={<Layout />}>
           <Route index element={<DashboardPage />} />

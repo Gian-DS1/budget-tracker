@@ -200,7 +200,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="kpi-grid">
+      <div className="kpi-grid" id="tour-dashboard-summary">
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
           <div className="kpi-label">Ingresos del Mes</div>
           <div className="kpi-value">{formatCurrency(currentTotals.income)}</div>

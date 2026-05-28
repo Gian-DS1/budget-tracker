@@ -68,6 +68,7 @@ export default function Sidebar() {
             <NavLink
               key={item.path}
               to={item.path}
+              id={`tour-${item.path.replace('/', '') || 'dashboard'}-nav`}
               onClick={closeMobileMenu}
               className={({ isActive }) =>
                 `sidebar-link ${isActive ? 'active' : ''}`
