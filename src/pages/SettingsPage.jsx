@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle } from 'lucide-react';
 import Papa from 'papaparse';
+import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
@@ -17,9 +18,9 @@ export default function SettingsPage() {
   const { categories } = useCategoryStore();
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
 
-  // ─── CSV Export ──────────────────────────────────────────────
+  // ─── Data Export ──────────────────────────────────────────────
 
-  const exportToCSV = () => {
+  const exportData = () => {
     if (transactions.length === 0) {
       toast.error('No hay transacciones para exportar');
       return;
@@ -38,104 +39,116 @@ export default function SettingsPage() {
       };
     });
 
-    const csv = Papa.unparse(data);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `FinTrack_Export_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Transacciones");
+    XLSX.writeFile(workbook, `FinTrack_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
 
-    toast.success('Archivo CSV exportado exitosamente');
+    toast.success('Archivo Excel exportado exitosamente');
   };
 
-  // ─── CSV Import ──────────────────────────────────────────────
+  // ─── Data Import ──────────────────────────────────────────────
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      complete: async (results) => {
-        const rows = results.data;
+    const fileExt = file.name.split('.').pop().toLowerCase();
+
+    const processData = async (rows) => {
+      const newTransactions = rows.map(row => {
+        const date = row['Fecha'] || row['Date'] || row['fecha'];
+        const desc = row['Descripción'] || row['Description'] || row['Concepto'] || row['descripcion'];
+        const rawAmount = row['Monto'] || row['Amount'] || row['monto'];
+        const typeStr = row['Tipo'] || row['Type'] || row['tipo'] || '';
+        const catStr = row['Categoría'] || row['Categoria'] || row['Category'] || row['categoría'] || '';
         
-        const newTransactions = rows.map(row => {
-          // Flexible column matching to help migrate from Google Sheets
-          const date = row['Fecha'] || row['Date'] || row['fecha'] || row['Date'];
-          const desc = row['Descripción'] || row['Description'] || row['Concepto'] || row['descripcion'] || row['concepto'];
-          const rawAmount = row['Monto'] || row['Amount'] || row['monto'] || row['amount'] || '0';
-          const typeStr = row['Tipo'] || row['Type'] || row['tipo'] || '';
-          const catStr = row['Categoría'] || row['Categoria'] || row['Category'] || row['categoría'] || row['categoria'] || '';
-          
-          if (!date || !rawAmount) return null;
+        if (!date || !rawAmount) return null;
 
-          // Parse amount cleanly
-          const amount = Math.abs(parseFloat(String(rawAmount).replace(/[^\d.-]/g, '')));
-          if (isNaN(amount) || amount === 0) return null;
+        const amount = Math.abs(parseFloat(String(rawAmount).replace(/[^\d.-]/g, '')));
+        if (isNaN(amount) || amount === 0) return null;
 
-          // Infer Type
-          let type = 'expense';
-          if (typeStr.toLowerCase().includes('ingreso') || typeStr.toLowerCase().includes('income')) {
-            type = 'income';
-          } else if (String(rawAmount).trim().startsWith('+')) {
-             type = 'income';
-          }
+        let type = 'expense';
+        if (String(typeStr).toLowerCase().includes('ingreso') || String(typeStr).toLowerCase().includes('income')) {
+          type = 'income';
+        } else if (String(rawAmount).trim().startsWith('+')) {
+           type = 'income';
+        }
 
-          // Format Date to YYYY-MM-DD
-          let formattedDate = new Date().toISOString().split('T')[0];
-          try {
-            // Very simple date parse attempt
+        let formattedDate = new Date().toISOString().split('T')[0];
+        try {
+          if (typeof date === 'number') {
+            const excelEpoch = new Date(1899, 11, 30);
+            const d = new Date(excelEpoch.getTime() + date * 86400000);
+            formattedDate = d.toISOString().split('T')[0];
+          } else {
             const d = new Date(date);
             if (!isNaN(d.getTime())) {
               formattedDate = d.toISOString().split('T')[0];
             }
-          } catch (err) { console.error(err); }
-
-          // Auto-categorize: First try to match the CSV's Category column, fallback to Description parsing
-          let categoryMatch = null;
-          if (catStr) {
-            // Robustly strip emojis and special symbols, leaving clean text
-            const cleanCatStr = catStr.replace(/[^\w\sáéíóúñÁÉÍÓÚÑ]/gu, '').trim().toLowerCase();
-            categoryMatch = categories.find(c => {
-              const catName = c.name.toLowerCase();
-              return catName === cleanCatStr || catName.includes(cleanCatStr) || cleanCatStr.includes(catName);
-            });
           }
-          
-          if (!categoryMatch) {
-            categoryMatch = autoCategorize(desc, categories);
-          }
+        } catch (err) { console.error(err); }
 
-          return {
-            date: formattedDate,
-            amount,
-            type,
-            description: desc || 'Importado de CSV',
-            categoryId: categoryMatch ? categoryMatch.id : '',
-            currency: 'DOP',
-            notes: 'Importado de Google Sheets / CSV'
-          };
-        }).filter(Boolean);
-
-        if (newTransactions.length > 0) {
-          const insertedCount = await bulkAddTransactions(newTransactions);
-          if (insertedCount > 0) {
-            toast.success(`Se importaron ${insertedCount} transacciones exitosamente`);
-          }
-        } else {
-          toast.error('No se pudo procesar el archivo. Verifica el formato de las columnas.');
+        let categoryMatch = null;
+        if (catStr) {
+          const cleanCatStr = String(catStr).replace(/[^\w\sáéíóúñÁÉÍÓÚÑ]/gu, '').trim().toLowerCase();
+          categoryMatch = categories.find(c => {
+            const catName = c.name.toLowerCase();
+            return catName === cleanCatStr || catName.includes(cleanCatStr) || cleanCatStr.includes(catName);
+          });
         }
-      },
-      error: () => {
-        toast.error('Error leyendo el archivo CSV');
+        
+        if (!categoryMatch) {
+          categoryMatch = autoCategorize(String(desc), categories);
+        }
+
+        return {
+          date: formattedDate,
+          amount,
+          type,
+          description: String(desc) || 'Importado',
+          categoryId: categoryMatch ? categoryMatch.id : '',
+          currency: 'DOP',
+          notes: 'Importado de Excel/CSV'
+        };
+      }).filter(Boolean);
+
+      if (newTransactions.length > 0) {
+        const insertedCount = await bulkAddTransactions(newTransactions);
+        if (insertedCount > 0) {
+          toast.success(`Se importaron ${insertedCount} transacciones exitosamente`);
+        }
+      } else {
+        toast.error('No se pudo procesar. Revisa el formato de columnas.');
       }
-    });
+    };
+
+    if (fileExt === 'csv') {
+      Papa.parse(file, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => processData(results.data),
+        error: () => toast.error('Error leyendo el archivo CSV')
+      });
+    } else if (fileExt === 'xlsx' || fileExt === 'xls') {
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+        try {
+          const bstr = evt.target.result;
+          const workbook = XLSX.read(bstr, { type: 'binary' });
+          const worksheet = workbook.Sheets[workbook.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(worksheet);
+          processData(data);
+        } catch (error) {
+          console.error(error);
+          toast.error('Error leyendo el archivo Excel');
+        }
+      };
+      reader.readAsBinaryString(file);
+    } else {
+      toast.error('Formato no soportado. Usa .csv o .xlsx');
+    }
     
-    // reset input
     e.target.value = null;
   };
 
@@ -227,23 +240,25 @@ export default function SettingsPage() {
         <div className="card flex flex-col justify-between">
           <div className="card-header border-b border-secondary pb-4 mb-4">
             <h3 className="card-title flex items-center gap-2">
-              <FileText size={20} /> Datos CSV
+              <FileText size={20} /> Datos Excel/CSV
             </h3>
           </div>
           <div className="text-sm text-muted mb-4">
-            Guarda un respaldo de tus transacciones o cárgalas desde una hoja de cálculo.
+            Respalda tus transacciones en Excel, o cárgalas desde un archivo externo.
+            <div className="mt-2 text-xs font-mono bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-primary)]">
+              Columnas: Fecha | Descripción | Monto | Tipo | Categoría
+            </div>
           </div>
           <div className="mt-auto">
             <div className="flex gap-4">
-              <button className="btn btn-secondary flex-1 justify-center" onClick={exportToCSV}>
+              <button className="btn btn-secondary flex-1 justify-center" onClick={exportData}>
                 <Download size={16} /> Exportar
               </button>
               <label className="btn btn-primary flex-1 justify-center" style={{ cursor: 'pointer' }}>
                 <Upload size={16} /> Importar
-                <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleFileUpload} />
+                <input type="file" accept=".csv, .xlsx, .xls" style={{ display: 'none' }} onChange={handleFileUpload} />
               </label>
             </div>
-            <div className="text-xs text-muted mt-3 text-center">Soporta Excel y Google Sheets</div>
           </div>
         </div>
 
@@ -255,7 +270,7 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="text-sm text-muted mb-4">
-            Elimina permanentemente todo el historial y datos almacenados en este navegador.
+            Elimina permanentemente todo tu historial financiero y datos vinculados a tu cuenta.
           </div>
           <button 
             className="btn btn-danger w-full justify-center mt-auto"
@@ -272,7 +287,7 @@ export default function SettingsPage() {
         onClose={() => setShowClearDataConfirm(false)}
         onConfirm={handleClearData}
         title="⚠️ Borrar todos los datos"
-        message="¿Estás completamente seguro? Perderás todas tus transacciones, presupuestos e historial. Esta acción eliminará permanentemente la base de datos local."
+        message="¿Estás completamente seguro? Perderás todas tus transacciones, presupuestos e historial. Esta acción eliminará permanentemente toda tu información de nuestra base de datos en la nube."
         confirmText="Sí, borrar todo"
       />
     </div>
