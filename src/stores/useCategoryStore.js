@@ -74,7 +74,43 @@ const useCategoryStore = create(
       }
     }
 
-    const formattedData = data.map(c => ({
+    // Auto-update: Seed any missing default categories if the user has some categories but is missing new ones
+    const missingCategories = defaultCategories.filter(
+      (dc) => !data.some((dbCat) => dbCat.name.toLowerCase() === dc.name.toLowerCase() && dbCat.type === dc.type)
+    );
+
+    let finalCategories = [...data];
+
+    if (missingCategories.length > 0) {
+      try {
+        const seedMissing = missingCategories.map((c, index) => ({
+          user_id: user.id,
+          name: c.name,
+          type: c.type,
+          icon: c.icon,
+          color: c.color,
+          keywords: c.keywords || [],
+          is_active: true,
+          sort_order: data.length + index
+        }));
+
+        const { data: insertedMissing, error: insertError } = await supabase
+          .from('categories')
+          .insert(seedMissing)
+          .select();
+
+        if (!insertError && insertedMissing) {
+          finalCategories = [...finalCategories, ...insertedMissing];
+          console.log(`Auto-added ${insertedMissing.length} missing default categories for user:`, missingCategories.map(c => c.name));
+        } else if (insertError) {
+          console.error("Failed to auto-insert missing categories:", insertError);
+        }
+      } catch (err) {
+        console.error("Error auto-inserting missing categories:", err);
+      }
+    }
+
+    const formattedData = finalCategories.map(c => ({
       ...c, 
       isActive: c.is_active, 
       sortOrder: c.sort_order 
