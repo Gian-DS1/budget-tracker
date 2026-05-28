@@ -1,7 +1,7 @@
 // FinTrack RD — Settings & Utilities Page
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown } from 'lucide-react';
+import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
@@ -284,18 +284,21 @@ export default function SettingsPage() {
                 </button>
                 
                 {showExportMenu && (
-                  <div className="absolute bottom-full left-0 mb-1 w-full bg-[var(--bg-card)] border border-[var(--border-secondary)] rounded-md shadow-lg z-10 overflow-hidden">
+                  <div 
+                    className="absolute bottom-full left-0 mb-2 w-full bg-[var(--bg-card)] border border-[var(--border-secondary)] rounded-md shadow-xl z-10 overflow-hidden"
+                    style={{ animation: 'slideUpFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
+                  >
                     <button 
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-secondary)] transition-colors"
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-primary)] transition-all duration-200"
                       onClick={() => { exportData('xlsx'); setShowExportMenu(false); }}
                     >
-                      Como Excel (.xlsx)
+                      <FileSpreadsheet size={16} /> Excel (.xlsx)
                     </button>
                     <button 
-                      className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-secondary)] transition-colors border-t border-[var(--border-secondary)]"
+                      className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-primary)] transition-all duration-200 border-t border-[var(--border-secondary)]"
                       onClick={() => { exportData('csv'); setShowExportMenu(false); }}
                     >
-                      Como texto (.csv)
+                      <FileText size={16} /> Texto (.csv)
                     </button>
                   </div>
                 )}

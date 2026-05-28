@@ -1617,3 +1617,16 @@ table {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0 !important; /* Avoid character overlap in monospace */
 }
+
+/* ── Animations ────────────────────────────────────────────── */
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
