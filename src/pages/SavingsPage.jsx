@@ -147,7 +147,7 @@ export default function SavingsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header flex items-center justify-between" id="tour-savings-header">
         <div>
           <h1 className="page-title">Metas de Ahorro</h1>
           <p className="page-subtitle">

@@ -122,7 +122,7 @@ export default function DebtsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header flex items-center justify-between" id="tour-debts-header">
         <div>
           <h1 className="page-title">Control de Deudas</h1>
           <p className="page-subtitle">

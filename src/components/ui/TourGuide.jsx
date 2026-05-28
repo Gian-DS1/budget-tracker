@@ -35,7 +35,7 @@ export default function TourGuide() {
             // Allow React a tiny moment to start rendering the new route
             setTimeout(() => {
               driverObj.moveNext();
-            }, 50);
+            }, 200);
           },
           
           onPrevClick: (element, step, { state }) => {
@@ -49,7 +49,7 @@ export default function TourGuide() {
             
             setTimeout(() => {
               driverObj.movePrevious();
-            }, 50);
+            }, 200);
           },
 
           onDestroyStarted: () => {

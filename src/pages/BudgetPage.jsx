@@ -259,7 +259,7 @@ export default function BudgetPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header flex items-center justify-between" id="tour-budget-header">
         <div>
           <h1 className="page-title">Presupuesto</h1>
           <p className="page-subtitle">Planificación base cero mensual</p>
