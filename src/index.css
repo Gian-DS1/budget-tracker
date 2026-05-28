@@ -138,12 +138,12 @@
 [data-theme="light"] {
   color-scheme: light;
 
-  --bg-primary: #f8fafc;
-  --bg-secondary: #f1f5f9;
-  --bg-tertiary: #e2e8f0;
-  --bg-card: #ffffff;
-  --bg-card-hover: #f8fafc;
-  --bg-input: #ffffff;
+  --bg-primary: #f1f5f9;
+  --bg-secondary: #e2e8f0;
+  --bg-tertiary: #cbd5e1;
+  --bg-card: #f8fafc;
+  --bg-card-hover: #f1f5f9;
+  --bg-input: #f8fafc;
   --bg-sidebar: rgba(255, 255, 255, 0.9);
   --bg-header: rgba(248, 250, 252, 0.85);
   --bg-modal-overlay: rgba(0, 0, 0, 0.3);

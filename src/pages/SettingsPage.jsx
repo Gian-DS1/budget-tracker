@@ -20,7 +20,7 @@ export default function SettingsPage() {
 
   // ─── Data Export ──────────────────────────────────────────────
 
-  const exportData = () => {
+  const exportData = (format = 'xlsx') => {
     if (transactions.length === 0) {
       toast.error('No hay transacciones para exportar');
       return;
@@ -39,12 +39,24 @@ export default function SettingsPage() {
       };
     });
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Transacciones");
-    XLSX.writeFile(workbook, `FinTrack_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
-
-    toast.success('Archivo Excel exportado exitosamente');
+    if (format === 'csv') {
+      const csv = Papa.unparse(data);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `FinTrack_Export_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      toast.success('Archivo CSV exportado exitosamente');
+    } else {
+      const worksheet = XLSX.utils.json_to_sheet(data);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Transacciones");
+      XLSX.writeFile(workbook, `FinTrack_Export_${new Date().toISOString().split('T')[0]}.xlsx`);
+      toast.success('Archivo Excel exportado exitosamente');
+    }
   };
 
   // ─── Data Import ──────────────────────────────────────────────
@@ -250,10 +262,15 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-auto">
-            <div className="flex gap-4">
-              <button className="btn btn-secondary flex-1 justify-center" onClick={exportData}>
-                <Download size={16} /> Exportar
-              </button>
+            <div className="flex gap-2">
+              <div className="flex-1 flex gap-2">
+                <button className="btn btn-secondary flex-1 justify-center px-1 text-sm font-semibold" onClick={() => exportData('csv')} title="Exportar como CSV">
+                  .CSV
+                </button>
+                <button className="btn btn-secondary flex-1 justify-center px-1 text-sm font-semibold" onClick={() => exportData('xlsx')} title="Exportar como Excel">
+                  .XLSX
+                </button>
+              </div>
               <label className="btn btn-primary flex-1 justify-center" style={{ cursor: 'pointer' }}>
                 <Upload size={16} /> Importar
                 <input type="file" accept=".csv, .xlsx, .xls" style={{ display: 'none' }} onChange={handleFileUpload} />
