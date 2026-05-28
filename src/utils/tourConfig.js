@@ -5,6 +5,9 @@ export const getTourSteps = (navigate) => [
       description: 'Te daremos un breve recorrido para que aprendas a utilizar tu nuevo sistema de presupuesto base cero. Haz clic en "Siguiente" para continuar.',
       side: 'over',
       align: 'center'
+    },
+    onHighlightStarted: () => {
+      navigate('/');
     }
   },
   {
@@ -15,26 +18,19 @@ export const getTourSteps = (navigate) => [
       side: 'bottom',
       align: 'start'
     },
-    onNextClick: (element, step, { state }) => {
-      navigate('/transacciones');
-      setTimeout(() => state.driver.moveNext(), 300);
+    onHighlightStarted: () => {
+      navigate('/');
     }
   },
   {
-    // Element removed so it centers the popover on the transactions page, or we could target the header
     popover: {
       title: 'Añadir Transacciones',
       description: 'En esta pestaña registrarás todos tus ingresos y gastos. Asegúrate de categorizarlos correctamente para mantener tu presupuesto al día.',
       side: 'over',
       align: 'center'
     },
-    onNextClick: (element, step, { state }) => {
-      navigate('/presupuesto');
-      setTimeout(() => state.driver.moveNext(), 300);
-    },
-    onPrevClick: (element, step, { state }) => {
-      navigate('/');
-      setTimeout(() => state.driver.movePrevious(), 300);
+    onHighlightStarted: () => {
+      navigate('/transacciones');
     }
   },
   {
@@ -44,13 +40,8 @@ export const getTourSteps = (navigate) => [
       side: 'over',
       align: 'center'
     },
-    onNextClick: (element, step, { state }) => {
-      navigate('/ahorros');
-      setTimeout(() => state.driver.moveNext(), 300);
-    },
-    onPrevClick: (element, step, { state }) => {
-      navigate('/transacciones');
-      setTimeout(() => state.driver.movePrevious(), 300);
+    onHighlightStarted: () => {
+      navigate('/presupuesto');
     }
   },
   {
@@ -60,13 +51,8 @@ export const getTourSteps = (navigate) => [
       side: 'over',
       align: 'center'
     },
-    onNextClick: (element, step, { state }) => {
-      navigate('/deudas');
-      setTimeout(() => state.driver.moveNext(), 300);
-    },
-    onPrevClick: (element, step, { state }) => {
-      navigate('/presupuesto');
-      setTimeout(() => state.driver.movePrevious(), 300);
+    onHighlightStarted: () => {
+      navigate('/ahorros');
     }
   },
   {
@@ -76,13 +62,8 @@ export const getTourSteps = (navigate) => [
       side: 'over',
       align: 'center'
     },
-    onNextClick: (element, step, { state }) => {
-      navigate('/');
-      setTimeout(() => state.driver.moveNext(), 300);
-    },
-    onPrevClick: (element, step, { state }) => {
-      navigate('/ahorros');
-      setTimeout(() => state.driver.movePrevious(), 300);
+    onHighlightStarted: () => {
+      navigate('/deudas');
     }
   },
   {
@@ -92,9 +73,8 @@ export const getTourSteps = (navigate) => [
       side: 'over',
       align: 'center'
     },
-    onPrevClick: (element, step, { state }) => {
-      navigate('/deudas');
-      setTimeout(() => state.driver.movePrevious(), 300);
+    onHighlightStarted: () => {
+      navigate('/');
     }
   }
 ];
