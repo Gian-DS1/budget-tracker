@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
+import toast from 'react-hot-toast';
 
 export async function fetchUSDRate(dateStr) {
   let rate = USD_TO_DOP_RATE;
@@ -101,14 +102,14 @@ const useTransactionStore = create(
     const { data, error } = await supabase.from('transactions').insert(dbTx).select().single();
     if (error) {
       console.error("Transaction insert error:", error);
-      import('react-hot-toast').then(toast => toast.default.error("Error al guardar: " + error.message));
+      toast.error("Error al guardar: " + error.message);
       return;
     }
 
     if (data) {
       const newTx = { ...data, categoryId: data.category_id, createdAt: data.created_at };
       set((state) => ({ transactions: [newTx, ...state.transactions] }));
-      import('react-hot-toast').then(toast => toast.default.success("Transacción guardada exitosamente"));
+      toast.success("Transacción guardada exitosamente");
     }
   },
 
@@ -164,7 +165,7 @@ const useTransactionStore = create(
       if (error) {
         console.error('Bulk insert error:', error);
         hasError = true;
-        import('react-hot-toast').then(toast => toast.default.error('Error importando lote: ' + error.message));
+        toast.error('Error importando lote: ' + error.message);
         break;
       }
       if (data) {
@@ -178,7 +179,7 @@ const useTransactionStore = create(
     }
 
     if (hasError && allInserted.length > 0) {
-      import('react-hot-toast').then(toast => toast.default.success(`Se importaron ${allInserted.length} transacciones (algunas fallaron)`));
+      toast.success(`Se importaron ${allInserted.length} transacciones (algunas fallaron)`);
     }
 
     return allInserted.length;

@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 const useBudgetStore = create(
   persist(
@@ -131,7 +132,7 @@ const useBudgetStore = create(
         });
 
         // Trigger a subtle success toast indicating the change has been successfully saved
-        import('react-hot-toast').then(toast => toast.default.success("Presupuesto guardado"));
+        toast.success("Presupuesto guardado");
       } else {
         throw error || new Error("Error en la respuesta de Supabase");
       }
@@ -139,7 +140,7 @@ const useBudgetStore = create(
       console.error("Budget save error:", error);
       // Rollback to previous state on failure
       set({ budgets: previousBudgets });
-      import('react-hot-toast').then(toast => toast.default.error("Error guardando presupuesto"));
+      toast.error("Error guardando presupuesto");
     }
   },
 

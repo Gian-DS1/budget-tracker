@@ -58,7 +58,6 @@ export default function DashboardPage() {
   const { getTotalSaved } = useSavingsStore();
   const { getTotalDebt } = useDebtStore();
 
-
   const now = new Date();
   const currentMonth = now.getMonth();
   const currentYear = now.getFullYear();
@@ -178,19 +177,23 @@ export default function DashboardPage() {
   // ─── Mini Calendar Helpers ───────────────────────────────────
   
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
-  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => {
-    const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
-    const dayTxs = currentMonthTransactions.filter(t => t.date === dayStr);
-    const { income, expense } = calculateTotals(dayTxs);
-    
-    let color = 'transparent';
-    if (income > 0 && expense === 0) color = 'var(--color-income-bg)';
-    else if (expense > 0 && income === 0) color = 'var(--color-expense-bg)';
-    else if (income > 0 && expense > 0) color = 'var(--bg-tertiary)';
+  const calendarDays = useMemo(() => {
+    const firstDayOfWeek = new Date(currentYear, currentMonth, 1).getDay();
+    const offset = firstDayOfWeek === 0 ? 6 : firstDayOfWeek - 1;
+    const days = Array.from({ length: daysInMonth }, (_, i) => {
+      const dayStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(i + 1).padStart(2, '0')}`;
+      const dayTxs = currentMonthTransactions.filter(t => t.date === dayStr);
+      const { income, expense } = calculateTotals(dayTxs);
+      
+      let color = 'transparent';
+      if (income > 0 && expense === 0) color = 'var(--color-income-bg)';
+      else if (expense > 0 && income === 0) color = 'var(--color-expense-bg)';
+      else if (income > 0 && expense > 0) color = 'var(--bg-tertiary)';
 
-    return { day: i + 1, date: dayStr, color, hasActivity: income > 0 || expense > 0 };
-  });
-
+      return { day: i + 1, date: dayStr, color, hasActivity: income > 0 || expense > 0 };
+    });
+    return { days, offset };
+  }, [currentMonthTransactions, daysInMonth, currentMonth, currentYear]);
 
   return (
     <div className="page-container">
@@ -274,7 +277,7 @@ export default function DashboardPage() {
           <div className="chart-header">
             <h3 className="chart-title">Distribución de Gastos</h3>
           </div>
-          <div style={{ height: 420, display: 'flex', alignItems: 'center' }}>
+          <div style={{ height: 300, display: 'flex', alignItems: 'center' }}>
             {expenseByCategory.length > 0 ? (
               <div style={{ width: '50%', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -376,13 +379,12 @@ export default function DashboardPage() {
               <div key={i} className="text-xs font-bold text-muted mb-2">{d}</div>
             ))}
             
-            {/* Empty slots for first day offset (simplified, assuming month starts on Mon for UI mockup, real logic would calculate offset) */}
-            {Array.from({ length: new Date(currentYear, currentMonth, 1).getDay() || 7 - 1 }).map((_, i) => (
+            {Array.from({ length: calendarDays.offset }).map((_, i) => (
               <div key={`empty-${i}`} />
             ))}
 
             {/* Days */}
-            {calendarDays.map((day) => (
+            {calendarDays.days.map((day) => (
               <div 
                 key={day.day} 
                 className="tooltip-container flex items-center justify-center"
