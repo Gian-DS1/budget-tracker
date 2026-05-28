@@ -275,7 +275,7 @@ export default function SettingsPage() {
           </div>
           <div className="mt-auto">
             <div className="flex gap-4">
-              <div className="relative flex-1" ref={exportMenuRef}>
+              <div style={{ position: 'relative', flex: 1 }} ref={exportMenuRef}>
                 <button 
                   className="btn btn-secondary w-full justify-center" 
                   onClick={() => setShowExportMenu(!showExportMenu)}
@@ -284,18 +284,15 @@ export default function SettingsPage() {
                 </button>
                 
                 {showExportMenu && (
-                  <div 
-                    className="absolute bottom-full left-0 mb-2 w-full bg-[var(--bg-card)] border border-[var(--border-secondary)] rounded-md shadow-xl z-10 overflow-hidden"
-                    style={{ animation: 'slideUpFade 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards' }}
-                  >
+                  <div className="export-dropdown-container">
                     <button 
-                      className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-primary)] transition-all duration-200"
+                      className="export-option"
                       onClick={() => { exportData('xlsx'); setShowExportMenu(false); }}
                     >
                       <FileSpreadsheet size={16} /> Excel (.xlsx)
                     </button>
                     <button 
-                      className="w-full flex items-center gap-2 px-4 py-3 text-sm font-medium hover:bg-[var(--bg-secondary)] hover:text-[var(--accent-primary)] transition-all duration-200 border-t border-[var(--border-secondary)]"
+                      className="export-option"
                       onClick={() => { exportData('csv'); setShowExportMenu(false); }}
                     >
                       <FileText size={16} /> Texto (.csv)
