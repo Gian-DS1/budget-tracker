@@ -183,6 +183,9 @@ export default function SettingsPage() {
               <Settings size={20} /> Apariencia
             </h3>
           </div>
+          <div className="text-sm text-muted mb-4">
+            Ajusta el tema visual de la aplicación según tu preferencia.
+          </div>
           <div className="flex gap-2 mt-auto">
             <button 
               className={`btn flex-1 justify-center ${theme === 'light' ? 'btn-primary' : 'btn-secondary'}`}
@@ -206,6 +209,9 @@ export default function SettingsPage() {
               <PlayCircle size={20} className="text-info" /> Tutorial
             </h3>
           </div>
+          <div className="text-sm text-muted mb-4">
+            Reinicia el recorrido guiado para aprender a utilizar las funciones de FinTrack.
+          </div>
           <button 
             className="btn btn-secondary w-full justify-center mt-auto"
             onClick={() => {
@@ -223,6 +229,9 @@ export default function SettingsPage() {
             <h3 className="card-title flex items-center gap-2">
               <FileText size={20} /> Datos CSV
             </h3>
+          </div>
+          <div className="text-sm text-muted mb-4">
+            Guarda un respaldo de tus transacciones o cárgalas desde una hoja de cálculo.
           </div>
           <div className="mt-auto">
             <div className="flex gap-4">
@@ -244,6 +253,9 @@ export default function SettingsPage() {
             <h3 className="card-title flex items-center gap-2 text-danger">
               <Trash2 size={20} /> Zona de Peligro
             </h3>
+          </div>
+          <div className="text-sm text-muted mb-4">
+            Elimina permanentemente todo el historial y datos almacenados en este navegador.
           </div>
           <button 
             className="btn btn-danger w-full justify-center mt-auto"
