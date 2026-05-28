@@ -293,85 +293,59 @@ export default function BudgetPage() {
         </div>
       ))}
 
-      {/* Comparison Header Cards */}
-      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 'var(--space-6)' }}>
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--accent-secondary)' }}>
-          <div className="kpi-label">Gastos Presupuestados</div>
-          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)' }}>
-            {formatCurrency(totalExpenseEstimated)}
-          </div>
-          <div className="text-xs text-muted mt-2">
-            Límite planificado para el mes
-          </div>
-        </div>
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-expense)' }}>
-          <div className="kpi-label">Gastos Reales</div>
-          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)', color: 'var(--color-expense)' }}>
-            {formatCurrency(totalExpenseActual)}
-          </div>
-          <div className="text-xs text-muted mt-2">
-            Dinero realmente gastado
-          </div>
-        </div>
-        <div className="kpi-card" style={{ '--kpi-accent': totalExpenseEstimated - totalExpenseActual >= 0 ? 'var(--color-income)' : 'var(--color-danger)' }}>
-          <div className="kpi-label">Diferencia de Gastos</div>
-          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)', color: totalExpenseEstimated - totalExpenseActual >= 0 ? 'var(--color-income)' : 'var(--color-danger)' }}>
-            {formatCurrency(totalExpenseEstimated - totalExpenseActual)}
-          </div>
-          <div className="text-xs text-muted mt-2">
-            {totalExpenseEstimated - totalExpenseActual >= 0 ? 'Ahorro sobre presupuesto' : 'Exceso de presupuesto'}
-          </div>
-        </div>
-      </div>
-
-      {/* Summary Cards */}
-      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
+      {/* Zero-Based Budget Summary Cards */}
+      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 'var(--space-6)' }}>
+        
+        {/* Card 1: Ingresos */}
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
-          <div className="kpi-label">Ingresos</div>
-          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)' }}>
+          <div className="kpi-label">Ingresos Reales</div>
+          <div className="kpi-value" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)' }}>
             {formatCurrency(totalIncomeActual)}
           </div>
-          <div className="text-xs text-muted mt-2">
-            Estimado: {formatCurrency(totalIncomeEstimated)}
+          <div className="text-xs text-muted mt-2 font-semibold">
+            Planificado: <span style={{ color: 'var(--text-primary)' }}>{formatCurrency(totalIncomeEstimated)}</span>
           </div>
         </div>
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-expense)' }}>
-          <div className="kpi-label">Gastos</div>
-          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)' }}>
-            {formatCurrency(totalExpenseActual)}
+
+        {/* Card 2: Total Asignado */}
+        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-fixed)' }}>
+          <div className="kpi-label">Presupuesto (Gastos + Ahorros)</div>
+          <div className="kpi-value" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)' }}>
+            {formatCurrency(totalExpenseEstimated + totalSavingsEstimated)}
           </div>
-          <div className="text-xs text-muted mt-2">
-            Estimado: {formatCurrency(totalExpenseEstimated)}
-          </div>
-        </div>
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-savings)' }}>
-          <div className="kpi-label">Ahorro</div>
-          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)' }}>
-            {formatCurrency(totalSavingsActual)}
-          </div>
-          <div className="text-xs text-muted mt-2">
-            Estimado: {formatCurrency(totalSavingsEstimated)}
+          <div className="text-xs text-muted mt-2 font-semibold">
+            Uso Real: <span style={{ color: 'var(--text-primary)' }}>{formatCurrency(totalExpenseActual + totalSavingsActual)}</span>
           </div>
         </div>
-        <div
-          className="kpi-card"
-          style={{
-            '--kpi-accent':
-              balanceActual >= 0 ? 'var(--color-income)' : 'var(--color-expense)',
-          }}
-        >
-          <div className="kpi-label">Balance</div>
-          <div
-            className="kpi-value"
-            style={{
-              fontSize: 'var(--font-xl)',
-              color: balanceActual >= 0 ? 'var(--color-income)' : 'var(--color-expense)',
-            }}
-          >
+
+        {/* Card 3: Por Asignar (Zero-based rule) */}
+        <div className="kpi-card" style={{ 
+          '--kpi-accent': balanceEstimated === 0 ? 'var(--color-success)' : balanceEstimated > 0 ? 'var(--color-warning)' : 'var(--color-danger)'
+        }}>
+          <div className="kpi-label">Por Asignar</div>
+          <div className="kpi-value" style={{ 
+            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+            color: balanceEstimated === 0 ? 'var(--color-success)' : balanceEstimated > 0 ? 'var(--color-warning)' : 'var(--color-danger)'
+          }}>
+            {formatCurrency(balanceEstimated)}
+          </div>
+          <div className="text-xs mt-2 font-semibold" style={{ color: balanceEstimated === 0 ? 'var(--color-success)' : 'var(--text-muted)'}}>
+            {balanceEstimated === 0 ? '¡Presupuesto perfecto! 🎉' : balanceEstimated > 0 ? 'Falta asignar este dinero' : 'Estás sobregirado'}
+          </div>
+        </div>
+
+        {/* Card 4: Balance Real */}
+        <div className="kpi-card" style={{ 
+          '--kpi-accent': balanceActual >= 0 ? 'var(--color-info)' : 'var(--color-danger)'
+        }}>
+          <div className="kpi-label">Efectivo Disponible</div>
+          <div className="kpi-value" style={{ 
+            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)'
+          }}>
             {formatCurrency(balanceActual)}
           </div>
-          <div className="text-xs text-muted mt-2">
-            Estimado: {formatCurrency(balanceEstimated)}
+          <div className="text-xs text-muted mt-2 font-semibold">
+            Dinero sobrante este mes
           </div>
         </div>
       </div>
