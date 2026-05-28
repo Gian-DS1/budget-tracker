@@ -69,7 +69,7 @@ const usePlanStore = create((set, get) => ({
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.targetAmount !== undefined) dbUpdates.target_amount = Number(updates.targetAmount);
     if (updates.currentAmount !== undefined) dbUpdates.current_amount = Number(updates.currentAmount);
-    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline;
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline || null;
     if (updates.horizon !== undefined || updates.type !== undefined) dbUpdates.type = updates.horizon || updates.type;
     if (updates.status !== undefined) dbUpdates.status = updates.status;
 

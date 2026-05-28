@@ -7,6 +7,7 @@ import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatDate, todayISO, formatPercent } from '../utils/formatters';
 import { calculateAmortization } from '../utils/calculations';
 import toast from 'react-hot-toast';
@@ -375,24 +376,18 @@ export default function DebtsPage() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Monto Original *</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
                 value={form.originalAmount}
-                onChange={(e) => setForm({ ...form, originalAmount: e.target.value })}
+                onChange={(val) => setForm({ ...form, originalAmount: val })}
                 placeholder="0.00"
                 required
               />
             </div>
             <div className="form-group">
               <label className="form-label">Saldo Actual</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
                 value={form.currentBalance}
-                onChange={(e) => setForm({ ...form, currentBalance: e.target.value })}
+                onChange={(val) => setForm({ ...form, currentBalance: val })}
                 placeholder="Igual al original si es nueva"
               />
             </div>
@@ -411,12 +406,9 @@ export default function DebtsPage() {
             </div>
             <div className="form-group">
               <label className="form-label">Pago Mensual *</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
                 value={form.monthlyPayment}
-                onChange={(e) => setForm({ ...form, monthlyPayment: e.target.value })}
+                onChange={(val) => setForm({ ...form, monthlyPayment: val })}
                 placeholder="0.00"
                 required
               />
@@ -465,12 +457,9 @@ export default function DebtsPage() {
         <div className="form-row">
           <div className="form-group">
             <label className="form-label">Monto del Pago</label>
-            <input
-              type="number"
-              min="0"
-              step="0.01"
+            <CurrencyInput
               value={paymentAmount}
-              onChange={(e) => setPaymentAmount(e.target.value)}
+              onChange={(val) => setPaymentAmount(val)}
               placeholder="0.00"
               autoFocus
             />

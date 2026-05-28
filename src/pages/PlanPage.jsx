@@ -174,14 +174,14 @@ export default function PlanPage() {
                           >
                             {plan.title}
                           </h3>
-                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted mt-1">
+                          <div className="flex flex-col gap-1 mt-1">
                             {plan.targetAmount > 0 && (
-                              <span className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
-                                {formatCurrency(plan.targetAmount)}
+                              <span className="font-semibold text-sm" style={{ color: 'var(--accent-primary)' }}>
+                                Objetivo: {formatCurrency(plan.targetAmount)}
                               </span>
                             )}
                             {plan.description && (
-                              <span>{plan.description}</span>
+                              <p className="text-sm text-muted" style={{ margin: 0 }}>{plan.description}</p>
                             )}
                           </div>
                         </div>

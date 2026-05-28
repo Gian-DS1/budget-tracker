@@ -321,6 +321,37 @@ export default function BudgetPage() {
         </div>
       ))}
 
+      {/* Comparison Header Cards */}
+      <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)', marginBottom: 'var(--space-6)' }}>
+        <div className="kpi-card" style={{ '--kpi-accent': 'var(--accent-secondary)' }}>
+          <div className="kpi-label">Gastos Presupuestados</div>
+          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)' }}>
+            {formatCurrency(totalExpenseEstimated)}
+          </div>
+          <div className="text-xs text-muted mt-2">
+            Límite planificado para el mes
+          </div>
+        </div>
+        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-expense)' }}>
+          <div className="kpi-label">Gastos Reales</div>
+          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)', color: 'var(--color-expense)' }}>
+            {formatCurrency(totalExpenseActual)}
+          </div>
+          <div className="text-xs text-muted mt-2">
+            Dinero realmente gastado
+          </div>
+        </div>
+        <div className="kpi-card" style={{ '--kpi-accent': totalExpenseEstimated - totalExpenseActual >= 0 ? 'var(--color-income)' : 'var(--color-danger)' }}>
+          <div className="kpi-label">Diferencia de Gastos</div>
+          <div className="kpi-value" style={{ fontSize: 'var(--font-xl)', color: totalExpenseEstimated - totalExpenseActual >= 0 ? 'var(--color-income)' : 'var(--color-danger)' }}>
+            {formatCurrency(totalExpenseEstimated - totalExpenseActual)}
+          </div>
+          <div className="text-xs text-muted mt-2">
+            {totalExpenseEstimated - totalExpenseActual >= 0 ? 'Ahorro sobre presupuesto' : 'Exceso de presupuesto'}
+          </div>
+        </div>
+      </div>
+
       {/* Summary Cards */}
       <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>

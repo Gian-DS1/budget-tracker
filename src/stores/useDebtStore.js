@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { USD_TO_DOP_RATE } from '../utils/constants';
 
 const useDebtStore = create((set, get) => ({
   debts: [],
@@ -18,17 +19,21 @@ const useDebtStore = create((set, get) => ({
 
     let formattedDebts = [];
     if (!debtsRes.error && debtsRes.data) {
-      formattedDebts = debtsRes.data.map(d => ({
-        id: d.id,
-        creditorName: d.creditor_name,
-        originalAmount: Number(d.total_amount),
-        currentBalance: Number(d.current_balance),
-        interestRate: Number(d.interest_rate),
-        monthlyPayment: Number(d.minimum_payment),
-        due_date: d.due_date,
-        status: d.status,
-        createdAt: d.created_at
-      }));
+      formattedDebts = debtsRes.data.map(d => {
+        const isUSD = d.creditor_name && d.creditor_name.endsWith(' [USD]');
+        return {
+          id: d.id,
+          creditorName: isUSD ? d.creditor_name.slice(0, -6) : d.creditor_name,
+          originalAmount: Number(d.total_amount),
+          currentBalance: Number(d.current_balance),
+          interestRate: Number(d.interest_rate),
+          monthlyPayment: Number(d.minimum_payment),
+          due_date: d.due_date,
+          status: d.status,
+          currency: isUSD ? 'USD' : 'DOP',
+          createdAt: d.created_at
+        };
+      });
     }
 
     let formattedPayments = [];
@@ -51,28 +56,33 @@ const useDebtStore = create((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    const currentBal = Number(debt.currentBalance !== undefined ? debt.currentBalance : debt.originalAmount);
+    const initialStatus = currentBal <= 0 ? 'paid_off' : 'active';
+    const dbName = debt.currency === 'USD' ? `${debt.creditorName} [USD]` : debt.creditorName;
+
     const dbPayload = {
       user_id: user.id,
-      creditor_name: debt.creditorName || debt.creditor_name,
+      creditor_name: dbName,
       total_amount: Number(debt.originalAmount),
-      current_balance: Number(debt.currentBalance || debt.originalAmount),
+      current_balance: currentBal,
       interest_rate: Number(debt.interestRate) || 0,
       minimum_payment: Number(debt.monthlyPayment) || 0,
       due_date: debt.dueDate || null,
-      status: 'active'
+      status: initialStatus
     };
 
     const { data, error } = await supabase.from('debts').insert(dbPayload).select().single();
     if (!error && data) {
       const formatted = {
         id: data.id,
-        creditorName: data.creditor_name,
+        creditorName: debt.currency === 'USD' ? data.creditor_name.slice(0, -6) : data.creditor_name,
         originalAmount: Number(data.total_amount),
         currentBalance: Number(data.current_balance),
         interestRate: Number(data.interest_rate),
         monthlyPayment: Number(data.minimum_payment),
         dueDate: data.due_date,
         status: data.status,
+        currency: debt.currency || 'DOP',
         createdAt: data.created_at
       };
       set((state) => ({ debts: [...state.debts, formatted] }));
@@ -80,19 +90,34 @@ const useDebtStore = create((set, get) => ({
   },
 
   updateDebt: async (id, updates) => {
+    const goal = get().debts.find(d => d.id === id);
+    const currentCurrency = updates.currency !== undefined ? updates.currency : (goal?.currency || 'DOP');
+
     const dbUpdates = {};
-    if (updates.creditorName !== undefined) dbUpdates.creditor_name = updates.creditorName;
+    if (updates.creditorName !== undefined || updates.currency !== undefined) {
+      const name = updates.creditorName !== undefined ? updates.creditorName : (goal?.creditorName || '');
+      dbUpdates.creditor_name = currentCurrency === 'USD' ? `${name} [USD]` : name;
+    }
+    
     if (updates.originalAmount !== undefined) dbUpdates.total_amount = Number(updates.originalAmount);
-    if (updates.currentBalance !== undefined) dbUpdates.current_balance = Number(updates.currentBalance);
+
+    let newCurrent = goal?.currentBalance || 0;
+    if (updates.currentBalance !== undefined) {
+      newCurrent = Number(updates.currentBalance);
+      dbUpdates.current_balance = newCurrent;
+      const newStatus = newCurrent <= 0 ? 'paid_off' : 'active';
+      dbUpdates.status = newStatus;
+      updates.status = newStatus;
+    }
+
     if (updates.interestRate !== undefined) dbUpdates.interest_rate = Number(updates.interestRate);
     if (updates.monthlyPayment !== undefined) dbUpdates.minimum_payment = Number(updates.monthlyPayment);
-    if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate;
-    if (updates.status !== undefined) dbUpdates.status = updates.status;
+    if (updates.dueDate !== undefined) dbUpdates.due_date = updates.dueDate || null;
 
     const { error } = await supabase.from('debts').update(dbUpdates).eq('id', id);
     if (!error) {
       set((state) => ({
-        debts: state.debts.map((d) => (d.id === id ? { ...d, ...updates } : d)),
+        debts: state.debts.map((d) => (d.id === id ? { ...d, ...updates, currentBalance: newCurrent, status: updates.status || d.status, currency: currentCurrency } : d)),
       }));
     }
   },
@@ -163,15 +188,23 @@ const useDebtStore = create((set, get) => ({
   },
 
   getTotalDebt: () => {
+    const rate = USD_TO_DOP_RATE;
     return get()
       .debts.filter((d) => d.status === 'active')
-      .reduce((sum, d) => sum + Number(d.currentBalance), 0);
+      .reduce((sum, d) => {
+        const val = Number(d.currentBalance);
+        return sum + (d.currency === 'USD' ? val * rate : val);
+      }, 0);
   },
 
   getTotalMonthlyPayment: () => {
+    const rate = USD_TO_DOP_RATE;
     return get()
       .debts.filter((d) => d.status === 'active')
-      .reduce((sum, d) => sum + Number(d.monthlyPayment), 0);
+      .reduce((sum, d) => {
+        const val = Number(d.monthlyPayment);
+        return sum + (d.currency === 'USD' ? val * rate : val);
+      }, 0);
   },
 
   getActiveDebts: () => get().debts.filter((d) => d.status === 'active'),

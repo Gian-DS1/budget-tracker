@@ -3,31 +3,33 @@ import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
 export async function fetchUSDRate(dateStr) {
+  let rate = USD_TO_DOP_RATE;
   try {
     const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${dateStr}/v1/currencies/usd.json`);
     if (response.ok) {
       const data = await response.json();
       if (data && data.usd && typeof data.usd.dop === 'number') {
-        return data.usd.dop;
+        rate = data.usd.dop;
       }
     }
   } catch (e) {
     console.warn("Error fetching historical rate for USD:", e);
-  }
-
-  try {
-    const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`);
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.usd && typeof data.usd.dop === 'number') {
-        return data.usd.dop;
+    try {
+      const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`);
+      if (response.ok) {
+        const data = await response.json();
+        if (data && data.usd && typeof data.usd.dop === 'number') {
+          rate = data.usd.dop;
+        }
       }
+    } catch (err) {
+      console.warn("Error fetching latest rate for USD:", err);
     }
-  } catch (e) {
-    console.warn("Error fetching latest rate for USD:", e);
   }
 
-  return USD_TO_DOP_RATE;
+  // Dominican bank selling rate has a standard spread (aprox +1.2%)
+  const bankSellingRate = Math.round(rate * 1.012 * 100) / 100;
+  return bankSellingRate;
 }
 
 const useTransactionStore = create((set, get) => ({

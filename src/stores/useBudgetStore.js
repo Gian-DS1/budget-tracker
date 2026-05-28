@@ -42,12 +42,32 @@ const useBudgetStore = create((set, get) => ({
       month: dbMonth
     };
 
-    // Upsert automatically handles inserts or updates based on the UNIQUE constraint
-    const { data, error } = await supabase
+    // Manual check to bypass database unique constraint missing errors on upsert
+    const { data: existingData } = await supabase
       .from('budgets')
-      .upsert(dbPayload, { onConflict: 'user_id, category_id, month' })
-      .select()
-      .single();
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('category_id', categoryId)
+      .eq('month', dbMonth)
+      .maybeSingle();
+
+    let result;
+    if (existingData) {
+      result = await supabase
+        .from('budgets')
+        .update({ amount: Number(estimatedAmount) })
+        .eq('id', existingData.id)
+        .select()
+        .single();
+    } else {
+      result = await supabase
+        .from('budgets')
+        .insert(dbPayload)
+        .select()
+        .single();
+    }
+
+    const { data, error } = result;
     
     if (!error && data) {
       const formatted = {
@@ -71,7 +91,7 @@ const useBudgetStore = create((set, get) => ({
         }
       });
     } else {
-      console.error("Budget upsert error", error);
+      console.error("Budget save error", error);
       import('react-hot-toast').then(toast => toast.default.error("Error guardando presupuesto"));
     }
   },

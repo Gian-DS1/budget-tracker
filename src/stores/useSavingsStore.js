@@ -74,7 +74,7 @@ const useSavingsStore = create((set, get) => ({
     if (updates.title !== undefined) dbUpdates.title = updates.title;
     if (updates.targetAmount !== undefined) dbUpdates.target_amount = newTarget;
     if (updates.currentAmount !== undefined) dbUpdates.current_amount = newCurrent;
-    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline;
+    if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline || null;
     if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
     if (updates.color !== undefined) dbUpdates.color = updates.color;
     dbUpdates.status = newStatus;
