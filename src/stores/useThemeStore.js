@@ -29,6 +29,11 @@ const useThemeStore = create(
         
       closeMobileMenu: () =>
         set({ mobileMenuOpen: false }),
+
+      // Global search (not persisted — transient UI state)
+      globalSearchQuery: '',
+      setGlobalSearchQuery: (query) => set({ globalSearchQuery: query }),
+      clearGlobalSearch: () => set({ globalSearchQuery: '' }),
     }),
     {
       name: 'fintrack-theme',

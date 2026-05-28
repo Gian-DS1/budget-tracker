@@ -1,6 +1,6 @@
 // FinTrack RD — Budget Page
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   ChevronLeft,
   ChevronRight,
@@ -13,10 +13,41 @@ import {
 import useBudgetStore from '../stores/useBudgetStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
+import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { calculateBudgetProgress, getProgressStatus, sumAmounts } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
 import toast from 'react-hot-toast';
+
+// Local state input that only persists on blur (avoids upsert on every keystroke)
+function BudgetEstimatedInput({ initialValue, onSave }) {
+  const [localValue, setLocalValue] = useState(
+    initialValue ? initialValue.toString() : ''
+  );
+
+  const handleChange = (val) => {
+    setLocalValue(val);
+  };
+
+  const handleBlur = () => {
+    onSave(localValue);
+  };
+
+  return (
+    <CurrencyInput
+      value={localValue}
+      onChange={handleChange}
+      onBlurCallback={handleBlur}
+      placeholder="0.00"
+      style={{
+        width: 120,
+        textAlign: 'right',
+        padding: 'var(--space-2) var(--space-3)',
+        fontSize: 'var(--font-sm)',
+      }}
+    />
+  );
+}
 
 export default function BudgetPage() {
   const now = new Date();
@@ -107,10 +138,10 @@ export default function BudgetPage() {
     }
   };
 
-  const handleEstimatedChange = (categoryId, value) => {
+  const handleEstimatedChange = useCallback((categoryId, value) => {
     const amount = parseFloat(value) || 0;
     setBudget(categoryId, year, month, amount);
-  };
+  }, [setBudget, year, month]);
 
   const renderSection = (title, icon, rows) => {
     if (rows.length === 0) return null;
@@ -146,21 +177,10 @@ export default function BudgetPage() {
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
-                    <input
-                      type="number"
-                      min="0"
-                      step="0.01"
-                      value={row.estimated || ''}
-                      onChange={(e) =>
-                        handleEstimatedChange(row.category.id, e.target.value)
-                      }
-                      placeholder="0.00"
-                      style={{
-                        width: 120,
-                        textAlign: 'right',
-                        padding: 'var(--space-2) var(--space-3)',
-                        fontSize: 'var(--font-sm)',
-                      }}
+                    <BudgetEstimatedInput
+                      key={`${row.category.id}-${year}-${month}`}
+                      initialValue={row.estimated}
+                      onSave={(value) => handleEstimatedChange(row.category.id, value)}
                     />
                   </td>
                   <td

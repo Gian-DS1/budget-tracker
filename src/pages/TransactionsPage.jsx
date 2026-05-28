@@ -1,14 +1,17 @@
 // FinTrack RD — Transactions Page
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3 } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
+import useThemeStore from '../stores/useThemeStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import CurrencyInput from '../components/ui/CurrencyInput';
 import { autoCategorize } from '../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel } from '../utils/formatters';
+import { USD_TO_DOP_RATE } from '../utils/constants';
 
 export default function TransactionsPage() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction } =
@@ -19,6 +22,9 @@ export default function TransactionsPage() {
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
+  // Global search integration
+  const { globalSearchQuery, clearGlobalSearch } = useThemeStore();
+
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [filterType, setFilterType] = useState('');
@@ -28,6 +34,14 @@ export default function TransactionsPage() {
   const [sortField, setSortField] = useState('date');
   const [sortDir, setSortDir] = useState('desc');
   const [showFilters, setShowFilters] = useState(false);
+
+  // Sync global search query from header
+  useEffect(() => {
+    if (globalSearchQuery) {
+      setSearchQuery(globalSearchQuery);
+      clearGlobalSearch();
+    }
+  }, [globalSearchQuery, clearGlobalSearch]);
 
   // Form state
   const [form, setForm] = useState({
@@ -466,12 +480,9 @@ export default function TransactionsPage() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Monto *</label>
-              <input
-                type="number"
-                step="0.01"
-                min="0"
+              <CurrencyInput
                 value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                onChange={(val) => setForm({ ...form, amount: val })}
                 placeholder="0.00"
                 required
               />
@@ -485,6 +496,11 @@ export default function TransactionsPage() {
                 <option value="DOP">RD$</option>
                 <option value="USD">US$</option>
               </select>
+              {form.currency === 'USD' && form.amount && (
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
+                  ≈ {formatCurrency(Number(form.amount) * USD_TO_DOP_RATE)} (tasa: {USD_TO_DOP_RATE})
+                </p>
+              )}
             </div>
           </div>
 

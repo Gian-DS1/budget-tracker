@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
+import { USD_TO_DOP_RATE } from '../utils/constants';
 
 const useTransactionStore = create((set, get) => ({
   transactions: [],
@@ -36,14 +37,26 @@ const useTransactionStore = create((set, get) => ({
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
+    // Convert USD to DOP if needed
+    const currency = transaction.currency || 'DOP';
+    let amount = Number(transaction.amount);
+    let notes = transaction.notes || null;
+    if (currency === 'USD') {
+      // Append conversion info to notes
+      const originalAmount = amount;
+      amount = Math.round(amount * USD_TO_DOP_RATE * 100) / 100;
+      const conversionNote = `[USD ${originalAmount.toFixed(2)} → RD$ ${amount.toFixed(2)} @ tasa ${USD_TO_DOP_RATE}]`;
+      notes = notes ? `${notes} ${conversionNote}` : conversionNote;
+    }
+
     const dbTx = {
       user_id: user.id,
-      category_id: transaction.categoryId,
-      amount: transaction.amount,
+      category_id: transaction.categoryId || null,
+      amount: amount,
       type: transaction.type,
       description: transaction.description,
       date: transaction.date,
-      notes: transaction.notes || null,
+      notes: notes,
       currency: 'DOP'
     };
 
@@ -93,7 +106,7 @@ const useTransactionStore = create((set, get) => ({
 
     const dbTxs = transactions.map(t => ({
       user_id: user.id,
-      category_id: t.categoryId,
+      category_id: t.categoryId || null,
       amount: t.amount,
       type: t.type,
       description: t.description,
@@ -102,11 +115,32 @@ const useTransactionStore = create((set, get) => ({
       currency: 'DOP'
     }));
 
-    const { data, error } = await supabase.from('transactions').insert(dbTxs).select();
-    if (!error && data) {
-      const newTxs = data.map(d => ({ ...d, categoryId: d.category_id, createdAt: d.created_at }));
-      // Prepend to array
+    // Insert in batches of 100 to avoid payload limits
+    const batchSize = 100;
+    let allInserted = [];
+    let hasError = false;
+
+    for (let i = 0; i < dbTxs.length; i += batchSize) {
+      const batch = dbTxs.slice(i, i + batchSize);
+      const { data, error } = await supabase.from('transactions').insert(batch).select();
+      if (error) {
+        console.error('Bulk insert error:', error);
+        hasError = true;
+        import('react-hot-toast').then(toast => toast.default.error('Error importando lote: ' + error.message));
+        break;
+      }
+      if (data) {
+        allInserted = [...allInserted, ...data];
+      }
+    }
+
+    if (allInserted.length > 0) {
+      const newTxs = allInserted.map(d => ({ ...d, categoryId: d.category_id, createdAt: d.created_at }));
       set((state) => ({ transactions: [...newTxs, ...state.transactions] }));
+    }
+
+    if (hasError && allInserted.length > 0) {
+      import('react-hot-toast').then(toast => toast.default.success(`Se importaron ${allInserted.length} transacciones (algunas fallaron)`));
     }
   },
 

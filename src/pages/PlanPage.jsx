@@ -7,6 +7,7 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import { formatCurrency, formatPercent, formatDate } from '../utils/formatters';
+import CurrencyInput from '../components/ui/CurrencyInput';
 
 const HORIZON_CONFIG = {
   short: { label: 'Corto Plazo', subtitle: '1-3 meses', emoji: '⚡', color: '#f59e0b' },
@@ -29,14 +30,15 @@ export default function PlanPage() {
     title: '',
     description: '',
     horizon: 'short',
-    targetDate: '',
+    targetAmount: '',
+    deadline: '',
   });
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.title) return;
     addPlan(form);
-    setForm({ title: '', description: '', horizon: 'short', targetDate: '' });
+    setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
     setShowForm(false);
   };
 
@@ -228,13 +230,21 @@ export default function PlanPage() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha Objetivo</label>
-              <input
-                type="date"
-                value={form.targetDate}
-                onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
+              <label className="form-label">Monto Objetivo</label>
+              <CurrencyInput
+                value={form.targetAmount}
+                onChange={(val) => setForm({ ...form, targetAmount: val })}
+                placeholder="0.00"
               />
             </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Fecha Objetivo</label>
+            <input
+              type="date"
+              value={form.deadline}
+              onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+            />
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => setShowForm(false)}>

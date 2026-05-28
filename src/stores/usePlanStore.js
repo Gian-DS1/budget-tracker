@@ -38,7 +38,7 @@ const usePlanStore = create((set, get) => ({
       user_id: user.id,
       title: plan.title,
       description: plan.description || null,
-      target_amount: Number(plan.targetAmount),
+      target_amount: Number(plan.targetAmount) || 0,
       current_amount: Number(plan.currentAmount) || 0,
       deadline: plan.deadline || null,
       type: plan.horizon || plan.type || null,

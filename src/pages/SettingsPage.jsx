@@ -60,7 +60,7 @@ export default function SettingsPage() {
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: (results) => {
+      complete: async (results) => {
         const rows = results.data;
         let importedCount = 0;
         
@@ -121,7 +121,7 @@ export default function SettingsPage() {
         }).filter(Boolean);
 
         if (newTransactions.length > 0) {
-          bulkAddTransactions(newTransactions);
+          await bulkAddTransactions(newTransactions);
           toast.success(`Se importaron ${newTransactions.length} transacciones`);
         } else {
           toast.error('No se pudo procesar el archivo. Verifica el formato de las columnas.');

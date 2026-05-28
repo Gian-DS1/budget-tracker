@@ -7,6 +7,9 @@ export const CURRENCIES = {
 
 export const DEFAULT_CURRENCY = 'DOP';
 
+// Tasa de cambio USD → DOP (ajustar según tasa actual)
+export const USD_TO_DOP_RATE = 60;
+
 export const TRANSACTION_TYPES = {
   INCOME: 'income',
   EXPENSE: 'expense',

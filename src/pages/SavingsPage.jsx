@@ -6,6 +6,7 @@ import useSavingsStore from '../stores/useSavingsStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
 import EmptyState from '../components/ui/EmptyState';
+import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent, formatDate, todayISO } from '../utils/formatters';
 import { monthsToGoal } from '../utils/calculations';
 import toast from 'react-hot-toast';
@@ -52,10 +53,10 @@ export default function SavingsPage() {
   const [contributeAmount, setContributeAmount] = useState('');
 
   const [form, setForm] = useState({
-    name: '',
+    title: '',
     targetAmount: '',
     currentAmount: '0',
-    targetDate: '',
+    deadline: '',
     priority: 'medium',
     icon: '🎯',
     color: '#10b981',
@@ -66,13 +67,13 @@ export default function SavingsPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name || !form.targetAmount) return;
+    if (!form.title || !form.targetAmount) return;
     addGoal(form);
     setForm({
-      name: '',
+      title: '',
       targetAmount: '',
       currentAmount: '0',
-      targetDate: '',
+      deadline: '',
       priority: 'medium',
       icon: '🎯',
       color: '#10b981',
@@ -261,8 +262,8 @@ export default function SavingsPage() {
             <label className="form-label">Nombre *</label>
             <input
               type="text"
-              value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              value={form.title}
+              onChange={(e) => setForm({ ...form, title: e.target.value })}
               placeholder="Ej: Fondo de Emergencia, Viaje, Mudanza..."
               required
             />
@@ -298,24 +299,18 @@ export default function SavingsPage() {
           <div className="form-row">
             <div className="form-group">
               <label className="form-label">Monto Objetivo *</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
                 value={form.targetAmount}
-                onChange={(e) => setForm({ ...form, targetAmount: e.target.value })}
+                onChange={(val) => setForm({ ...form, targetAmount: val })}
                 placeholder="0.00"
                 required
               />
             </div>
             <div className="form-group">
               <label className="form-label">Monto Inicial</label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
+              <CurrencyInput
                 value={form.currentAmount}
-                onChange={(e) => setForm({ ...form, currentAmount: e.target.value })}
+                onChange={(val) => setForm({ ...form, currentAmount: val })}
                 placeholder="0.00"
               />
             </div>
@@ -326,8 +321,8 @@ export default function SavingsPage() {
               <label className="form-label">Fecha Objetivo</label>
               <input
                 type="date"
-                value={form.targetDate}
-                onChange={(e) => setForm({ ...form, targetDate: e.target.value })}
+                value={form.deadline}
+                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
               />
             </div>
             <div className="form-group">
