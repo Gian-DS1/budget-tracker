@@ -9,6 +9,7 @@ import useCategoryStore from '../stores/useCategoryStore';
 import useThemeStore from '../stores/useThemeStore';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { autoCategorize } from '../data/defaultCategories';
+import { supabase } from '../lib/supabase';
 
 export default function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
@@ -141,13 +142,30 @@ export default function SettingsPage() {
 
   // ─── Data Clear ──────────────────────────────────────────────
 
-  const handleClearData = () => {
+  const handleClearData = async () => {
+    toast.loading('Borrando datos...', { id: 'clear-data' });
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (user) {
+      await Promise.all([
+        supabase.from('transactions').delete().eq('user_id', user.id),
+        supabase.from('budgets').delete().eq('user_id', user.id),
+        supabase.from('savings').delete().eq('user_id', user.id),
+        supabase.from('debts').delete().eq('user_id', user.id),
+        supabase.from('plans').delete().eq('user_id', user.id)
+      ]);
+    }
+
     localStorage.removeItem('fintrack-transactions');
     localStorage.removeItem('fintrack-budgets');
     localStorage.removeItem('fintrack-savings');
     localStorage.removeItem('fintrack-debts');
     localStorage.removeItem('fintrack-plans');
-    window.location.reload(); // Reload to reset Zustand memory stores
+    
+    toast.success('Datos borrados exitosamente', { id: 'clear-data' });
+    setTimeout(() => {
+      window.location.reload(); // Reload to reset Zustand memory stores
+    }, 500);
   };
 
   return (
