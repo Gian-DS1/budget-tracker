@@ -10,6 +10,7 @@ export default function FeedbackPage() {
     description: '',
   });
   const [copied, setCopied] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const DEVELOPER_EMAIL = 'giancarlos.estevez@gmail.com';
 
@@ -21,39 +22,79 @@ export default function FeedbackPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.subject || !form.description) {
       toast.error('Por favor completa todos los campos requeridos');
       return;
     }
 
+    setSending(true);
     const typeLabel = form.type === 'bug' ? '🔴 [ERROR/BUG]' : form.type === 'improvement' ? '💡 [MEJORA]' : '💬 [COMENTARIO]';
     const emailSubject = `${typeLabel} Feedback Beta - ${form.subject}`;
-    const emailBody = `Hola,\n\nAquí tienes mis comentarios sobre la fase Beta de FinTrack RD:\n\n-------------------------------------------------\nASUNTO: ${form.subject}\nTIPO: ${typeLabel}\n-------------------------------------------------\n\nDESCRIPCIÓN:\n${form.description}\n\n-------------------------------------------------\nEnviado desde mi panel de FinTrack RD`;
 
-    // Mailto link
-    const mailtoUrl = `mailto:${DEVELOPER_EMAIL}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-    
-    // Copy to clipboard as fallback first
-    const textToCopy = `Tipo: ${typeLabel}\nAsunto: ${form.subject}\n\nDescripción:\n${form.description}`;
-    navigator.clipboard.writeText(textToCopy);
+    try {
+      // Use FormSubmit.co AJAX endpoint to send directly to developer email
+      const response = await fetch(`https://formsubmit.co/ajax/${DEVELOPER_EMAIL}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Accept": "application/json"
+        },
+        body: JSON.stringify({
+          _subject: emailSubject,
+          _captcha: "false", // Disable captcha for seamless AJAX submission
+          _template: "box", // Sleek dark/light styled card in email
+          "Tipo de Feedback": form.type === 'bug' ? '🔴 Reportar un Error (Bug)' : form.type === 'improvement' ? '💡 Sugerencia de Mejora' : '💬 Comentario General',
+          "Asunto": form.subject,
+          "Descripción": form.description,
+          "Entorno": "FinTrack RD Portal Beta Client"
+        })
+      });
 
-    // Open mail client
-    window.location.href = mailtoUrl;
+      const result = await response.json();
 
-    toast.success('¡Cargando correo! Copiamos el texto al portapapeles por seguridad', { duration: 5000 });
-    
-    // Reset form
-    setForm({
-      type: 'bug',
-      subject: '',
-      description: '',
-    });
+      if (response.ok && result.success === "true") {
+        toast.success('¡Feedback enviado directamente al desarrollador!');
+        // Reset form
+        setForm({
+          type: 'bug',
+          subject: '',
+          description: '',
+        });
+      } else {
+        throw new Error(result.message || "La API no devolvió éxito");
+      }
+    } catch (err) {
+      console.warn("Fallo en envío directo de FormSubmit. Reintentando con cliente nativo...", err);
+      // Fail-safe: Fallback to pre-filled mailto redirection
+      toast.error('No se pudo enviar directo. Abriendo cliente de correo...');
+      
+      const emailBody = `Hola,\n\nAquí tienes mis comentarios sobre la fase Beta de FinTrack RD:\n\n-------------------------------------------------\nASUNTO: ${form.subject}\nTIPO: ${typeLabel}\n-------------------------------------------------\n\nDESCRIPCIÓN:\n${form.description}\n\n-------------------------------------------------\nEnviado desde mi panel de FinTrack RD`;
+      const mailtoUrl = `mailto:${DEVELOPER_EMAIL}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
+      
+      // Copy to clipboard as a double safety measure
+      const textToCopy = `Tipo: ${typeLabel}\nAsunto: ${form.subject}\n\nDescripción:\n${form.description}`;
+      navigator.clipboard.writeText(textToCopy);
+      
+      window.location.href = mailtoUrl;
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
     <div className="page-container">
+      {/* Encapsulated Spinner style block */}
+      <style>{`
+        @keyframes feedback-spin {
+          to { transform: rotate(360deg); }
+        }
+        .feedback-spinner {
+          animation: feedback-spin 0.8s linear infinite;
+        }
+      `}</style>
+
       <div className="page-header flex items-center justify-between">
         <div>
           <h1 className="page-title flex items-center gap-3">
@@ -76,6 +117,7 @@ export default function FeedbackPage() {
               <select
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
+                disabled={sending}
                 required
               >
                 <option value="bug">🔴 Reportar un Error (Bug)</option>
@@ -91,6 +133,7 @@ export default function FeedbackPage() {
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
                 placeholder="Ej: Error al registrar pago de deuda, Sugerencia para reportes..."
+                disabled={sending}
                 required
               />
             </div>
@@ -102,6 +145,7 @@ export default function FeedbackPage() {
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Por favor, describe detalladamente la mejora que propones o el error encontrado. Si es un error, indica los pasos para reproducirlo..."
                 rows={6}
+                disabled={sending}
                 required
               />
             </div>
@@ -111,13 +155,33 @@ export default function FeedbackPage() {
                 type="button"
                 className="btn btn-secondary"
                 onClick={handleCopyText}
-                disabled={!form.subject || !form.description}
+                disabled={sending || !form.subject || !form.description}
                 title="Copiar texto para enviar manualmente"
               >
                 {copied ? <Check size={16} /> : <Copy size={16} />} Copiar al Portapapeles
               </button>
-              <button type="submit" className="btn btn-primary">
-                <Send size={16} /> Enviar por Correo
+              <button type="submit" className="btn btn-primary" disabled={sending}>
+                {sending ? (
+                  <>
+                    <span 
+                      className="feedback-spinner" 
+                      style={{ 
+                        width: 16, 
+                        height: 16, 
+                        border: '2px solid currentColor', 
+                        borderTopColor: 'transparent', 
+                        borderRadius: '50%', 
+                        display: 'inline-block', 
+                        marginRight: 8 
+                      }} 
+                    />
+                    Enviando...
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} /> Enviar Feedback
+                  </>
+                )}
               </button>
             </div>
           </form>
@@ -127,10 +191,10 @@ export default function FeedbackPage() {
         <div className="flex flex-col gap-6">
           <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-secondary)' }}>
             <h4 className="font-bold flex items-center gap-2 mb-3 text-base" style={{ color: 'var(--accent-secondary)' }}>
-              <AlertCircle size={20} /> Fase Beta Activa
+              <AlertCircle size={20} /> Envío Directo y Autónomo
             </h4>
             <p className="text-sm text-secondary" style={{ lineHeight: 1.6 }}>
-              FinTrack RD se encuentra actualmente en fase de pruebas beta. Tu feedback es enviado directamente al correo del desarrollador principal para ser analizado y aplicado en las próximas actualizaciones.
+              Los comentarios se envían directamente al desarrollador a través de la aplicación en segundo plano. No necesitas abrir ningún programa de correo externo ni registrarte. ¡Es 100% automático!
             </p>
           </div>
 
