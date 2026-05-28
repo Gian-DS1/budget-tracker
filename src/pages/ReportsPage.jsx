@@ -193,7 +193,7 @@ export default function ReportsPage() {
       </div>
 
       {/* Tabs */}
-      <div className="tabs" style={{ maxWidth: 450 }}>
+      <div className="tabs" style={{ maxWidth: 'fit-content' }}>
         <button 
           className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'projections' ? 'active' : ''}`}
           onClick={() => setActiveTab('projections')}
