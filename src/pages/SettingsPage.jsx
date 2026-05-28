@@ -14,9 +14,8 @@ import { supabase } from '../lib/supabase';
 export default function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
-  const { categories, resetCategoriesToDefault } = useCategoryStore();
+  const { categories } = useCategoryStore();
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
-  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // ─── CSV Export ──────────────────────────────────────────────
 
@@ -176,140 +175,82 @@ export default function SettingsPage() {
       </div>
 
       <div className="grid-2">
+        
         {/* Appearance Settings */}
-        <div className="card">
+        <div className="card flex flex-col justify-between">
           <div className="card-header border-b border-secondary pb-4 mb-4">
             <h3 className="card-title flex items-center gap-2">
               <Settings size={20} /> Apariencia
             </h3>
           </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="font-semibold mb-1">Tema de la Aplicación</div>
-              <div className="text-sm text-muted">Elige entre modo claro u oscuro</div>
-            </div>
-            <div className="flex gap-2">
-              <button 
-                className={`btn btn-sm ${theme === 'light' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setTheme('light')}
-              >
-                <Sun size={16} /> Claro
-              </button>
-              <button 
-                className={`btn btn-sm ${theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
-                onClick={() => setTheme('dark')}
-              >
-                <Moon size={16} /> Oscuro
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Help & Tutorial */}
-        <div className="card">
-          <div className="card-header border-b border-secondary pb-4 mb-4">
-            <h3 className="card-title flex items-center gap-2">
-              <PlayCircle size={20} className="text-info" /> Ayuda y Tutorial
-            </h3>
-          </div>
-          <div>
-            <div className="font-semibold mb-1">Repetir Recorrido Guiado</div>
-            <div className="text-sm text-muted mb-4">
-              Vuelve a lanzar el tutorial paso a paso para recordar cómo utilizar las funciones principales de la aplicación.
-            </div>
+          <div className="flex gap-2 mt-auto">
             <button 
-              className="btn btn-secondary w-full justify-center"
-              onClick={() => {
-                localStorage.removeItem('fintrack-tour-seen');
-                window.location.href = '/';
-              }}
+              className={`btn flex-1 justify-center ${theme === 'light' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setTheme('light')}
             >
-              <PlayCircle size={16} /> Iniciar Tutorial
+              <Sun size={16} /> Claro
+            </button>
+            <button 
+              className={`btn flex-1 justify-center ${theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setTheme('dark')}
+            >
+              <Moon size={16} /> Oscuro
             </button>
           </div>
         </div>
 
-        {/* Data Import/Export */}
-        <div className="card">
+        {/* Help & Tutorial */}
+        <div className="card flex flex-col justify-between">
           <div className="card-header border-b border-secondary pb-4 mb-4">
             <h3 className="card-title flex items-center gap-2">
-              <FileText size={20} /> Importar y Exportar Datos
+              <PlayCircle size={20} className="text-info" /> Tutorial
             </h3>
           </div>
-          
-          <div className="space-y-6">
-            <div>
-              <div className="font-semibold mb-1">Exportar a CSV</div>
-              <div className="text-sm text-muted mb-3">
-                Descarga todas tus transacciones en formato CSV, compatible con Excel o Google Sheets.
-              </div>
-              <button className="btn btn-secondary w-full justify-center" onClick={exportToCSV}>
-                <Download size={16} /> Descargar CSV
+          <button 
+            className="btn btn-secondary w-full justify-center mt-auto"
+            onClick={() => {
+              localStorage.removeItem('fintrack-tour-seen');
+              window.location.href = '/';
+            }}
+          >
+            <PlayCircle size={16} /> Repetir Recorrido Guiado
+          </button>
+        </div>
+
+        {/* Data Import/Export */}
+        <div className="card flex flex-col justify-between">
+          <div className="card-header border-b border-secondary pb-4 mb-4">
+            <h3 className="card-title flex items-center gap-2">
+              <FileText size={20} /> Datos CSV
+            </h3>
+          </div>
+          <div className="mt-auto">
+            <div className="flex gap-4">
+              <button className="btn btn-secondary flex-1 justify-center" onClick={exportToCSV}>
+                <Download size={16} /> Exportar
               </button>
-            </div>
-
-            <div style={{ height: 1, background: 'var(--border-primary)' }} />
-
-            <div>
-              <div className="font-semibold mb-1">Migrar desde Google Sheets (CSV)</div>
-              <div className="text-sm text-muted mb-3">
-                Sube tu CSV exportado de Google Sheets. El sistema intentará detectar las columnas "Fecha", "Descripción" y "Monto" automáticamente.
-              </div>
-              
-              {/* Custom File Input Upload Button */}
-              <label className="btn btn-primary w-full justify-center" style={{ cursor: 'pointer' }}>
-                <Upload size={16} /> Subir archivo CSV
-                <input 
-                  type="file" 
-                  accept=".csv" 
-                  style={{ display: 'none' }} 
-                  onChange={handleFileUpload}
-                />
+              <label className="btn btn-primary flex-1 justify-center" style={{ cursor: 'pointer' }}>
+                <Upload size={16} /> Importar
+                <input type="file" accept=".csv" style={{ display: 'none' }} onChange={handleFileUpload} />
               </label>
             </div>
+            <div className="text-xs text-muted mt-3 text-center">Soporta Excel y Google Sheets</div>
           </div>
         </div>
 
         {/* Danger Zone */}
-        <div className="card" style={{ border: '1px solid var(--color-danger)' }}>
+        <div className="card flex flex-col justify-between" style={{ border: '1px solid var(--color-danger)' }}>
           <div className="card-header border-b border-secondary pb-4 mb-4">
             <h3 className="card-title flex items-center gap-2 text-danger">
               <Trash2 size={20} /> Zona de Peligro
             </h3>
           </div>
-          <div>
-            <div className="font-semibold mb-1">Borrar todos los datos</div>
-            <div className="text-sm text-muted mb-4">
-              Elimina permanentemente todas las transacciones, presupuestos, deudas y ahorros de este navegador. Esta acción NO se puede deshacer.
-            </div>
-            <button 
-              className="btn btn-danger w-full justify-center"
-              onClick={() => setShowClearDataConfirm(true)}
-            >
-              Borrar Toda mi Data
-            </button>
-          </div>
-        </div>
-
-        {/* System Categories Card */}
-        <div className="card">
-          <div className="card-header border-b border-secondary pb-4 mb-4">
-            <h3 className="card-title flex items-center gap-2">
-              <Upload size={20} className="text-accent" /> Categorías del Sistema
-            </h3>
-          </div>
-          <div>
-            <div className="font-semibold mb-1">Restablecer Categorías del Sistema</div>
-            <div className="text-sm text-muted mb-4">
-              Actualiza tus categorías al conjunto optimizado para República Dominicana basado en tus gastos reales (desglose de compras, servicios, tecnología, vehículos y combustible).
-            </div>
-            <button 
-              className="btn btn-secondary w-full justify-center"
-              onClick={() => setShowResetConfirm(true)}
-            >
-              Restablecer Categorías
-            </button>
-          </div>
+          <button 
+            className="btn btn-danger w-full justify-center mt-auto"
+            onClick={() => setShowClearDataConfirm(true)}
+          >
+            <Trash2 size={16} /> Borrar Toda mi Data
+          </button>
         </div>
 
       </div>
@@ -321,21 +262,6 @@ export default function SettingsPage() {
         title="⚠️ Borrar todos los datos"
         message="¿Estás completamente seguro? Perderás todas tus transacciones, presupuestos e historial. Esta acción eliminará permanentemente la base de datos local."
         confirmText="Sí, borrar todo"
-      />
-
-      <ConfirmDialog
-        isOpen={showResetConfirm}
-        onClose={() => setShowResetConfirm(false)}
-        onConfirm={async () => {
-          setShowResetConfirm(false);
-          const success = await resetCategoriesToDefault();
-          if (success) {
-            toast.success("Categorías optimizadas cargadas");
-          }
-        }}
-        title="🔄 Restablecer Categorías"
-        message="¿Estás seguro de que deseas restablecer tus categorías? Se eliminarán tus categorías personalizadas actuales y se cargarán las categorías optimizadas basadas en tus gastos reales."
-        confirmText="Sí, restablecer"
       />
     </div>
   );
