@@ -307,12 +307,12 @@ export default function DashboardPage() {
             {expenseByCategory.length > 0 && (
               <div style={{ width: '50%', maxHeight: 260, overflowY: 'auto', paddingLeft: 'var(--space-4)' }}>
                 {expenseByCategory.map((entry, idx) => (
-                  <div key={idx} className="flex items-center justify-between mb-3 text-xs">
-                    <div className="flex items-center gap-2 truncate">
-                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
-                      <span className="truncate" title={entry.name}>{entry.name}</span>
+                  <div key={idx} className="flex items-start justify-between mb-3 text-xs">
+                    <div className="flex items-start gap-2" style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
+                      <div style={{ width: 10, height: 10, borderRadius: '50%', background: entry.color, flexShrink: 0, marginTop: '4px' }} />
+                      <span style={{ wordBreak: 'break-word' }} title={entry.name}>{entry.name}</span>
                     </div>
-                    <span className="font-semibold ml-2">{formatPercent((entry.value / currentTotals.expense) * 100)}</span>
+                    <span className="font-semibold" style={{ flexShrink: 0 }}>{formatPercent((entry.value / currentTotals.expense) * 100)}</span>
                   </div>
                 ))}
               </div>
