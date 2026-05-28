@@ -1,6 +1,6 @@
 // FinTrack RD — Header Component
 
-import { Bell, Moon, Sun, Menu } from 'lucide-react';
+import { Moon, Sun, Menu } from 'lucide-react';
 import useThemeStore from '../../stores/useThemeStore';
 
 export default function Header() {
@@ -15,17 +15,15 @@ export default function Header() {
       </div>
 
       <div className="header-actions">
-        <button className="btn-icon tooltip-container" onClick={toggleTheme}>
+        <button 
+          className="btn-icon" 
+          onClick={toggleTheme}
+          title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+        >
           {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
-          <span className="tooltip">
-            {theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
-          </span>
-        </button>
-        <button className="btn-icon tooltip-container">
-          <Bell size={20} />
-          <span className="tooltip">Notificaciones</span>
         </button>
       </div>
     </header>
   );
 }
+

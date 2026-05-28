@@ -195,22 +195,22 @@ export default function ReportsPage() {
       {/* Tabs */}
       <div className="tabs" style={{ maxWidth: 450 }}>
         <button 
-          className={`tab flex-1 ${activeTab === 'projections' ? 'active' : ''}`}
+          className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'projections' ? 'active' : ''}`}
           onClick={() => setActiveTab('projections')}
         >
-          <TrendingUp size={16} className="inline mr-2" /> Proyecciones
+          <TrendingUp size={16} /> Proyecciones
         </button>
         <button 
-          className={`tab flex-1 ${activeTab === 'anomalies' ? 'active' : ''}`}
+          className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'anomalies' ? 'active' : ''}`}
           onClick={() => setActiveTab('anomalies')}
         >
-          <AlertOctagon size={16} className="inline mr-2" /> Anomalías
+          <AlertOctagon size={16} /> Anomalías
         </button>
         <button 
-          className={`tab flex-1 ${activeTab === 'debts' ? 'active' : ''}`}
+          className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'debts' ? 'active' : ''}`}
           onClick={() => setActiveTab('debts')}
         >
-          <Lightbulb size={16} className="inline mr-2" /> Estrategia Deuda
+          <Lightbulb size={16} /> Estrategia Deuda
         </button>
       </div>
 
