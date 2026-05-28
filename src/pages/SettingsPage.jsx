@@ -274,8 +274,8 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-auto">
-            <div className="flex gap-4">
-              <div style={{ position: 'relative', flex: 1 }} ref={exportMenuRef}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+              <div style={{ position: 'relative' }} ref={exportMenuRef}>
                 <button 
                   className="btn btn-secondary w-full justify-center" 
                   onClick={() => setShowExportMenu(!showExportMenu)}
@@ -300,7 +300,7 @@ export default function SettingsPage() {
                   </div>
                 )}
               </div>
-              <label className="btn btn-primary flex-1 justify-center" style={{ cursor: 'pointer' }}>
+              <label className="btn btn-primary w-full justify-center" style={{ cursor: 'pointer', margin: 0 }}>
                 <Upload size={16} /> Importar
                 <input type="file" accept=".csv, .xlsx, .xls" style={{ display: 'none' }} onChange={handleFileUpload} />
               </label>
