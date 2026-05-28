@@ -1,7 +1,7 @@
 // FinTrack RD — Settings & Utilities Page
 
-import { useState } from 'react';
-import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle } from 'lucide-react';
+import { useState, useRef, useEffect } from 'react';
+import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
 import toast from 'react-hot-toast';
@@ -17,6 +17,18 @@ export default function SettingsPage() {
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const exportMenuRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(event.target)) {
+        setShowExportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // ─── Data Export ──────────────────────────────────────────────
 
@@ -262,14 +274,31 @@ export default function SettingsPage() {
             </div>
           </div>
           <div className="mt-auto">
-            <div className="flex gap-2">
-              <div className="flex-1 flex gap-2">
-                <button className="btn btn-secondary flex-1 justify-center px-1 text-sm font-semibold" onClick={() => exportData('csv')} title="Exportar como CSV">
-                  .CSV
+            <div className="flex gap-4">
+              <div className="relative flex-1" ref={exportMenuRef}>
+                <button 
+                  className="btn btn-secondary w-full justify-center" 
+                  onClick={() => setShowExportMenu(!showExportMenu)}
+                >
+                  <Download size={16} /> Exportar <ChevronDown size={14} />
                 </button>
-                <button className="btn btn-secondary flex-1 justify-center px-1 text-sm font-semibold" onClick={() => exportData('xlsx')} title="Exportar como Excel">
-                  .XLSX
-                </button>
+                
+                {showExportMenu && (
+                  <div className="absolute bottom-full left-0 mb-1 w-full bg-[var(--bg-card)] border border-[var(--border-secondary)] rounded-md shadow-lg z-10 overflow-hidden">
+                    <button 
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-secondary)] transition-colors"
+                      onClick={() => { exportData('xlsx'); setShowExportMenu(false); }}
+                    >
+                      Como Excel (.xlsx)
+                    </button>
+                    <button 
+                      className="w-full text-left px-4 py-2 text-sm hover:bg-[var(--bg-secondary)] transition-colors border-t border-[var(--border-secondary)]"
+                      onClick={() => { exportData('csv'); setShowExportMenu(false); }}
+                    >
+                      Como texto (.csv)
+                    </button>
+                  </div>
+                )}
               </div>
               <label className="btn btn-primary flex-1 justify-center" style={{ cursor: 'pointer' }}>
                 <Upload size={16} /> Importar
