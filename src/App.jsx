@@ -11,6 +11,7 @@ import useSavingsStore from './stores/useSavingsStore';
 import useDebtStore from './stores/useDebtStore';
 import usePlanStore from './stores/usePlanStore';
 import { useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabase';
 import AuthPage from './pages/AuthPage';
 
 import DashboardPage from './pages/DashboardPage';
@@ -38,6 +39,28 @@ function App() {
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Supabase Database Keep-Alive Trigger to prevent sleep on the free tier
+  useEffect(() => {
+    if (!user) return;
+
+    const keepAlive = async () => {
+      try {
+        await supabase.from('categories').select('id').limit(1);
+        console.log('Supabase keep-alive ping successful');
+      } catch (err) {
+        console.warn('Supabase keep-alive ping failed', err);
+      }
+    };
+
+    // Trigger immediately on mount/login
+    keepAlive();
+
+    // Trigger every 15 minutes
+    const intervalId = setInterval(keepAlive, 15 * 60 * 1000);
+
+    return () => clearInterval(intervalId);
+  }, [user]);
 
   useEffect(() => {
     if (user) {
