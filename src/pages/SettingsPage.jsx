@@ -1,7 +1,7 @@
 // FinTrack RD — Settings & Utilities Page
 
 import { useState } from 'react';
-import { Upload, Download, FileText, Settings, Moon, Sun, Trash2 } from 'lucide-react';
+import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle } from 'lucide-react';
 import Papa from 'papaparse';
 import toast from 'react-hot-toast';
 import useTransactionStore from '../stores/useTransactionStore';
@@ -202,6 +202,30 @@ export default function SettingsPage() {
                 <Moon size={16} /> Oscuro
               </button>
             </div>
+          </div>
+        </div>
+
+        {/* Help & Tutorial */}
+        <div className="card">
+          <div className="card-header border-b border-secondary pb-4 mb-4">
+            <h3 className="card-title flex items-center gap-2">
+              <PlayCircle size={20} className="text-info" /> Ayuda y Tutorial
+            </h3>
+          </div>
+          <div>
+            <div className="font-semibold mb-1">Repetir Recorrido Guiado</div>
+            <div className="text-sm text-muted mb-4">
+              Vuelve a lanzar el tutorial paso a paso para recordar cómo utilizar las funciones principales de la aplicación.
+            </div>
+            <button 
+              className="btn btn-secondary w-full justify-center"
+              onClick={() => {
+                localStorage.removeItem('fintrack-tour-seen');
+                window.location.href = '/';
+              }}
+            >
+              <PlayCircle size={16} /> Iniciar Tutorial
+            </button>
           </div>
         </div>
 
