@@ -96,7 +96,7 @@ export default function SavingsPage() {
       amount: amount,
       type: 'savings',
       categoryId: '',
-      description: `Abono a meta: ${goal?.name}`,
+      description: `Abono a meta: ${goal?.title}`,
       currency: goal?.currency || 'DOP',
     });
 
@@ -176,7 +176,7 @@ export default function SavingsPage() {
                   <div className="flex items-center gap-3">
                     <span style={{ fontSize: 'var(--font-2xl)' }}>{goal.icon}</span>
                     <div>
-                      <h3 className="font-bold">{goal.name}</h3>
+                      <h3 className="font-bold">{goal.title}</h3>
                       <span
                         className={`badge ${
                           goal.status === 'completed'
@@ -226,7 +226,7 @@ export default function SavingsPage() {
                 {remaining > 0 && goal.status === 'active' && (
                   <p className="text-xs text-muted mb-4">
                     Faltan {formatCurrency(remaining, goal.currency)} para completar
-                    {goal.targetDate && ` — Meta: ${formatDate(goal.targetDate)}`}
+                    {goal.deadline && ` — Meta: ${formatDate(goal.deadline)}`}
                   </p>
                 )}
 
@@ -360,12 +360,9 @@ export default function SavingsPage() {
       >
         <div className="form-group">
           <label className="form-label">Monto a abonar</label>
-          <input
-            type="number"
-            min="0"
-            step="0.01"
+          <CurrencyInput
             value={contributeAmount}
-            onChange={(e) => setContributeAmount(e.target.value)}
+            onChange={(val) => setContributeAmount(val)}
             placeholder="0.00"
             autoFocus
           />

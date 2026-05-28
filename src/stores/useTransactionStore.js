@@ -102,7 +102,7 @@ const useTransactionStore = create((set, get) => ({
 
   bulkAddTransactions: async (transactions) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return 0;
 
     const dbTxs = transactions.map(t => ({
       user_id: user.id,
@@ -142,6 +142,8 @@ const useTransactionStore = create((set, get) => ({
     if (hasError && allInserted.length > 0) {
       import('react-hot-toast').then(toast => toast.default.success(`Se importaron ${allInserted.length} transacciones (algunas fallaron)`));
     }
+
+    return allInserted.length;
   },
 
   getTransactionsByMonth: (year, month) => {

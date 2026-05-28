@@ -121,8 +121,10 @@ export default function SettingsPage() {
         }).filter(Boolean);
 
         if (newTransactions.length > 0) {
-          await bulkAddTransactions(newTransactions);
-          toast.success(`Se importaron ${newTransactions.length} transacciones`);
+          const insertedCount = await bulkAddTransactions(newTransactions);
+          if (insertedCount > 0) {
+            toast.success(`Se importaron ${insertedCount} transacciones exitosamente`);
+          }
         } else {
           toast.error('No se pudo procesar el archivo. Verifica el formato de las columnas.');
         }

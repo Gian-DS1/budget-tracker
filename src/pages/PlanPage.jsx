@@ -110,7 +110,7 @@ export default function PlanPage() {
                   {horizonPlans.map((plan) => {
                     const statusConfig = STATUS_CONFIG[plan.status];
                     const StatusIcon = statusConfig.icon;
-                    const daysRemaining = getDaysRemaining(plan.targetDate);
+                    const daysRemaining = getDaysRemaining(plan.deadline);
 
                     return (
                       <div
@@ -149,9 +149,9 @@ export default function PlanPage() {
                         </div>
 
                         {/* Date & Days */}
-                        {plan.targetDate && (
+                        {plan.deadline && (
                           <div className="text-right">
-                            <div className="text-xs text-muted">{formatDate(plan.targetDate)}</div>
+                            <div className="text-xs text-muted">{formatDate(plan.deadline)}</div>
                             {daysRemaining !== null && plan.status !== 'completed' && (
                               <div
                                 className="text-xs font-semibold"
