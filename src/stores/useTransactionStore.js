@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
@@ -32,7 +33,9 @@ export async function fetchUSDRate(dateStr) {
   return bankSellingRate;
 }
 
-const useTransactionStore = create((set, get) => ({
+const useTransactionStore = create(
+  persist(
+    (set, get) => ({
   transactions: [],
   loading: false,
 
@@ -201,6 +204,12 @@ const useTransactionStore = create((set, get) => ({
   getTransactionsByType: (type) => {
     return get().transactions.filter((t) => t.type === type);
   },
-}));
+}),
+{
+  name: 'fintrack-transactions-cache',
+  partialize: (state) => ({ transactions: state.transactions }),
+}
+)
+);
 
 export default useTransactionStore;

@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 
-const useBudgetStore = create((set, get) => ({
+const useBudgetStore = create(
+  persist(
+    (set, get) => ({
   budgets: [],
   loading: false,
 
@@ -203,6 +206,12 @@ const useBudgetStore = create((set, get) => ({
     }
     return false;
   },
-}));
+}),
+{
+  name: 'fintrack-budgets-cache',
+  partialize: (state) => ({ budgets: state.budgets }),
+}
+)
+);
 
 export default useBudgetStore;

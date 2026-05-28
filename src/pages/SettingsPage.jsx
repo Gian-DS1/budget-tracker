@@ -13,9 +13,9 @@ import { autoCategorize } from '../data/defaultCategories';
 export default function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
-
+  const { categories, resetCategoriesToDefault } = useCategoryStore();
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   // ─── CSV Export ──────────────────────────────────────────────
 
@@ -66,10 +66,10 @@ export default function SettingsPage() {
         
         const newTransactions = rows.map(row => {
           // Flexible column matching to help migrate from Google Sheets
-          const date = row['Fecha'] || row['Date'] || row['fecha'];
-          const desc = row['Descripción'] || row['Description'] || row['Concepto'] || row['descripcion'];
-          const rawAmount = row['Monto'] || row['Amount'] || row['monto'] || '0';
-          const typeStr = row['Tipo'] || row['Type'] || '';
+          const date = row['Fecha'] || row['Date'] || row['fecha'] || row['Date'];
+          const desc = row['Descripción'] || row['Description'] || row['Concepto'] || row['descripcion'] || row['concepto'];
+          const rawAmount = row['Monto'] || row['Amount'] || row['monto'] || row['amount'] || '0';
+          const typeStr = row['Tipo'] || row['Type'] || row['tipo'] || '';
           const catStr = row['Categoría'] || row['Categoria'] || row['Category'] || row['categoría'] || row['categoria'] || '';
           
           if (!date || !rawAmount) return null;
@@ -99,9 +99,12 @@ export default function SettingsPage() {
           // Auto-categorize: First try to match the CSV's Category column, fallback to Description parsing
           let categoryMatch = null;
           if (catStr) {
-            // Remove emojis and trim spaces to find a clean match
-            const cleanCatStr = catStr.replace(/[\u1000-\uFFFF]/g, '').trim().toLowerCase();
-            categoryMatch = categories.find(c => c.name.toLowerCase() === cleanCatStr || c.name.toLowerCase().includes(cleanCatStr));
+            // Robustly strip emojis and special symbols, leaving clean text
+            const cleanCatStr = catStr.replace(/[^\w\sáéíóúñÁÉÍÓÚÑ]/gu, '').trim().toLowerCase();
+            categoryMatch = categories.find(c => {
+              const catName = c.name.toLowerCase();
+              return catName === cleanCatStr || catName.includes(cleanCatStr) || cleanCatStr.includes(catName);
+            });
           }
           
           if (!categoryMatch) {
@@ -137,7 +140,6 @@ export default function SettingsPage() {
     // reset input
     e.target.value = null;
   };
-
 
   // ─── Data Clear ──────────────────────────────────────────────
 
@@ -249,6 +251,27 @@ export default function SettingsPage() {
           </div>
         </div>
 
+        {/* System Categories Card */}
+        <div className="card">
+          <div className="card-header border-b border-secondary pb-4 mb-4">
+            <h3 className="card-title flex items-center gap-2">
+              <Upload size={20} className="text-accent" /> Categorías del Sistema
+            </h3>
+          </div>
+          <div>
+            <div className="font-semibold mb-1">Restablecer Categorías del Sistema</div>
+            <div className="text-sm text-muted mb-4">
+              Actualiza tus categorías al conjunto optimizado para República Dominicana basado en tus gastos reales (desglose de compras, servicios, tecnología, vehículos y combustible).
+            </div>
+            <button 
+              className="btn btn-secondary w-full justify-center"
+              onClick={() => setShowResetConfirm(true)}
+            >
+              Restablecer Categorías
+            </button>
+          </div>
+        </div>
+
       </div>
 
       <ConfirmDialog
@@ -258,6 +281,21 @@ export default function SettingsPage() {
         title="⚠️ Borrar todos los datos"
         message="¿Estás completamente seguro? Perderás todas tus transacciones, presupuestos e historial. Esta acción eliminará permanentemente la base de datos local."
         confirmText="Sí, borrar todo"
+      />
+
+      <ConfirmDialog
+        isOpen={showResetConfirm}
+        onClose={() => setShowResetConfirm(false)}
+        onConfirm={async () => {
+          setShowResetConfirm(false);
+          const success = await resetCategoriesToDefault();
+          if (success) {
+            toast.success("Categorías optimizadas cargadas");
+          }
+        }}
+        title="🔄 Restablecer Categorías"
+        message="¿Estás seguro de que deseas restablecer tus categorías? Se eliminarán tus categorías personalizadas actuales y se cargarán las categorías optimizadas basadas en tus gastos reales."
+        confirmText="Sí, restablecer"
       />
     </div>
   );

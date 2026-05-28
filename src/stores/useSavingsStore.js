@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 
-const useSavingsStore = create((set, get) => ({
+const useSavingsStore = create(
+  persist(
+    (set, get) => ({
   goals: [],
   loading: false,
 
@@ -115,6 +118,12 @@ const useSavingsStore = create((set, get) => ({
   },
 
   getActiveGoals: () => get().goals.filter((g) => g.status === 'active'),
-}));
+}),
+{
+  name: 'fintrack-savings-cache',
+  partialize: (state) => ({ goals: state.goals }),
+}
+)
+);
 
 export default useSavingsStore;

@@ -1,9 +1,12 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { defaultCategories } from '../data/defaultCategories';
 import toast from 'react-hot-toast';
 
-const useCategoryStore = create((set, get) => ({
+const useCategoryStore = create(
+  persist(
+    (set, get) => ({
   categories: [],
   loading: false,
   error: null,
@@ -79,6 +82,70 @@ const useCategoryStore = create((set, get) => ({
     set({ categories: formattedData, loading: false });
   },
 
+  resetCategoriesToDefault: async () => {
+    set({ loading: true, error: null });
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      set({ loading: false });
+      return false;
+    }
+
+    try {
+      // 1. Delete all existing categories for this user
+      const { error: deleteError } = await supabase
+        .from('categories')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (deleteError) {
+        console.error("Error deleting categories:", deleteError);
+        toast.error("Error al borrar categorías existentes");
+        set({ loading: false });
+        return false;
+      }
+
+      // 2. Insert new default categories
+      const seedData = defaultCategories.map((c, index) => ({
+        user_id: user.id,
+        name: c.name,
+        type: c.type,
+        icon: c.icon,
+        color: c.color,
+        keywords: c.keywords || [],
+        is_active: true,
+        sort_order: index
+      }));
+
+      const { data: insertedData, error: insertError } = await supabase
+        .from('categories')
+        .insert(seedData)
+        .select();
+
+      if (insertError) {
+        console.error("Error seeding default categories:", insertError);
+        toast.error("Error insertando nuevas categorías por defecto");
+        set({ loading: false });
+        return false;
+      }
+
+      if (insertedData) {
+        const formattedData = insertedData.map(c => ({
+          ...c, 
+          isActive: c.is_active, 
+          sortOrder: c.sort_order 
+        }));
+        set({ categories: formattedData, loading: false });
+        toast.success("Categorías restablecidas con éxito");
+        return true;
+      }
+    } catch (err) {
+      console.error("Failed to reset categories", err);
+      toast.error("Error al restablecer categorías");
+      set({ loading: false });
+      return false;
+    }
+  },
+
   addCategory: async (category) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
@@ -136,6 +203,12 @@ const useCategoryStore = create((set, get) => ({
   getActiveCategories: () => get().categories.filter((c) => c.isActive),
   getCategoriesByType: (type) => get().categories.filter((c) => c.type === type && c.isActive),
   getCategoryById: (id) => get().categories.find((c) => c.id === id),
-}));
+}),
+{
+  name: 'fintrack-categories-cache',
+  partialize: (state) => ({ categories: state.categories }),
+}
+)
+);
 
 export default useCategoryStore;

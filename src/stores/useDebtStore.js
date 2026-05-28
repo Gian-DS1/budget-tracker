@@ -1,8 +1,11 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
-const useDebtStore = create((set, get) => ({
+const useDebtStore = create(
+  persist(
+    (set, get) => ({
   debts: [],
   payments: [],
   loading: false,
@@ -208,6 +211,12 @@ const useDebtStore = create((set, get) => ({
   },
 
   getActiveDebts: () => get().debts.filter((d) => d.status === 'active'),
-}));
+}),
+{
+  name: 'fintrack-debts-cache',
+  partialize: (state) => ({ debts: state.debts, payments: state.payments }),
+}
+)
+);
 
 export default useDebtStore;
