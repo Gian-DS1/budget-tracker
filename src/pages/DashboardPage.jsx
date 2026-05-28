@@ -276,7 +276,8 @@ export default function DashboardPage() {
           </div>
           <div style={{ height: 300, display: 'flex', alignItems: 'center' }}>
             {expenseByCategory.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
+              <div style={{ width: '50%', height: '100%' }}>
+                <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={expenseByCategory}
@@ -295,6 +296,7 @@ export default function DashboardPage() {
                   <RechartsTooltip content={<CustomTooltip />} />
                 </PieChart>
               </ResponsiveContainer>
+              </div>
             ) : (
               <div className="w-full text-center text-muted">
                 No hay gastos registrados este mes
@@ -303,9 +305,9 @@ export default function DashboardPage() {
             
             {/* Legend inside the container for better layout */}
             {expenseByCategory.length > 0 && (
-              <div style={{ width: '40%', maxHeight: 260, overflowY: 'auto', paddingLeft: 'var(--space-4)' }}>
+              <div style={{ width: '50%', maxHeight: 260, overflowY: 'auto', paddingLeft: 'var(--space-4)' }}>
                 {expenseByCategory.map((entry, idx) => (
-                  <div key={idx} className="flex items-center justify-between mb-3 text-sm">
+                  <div key={idx} className="flex items-center justify-between mb-3 text-xs">
                     <div className="flex items-center gap-2 truncate">
                       <div style={{ width: 10, height: 10, borderRadius: '50%', background: entry.color, flexShrink: 0 }} />
                       <span className="truncate" title={entry.name}>{entry.name}</span>
