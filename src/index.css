@@ -1591,7 +1591,13 @@ table {
    Modern Tech / Numerical Data Styling (Plus Jakarta Sans & JetBrains Mono)
    ============================================================ */
 
-/* tabular-nums aligns numbers perfectly vertically for financial metrics */
+/* Universal Reset: Force Plus Jakarta Sans globally for all text, headings, UI and sidebar components */
+* {
+  font-family: var(--font-family);
+  letter-spacing: -0.015em;
+}
+
+/* Tabular Monospace Font: Applied exclusively for pure financial metrics and numerical values */
 .kpi-value,
 .amount,
 .amount-positive,
@@ -1606,32 +1612,7 @@ table {
 .metric,
 .progress-percentage,
 .font-mono {
-  font-family: var(--font-mono), monospace;
+  font-family: var(--font-mono), monospace !important;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0 !important; /* Avoid character overlap in monospace */
-}
-
-/* Ensure clean sans-serif spacing for descriptions, inputs, selects, sidebars, charts and labels */
-html,
-body,
-th,
-td,
-input,
-select,
-textarea,
-button,
-.kpi-label,
-.card-title,
-.page-title,
-.page-subtitle,
-.sidebar-link,
-.btn,
-.description,
-.category,
-.text-xs,
-.text-muted,
-.kpi-change,
-label {
-  font-family: var(--font-family);
-  letter-spacing: -0.015em;
 }
