@@ -274,7 +274,7 @@ export default function DashboardPage() {
           <div className="chart-header">
             <h3 className="chart-title">Distribución de Gastos</h3>
           </div>
-          <div style={{ height: 300, display: 'flex', alignItems: 'center' }}>
+          <div style={{ height: 420, display: 'flex', alignItems: 'center' }}>
             {expenseByCategory.length > 0 ? (
               <div style={{ width: '50%', height: '100%' }}>
                 <ResponsiveContainer width="100%" height="100%">
@@ -283,8 +283,8 @@ export default function DashboardPage() {
                     data={expenseByCategory}
                     cx="50%"
                     cy="50%"
-                    innerRadius={70}
-                    outerRadius={100}
+                    innerRadius={100}
+                    outerRadius={140}
                     paddingAngle={2}
                     dataKey="value"
                     stroke="none"
@@ -305,7 +305,7 @@ export default function DashboardPage() {
             
             {/* Legend inside the container for better layout */}
             {expenseByCategory.length > 0 && (
-              <div style={{ width: '50%', maxHeight: 260, overflowY: 'auto', paddingLeft: 'var(--space-4)' }}>
+              <div style={{ width: '50%', maxHeight: 400, overflowY: 'auto', paddingLeft: 'var(--space-4)' }}>
                 {expenseByCategory.map((entry, idx) => (
                   <div key={idx} className="flex items-start justify-between mb-3 text-xs">
                     <div className="flex items-start gap-2" style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>
