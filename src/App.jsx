@@ -22,6 +22,7 @@ import PlanPage from './pages/PlanPage';
 import ReportsPage from './pages/ReportsPage';
 import CalendarPage from './pages/CalendarPage';
 import SettingsPage from './pages/SettingsPage';
+import FeedbackPage from './pages/FeedbackPage';
 
 function App() {
   const { theme } = useThemeStore();
@@ -96,6 +97,7 @@ function App() {
           <Route path="reportes" element={<ReportsPage />} />
           <Route path="calendario" element={<CalendarPage />} />
           <Route path="ajustes" element={<SettingsPage />} />
+          <Route path="feedback" element={<FeedbackPage />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>
       </Routes>

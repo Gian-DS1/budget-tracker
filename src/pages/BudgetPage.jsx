@@ -54,11 +54,14 @@ export default function BudgetPage() {
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
 
-  const { setBudget, getBudgetsByMonth, copyBudgetFromPreviousMonth } = useBudgetStore();
+  const budgets = useBudgetStore((state) => state.budgets);
+  const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const { transactions } = useTransactionStore();
   const { categories } = useCategoryStore();
 
-  const monthBudgets = useMemo(() => getBudgetsByMonth(year, month), [getBudgetsByMonth, year, month]);
+  const monthBudgets = useMemo(() => {
+    return budgets.filter((b) => b.year === year && b.month === month);
+  }, [budgets, year, month]);
 
   const monthTransactions = useMemo(
     () =>

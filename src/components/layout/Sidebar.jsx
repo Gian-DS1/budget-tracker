@@ -15,6 +15,7 @@ import {
   ChevronRight,
   TrendingUp,
   LogOut,
+  MessageSquare,
 } from 'lucide-react';
 import useThemeStore from '../../stores/useThemeStore';
 import { useAuth } from '../../contexts/AuthContext';
@@ -34,6 +35,7 @@ const navItems = [
   { path: '/calendario', label: 'Calendario', icon: Calendar },
   { path: '/reportes', label: 'Reportes', icon: FileText },
   { path: '/ajustes', label: 'Ajustes', icon: Settings },
+  { path: '/feedback', label: 'Feedback / Beta', icon: MessageSquare },
 ];
 
 export default function Sidebar() {
