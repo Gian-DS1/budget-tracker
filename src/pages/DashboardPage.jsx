@@ -225,24 +225,24 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="kpi-card" style={{ '--kpi-accent': currentTotals.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}>
+        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-info)' }}>
           <div className="kpi-label">Balance Neto</div>
           <div className="kpi-value">{formatCurrency(currentTotals.balance)}</div>
-          <div className="kpi-change" style={{ background: 'var(--bg-tertiary)' }}>
+          <div className="kpi-change" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-info)' }}>
             Tasa de ahorro: {savingsRate.toFixed(1)}%
           </div>
-          <div className="kpi-icon" style={{ background: 'var(--bg-tertiary)' }}>
+          <div className="kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-info)' }}>
             <Target size={20} />
           </div>
         </div>
 
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-debt)' }}>
+        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-warning)' }}>
           <div className="kpi-label">Deuda Total</div>
-          <div className="kpi-value" style={{ color: 'var(--color-expense)' }}>{formatCurrency(getTotalDebt())}</div>
-          <div className="kpi-change positive">
+          <div className="kpi-value">{formatCurrency(getTotalDebt())}</div>
+          <div className="kpi-change" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--color-warning)' }}>
             Patrimonio: {formatCurrency(getTotalSaved() - getTotalDebt())}
           </div>
-          <div className="kpi-icon" style={{ background: 'var(--color-debt-bg)', color: 'var(--color-debt)' }}>
+          <div className="kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--color-warning)' }}>
             <CreditCard size={20} />
           </div>
         </div>
