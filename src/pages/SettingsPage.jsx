@@ -11,7 +11,7 @@ import { autoCategorize } from '../data/defaultCategories';
 import { supabase } from '../lib/supabase';
 
 export default function SettingsPage() {
-  const { theme, setTheme } = useThemeStore();
+  const { theme, setTheme, viewMode, setViewMode } = useThemeStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
@@ -236,11 +236,28 @@ export default function SettingsPage() {
             >
               <Sun size={16} /> Claro
             </button>
-            <button 
+            <button
               className={`btn flex-1 justify-center ${theme === 'dark' ? 'btn-primary' : 'btn-secondary'}`}
               onClick={() => setTheme('dark')}
             >
               <Moon size={16} /> Oscuro
+            </button>
+          </div>
+          <div className="text-sm text-muted mb-2 mt-4">
+            Nivel de detalle de la interfaz.
+          </div>
+          <div className="flex gap-2">
+            <button
+              className={`btn flex-1 justify-center ${viewMode === 'simple' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setViewMode('simple')}
+            >
+              Simple
+            </button>
+            <button
+              className={`btn flex-1 justify-center ${viewMode === 'advanced' ? 'btn-primary' : 'btn-secondary'}`}
+              onClick={() => setViewMode('advanced')}
+            >
+              Avanzado
             </button>
           </div>
         </div>

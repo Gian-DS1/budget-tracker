@@ -27,6 +27,7 @@ import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useBudgetStore from '../stores/useBudgetStore';
+import useThemeStore from '../stores/useThemeStore';
 import {
   formatCurrency,
   formatPercent,
@@ -64,6 +65,7 @@ export default function DashboardPage() {
   const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
+  const viewMode = useThemeStore((s) => s.viewMode);
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -312,6 +314,8 @@ export default function DashboardPage() {
         </div>
       </div>
 
+      {viewMode === 'advanced' && (
+        <>
       <div className="grid-2">
         {/* Trend Chart */}
         <div className="chart-container">
@@ -474,6 +478,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+        </>
+      )}
     </div>
   );
 }
