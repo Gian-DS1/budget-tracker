@@ -14,7 +14,7 @@ import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel }
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
 export default function TransactionsPage() {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction } =
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkAssignCard } =
     useTransactionStore();
   const { categories } = useCategoryStore();
   const { cards } = useCreditCardStore();
@@ -22,6 +22,11 @@ export default function TransactionsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+
+  // Bulk Actions State
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
+  const [bulkCardId, setBulkCardId] = useState('');
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -155,6 +160,35 @@ export default function TransactionsPage() {
 
     return result;
   }, [transactions, searchQuery, filterType, filterCategory, filterDateFrom, filterDateTo, sortField, sortDir]);
+
+  // Bulk Action Handlers
+  const handleSelectAll = (e) => {
+    if (e.target.checked) {
+      setSelectedIds(filtered.map(t => t.id));
+    } else {
+      setSelectedIds([]);
+    }
+  };
+
+  const handleSelectOne = (e, id) => {
+    if (e.target.checked) {
+      setSelectedIds(prev => [...prev, id]);
+    } else {
+      setSelectedIds(prev => prev.filter(i => i !== id));
+    }
+  };
+
+  const handleBulkDelete = () => {
+    bulkDeleteTransactions(selectedIds);
+    setSelectedIds([]);
+    setShowBulkDeleteConfirm(false);
+  };
+
+  const handleBulkAssignCard = () => {
+    bulkAssignCard(selectedIds, bulkCardId);
+    setSelectedIds([]);
+    setBulkCardId('');
+  };
 
   const toggleSort = (field) => {
     if (sortField === field) {
@@ -301,6 +335,40 @@ export default function TransactionsPage() {
         )}
       </div>
 
+      {/* Bulk Actions Toolbar */}
+      {selectedIds.length > 0 && (
+        <div className="card" style={{ marginBottom: 'var(--space-6)', background: 'var(--accent-primary-subtle)', borderColor: 'var(--accent-primary)' }}>
+          <div className="flex items-center justify-between">
+            <div className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
+              {selectedIds.length} transacciones seleccionadas
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-2">
+                <select 
+                  value={bulkCardId} 
+                  onChange={(e) => setBulkCardId(e.target.value)}
+                  style={{ padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--font-sm)' }}
+                >
+                  <option value="">Sin tarjeta</option>
+                  {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+                <button className="btn btn-primary" onClick={handleBulkAssignCard} style={{ padding: 'var(--space-2) var(--space-4)' }}>
+                  Asignar Tarjeta
+                </button>
+              </div>
+              <div style={{ width: '1px', height: '24px', background: 'var(--border-primary)' }}></div>
+              <button 
+                className="btn btn-secondary" 
+                style={{ color: 'var(--color-danger)', borderColor: 'var(--color-danger)', padding: 'var(--space-2) var(--space-4)' }}
+                onClick={() => setShowBulkDeleteConfirm(true)}
+              >
+                <Trash2 size={14} style={{ marginRight: 4 }} /> Eliminar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Transactions Table */}
       {filtered.length === 0 ? (
         <EmptyState
@@ -331,6 +399,14 @@ export default function TransactionsPage() {
             <table className="data-table">
               <thead>
                 <tr>
+                  <th style={{ width: 40, textAlign: 'center' }}>
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && selectedIds.length === filtered.length}
+                      onChange={handleSelectAll}
+                      style={{ cursor: 'pointer' }}
+                    />
+                  </th>
                   <th
                     style={{ cursor: 'pointer' }}
                     onClick={() => toggleSort('date')}
@@ -355,7 +431,15 @@ export default function TransactionsPage() {
               </thead>
               <tbody>
                 {filtered.map((t) => (
-                  <tr key={t.id}>
+                  <tr key={t.id} style={{ background: selectedIds.includes(t.id) ? 'var(--accent-primary-subtle)' : undefined }}>
+                    <td style={{ textAlign: 'center' }}>
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(t.id)}
+                        onChange={(e) => handleSelectOne(e, t.id)}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </td>
                     <td style={{ whiteSpace: 'nowrap' }}>{formatDate(t.date)}</td>
                     <td>
                       <div>
@@ -605,6 +689,14 @@ export default function TransactionsPage() {
         onConfirm={() => deleteTransaction(showDeleteConfirm)}
         title="Eliminar Transacción"
         message="¿Seguro que quieres eliminar esta transacción? Esta acción no se puede deshacer."
+      />
+
+      <ConfirmDialog
+        isOpen={showBulkDeleteConfirm}
+        onClose={() => setShowBulkDeleteConfirm(false)}
+        onConfirm={handleBulkDelete}
+        title="Eliminar Transacciones Múltiples"
+        message={`¿Seguro que quieres eliminar ${selectedIds.length} transacciones seleccionadas? Esta acción no se puede deshacer.`}
       />
     </div>
   );

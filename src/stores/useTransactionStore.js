@@ -152,6 +152,35 @@ const useTransactionStore = create(
     }
   },
 
+  bulkDeleteTransactions: async (ids) => {
+    if (!ids || ids.length === 0) return;
+    const { error } = await supabase.from('transactions').delete().in('id', ids);
+    if (!error) {
+      set((state) => ({
+        transactions: state.transactions.filter((t) => !ids.includes(t.id)),
+      }));
+    } else {
+      console.error('Bulk delete error:', error);
+      toast.error('Error al eliminar transacciones');
+    }
+  },
+
+  bulkAssignCard: async (ids, cardId) => {
+    if (!ids || ids.length === 0) return;
+    const dbCardId = cardId || null;
+    const { error } = await supabase.from('transactions').update({ card_id: dbCardId }).in('id', ids);
+    if (!error) {
+      set((state) => ({
+        transactions: state.transactions.map((t) =>
+          ids.includes(t.id) ? { ...t, cardId: dbCardId } : t
+        ),
+      }));
+    } else {
+      console.error('Bulk update error:', error);
+      toast.error('Error al actualizar transacciones');
+    }
+  },
+
   bulkAddTransactions: async (transactions) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return 0;
