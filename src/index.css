@@ -1642,6 +1642,9 @@ table {
 .font-mono {
   font-family: var(--font-mono), monospace !important;
   font-variant-numeric: tabular-nums;
+  /* Keep monetary amounts on a single line so large numbers never wrap mid-value.
+     Containers that hold them either size to content or scroll horizontally. */
+  white-space: nowrap;
   letter-spacing: 0 !important; /* Avoid character overlap in monospace */
 }
 

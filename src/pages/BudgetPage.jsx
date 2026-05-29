@@ -257,9 +257,9 @@ export default function BudgetPage() {
             <thead>
               <tr>
                 <th>Categoría</th>
-                <th style={{ textAlign: 'right', width: 150 }}>Estimado</th>
-                <th style={{ textAlign: 'right', width: 150 }}>Actual</th>
-                <th style={{ textAlign: 'right', width: 120 }}>Diferencia</th>
+                <th style={{ textAlign: 'right', width: 150, whiteSpace: 'nowrap' }}>Estimado</th>
+                <th style={{ textAlign: 'right', width: 150, whiteSpace: 'nowrap' }}>Actual</th>
+                <th style={{ textAlign: 'right', width: 160, whiteSpace: 'nowrap' }}>Diferencia</th>
                 <th style={{ width: 200 }}>Progreso</th>
               </tr>
             </thead>
@@ -293,13 +293,13 @@ export default function BudgetPage() {
                     />
                   </td>
                   <td
-                    style={{ textAlign: 'right' }}
+                    style={{ textAlign: 'right', whiteSpace: 'nowrap' }}
                     className={row.actual > 0 ? 'font-semibold' : 'text-muted'}
                   >
                     {formatCurrency(row.actual)}
                   </td>
                   <td
-                    style={{ textAlign: 'right' }}
+                    style={{ textAlign: 'right', whiteSpace: 'nowrap' }}
                     className={
                       row.difference > 0
                         ? 'amount-positive'
@@ -506,19 +506,19 @@ export default function BudgetPage() {
               <thead>
                 <tr>
                   <th>Concepto</th>
-                  <th style={{ textAlign: 'right', width: 150 }}>Planificado</th>
-                  <th style={{ textAlign: 'right', width: 150 }}>Pagado</th>
-                  <th style={{ textAlign: 'right', width: 120 }}>Diferencia</th>
+                  <th style={{ textAlign: 'right', width: 150, whiteSpace: 'nowrap' }}>Planificado</th>
+                  <th style={{ textAlign: 'right', width: 150, whiteSpace: 'nowrap' }}>Pagado</th>
+                  <th style={{ textAlign: 'right', width: 160, whiteSpace: 'nowrap' }}>Diferencia</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
                   <td><span className="font-semibold">Pagos del mes (deudas activas)</span></td>
-                  <td style={{ textAlign: 'right' }}>{formatCurrency(debtPlanned)}</td>
-                  <td style={{ textAlign: 'right' }} className={debtPaid > 0 ? 'font-semibold' : 'text-muted'}>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>{formatCurrency(debtPlanned)}</td>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} className={debtPaid > 0 ? 'font-semibold' : 'text-muted'}>
                     {formatCurrency(debtPaid)}
                   </td>
-                  <td style={{ textAlign: 'right' }} className={debtPlanned - debtPaid > 0 ? 'amount-negative' : 'text-muted'}>
+                  <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }} className={debtPlanned - debtPaid > 0 ? 'amount-negative' : 'text-muted'}>
                     {formatCurrency(debtPlanned - debtPaid)}
                   </td>
                 </tr>
