@@ -244,16 +244,17 @@ export default function CreditCardsPage() {
                   {categories.filter(c => c.type !== 'income' && c.type !== 'savings' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </optgroup>
               </select>
-              <div className="relative" style={{ width: '110px', flexShrink: 0 }}>
+              <div className="flex items-center gap-2">
                 <input 
                   type="number" 
                   min="0" max="100" step="0.1"
                   value={newRulePercentage} 
                   onChange={(e) => setNewRulePercentage(e.target.value)} 
-                  placeholder="Ej: 5"
-                  style={{ width: '100%', padding: '8px 24px 8px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
+                  placeholder="5"
+                  className="no-spinners text-center"
+                  style={{ width: '60px', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
                 />
-                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted">%</span>
+                <span className="text-muted font-medium">%</span>
               </div>
               <button type="button" className="btn btn-secondary" onClick={handleAddRule}>
                 <Plus size={16} />
