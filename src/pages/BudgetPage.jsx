@@ -13,10 +13,11 @@ import {
 import useBudgetStore from '../stores/useBudgetStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
+import useDebtStore from '../stores/useDebtStore';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent } from '../utils/formatters';
-import { calculateBudgetProgress, getProgressStatus, sumAmounts } from '../utils/calculations';
-import { MONTHS_ES } from '../utils/constants';
+import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary } from '../utils/calculations';
+import { MONTHS_ES, USD_TO_DOP_RATE } from '../utils/constants';
 import toast from 'react-hot-toast';
 
 // Local state input that only persists on blur (avoids upsert on every keystroke)
@@ -58,6 +59,22 @@ export default function BudgetPage() {
   const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const { transactions } = useTransactionStore();
   const { categories } = useCategoryStore();
+
+  const debts = useDebtStore((s) => s.debts);
+  const payments = useDebtStore((s) => s.payments);
+  const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
+
+  const debtPlanned = getTotalMonthlyPayment();
+
+  const debtPaid = useMemo(() => {
+    return payments.reduce((sum, p) => {
+      const d = new Date(p.date + 'T00:00:00');
+      if (d.getFullYear() !== year || d.getMonth() !== month) return sum;
+      const debt = debts.find((dd) => dd.id === p.debtId);
+      const val = Number(p.amount) || 0;
+      return sum + (debt && debt.currency === 'USD' ? val * USD_TO_DOP_RATE : val);
+    }, 0);
+  }, [payments, debts, year, month]);
 
   const monthBudgets = useMemo(() => {
     return budgets.filter((b) => b.year === year && b.month === month);
@@ -105,6 +122,18 @@ export default function BudgetPage() {
     });
   }, [categories, monthBudgets, monthTransactions]);
 
+  const summary = useMemo(
+    () =>
+      getBudgetSummary({
+        monthTransactions,
+        monthBudgets,
+        categories,
+        debtPlanned,
+        debtPaid,
+      }),
+    [monthTransactions, monthBudgets, categories, debtPlanned, debtPaid]
+  );
+
   // Summaries
   const incomeRows = budgetRows.filter((r) => r.category.type === 'income');
   const expenseRows = budgetRows.filter(
@@ -121,7 +150,7 @@ export default function BudgetPage() {
   const totalSavingsEstimated = savingsRows.reduce((s, r) => s + r.estimated, 0);
   const totalSavingsActual = savingsRows.reduce((s, r) => s + r.actual, 0);
 
-  const balanceEstimated = totalIncomeEstimated - totalExpenseEstimated - totalSavingsEstimated;
+  const balanceEstimated = summary.porAsignar;
   const balanceActual = totalIncomeActual - totalExpenseActual - totalSavingsActual;
 
   const navigateMonth = (direction) => {
@@ -305,7 +334,33 @@ export default function BudgetPage() {
 
       {/* Zero-Based Budget Summary Cards */}
       <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 'var(--space-6)' }}>
-        
+
+        {/* Card 0: Puedes gastar */}
+        <div className="kpi-card" style={{
+          '--kpi-accent':
+            summary.estado === 'danger' ? 'var(--color-danger)'
+            : summary.estado === 'warning' ? 'var(--color-warning)'
+            : summary.estado === 'good' ? 'var(--color-success)'
+            : 'var(--text-tertiary)'
+        }}>
+          <div className="kpi-label">💚 Puedes gastar</div>
+          <div className="kpi-value" style={{
+            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+            color:
+              summary.estado === 'danger' ? 'var(--color-danger)'
+              : summary.estado === 'warning' ? 'var(--color-warning)'
+              : summary.estado === 'good' ? 'var(--color-success)'
+              : 'var(--text-primary)'
+          }}>
+            {formatCurrency(summary.puedesGastar)}
+          </div>
+          <div className="text-xs text-muted mt-2 font-semibold">
+            {summary.estado === 'neutral'
+              ? 'Aún no has registrado ingresos este mes'
+              : 'Disponible este mes sin atrasar pagos ni metas'}
+          </div>
+        </div>
+
         {/* Card 1: Ingresos */}
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
           <div className="kpi-label">Ingresos Reales</div>
@@ -365,6 +420,40 @@ export default function BudgetPage() {
       {renderSection('Gastos Fijos', <Wallet size={18} style={{ color: 'var(--color-fixed)' }} />, budgetRows.filter(r => r.category.type === 'fixed_expense'))}
       {renderSection('Gastos Variables', <TrendingDown size={18} style={{ color: 'var(--color-variable)' }} />, budgetRows.filter(r => r.category.type === 'variable_expense'))}
       {renderSection('Ahorro', <TrendingUp size={18} style={{ color: 'var(--color-savings)' }} />, savingsRows)}
+
+      {(debtPlanned > 0 || debtPaid > 0) && (
+        <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
+          <div className="card-header">
+            <h3 className="card-title flex items-center gap-2">
+              <TrendingDown size={18} style={{ color: 'var(--color-danger)' }} /> Pago de Deuda
+            </h3>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Concepto</th>
+                  <th style={{ textAlign: 'right', width: 150 }}>Planificado</th>
+                  <th style={{ textAlign: 'right', width: 150 }}>Pagado</th>
+                  <th style={{ textAlign: 'right', width: 120 }}>Diferencia</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span className="font-semibold">Pagos del mes (deudas activas)</span></td>
+                  <td style={{ textAlign: 'right' }}>{formatCurrency(debtPlanned)}</td>
+                  <td style={{ textAlign: 'right' }} className={debtPaid > 0 ? 'font-semibold' : 'text-muted'}>
+                    {formatCurrency(debtPaid)}
+                  </td>
+                  <td style={{ textAlign: 'right' }} className={debtPlanned - debtPaid > 0 ? 'amount-negative' : 'text-muted'}>
+                    {formatCurrency(debtPlanned - debtPaid)}
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
