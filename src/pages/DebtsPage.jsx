@@ -98,17 +98,7 @@ export default function DebtsPage() {
 
     addPayment(debtId, amount, paymentDate);
 
-    // Create transaction
     const debt = debts.find((d) => d.id === debtId);
-    addTransaction({
-      date: paymentDate,
-      amount: amount,
-      type: 'debt_payment',
-      categoryId: '',
-      description: `Pago deuda: ${debt?.creditorName}`,
-      currency: debt?.currency || 'DOP',
-    });
-
     const newBalance = Number(debt?.currentBalance) - amount;
     if (newBalance <= 0) {
       toast.success('🎉 ¡Deuda liquidada! Felicidades!', { duration: 5000 });
