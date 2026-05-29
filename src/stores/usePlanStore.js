@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 const usePlanStore = create(
   persist(
@@ -29,6 +30,8 @@ const usePlanStore = create(
           }));
           set({ plans: formatted, loading: false });
         } else {
+          console.error('Error fetching plans:', error);
+          toast.error('No se pudieron cargar los planes');
           set({ loading: false });
         }
       },

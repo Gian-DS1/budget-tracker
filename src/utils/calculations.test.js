@@ -102,6 +102,26 @@ describe('getBudgetSummary', () => {
   });
 });
 
+describe('getBudgetSummary — invariante anti doble-conteo de deuda', () => {
+  it('un pago de deuda real (gasto fijo) NO reduce puedesGastar; solo lo hace el plan de deuda', () => {
+    // El pago de deuda crea una transacción fixed_expense Y debtPlanned entra en
+    // comprometido. puedesGastar debe restar SOLO el plan, nunca también el gasto
+    // fijo real, o la deuda se contaría dos veces.
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 50000 },
+        { categoryId: 'fix', amount: 8000 }, // pago de deuda real (gasto fijo)
+      ],
+      monthBudgets: [],
+      categories,
+      debtPlanned: 10000,
+      debtPaid: 8000,
+    });
+    expect(r.comprometido).toBe(10000); // solo el plan de deuda
+    expect(r.puedesGastar).toBe(40000); // 50000 - 10000, el 8000 fijo NO se resta
+  });
+});
+
 describe('getAccumulatedBalance', () => {
   const budgets = [
     { categoryId: 'mar', year: 2026, month: 0, estimatedAmount: 1000 },

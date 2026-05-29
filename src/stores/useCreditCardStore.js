@@ -35,6 +35,8 @@ const useCreditCardStore = create(
         if (!error && data) {
           set({ cards: data.map(mapFromDb), loading: false });
         } else {
+          console.error('Error fetching cards:', error);
+          toast.error('No se pudieron cargar las tarjetas');
           set({ loading: false });
         }
       },

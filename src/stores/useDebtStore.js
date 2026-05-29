@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 import useRateStore from './useRateStore';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
@@ -21,6 +22,11 @@ const useDebtStore = create(
       supabase.from('debts').select('*').eq('user_id', user.id),
       supabase.from('debt_payments').select('*').eq('user_id', user.id)
     ]);
+
+    if (debtsRes.error || paymentsRes.error) {
+      console.error('Error fetching debts/payments:', debtsRes.error || paymentsRes.error);
+      toast.error('No se pudieron cargar las deudas');
+    }
 
     let formattedDebts = [];
     if (!debtsRes.error && debtsRes.data) {

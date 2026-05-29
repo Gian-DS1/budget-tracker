@@ -29,6 +29,8 @@ const useSavingsStore = create(
       }));
       set({ goals: formatted, loading: false });
     } else {
+      console.error('Error fetching savings goals:', error);
+      toast.error('No se pudieron cargar las metas de ahorro');
       set({ loading: false });
     }
   },
