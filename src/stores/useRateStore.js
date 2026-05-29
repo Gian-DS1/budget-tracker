@@ -20,6 +20,7 @@ const useRateStore = create(
     (set, get) => ({
       liveRate: USD_TO_DOP_RATE, // fallback hasta el primer fetch
       manualRate: null,
+      source: 'mercado', // 'popular' | 'mercado' — de dónde vino liveRate
       lastFetched: null,
       loading: false,
 
@@ -32,9 +33,35 @@ const useRateStore = create(
         return !isNaN(live) && live > 0 ? live : USD_TO_DOP_RATE;
       },
 
-      /** Obtiene la tasa de mercado actual y le aplica el spread bancario. */
+      /**
+       * Obtiene la tasa USD→DOP. Prioridad:
+       *  1) Banco Popular vía nuestra función serverless /api/rate (tasa real de
+       *     venta, sin spread añadido — ya es la tasa del banco).
+       *  2) Fallback: API global de mercado + spread bancario (~1.2%).
+       */
       fetchRate: async () => {
         set({ loading: true });
+
+        // 1) Banco Popular (mismo origen, sin CORS, key oculta en el server)
+        try {
+          const res = await fetch('/api/rate');
+          if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data.rate === 'number' && data.rate > 0) {
+              set({
+                liveRate: data.rate,
+                source: 'popular',
+                lastFetched: data.updatedAt || new Date().toISOString(),
+                loading: false,
+              });
+              return data.rate;
+            }
+          }
+        } catch (e) {
+          console.warn('Tasa Banco Popular (/api/rate) no disponible:', e);
+        }
+
+        // 2) Fallback: mercado global con spread
         try {
           const res = await fetch(
             'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json'
@@ -43,13 +70,19 @@ const useRateStore = create(
             const data = await res.json();
             if (data && data.usd && typeof data.usd.dop === 'number') {
               const withSpread = Math.round(data.usd.dop * BANK_SPREAD * 100) / 100;
-              set({ liveRate: withSpread, lastFetched: new Date().toISOString(), loading: false });
+              set({
+                liveRate: withSpread,
+                source: 'mercado',
+                lastFetched: new Date().toISOString(),
+                loading: false,
+              });
               return withSpread;
             }
           }
         } catch (e) {
           console.warn('No se pudo obtener la tasa USD→DOP:', e);
         }
+
         set({ loading: false });
         return get().liveRate;
       },

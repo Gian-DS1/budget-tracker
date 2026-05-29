@@ -16,6 +16,7 @@ export default function SettingsPage() {
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const liveRate = useRateStore((s) => s.liveRate);
+  const rateSource = useRateStore((s) => s.source);
   const manualRate = useRateStore((s) => s.manualRate);
   const setManualRate = useRateStore((s) => s.setManualRate);
   const fetchRate = useRateStore((s) => s.fetchRate);
@@ -284,8 +285,9 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="text-sm text-muted mb-4">
-            Se usa para valorar deudas y balances en dólares. Tasa de mercado
-            actual: <span className="font-semibold amount-neutral">RD$ {liveRate}</span>.
+            Se usa para valorar deudas y balances en dólares. Tasa actual
+            ({rateSource === 'popular' ? 'Banco Popular' : 'mercado'}):{' '}
+            <span className="font-semibold amount-neutral">RD$ {liveRate}</span>.
             {manualRate != null && (
               <> Usando override manual: <span className="font-semibold amount-neutral">RD$ {manualRate}</span>.</>
             )}
