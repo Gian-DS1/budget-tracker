@@ -42,8 +42,8 @@ export default function DebtsPage() {
     startDate: todayISO(),
   });
 
-  const totalDebt = useMemo(() => getTotalDebt(), [getTotalDebt]);
-  const totalMonthly = useMemo(() => getTotalMonthlyPayment(), [getTotalMonthlyPayment]);
+  const totalDebt = useMemo(() => getTotalDebt(), [getTotalDebt, debts]);
+  const totalMonthly = useMemo(() => getTotalMonthlyPayment(), [getTotalMonthlyPayment, debts]);
 
   const openEditForm = (debt) => {
     setForm({
