@@ -367,17 +367,17 @@ export default function DashboardPage() {
           <div className="chart-header">
             <h3 className="chart-title">Distribución de Gastos</h3>
           </div>
-          <div style={{ height: 300, display: 'flex', alignItems: 'center' }}>
+          <div className="donut-row">
             {expenseByCategory.length > 0 ? (
-              <div style={{ width: '50%', height: '100%' }}>
+              <div className="donut-canvas">
                 <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={expenseByCategory}
                     cx="50%"
                     cy="50%"
-                    innerRadius={100}
-                    outerRadius={140}
+                    innerRadius="58%"
+                    outerRadius="88%"
                     paddingAngle={2}
                     dataKey="value"
                     stroke="none"
@@ -398,7 +398,7 @@ export default function DashboardPage() {
             
             {/* Legend inside the container for better layout */}
             {expenseByCategory.length > 0 && (
-              <div style={{ width: '50%', maxHeight: 400, overflowY: 'auto', paddingLeft: 'var(--space-4)' }}>
+              <div className="donut-legend">
                 {expenseByCategory.map((entry, idx) => (
                   <div key={idx} className="flex items-start justify-between mb-3 text-xs">
                     <div className="flex items-start gap-2" style={{ flex: 1, minWidth: 0, paddingRight: '10px' }}>

@@ -138,7 +138,7 @@ export default function DebtsPage() {
 
       {/* Summary */}
       {debts.length > 0 && (
-        <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-debt)' }}>
             <div className="kpi-label">Deuda Total</div>
             <div className="kpi-value" style={{ fontSize: 'var(--font-2xl)', color: 'var(--color-expense)' }}>

@@ -349,11 +349,11 @@ export default function TransactionsPage() {
       {/* Bulk Actions Toolbar */}
       {selectedIds.length > 0 && (
         <div className="card" style={{ marginBottom: 'var(--space-6)', background: 'var(--accent-primary-subtle)', borderColor: 'var(--accent-primary)' }}>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between" style={{ flexWrap: 'wrap', gap: 'var(--space-3)' }}>
             <div className="font-semibold" style={{ color: 'var(--accent-primary)' }}>
               {selectedIds.length} transacciones seleccionadas
             </div>
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4" style={{ flexWrap: 'wrap' }}>
               <div className="flex items-center gap-2">
                 <select 
                   value={bulkCardId} 

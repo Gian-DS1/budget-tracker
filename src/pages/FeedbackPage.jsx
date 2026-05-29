@@ -104,7 +104,7 @@ export default function FeedbackPage() {
         </div>
       </div>
 
-      <div className="grid-2" style={{ gridTemplateColumns: '3fr 2fr', alignItems: 'start' }}>
+      <div className="grid-2 grid-feedback" style={{ alignItems: 'start' }}>
         {/* Feedback Form Card */}
         <div className="card">
           <div className="card-header border-b border-secondary pb-4 mb-6">
