@@ -33,6 +33,7 @@ export default function PlanPage() {
     description: '',
     horizon: 'short',
     targetAmount: '',
+    currentAmount: '',
     deadline: '',
   });
 
@@ -42,6 +43,7 @@ export default function PlanPage() {
       description: plan.description || '',
       horizon: plan.horizon || 'short',
       targetAmount: plan.targetAmount ? plan.targetAmount.toString() : '',
+      currentAmount: plan.currentAmount ? plan.currentAmount.toString() : '',
       deadline: plan.deadline || '',
     });
     setEditingPlan(plan.id);
@@ -55,6 +57,7 @@ export default function PlanPage() {
     const planData = {
       ...form,
       targetAmount: Number(form.targetAmount) || 0,
+      currentAmount: Number(form.currentAmount) || 0,
     };
 
     if (editingPlan) {
@@ -65,7 +68,7 @@ export default function PlanPage() {
       toast.success('Meta creada');
     }
 
-    setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
+    setForm({ title: '', description: '', horizon: 'short', targetAmount: '', currentAmount: '', deadline: '' });
     setEditingPlan(null);
     setShowForm(false);
   };
@@ -92,7 +95,7 @@ export default function PlanPage() {
         {plans.length > 0 && (
           <button className="btn btn-primary btn-lg" onClick={() => {
             setEditingPlan(null);
-            setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
+            setForm({ title: '', description: '', horizon: 'short', targetAmount: '', currentAmount: '', deadline: '' });
             setShowForm(true);
           }}>
             <Plus size={18} /> Nueva Meta
@@ -108,7 +111,7 @@ export default function PlanPage() {
           action={
             <button className="btn btn-primary" onClick={() => {
               setEditingPlan(null);
-              setForm({ title: '', description: '', horizon: 'short', targetAmount: '', deadline: '' });
+              setForm({ title: '', description: '', horizon: 'short', targetAmount: '', currentAmount: '', deadline: '' });
               setShowForm(true);
             }}>
               <Plus size={16} /> Crear Meta
@@ -143,6 +146,13 @@ export default function PlanPage() {
                     const statusConfig = STATUS_CONFIG[plan.status];
                     const StatusIcon = statusConfig.icon;
                     const daysRemaining = getDaysRemaining(plan.deadline);
+                    const monthsRemaining = daysRemaining > 0 ? Math.max(1, Math.ceil(daysRemaining / 30.44)) : 0;
+                    
+                    const tAmount = Number(plan.targetAmount) || 0;
+                    const cAmount = Number(plan.currentAmount) || 0;
+                    const remainingAmount = Math.max(0, tAmount - cAmount);
+                    const progress = tAmount > 0 ? Math.min(100, Math.round((cAmount / tAmount) * 100)) : 0;
+                    const suggestedMonthly = monthsRemaining > 0 ? (remainingAmount / monthsRemaining) : 0;
 
                     return (
                       <div
@@ -171,10 +181,28 @@ export default function PlanPage() {
                             {plan.title}
                           </h3>
                           <div className="flex flex-col gap-1 mt-1">
-                            {plan.targetAmount > 0 && (
-                              <span className="font-semibold text-sm" style={{ color: 'var(--accent-primary)' }}>
-                                Objetivo: {formatCurrency(plan.targetAmount)}
-                              </span>
+                            {tAmount > 0 && (
+                              <div className="flex flex-col gap-2 mt-2">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted">Ahorro: {formatCurrency(cAmount)}</span>
+                                  <span className="font-bold" style={{ color: 'var(--accent-primary)' }}>Meta: {formatCurrency(tAmount)}</span>
+                                </div>
+                                <div className="progress-bar progress-good" style={{ height: '6px' }}>
+                                  <div className="progress-bar-fill" style={{ width: `${progress}%`, background: 'var(--color-success)' }} />
+                                </div>
+                                
+                                {plan.status !== 'completed' && daysRemaining > 0 && suggestedMonthly > 0 && (
+                                  <div className="text-xs" style={{ 
+                                    padding: 'var(--space-2)', 
+                                    background: 'var(--bg-secondary)', 
+                                    borderRadius: 'var(--radius-sm)',
+                                    display: 'inline-block',
+                                    marginTop: 'var(--space-1)'
+                                  }}>
+                                    💡 Necesitas ahorrar <span className="font-bold text-primary">{formatCurrency(suggestedMonthly)}</span>/mes por los próximos {monthsRemaining} meses.
+                                  </div>
+                                )}
+                              </div>
                             )}
                             {plan.description && (
                               <p className="text-sm text-muted" style={{ margin: 0 }}>{plan.description}</p>
@@ -301,13 +329,23 @@ export default function PlanPage() {
               />
             </div>
           </div>
-          <div className="form-group">
-            <label className="form-label">Fecha Objetivo</label>
-            <input
-              type="date"
-              value={form.deadline}
-              onChange={(e) => setForm({ ...form, deadline: e.target.value })}
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Ahorro Actual</label>
+              <CurrencyInput
+                value={form.currentAmount}
+                onChange={(val) => setForm({ ...form, currentAmount: val })}
+                placeholder="0.00"
+              />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Fecha Objetivo</label>
+              <input
+                type="date"
+                value={form.deadline}
+                onChange={(e) => setForm({ ...form, deadline: e.target.value })}
+              />
+            </div>
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setEditingPlan(null); }}>
