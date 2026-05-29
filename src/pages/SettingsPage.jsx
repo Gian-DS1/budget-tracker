@@ -209,7 +209,8 @@ export default function SettingsPage() {
         supabase.from('budgets').delete().eq('user_id', user.id),
         supabase.from('savings').delete().eq('user_id', user.id),
         supabase.from('debts').delete().eq('user_id', user.id),
-        supabase.from('plans').delete().eq('user_id', user.id)
+        supabase.from('plans').delete().eq('user_id', user.id),
+        supabase.from('credit_cards').delete().eq('user_id', user.id)
       ]);
     }
 
@@ -220,7 +221,8 @@ export default function SettingsPage() {
     localStorage.removeItem('fintrack-savings-cache');
     localStorage.removeItem('fintrack-debts-cache');
     localStorage.removeItem('fintrack-plans-cache');
-    
+    localStorage.removeItem('fintrack-cards-cache');
+
     toast.success('Datos borrados exitosamente', { id: 'clear-data' });
     setTimeout(() => {
       window.location.reload(); // Reload to reset Zustand memory stores
