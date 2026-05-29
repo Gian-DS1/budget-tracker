@@ -87,6 +87,7 @@ export default function SettingsPage() {
         const rawAmount = row['Monto'] || row['Amount'] || row['monto'];
         const typeStr = row['Tipo'] || row['Type'] || row['tipo'] || '';
         const catStr = row['Categoría'] || row['Categoria'] || row['Category'] || row['categoría'] || '';
+        const notesStr = row['Notas'] || row['Notes'] || row['notas'] || null;
         
         if (!date || !rawAmount) return null;
 
@@ -134,7 +135,7 @@ export default function SettingsPage() {
           description: String(desc) || 'Importado',
           categoryId: categoryMatch ? categoryMatch.id : '',
           currency: 'DOP',
-          notes: 'Importado de Excel/CSV'
+          notes: notesStr
         };
       }).filter(Boolean);
 
