@@ -26,12 +26,15 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCategoryStore from '../stores/useCategoryStore';
+import useBudgetStore from '../stores/useBudgetStore';
 import {
   formatCurrency,
   formatPercent,
   formatDate,
   MONTHS_SHORT_ES,
 } from '../utils/formatters';
+import { getBudgetSummary } from '../utils/calculations';
+import { USD_TO_DOP_RATE } from '../utils/constants';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -57,6 +60,10 @@ export default function DashboardPage() {
   const { categories } = useCategoryStore();
   const { getTotalSaved } = useSavingsStore();
   const { getTotalDebt } = useDebtStore();
+  const budgets = useBudgetStore((s) => s.budgets);
+  const debts = useDebtStore((s) => s.debts);
+  const payments = useDebtStore((s) => s.payments);
+  const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -70,6 +77,33 @@ export default function DashboardPage() {
       return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
     });
   }, [transactions, currentMonth, currentYear]);
+
+  const monthBudgets = useMemo(
+    () => budgets.filter((b) => b.year === currentYear && b.month === currentMonth),
+    [budgets, currentYear, currentMonth]
+  );
+
+  const debtPaidThisMonth = useMemo(() => {
+    return payments.reduce((sum, p) => {
+      const d = new Date(p.date + 'T00:00:00');
+      if (d.getFullYear() !== currentYear || d.getMonth() !== currentMonth) return sum;
+      const debt = debts.find((dd) => dd.id === p.debtId);
+      const val = Number(p.amount) || 0;
+      return sum + (debt && debt.currency === 'USD' ? val * USD_TO_DOP_RATE : val);
+    }, 0);
+  }, [payments, debts, currentYear, currentMonth]);
+
+  const summary = useMemo(
+    () =>
+      getBudgetSummary({
+        monthTransactions: currentMonthTransactions,
+        monthBudgets,
+        categories,
+        debtPlanned: getTotalMonthlyPayment(),
+        debtPaid: debtPaidThisMonth,
+      }),
+    [currentMonthTransactions, monthBudgets, categories, getTotalMonthlyPayment, debtPaidThisMonth]
+  );
 
   const previousMonthTransactions = useMemo(() => {
     let prevMonth = currentMonth - 1;
@@ -200,6 +234,33 @@ export default function DashboardPage() {
       <div className="page-header">
         <h1 className="page-title">Dashboard</h1>
         <p className="page-subtitle">Resumen financiero de {MONTHS_SHORT_ES[currentMonth]} {currentYear}</p>
+      </div>
+
+      {/* Héroe: Puedes gastar */}
+      <div className="kpi-card" style={{
+        marginBottom: 'var(--space-6)',
+        '--kpi-accent':
+          summary.estado === 'danger' ? 'var(--color-danger)'
+          : summary.estado === 'warning' ? 'var(--color-warning)'
+          : summary.estado === 'good' ? 'var(--color-success)'
+          : 'var(--text-tertiary)'
+      }}>
+        <div className="kpi-label">💚 Puedes gastar este mes</div>
+        <div className="kpi-value" style={{
+          fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
+          color:
+            summary.estado === 'danger' ? 'var(--color-danger)'
+            : summary.estado === 'warning' ? 'var(--color-warning)'
+            : summary.estado === 'good' ? 'var(--color-success)'
+            : 'var(--text-primary)'
+        }}>
+          {formatCurrency(summary.puedesGastar)}
+        </div>
+        <div className="text-sm text-muted mt-2">
+          {summary.estado === 'neutral'
+            ? 'Aún no has registrado ingresos este mes.'
+            : 'Disponible sin atrasarte en pagos ni metas.'}
+        </div>
       </div>
 
       {/* KPI Cards */}
