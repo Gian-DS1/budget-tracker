@@ -59,6 +59,7 @@ const useTransactionStore = create(
       const formattedData = data.map(t => ({
         ...t,
         categoryId: t.category_id,
+        cardId: t.card_id || null,
         createdAt: t.created_at
       }));
       set({ transactions: formattedData, loading: false });
@@ -91,6 +92,7 @@ const useTransactionStore = create(
     const dbTx = {
       user_id: user.id,
       category_id: transaction.categoryId || null,
+      card_id: transaction.cardId || null,
       amount: amount,
       type: transaction.type,
       description: transaction.description,
@@ -107,7 +109,7 @@ const useTransactionStore = create(
     }
 
     if (data) {
-      const newTx = { ...data, categoryId: data.category_id, createdAt: data.created_at };
+      const newTx = { ...data, categoryId: data.category_id, cardId: data.card_id || null, createdAt: data.created_at };
       set((state) => ({ transactions: [newTx, ...state.transactions] }));
       toast.success("Transacción guardada exitosamente");
     }
@@ -119,6 +121,7 @@ const useTransactionStore = create(
     // reject the update with an "unknown column" error.
     const dbUpdates = {};
     if (updates.categoryId !== undefined) dbUpdates.category_id = updates.categoryId || null;
+    if (updates.cardId !== undefined) dbUpdates.card_id = updates.cardId || null;
     if (updates.amount !== undefined) dbUpdates.amount = Number(updates.amount);
     if (updates.type !== undefined) dbUpdates.type = updates.type;
     if (updates.description !== undefined) dbUpdates.description = updates.description;
@@ -156,6 +159,7 @@ const useTransactionStore = create(
     const dbTxs = transactions.map(t => ({
       user_id: user.id,
       category_id: t.categoryId || null,
+      card_id: null,
       amount: t.amount,
       type: t.type,
       description: t.description,
@@ -184,7 +188,7 @@ const useTransactionStore = create(
     }
 
     if (allInserted.length > 0) {
-      const newTxs = allInserted.map(d => ({ ...d, categoryId: d.category_id, createdAt: d.created_at }));
+      const newTxs = allInserted.map(d => ({ ...d, categoryId: d.category_id, cardId: d.card_id || null, createdAt: d.created_at }));
       set((state) => ({ transactions: [...newTxs, ...state.transactions] }));
     }
 
