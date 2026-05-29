@@ -466,6 +466,11 @@ export default function TransactionsPage() {
                             {t.notes}
                           </span>
                         )}
+                        {t.cashbackEarned > 0 && (
+                          <span className="text-xs" style={{ display: 'block', color: 'var(--color-income)', marginTop: 2 }}>
+                            ¡Cashback! Generó +{formatCurrency(t.cashbackEarned, t.currency)}
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td>{getCategoryName(t.categoryId)}</td>
