@@ -244,7 +244,7 @@ export default function CreditCardsPage() {
                   {categories.filter(c => c.type !== 'income' && c.type !== 'savings' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </optgroup>
               </select>
-              <div className="relative" style={{ width: '80px' }}>
+              <div className="relative" style={{ width: '110px', flexShrink: 0 }}>
                 <input 
                   type="number" 
                   min="0" max="100" step="0.1"
