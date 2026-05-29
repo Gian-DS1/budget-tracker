@@ -116,6 +116,16 @@ export const defaultCategories = [
     isActive: true,
     sortOrder: 10,
   },
+  {
+    id: generateId(),
+    name: 'Pago de Préstamos y Deudas',
+    type: 'fixed_expense',
+    icon: '🏛️',
+    color: '#dc2626',
+    keywords: ['prestamo', 'préstamo', 'cuota', 'intereses', 'capital', 'abono a deuda', 'financiamiento', 'tarjeta de crédito', 'prestamos'],
+    isActive: true,
+    sortOrder: 10.5,
+  },
 
   // ── Variable Expenses ───────────────────────────────────────
   {

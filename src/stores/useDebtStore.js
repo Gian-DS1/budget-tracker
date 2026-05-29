@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
+import useCategoryStore from './useCategoryStore';
+import useTransactionStore from './useTransactionStore';
 
 const useDebtStore = create(
   persist(
@@ -183,6 +185,29 @@ const useDebtStore = create(
             : d
         ),
       }));
+      
+      // Sync with Transactions
+      try {
+        const categories = useCategoryStore.getState().categories;
+        const loanCategory = categories.find(c => c.name === 'Pago de Préstamos y Deudas' || c.name.includes('Préstamos'));
+        
+        if (loanCategory) {
+          const addTransaction = useTransactionStore.getState().addTransaction;
+          const currency = debt.currency || 'DOP';
+          
+          addTransaction({
+            amount: Number(amount),
+            type: 'fixed_expense',
+            description: `Pago cuota - ${debt.creditorName}`,
+            date: date,
+            categoryId: loanCategory.id,
+            currency: currency,
+            notes: notes || 'Generado automáticamente desde Deudas'
+          });
+        }
+      } catch (err) {
+        console.error('Error syncing debt payment with transactions:', err);
+      }
     }
   },
 
