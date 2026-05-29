@@ -14,7 +14,7 @@ import useBudgetStore from '../stores/useBudgetStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
-import useThemeStore from '../stores/useThemeStore';
+
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary } from '../utils/calculations';
@@ -64,7 +64,7 @@ export default function BudgetPage() {
   const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
-  const viewMode = useThemeStore((s) => s.viewMode);
+
 
   const debtPlanned = getTotalMonthlyPayment();
 
@@ -417,9 +417,7 @@ export default function BudgetPage() {
         </div>
       </div>
 
-      {/* Budget Tables by Section (solo en modo Avanzado) */}
-      {viewMode === 'advanced' && (
-        <>
+
       {renderSection('Ingresos', <TrendingUp size={18} style={{ color: 'var(--color-income)' }} />, incomeRows)}
       {renderSection('Gastos Fijos', <Wallet size={18} style={{ color: 'var(--color-fixed)' }} />, budgetRows.filter(r => r.category.type === 'fixed_expense'))}
       {renderSection('Gastos Variables', <TrendingDown size={18} style={{ color: 'var(--color-variable)' }} />, budgetRows.filter(r => r.category.type === 'variable_expense'))}
@@ -458,8 +456,7 @@ export default function BudgetPage() {
           </div>
         </div>
       )}
-        </>
-      )}
+
     </div>
   );
 }

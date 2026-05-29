@@ -9,7 +9,7 @@ const useThemeStore = create(
       theme: window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark',
       sidebarCollapsed: false,
       mobileMenuOpen: false,
-      viewMode: 'simple', // 'simple' | 'advanced'
+
 
       toggleTheme: () =>
         set((state) => ({
@@ -18,7 +18,7 @@ const useThemeStore = create(
 
       setTheme: (theme) => set({ theme }),
 
-      setViewMode: (mode) => set({ viewMode: mode === 'advanced' ? 'advanced' : 'simple' }),
+
 
       toggleSidebar: () =>
         set((state) => ({
