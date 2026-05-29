@@ -7,6 +7,7 @@ import {
   Wallet,
   PiggyBank,
   CreditCard,
+  Landmark,
   Target,
   Calendar,
   FileText,
@@ -28,7 +29,7 @@ const navItems = [
 
   { section: 'Patrimonio' },
   { path: '/ahorros', label: 'Ahorros', icon: PiggyBank },
-  { path: '/deudas', label: 'Deudas', icon: CreditCard },
+  { path: '/deudas', label: 'Deudas', icon: Landmark },
   { path: '/tarjetas', label: 'Tarjetas', icon: CreditCard },
   { path: '/plan', label: 'Plan Financiero', icon: Target },
 

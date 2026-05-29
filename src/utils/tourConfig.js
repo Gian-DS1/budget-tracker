@@ -2,7 +2,7 @@ export const tourSteps = [
   {
     popover: {
       title: '¡Bienvenido a FinTrack RD! 🎉',
-      description: 'Te daremos un breve recorrido para que aprendas a utilizar tu nuevo sistema de presupuesto base cero. Haz clic en "Siguiente" para continuar.',
+      description: 'Te daremos un recorrido guiado para que domines tu nuevo sistema financiero. Haz clic en "Siguiente" para continuar.',
       side: 'over',
       align: 'center'
     }
@@ -11,7 +11,7 @@ export const tourSteps = [
     element: '#tour-dashboard-summary',
     popover: {
       title: 'Tu Resumen Global',
-      description: 'Aquí verás un vistazo rápido de tus finanzas: cuánto ganas, cuánto gastas y tu saldo real.',
+      description: 'Aquí verás un vistazo rápido de tus finanzas: ingresos, gastos y tu saldo real disponible.',
       side: 'bottom',
       align: 'start'
     }
@@ -19,8 +19,8 @@ export const tourSteps = [
   {
     element: '#tour-transactions-header',
     popover: {
-      title: 'Añadir Transacciones',
-      description: 'En esta pestaña registrarás todos tus ingresos y gastos. Asegúrate de categorizarlos correctamente para mantener tu presupuesto al día.',
+      title: 'Transacciones',
+      description: 'Registra y categoriza todos tus ingresos y gastos aquí para mantener tu presupuesto al día.',
       side: 'bottom',
       align: 'start'
     }
@@ -29,7 +29,7 @@ export const tourSteps = [
     element: '#tour-budget-header',
     popover: {
       title: 'Presupuesto Base Cero',
-      description: 'Aquí ocurre la magia. Planificarás el destino de cada peso antes de gastarlo. El objetivo es que la tarjeta "Por Asignar" siempre sea 0.00.',
+      description: 'Asigna cada peso ganado a una categoría. El objetivo es que "Por Asignar" siempre sea 0.00.',
       side: 'bottom',
       align: 'start'
     }
@@ -38,7 +38,7 @@ export const tourSteps = [
     element: '#tour-savings-header',
     popover: {
       title: 'Ahorros y Metas',
-      description: 'Crea metas de ahorro a largo plazo (fondo de emergencia, vacaciones) y sepáralos en "sobres" virtuales.',
+      description: 'Crea metas como tu fondo de emergencia o vacaciones, y sepáralos en sobres virtuales.',
       side: 'bottom',
       align: 'start'
     }
@@ -46,8 +46,44 @@ export const tourSteps = [
   {
     element: '#tour-debts-header',
     popover: {
-      title: 'Gestión de Deudas',
-      description: 'Registra tus préstamos o tarjetas de crédito aquí. El sistema calculará tu progreso automáticamente conforme vayas pagando.',
+      title: 'Préstamos y Deudas',
+      description: 'Lleva el control de tus préstamos, visualiza el progreso de pago y gestiona los intereses.',
+      side: 'bottom',
+      align: 'start'
+    }
+  },
+  {
+    element: '#tour-creditcards-header',
+    popover: {
+      title: 'Tarjetas de Crédito',
+      description: 'Monitorea tus fechas de corte, fechas de pago y el estado de cuenta de tus tarjetas de crédito.',
+      side: 'bottom',
+      align: 'start'
+    }
+  },
+  {
+    element: '#tour-plan-header',
+    popover: {
+      title: 'Plan Financiero',
+      description: 'Define tus metas financieras a corto, mediano y largo plazo, y da seguimiento a su cumplimiento.',
+      side: 'bottom',
+      align: 'start'
+    }
+  },
+  {
+    element: '#tour-calendar-header',
+    popover: {
+      title: 'Calendario',
+      description: 'Visualiza tus transacciones día a día en un calendario para identificar tus patrones de gasto.',
+      side: 'bottom',
+      align: 'start'
+    }
+  },
+  {
+    element: '#tour-reports-header',
+    popover: {
+      title: 'Reportes Inteligentes',
+      description: 'Descubre anomalías en tus gastos, proyecta tus finanzas y descubre la mejor estrategia para pagar deudas.',
       side: 'bottom',
       align: 'start'
     }

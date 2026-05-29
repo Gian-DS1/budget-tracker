@@ -21,7 +21,8 @@ export default function TourGuide() {
         nextBtnText: 'Siguiente →',
         prevBtnText: '← Anterior',
         doneBtnText: '¡Empezar!',
-        allowClose: false,
+        allowClose: true,
+        showButtons: ['next', 'previous', 'close'],
         overlayColor: 'rgba(0, 0, 0, 0.7)',
         steps: tourSteps,
         
@@ -34,7 +35,11 @@ export default function TourGuide() {
           if (currentStepIndex === 2) navigate('/presupuesto');
           if (currentStepIndex === 3) navigate('/ahorros');
           if (currentStepIndex === 4) navigate('/deudas');
-          if (currentStepIndex === 5) navigate('/');
+          if (currentStepIndex === 5) navigate('/tarjetas');
+          if (currentStepIndex === 6) navigate('/plan');
+          if (currentStepIndex === 7) navigate('/calendario');
+          if (currentStepIndex === 8) navigate('/reportes');
+          if (currentStepIndex === 9) navigate('/');
           
           // Mover al siguiente paso (se centrara si el elemento aun no existe)
           driverRef.current.moveNext();
@@ -54,6 +59,10 @@ export default function TourGuide() {
           if (currentStepIndex === 4) navigate('/presupuesto');
           if (currentStepIndex === 5) navigate('/ahorros');
           if (currentStepIndex === 6) navigate('/deudas');
+          if (currentStepIndex === 7) navigate('/tarjetas');
+          if (currentStepIndex === 8) navigate('/plan');
+          if (currentStepIndex === 9) navigate('/calendario');
+          if (currentStepIndex === 10) navigate('/reportes');
           
           driverRef.current.movePrevious();
 

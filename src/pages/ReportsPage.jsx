@@ -187,7 +187,7 @@ export default function ReportsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="page-header" id="tour-reports-header">
         <h1 className="page-title">Análisis e Inteligencia</h1>
         <p className="page-subtitle">Proyecciones predictivas y recomendaciones</p>
       </div>

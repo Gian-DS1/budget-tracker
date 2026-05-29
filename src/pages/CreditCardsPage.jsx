@@ -60,7 +60,7 @@ export default function CreditCardsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header flex items-center justify-between">
+      <div className="page-header flex items-center justify-between" id="tour-creditcards-header">
         <div>
           <h1 className="page-title">Tarjetas</h1>
           <p className="page-subtitle">Control de consumo y fechas de tus tarjetas de crédito</p>
