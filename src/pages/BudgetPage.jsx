@@ -9,6 +9,7 @@ import {
   Wallet,
   TrendingUp,
   TrendingDown,
+  PiggyBank,
 } from 'lucide-react';
 import useBudgetStore from '../stores/useBudgetStore';
 import useTransactionStore from '../stores/useTransactionStore';
@@ -16,8 +17,9 @@ import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
 
 import CurrencyInput from '../components/ui/CurrencyInput';
+import Modal from '../components/ui/Modal';
 import { formatCurrency, formatPercent } from '../utils/formatters';
-import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary } from '../utils/calculations';
+import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance } from '../utils/calculations';
 import { MONTHS_ES, USD_TO_DOP_RATE } from '../utils/constants';
 import toast from 'react-hot-toast';
 
@@ -51,6 +53,23 @@ function BudgetEstimatedInput({ initialValue, onSave }) {
   );
 }
 
+// Progress display for an accumulative category (sinking fund): shows the pot
+// (available of accumulated) instead of the monthly budget progress.
+function PotProgress({ pot }) {
+  const pct = pot.budgeted > 0 ? (pot.spent / pot.budgeted) * 100 : 0;
+  const ok = pot.available >= 0;
+  return (
+    <div>
+      <div className={`progress-bar progress-${ok ? 'good' : 'danger'}`}>
+        <div className="progress-bar-fill" style={{ width: `${Math.min(pct, 100)}%` }} />
+      </div>
+      <div className="text-xs mt-1" style={{ color: ok ? 'var(--color-success)' : 'var(--color-danger)' }}>
+        Bote: {formatCurrency(pot.available)} <span className="text-muted">de {formatCurrency(pot.budgeted)} acumulado</span>
+      </div>
+    </div>
+  );
+}
+
 export default function BudgetPage() {
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
@@ -59,7 +78,10 @@ export default function BudgetPage() {
   const budgets = useBudgetStore((state) => state.budgets);
   const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const { transactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
+  const { categories, updateCategory } = useCategoryStore();
+
+  const [configCat, setConfigCat] = useState(null);
+  const [configForm, setConfigForm] = useState({ isAccumulative: false, accumulationStart: '' });
 
   const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
@@ -136,6 +158,23 @@ export default function BudgetPage() {
     [monthTransactions, monthBudgets, categories, debtPlanned, debtPaid]
   );
 
+  const accumulatedById = useMemo(() => {
+    const map = {};
+    categories.forEach((c) => {
+      if (c.isAccumulative) {
+        map[c.id] = getAccumulatedBalance({
+          categoryId: c.id,
+          accumulationStart: c.accumulationStart,
+          budgets,
+          transactions,
+          uptoYear: year,
+          uptoMonth: month,
+        });
+      }
+    });
+    return map;
+  }, [categories, budgets, transactions, year, month]);
+
   // Summaries
   const incomeRows = budgetRows.filter((r) => r.category.type === 'income');
   const expenseRows = budgetRows.filter(
@@ -183,6 +222,23 @@ export default function BudgetPage() {
     setBudget(categoryId, year, month, amount);
   }, [setBudget, year, month]);
 
+  const openConfig = (cat) => {
+    const d = new Date();
+    setConfigForm({
+      isAccumulative: !!cat.isAccumulative,
+      accumulationStart: cat.accumulationStart || `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`,
+    });
+    setConfigCat(cat);
+  };
+
+  const handleSaveConfig = () => {
+    updateCategory(configCat.id, {
+      isAccumulative: configForm.isAccumulative,
+      accumulationStart: configForm.isAccumulative ? configForm.accumulationStart : null,
+    });
+    setConfigCat(null);
+  };
+
   const renderSection = (title, icon, rows) => {
     if (rows.length === 0) return null;
 
@@ -214,6 +270,19 @@ export default function BudgetPage() {
                     <span className="flex items-center gap-2">
                       <span>{row.category.icon}</span>
                       <span className="font-semibold">{row.category.name}</span>
+                      {row.category.isAccumulative && (
+                        <span className="badge badge-savings" title="Sobre acumulativo">🔁 Sobre</span>
+                      )}
+                      {row.category.type !== 'income' && (
+                        <button
+                          className="btn-icon"
+                          title="Configurar sobre acumulativo"
+                          onClick={() => openConfig(row.category)}
+                          style={{ marginLeft: 'auto' }}
+                        >
+                          <PiggyBank size={14} />
+                        </button>
+                      )}
                     </span>
                   </td>
                   <td style={{ textAlign: 'right' }}>
@@ -242,7 +311,9 @@ export default function BudgetPage() {
                     {row.estimated > 0 || row.actual > 0 ? formatCurrency(row.difference) : '—'}
                   </td>
                   <td>
-                    {row.estimated > 0 ? (
+                    {row.category.isAccumulative && accumulatedById[row.category.id] ? (
+                      <PotProgress pot={accumulatedById[row.category.id]} />
+                    ) : row.estimated > 0 ? (
                       <div className="flex items-center gap-2">
                         <div className={`progress-bar progress-${row.status}`} style={{ flex: 1 }}>
                           <div
@@ -456,6 +527,40 @@ export default function BudgetPage() {
           </div>
         </div>
       )}
+
+      <Modal
+        isOpen={!!configCat}
+        onClose={() => setConfigCat(null)}
+        title={`Sobre acumulativo — ${configCat?.name || ''}`}
+      >
+        <div className="form-group">
+          <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={configForm.isAccumulative}
+              onChange={(e) => setConfigForm({ ...configForm, isAccumulative: e.target.checked })}
+              style={{ width: 'auto' }}
+            />
+            <span className="form-label" style={{ marginBottom: 0 }}>
+              Tratar como sobre acumulativo (arrastra el saldo no gastado mes a mes)
+            </span>
+          </label>
+        </div>
+        {configForm.isAccumulative && (
+          <div className="form-group">
+            <label className="form-label">Mes de inicio del bote</label>
+            <input
+              type="month"
+              value={configForm.accumulationStart}
+              onChange={(e) => setConfigForm({ ...configForm, accumulationStart: e.target.value })}
+            />
+          </div>
+        )}
+        <div className="modal-footer">
+          <button type="button" className="btn btn-secondary" onClick={() => setConfigCat(null)}>Cancelar</button>
+          <button type="button" className="btn btn-primary" onClick={handleSaveConfig}>Guardar</button>
+        </div>
+      </Modal>
 
     </div>
   );

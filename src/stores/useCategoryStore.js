@@ -149,7 +149,9 @@ const useCategoryStore = create(
     const formattedData = finalCategories.map(c => ({
       ...c,
       isActive: c.is_active,
-      sortOrder: c.sort_order
+      sortOrder: c.sort_order,
+      isAccumulative: c.is_accumulative || false,
+      accumulationStart: c.accumulation_start || null
     }));
     set({ categories: formattedData, loading: false });
     })();
@@ -287,6 +289,14 @@ const useCategoryStore = create(
     if (updates.sortOrder !== undefined) {
       dbUpdates.sort_order = updates.sortOrder;
       delete dbUpdates.sortOrder;
+    }
+    if (updates.isAccumulative !== undefined) {
+      dbUpdates.is_accumulative = updates.isAccumulative;
+      delete dbUpdates.isAccumulative;
+    }
+    if (updates.accumulationStart !== undefined) {
+      dbUpdates.accumulation_start = updates.accumulationStart;
+      delete dbUpdates.accumulationStart;
     }
 
     const { error } = await supabase.from('categories').update(dbUpdates).eq('id', id);

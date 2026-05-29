@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBudgetSummary } from './calculations';
+import { getBudgetSummary, getAccumulatedBalance } from './calculations';
 
 const categories = [
   { id: 'inc', type: 'income' },
@@ -99,5 +99,97 @@ describe('getBudgetSummary', () => {
       debtPaid: 0,
     });
     expect(r.variableGastado).toBe(2500);
+  });
+});
+
+describe('getAccumulatedBalance', () => {
+  const budgets = [
+    { categoryId: 'mar', year: 2026, month: 0, estimatedAmount: 1000 },
+    { categoryId: 'mar', year: 2026, month: 1, estimatedAmount: 1000 },
+    { categoryId: 'mar', year: 2026, month: 2, estimatedAmount: 1000 },
+    { categoryId: 'mar', year: 2026, month: 3, estimatedAmount: 1000 },
+    { categoryId: 'mar', year: 2026, month: 4, estimatedAmount: 1000 },
+    { categoryId: 'otra', year: 2026, month: 0, estimatedAmount: 9999 },
+  ];
+
+  it('bote = presupuestado acumulado - gastado, desde el mes de inicio', () => {
+    const r = getAccumulatedBalance({
+      categoryId: 'mar',
+      accumulationStart: '2026-01',
+      budgets,
+      transactions: [{ categoryId: 'mar', date: '2026-05-10', amount: 4000 }],
+      uptoYear: 2026,
+      uptoMonth: 4,
+    });
+    expect(r.budgeted).toBe(5000);
+    expect(r.spent).toBe(4000);
+    expect(r.available).toBe(1000);
+  });
+
+  it('ignora meses anteriores al inicio', () => {
+    const r = getAccumulatedBalance({
+      categoryId: 'mar',
+      accumulationStart: '2026-03',
+      budgets,
+      transactions: [],
+      uptoYear: 2026,
+      uptoMonth: 4,
+    });
+    expect(r.budgeted).toBe(3000); // marzo, abril, mayo (month 2,3,4)
+  });
+
+  it('bote 0 si el inicio es futuro', () => {
+    const r = getAccumulatedBalance({
+      categoryId: 'mar',
+      accumulationStart: '2026-12',
+      budgets,
+      transactions: [{ categoryId: 'mar', date: '2026-05-10', amount: 500 }],
+      uptoYear: 2026,
+      uptoMonth: 4,
+    });
+    expect(r.budgeted).toBe(0);
+    expect(r.spent).toBe(0);
+    expect(r.available).toBe(0);
+  });
+
+  it('permite sobregiro del bote (available negativo)', () => {
+    const r = getAccumulatedBalance({
+      categoryId: 'mar',
+      accumulationStart: '2026-01',
+      budgets,
+      transactions: [{ categoryId: 'mar', date: '2026-02-10', amount: 5000 }],
+      uptoYear: 2026,
+      uptoMonth: 1,
+    });
+    expect(r.budgeted).toBe(2000); // ene + feb
+    expect(r.spent).toBe(5000);
+    expect(r.available).toBe(-3000);
+  });
+});
+
+describe('getBudgetSummary — categorías acumulativas', () => {
+  const cats = [
+    { id: 'inc', type: 'income' },
+    { id: 'var', type: 'variable_expense' },
+    { id: 'mar', type: 'variable_expense', isAccumulative: true },
+  ];
+
+  it('reserva el aporte y excluye el gasto del bote de puedesGastar', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 50000 },
+        { categoryId: 'var', amount: 2000 },
+        { categoryId: 'mar', amount: 11000 },
+      ],
+      monthBudgets: [{ categoryId: 'mar', estimatedAmount: 1000 }],
+      categories: cats,
+      debtPlanned: 0,
+      debtPaid: 0,
+    });
+    expect(r.accumulativePlan).toBe(1000);
+    expect(r.accumulativeSpent).toBe(11000);
+    expect(r.variableGastado).toBe(2000);
+    expect(r.comprometido).toBe(1000);
+    expect(r.puedesGastar).toBe(47000);
   });
 });

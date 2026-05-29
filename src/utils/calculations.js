@@ -183,22 +183,26 @@ export function getBudgetSummary({
   debtPlanned = 0,
   debtPaid = 0,
 }) {
-  const typeById = new Map(categories.map((c) => [c.id, c.type]));
+  const catById = new Map(categories.map((c) => [c.id, c]));
 
   const estimatedByType = { income: 0, fixed_expense: 0, variable_expense: 0, savings: 0 };
+  let accumulativePlan = 0;
   for (const b of monthBudgets) {
-    const type = typeById.get(b.categoryId);
-    if (type && type in estimatedByType) {
-      estimatedByType[type] += Number(b.estimatedAmount) || 0;
-    }
+    const cat = catById.get(b.categoryId);
+    if (!cat) continue;
+    const amt = Number(b.estimatedAmount) || 0;
+    if (cat.isAccumulative) { accumulativePlan += amt; continue; }
+    if (cat.type in estimatedByType) estimatedByType[cat.type] += amt;
   }
 
   const actualByType = { income: 0, fixed_expense: 0, variable_expense: 0, savings: 0 };
+  let accumulativeSpent = 0;
   for (const t of monthTransactions) {
-    const type = typeById.get(t.categoryId);
-    if (type && type in actualByType) {
-      actualByType[type] += Number(t.amount) || 0;
-    }
+    const cat = catById.get(t.categoryId);
+    if (!cat) continue;
+    const amt = Number(t.amount) || 0;
+    if (cat.isAccumulative) { accumulativeSpent += amt; continue; }
+    if (cat.type in actualByType) actualByType[cat.type] += amt;
   }
 
   const ingresoRecibido = actualByType.income;
@@ -209,12 +213,12 @@ export function getBudgetSummary({
   const variableGastado = actualByType.variable_expense;
   const planDebt = Number(debtPlanned) || 0;
 
-  const comprometido = gastosFijosPlan + planDebt + ahorroPlan;
+  const comprometido = gastosFijosPlan + planDebt + ahorroPlan + accumulativePlan;
   const disponible = ingresoRecibido - comprometido - variableGastado;
   const puedesGastar = Math.max(0, disponible);
 
   const porAsignar =
-    ingresoEstimado - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - planDebt;
+    ingresoEstimado - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - planDebt;
 
   let estado;
   if (ingresoRecibido === 0) estado = 'neutral';
@@ -229,6 +233,8 @@ export function getBudgetSummary({
     gastosVariablesPlan,
     ahorroPlan,
     variableGastado,
+    accumulativePlan,
+    accumulativeSpent,
     debtPlanned: planDebt,
     debtPaid: Number(debtPaid) || 0,
     comprometido,
@@ -237,6 +243,54 @@ export function getBudgetSummary({
     porAsignar,
     estado,
   };
+}
+
+/**
+ * Bote acumulado (sinking fund) de una categoría: suma de aportes presupuestados
+ * menos lo gastado, desde `accumulationStart` ('YYYY-MM') hasta (uptoYear, uptoMonth).
+ * Todo en DOP. Devuelve { budgeted, spent, available }.
+ */
+export function getAccumulatedBalance({
+  categoryId,
+  accumulationStart,
+  budgets = [],
+  transactions = [],
+  uptoYear,
+  uptoMonth,
+}) {
+  const uptoIdx = uptoYear * 12 + uptoMonth;
+
+  let startIdx;
+  let startISO;
+  if (accumulationStart && /^\d{4}-\d{2}$/.test(accumulationStart)) {
+    const [sy, sm] = accumulationStart.split('-').map(Number);
+    startIdx = sy * 12 + (sm - 1);
+    startISO = `${accumulationStart}-01`;
+  } else {
+    startIdx = uptoIdx;
+    startISO = `${uptoYear}-${String(uptoMonth + 1).padStart(2, '0')}-01`;
+  }
+
+  // Primer día del mes siguiente a `upto` (límite superior exclusivo para fechas).
+  let nextMonth = uptoMonth + 1;
+  let nextYear = uptoYear;
+  if (nextMonth > 11) { nextMonth = 0; nextYear += 1; }
+  const endExclusiveISO = `${nextYear}-${String(nextMonth + 1).padStart(2, '0')}-01`;
+
+  let budgeted = 0;
+  for (const b of budgets) {
+    if (b.categoryId !== categoryId) continue;
+    const idx = b.year * 12 + b.month;
+    if (idx >= startIdx && idx <= uptoIdx) budgeted += Number(b.estimatedAmount) || 0;
+  }
+
+  let spent = 0;
+  for (const t of transactions) {
+    if (t.categoryId !== categoryId) continue;
+    if (t.date >= startISO && t.date < endExclusiveISO) spent += Number(t.amount) || 0;
+  }
+
+  return { budgeted, spent, available: budgeted - spent };
 }
 
 /**
