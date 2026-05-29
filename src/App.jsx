@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
+import toast from 'react-hot-toast';
 import { useEffect, lazy, Suspense } from 'react';
 
 import Layout from './components/layout/Layout';
@@ -12,6 +13,7 @@ import useDebtStore from './stores/useDebtStore';
 import usePlanStore from './stores/usePlanStore';
 import useCreditCardStore from './stores/useCreditCardStore';
 import useRateStore from './stores/useRateStore';
+import useRecurringStore from './stores/useRecurringStore';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import AuthPage from './pages/AuthPage';
@@ -48,6 +50,8 @@ function App() {
   const fetchDebtsAndPayments = useDebtStore((state) => state.fetchDebtsAndPayments);
   const fetchPlans = usePlanStore((state) => state.fetchPlans);
   const fetchCards = useCreditCardStore((state) => state.fetchCards);
+  const fetchRecurring = useRecurringStore((state) => state.fetchRecurring);
+  const materializeDue = useRecurringStore((state) => state.materializeDue);
 
   const fetchRate = useRateStore((state) => state.fetchRate);
 
@@ -93,6 +97,25 @@ function App() {
       fetchCards();
     }
   }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchPlans, fetchCards]);
+
+  // Transacciones recurrentes: carga las plantillas y materializa las
+  // ocurrencias vencidas (con aviso). Separado para poder encadenar fetch →
+  // materialize sin condicionar el bloque de arriba.
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    (async () => {
+      await fetchRecurring();
+      if (cancelled) return;
+      const res = await materializeDue();
+      if (!cancelled && res.count > 0) {
+        toast.success(
+          `Se ${res.count === 1 ? 'registró' : 'registraron'} ${res.count} transacción${res.count === 1 ? '' : 'es'} recurrente${res.count === 1 ? '' : 's'}`
+        );
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [user, fetchRecurring, materializeDue]);
 
   if (loading) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Cargando aplicación...</div>;

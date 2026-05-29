@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }) => {
       'fintrack-debts-cache',
       'fintrack-plans-cache',
       'fintrack-cards-cache',
+      'fintrack-recurring-cache',
     ].forEach((key) => localStorage.removeItem(key));
     toast.success('Sesión cerrada');
   };

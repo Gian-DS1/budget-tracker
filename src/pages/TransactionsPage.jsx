@@ -1,10 +1,11 @@
 // FinTrack RD — Transactions Page
 
 import { useState, useMemo } from 'react';
-import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3 } from 'lucide-react';
+import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3, Repeat, Play, Pause } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
+import useRecurringStore, { advanceDate } from '../stores/useRecurringStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -20,6 +21,11 @@ export default function TransactionsPage() {
   const { categories } = useCategoryStore();
   const { cards } = useCreditCardStore();
   const fxRate = useRateStore((s) => s.getRate());
+  const recurring = useRecurringStore((s) => s.recurring);
+  const addRecurring = useRecurringStore((s) => s.addRecurring);
+  const toggleRecurring = useRecurringStore((s) => s.toggleActive);
+  const deleteRecurring = useRecurringStore((s) => s.deleteRecurring);
+  const [showRecurring, setShowRecurring] = useState(false);
 
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -117,6 +123,22 @@ export default function TransactionsPage() {
       updateTransaction(editingTransaction, data);
     } else {
       addTransaction(data);
+      // Si se marcó como recurrente, además se crea la plantilla. La primera
+      // ocurrencia es la transacción recién registrada; la plantilla apunta a la
+      // SIGUIENTE fecha para que materializeDue no la duplique hoy.
+      if (form.isRecurring) {
+        addRecurring({
+          categoryId: form.categoryId,
+          cardId: form.cardId,
+          amount: Number(form.amount),
+          type: form.type,
+          description: form.description,
+          notes: form.notes,
+          currency: form.currency,
+          frequency: form.recurrencePattern,
+          nextDate: advanceDate(form.date, form.recurrencePattern),
+        });
+      }
     }
 
     resetForm();
@@ -244,14 +266,19 @@ export default function TransactionsPage() {
           <h1 className="page-title">Transacciones</h1>
           <p className="page-subtitle">Gestiona tus ingresos y gastos</p>
         </div>
-        {transactions.length > 0 && (
-          <button className="btn btn-primary btn-lg" onClick={() => {
-            resetForm();
-            setShowForm(true);
-          }}>
-            <Plus size={18} /> Nueva Transacción
+        <div className="flex items-center gap-2" style={{ flexWrap: 'wrap' }}>
+          <button className="btn btn-secondary" onClick={() => setShowRecurring(true)}>
+            <Repeat size={16} /> Recurrentes{recurring.length > 0 ? ` (${recurring.length})` : ''}
           </button>
-        )}
+          {transactions.length > 0 && (
+            <button className="btn btn-primary btn-lg" onClick={() => {
+              resetForm();
+              setShowForm(true);
+            }}>
+              <Plus size={18} /> Nueva Transacción
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Search & Filter Bar */}
@@ -720,6 +747,56 @@ export default function TransactionsPage() {
         title="Eliminar Transacciones Múltiples"
         message={`¿Seguro que quieres eliminar ${selectedIds.length} transacciones seleccionadas? Esta acción no se puede deshacer.`}
       />
+
+      {/* Recurring templates management */}
+      <Modal
+        isOpen={showRecurring}
+        onClose={() => setShowRecurring(false)}
+        title="Transacciones recurrentes"
+      >
+        <p className="text-sm text-muted mb-4">
+          Se generan solas al abrir la app cuando llega su fecha. Para crear una,
+          marca "Transacción recurrente" al registrar una transacción.
+        </p>
+        {recurring.length === 0 ? (
+          <div className="text-center text-muted py-8">No tienes recurrentes activas.</div>
+        ) : (
+          <div className="flex flex-col gap-3">
+            {recurring.map((r) => {
+              const cat = categories.find((c) => c.id === r.categoryId);
+              const freqLabel = r.frequency === 'weekly' ? 'Semanal' : r.frequency === 'biweekly' ? 'Quincenal' : 'Mensual';
+              return (
+                <div
+                  key={r.id}
+                  className="flex items-center justify-between gap-3"
+                  style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', padding: 'var(--space-3) var(--space-4)', opacity: r.active ? 1 : 0.55 }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div className="font-semibold truncate">
+                      {cat?.icon || '🔁'} {r.description || cat?.name || 'Recurrente'}
+                    </div>
+                    <div className="text-xs text-muted">
+                      {freqLabel} · próxima: {formatDate(r.nextDate)}
+                      {!r.active && ' · pausada'}
+                    </div>
+                  </div>
+                  <div className="font-bold amount-neutral" style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {formatCurrency(r.amount, r.currency)}
+                  </div>
+                  <div className="flex items-center gap-1" style={{ flexShrink: 0 }}>
+                    <button className="btn-icon" title={r.active ? 'Pausar' : 'Activar'} onClick={() => toggleRecurring(r.id)}>
+                      {r.active ? <Pause size={15} /> : <Play size={15} />}
+                    </button>
+                    <button className="btn-icon" title="Eliminar" style={{ color: 'var(--color-danger)' }} onClick={() => deleteRecurring(r.id)}>
+                      <Trash2 size={15} />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }
