@@ -1940,3 +1940,130 @@ table {
     font-size: 0.6rem;
   }
 }
+
+/* ============================================================
+   Tour Guide (driver.js) — theme-aware popover
+   ============================================================ */
+
+[data-theme="dark"] .driver-popover {
+  background-color: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border-secondary);
+  box-shadow: var(--shadow-xl);
+}
+
+[data-theme="dark"] .driver-popover-title,
+[data-theme="dark"] .driver-popover-description {
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .driver-popover-progress-text {
+  color: var(--text-tertiary);
+}
+
+[data-theme="dark"] .driver-popover-close-btn {
+  color: var(--text-secondary);
+}
+
+[data-theme="dark"] .driver-popover-close-btn:hover {
+  color: var(--text-primary);
+}
+
+/* Arrow: the colored border points toward the popover, so it must match the
+   popover background per side. */
+[data-theme="dark"] .driver-popover-arrow-side-left.driver-popover-arrow {
+  border-left-color: var(--bg-card);
+}
+[data-theme="dark"] .driver-popover-arrow-side-right.driver-popover-arrow {
+  border-right-color: var(--bg-card);
+}
+[data-theme="dark"] .driver-popover-arrow-side-top.driver-popover-arrow {
+  border-top-color: var(--bg-card);
+}
+[data-theme="dark"] .driver-popover-arrow-side-bottom.driver-popover-arrow {
+  border-bottom-color: var(--bg-card);
+}
+
+[data-theme="dark"] .driver-popover-footer button {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  text-shadow: none;
+  border: 1px solid var(--border-secondary);
+}
+
+[data-theme="dark"] .driver-popover-footer button:hover {
+  background-color: var(--bg-card-hover);
+}
+
+/* ============================================================
+   Responsive refinements — adapt to small laptops & phones
+   without altering the desktop design
+   ============================================================ */
+
+/* Small laptops (e.g. MacBook 13"/14"): stack side-by-side charts so they
+   stop clipping/compressing. Large monitors keep the 2-up layout. */
+@media (max-width: 1200px) {
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .page-title {
+    font-size: var(--font-2xl);
+  }
+
+  .page-header {
+    margin-bottom: var(--space-5);
+  }
+
+  /* Header rows that hold a title + action button: let the button wrap
+     under the title instead of overflowing. */
+  .page-header.flex {
+    flex-wrap: wrap;
+    gap: var(--space-3);
+  }
+
+  .card {
+    padding: var(--space-4);
+  }
+
+  .kpi-card {
+    padding: var(--space-4);
+  }
+
+  /* Oversized primary buttons shrink to normal size on phones. */
+  .btn-lg {
+    padding: var(--space-3) var(--space-5);
+    font-size: var(--font-sm);
+    border-radius: var(--radius-md);
+  }
+
+  .month-selector-label {
+    min-width: 0;
+    font-size: var(--font-base);
+  }
+}
+
+@media (max-width: 480px) {
+  .page-container {
+    padding: var(--space-3);
+  }
+
+  /* Action button in a page header goes full-width on tiny screens. */
+  .page-header.flex .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .data-table thead th,
+  .data-table tbody td {
+    padding: var(--space-2) var(--space-3);
+    font-size: var(--font-xs);
+  }
+
+  /* The decorative KPI icon is noise on tiny screens. */
+  .kpi-icon {
+    display: none;
+  }
+}
