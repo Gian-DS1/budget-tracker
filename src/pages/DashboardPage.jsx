@@ -28,6 +28,7 @@ import useDebtStore from '../stores/useDebtStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useBudgetStore from '../stores/useBudgetStore';
 import useThemeStore from '../stores/useThemeStore';
+import useCreditCardStore from '../stores/useCreditCardStore';
 import {
   formatCurrency,
   formatPercent,
@@ -35,6 +36,7 @@ import {
   MONTHS_SHORT_ES,
 } from '../utils/formatters';
 import { getBudgetSummary } from '../utils/calculations';
+import { getCardCycles, getStatementAmount, isStatementPaid } from '../utils/creditCards';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
 const CustomTooltip = ({ active, payload, label }) => {
@@ -66,6 +68,7 @@ export default function DashboardPage() {
   const payments = useDebtStore((s) => s.payments);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
   const viewMode = useThemeStore((s) => s.viewMode);
+  const cards = useCreditCardStore((s) => s.cards);
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -106,6 +109,20 @@ export default function DashboardPage() {
       }),
     [currentMonthTransactions, monthBudgets, categories, getTotalMonthlyPayment, debtPaidThisMonth]
   );
+
+  const cardAlerts = useMemo(() => {
+    const today = new Date();
+    const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    return cards
+      .map((card) => {
+        const cy = getCardCycles(card, today);
+        const amount = getStatementAmount(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
+        const due = new Date(cy.dueDateISO + 'T00:00:00');
+        const days = Math.round((due - todayMidnight) / 86400000);
+        return { card, amount, dueISO: cy.dueDateISO, days, paid: isStatementPaid(card, cy.closedEndISO) };
+      })
+      .filter((a) => !a.paid && a.amount > 0 && a.days >= 0 && a.days <= 5);
+  }, [cards, transactions]);
 
   const previousMonthTransactions = useMemo(() => {
     let prevMonth = currentMonth - 1;
@@ -264,6 +281,15 @@ export default function DashboardPage() {
             : 'Disponible sin atrasarte en pagos ni metas.'}
         </div>
       </div>
+
+      {cardAlerts.map((a) => (
+        <div key={a.card.id} className="alert alert-warning" style={{ marginBottom: 'var(--space-4)' }}>
+          <CreditCard size={16} />
+          <span>
+            <strong>{a.card.name}</strong>: pago de {formatCurrency(a.amount)} vence {a.days === 0 ? 'hoy' : `en ${a.days} día${a.days === 1 ? '' : 's'}`} ({formatDate(a.dueISO)}).
+          </span>
+        </div>
+      ))}
 
       {/* KPI Cards */}
       <div className="kpi-grid" id="tour-dashboard-summary">
