@@ -46,10 +46,9 @@ export default function Sidebar() {
 
   return (
     <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
-      {/* Logo */}
       <div className="sidebar-logo">
-        <div className="sidebar-logo-icon">
-          <TrendingUp size={20} />
+        <div className="sidebar-logo-icon" style={{ background: 'transparent', padding: 0 }}>
+          <img src="/favicon.svg" alt="FinTrack RD" style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-lg)' }} />
         </div>
         <span className="sidebar-logo-text">FinTrack RD</span>
       </div>
