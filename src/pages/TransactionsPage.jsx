@@ -92,6 +92,22 @@ export default function TransactionsPage() {
     });
   };
 
+  const calculatedCashback = useMemo(() => {
+    if (!form.cardId || !form.amount || isNaN(Number(form.amount))) return 0;
+    const card = cards.find(c => c.id === form.cardId);
+    if (!card || !card.cashbackRules || card.cashbackRules.length === 0) return 0;
+
+    // Check specific category rule first, then 'all'
+    const specificRule = card.cashbackRules.find(r => r.categoryId === form.categoryId);
+    const allRule = card.cashbackRules.find(r => r.categoryId === 'all');
+    
+    const ruleToApply = specificRule || allRule;
+    if (ruleToApply) {
+      return (Number(form.amount) * ruleToApply.percentage) / 100;
+    }
+    return 0;
+  }, [form.cardId, form.categoryId, form.amount, cards]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.amount || !form.date) return;
@@ -99,6 +115,7 @@ export default function TransactionsPage() {
     const data = {
       ...form,
       amount: Number(form.amount),
+      cashbackEarned: calculatedCashback,
     };
 
     if (editingTransaction) {
@@ -620,11 +637,16 @@ export default function TransactionsPage() {
                 value={form.cardId}
                 onChange={(e) => setForm({ ...form, cardId: e.target.value })}
               >
-                <option value="">Sin tarjeta / efectivo</option>
+                <option value="">Sin tarjeta</option>
                 {cards.map((c) => (
-                  <option key={c.id} value={c.id}>{c.name}{c.bank ? ` — ${c.bank}` : ''}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
+              {calculatedCashback > 0 && (
+                <div className="text-xs mt-2" style={{ color: 'var(--color-income)' }}>
+                  <span className="font-semibold">¡Cashback!</span> Esta compra generará <span className="font-bold">+{formatCurrency(calculatedCashback)}</span>
+                </div>
+              )}
             </div>
           )}
 

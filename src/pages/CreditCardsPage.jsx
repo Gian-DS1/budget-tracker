@@ -1,9 +1,10 @@
 // FinTrack RD — Credit Cards Page
 
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar } from 'lucide-react';
+import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar, X } from 'lucide-react';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import useTransactionStore from '../stores/useTransactionStore';
+import useCategoryStore from '../stores/useCategoryStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -12,16 +13,21 @@ import { getCardCycles, getStatementAmount, isStatementPaid } from '../utils/cre
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899'];
 
-const emptyForm = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#6366f1' };
+const emptyForm = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#6366f1', cashbackRules: [] };
 
 export default function CreditCardsPage() {
   const { cards, addCard, updateCard, deleteCard, markStatementPaid } = useCreditCardStore();
   const { transactions } = useTransactionStore();
+  const { categories } = useCategoryStore();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
+  
+  // Cashback Rule UI State
+  const [newRuleCategory, setNewRuleCategory] = useState('all');
+  const [newRulePercentage, setNewRulePercentage] = useState('');
 
   const openCreate = () => {
     setForm(emptyForm);
@@ -30,9 +36,39 @@ export default function CreditCardsPage() {
   };
 
   const openEdit = (card) => {
-    setForm({ name: card.name, bank: card.bank, cutoffDay: String(card.cutoffDay), dueDay: String(card.dueDay), color: card.color });
+    setForm({ 
+      name: card.name, 
+      bank: card.bank, 
+      cutoffDay: String(card.cutoffDay), 
+      dueDay: String(card.dueDay), 
+      color: card.color,
+      cashbackRules: card.cashbackRules || []
+    });
     setEditingId(card.id);
     setShowForm(true);
+  };
+
+  const handleAddRule = () => {
+    if (!newRulePercentage || isNaN(Number(newRulePercentage))) return;
+    const rules = [...(form.cashbackRules || [])];
+    
+    // Check if rule for this category already exists and update it
+    const existingIdx = rules.findIndex(r => r.categoryId === newRuleCategory);
+    if (existingIdx >= 0) {
+      rules[existingIdx].percentage = Number(newRulePercentage);
+    } else {
+      rules.push({ categoryId: newRuleCategory, percentage: Number(newRulePercentage) });
+    }
+    
+    setForm({ ...form, cashbackRules: rules });
+    setNewRuleCategory('all');
+    setNewRulePercentage('');
+  };
+
+  const handleRemoveRule = (index) => {
+    const rules = [...(form.cashbackRules || [])];
+    rules.splice(index, 1);
+    setForm({ ...form, cashbackRules: rules });
   };
 
   const handleSubmit = (e) => {
@@ -40,7 +76,7 @@ export default function CreditCardsPage() {
     const cutoffDay = parseInt(form.cutoffDay, 10);
     const dueDay = parseInt(form.dueDay, 10);
     if (!form.name || !(cutoffDay >= 1 && cutoffDay <= 31) || !(dueDay >= 1 && dueDay <= 31)) return;
-    const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color };
+    const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color, cashbackRules: form.cashbackRules || [] };
     if (editingId) updateCard(editingId, payload);
     else addCard(payload);
     setShowForm(false);
@@ -54,7 +90,12 @@ export default function CreditCardsPage() {
       const openAmount = getStatementAmount(transactions, card.id, cy.openStartISO, cy.openEndISO);
       const closedAmount = getStatementAmount(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
       const paid = isStatementPaid(card, cy.closedEndISO);
-      return { card, cy, openAmount, closedAmount, paid };
+      
+      const openCashback = transactions
+        .filter(t => t.cardId === card.id && t.date >= cy.openStartISO && t.date <= cy.openEndISO)
+        .reduce((sum, t) => sum + (t.cashbackEarned || 0), 0);
+        
+      return { card, cy, openAmount, closedAmount, paid, openCashback };
     });
   }, [cards, transactions]);
 
@@ -85,7 +126,7 @@ export default function CreditCardsPage() {
         />
       ) : (
         <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-          {rows.map(({ card, cy, openAmount, closedAmount, paid }) => (
+          {rows.map(({ card, cy, openAmount, closedAmount, paid, openCashback }) => (
             <div key={card.id} className="card" style={{ '--kpi-accent': card.color }}>
               <div className="card-header">
                 <h3 className="card-title flex items-center gap-2">
@@ -103,10 +144,16 @@ export default function CreditCardsPage() {
               <div className="flex flex-col gap-4">
                 <div>
                   <div className="kpi-label">Ciclo abierto (consumo)</div>
-                  <div className="kpi-value">{formatCurrency(openAmount)}</div>
-                  <div className="text-xs text-muted mt-2 flex items-center gap-1">
-                    <Calendar size={12} /> Cierra el {formatDate(cy.openEndISO)}
+                  <div className="flex justify-between items-center text-sm">
+                    <span className="text-muted">Corte al: {formatDate(cy.openEndISO)}</span>
+                    <span className="font-semibold text-primary">{formatCurrency(openAmount)}</span>
                   </div>
+                  {openCashback > 0 && (
+                    <div className="flex justify-between items-center text-xs mt-1" style={{ color: 'var(--color-income)' }}>
+                      <span>Cashback Acumulado</span>
+                      <span className="font-semibold">+{formatCurrency(openCashback)}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
@@ -179,6 +226,61 @@ export default function CreditCardsPage() {
               ))}
             </div>
           </div>
+          
+          <div className="form-group" style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
+            <label className="form-label font-semibold">Reglas de Cashback</label>
+            <div className="flex items-center gap-2 mb-3">
+              <select 
+                className="flex-1" 
+                value={newRuleCategory} 
+                onChange={(e) => setNewRuleCategory(e.target.value)}
+                style={{ padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
+              >
+                <option value="all">Todas las categorías</option>
+                <optgroup label="Ingresos">
+                  {categories.filter(c => c.type === 'income' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </optgroup>
+                <optgroup label="Gastos">
+                  {categories.filter(c => c.type !== 'income' && c.type !== 'savings' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </optgroup>
+              </select>
+              <div className="relative" style={{ width: '80px' }}>
+                <input 
+                  type="number" 
+                  min="0" max="100" step="0.1"
+                  value={newRulePercentage} 
+                  onChange={(e) => setNewRulePercentage(e.target.value)} 
+                  placeholder="Ej: 5"
+                  style={{ width: '100%', padding: '8px 24px 8px 8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
+                />
+                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-muted">%</span>
+              </div>
+              <button type="button" className="btn btn-secondary" onClick={handleAddRule}>
+                <Plus size={16} />
+              </button>
+            </div>
+            
+            {form.cashbackRules && form.cashbackRules.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {form.cashbackRules.map((rule, idx) => {
+                  const cat = categories.find(c => c.id === rule.categoryId);
+                  const label = rule.categoryId === 'all' ? 'Todas las categorías' : (cat ? `${cat.icon} ${cat.name}` : 'Categoría desconocida');
+                  return (
+                    <div key={idx} className="flex items-center justify-between p-2 rounded-md" style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-primary)' }}>
+                      <span className="text-sm">{label}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="font-semibold text-sm" style={{ color: 'var(--color-income)' }}>{rule.percentage}%</span>
+                        <button type="button" className="text-danger" onClick={() => handleRemoveRule(idx)}><X size={14} /></button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-xs text-muted">Añade beneficios de cashback para que el sistema los calcule automáticamente en tus gastos.</div>
+            )}
+          </div>
+          
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setForm(emptyForm); setEditingId(null); }}>Cancelar</button>
             <button type="submit" className="btn btn-primary">{editingId ? 'Guardar Cambios' : 'Agregar'}</button>

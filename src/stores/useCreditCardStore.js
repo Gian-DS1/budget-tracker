@@ -11,6 +11,7 @@ const mapFromDb = (c) => ({
   dueDay: Number(c.due_day),
   color: c.color || '#6366f1',
   paidCycles: Array.isArray(c.paid_cycles) ? c.paid_cycles : [],
+  cashbackRules: Array.isArray(c.cashback_rules) ? c.cashback_rules : [],
   createdAt: c.created_at,
 });
 
@@ -49,6 +50,7 @@ const useCreditCardStore = create(
           cutoff_day: Number(card.cutoffDay),
           due_day: Number(card.dueDay),
           color: card.color || '#6366f1',
+          cashback_rules: Array.isArray(card.cashbackRules) ? card.cashbackRules : [],
         };
 
         const { data, error } = await supabase.from('credit_cards').insert(payload).select().single();
@@ -68,6 +70,7 @@ const useCreditCardStore = create(
         if (updates.cutoffDay !== undefined) dbUpdates.cutoff_day = Number(updates.cutoffDay);
         if (updates.dueDay !== undefined) dbUpdates.due_day = Number(updates.dueDay);
         if (updates.color !== undefined) dbUpdates.color = updates.color;
+        if (updates.cashbackRules !== undefined) dbUpdates.cashback_rules = updates.cashbackRules;
 
         const { error } = await supabase.from('credit_cards').update(dbUpdates).eq('id', id);
         if (error) {

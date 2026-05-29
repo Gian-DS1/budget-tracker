@@ -60,6 +60,7 @@ const useTransactionStore = create(
         ...t,
         categoryId: t.category_id,
         cardId: t.card_id || null,
+        cashbackEarned: t.cashback_earned ? Number(t.cashback_earned) : 0,
         createdAt: t.created_at
       }));
       set({ transactions: formattedData, loading: false });
@@ -98,7 +99,8 @@ const useTransactionStore = create(
       description: transaction.description,
       date: transaction.date,
       notes: notes,
-      currency: 'DOP'
+      currency: 'DOP',
+      cashback_earned: transaction.cashbackEarned || 0
     };
 
     const { data, error } = await supabase.from('transactions').insert(dbTx).select().single();
@@ -109,7 +111,13 @@ const useTransactionStore = create(
     }
 
     if (data) {
-      const newTx = { ...data, categoryId: data.category_id, cardId: data.card_id || null, createdAt: data.created_at };
+      const newTx = { 
+        ...data, 
+        categoryId: data.category_id, 
+        cardId: data.card_id || null, 
+        cashbackEarned: data.cashback_earned ? Number(data.cashback_earned) : 0,
+        createdAt: data.created_at 
+      };
       set((state) => ({ transactions: [newTx, ...state.transactions] }));
       toast.success("Transacción guardada exitosamente");
     }
@@ -127,6 +135,7 @@ const useTransactionStore = create(
     if (updates.description !== undefined) dbUpdates.description = updates.description;
     if (updates.date !== undefined) dbUpdates.date = updates.date;
     if (updates.notes !== undefined) dbUpdates.notes = updates.notes || null;
+    if (updates.cashbackEarned !== undefined) dbUpdates.cashback_earned = Number(updates.cashbackEarned);
 
     const { error } = await supabase.from('transactions').update(dbUpdates).eq('id', id);
     if (error) {
