@@ -3,6 +3,7 @@ import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 import toast from 'react-hot-toast';
+import useCreditCardStore from './useCreditCardStore';
 
 export async function fetchUSDRate(dateStr) {
   let rate = USD_TO_DOP_RATE;
@@ -177,17 +178,50 @@ const useTransactionStore = create(
   bulkAssignCard: async (ids, cardId) => {
     if (!ids || ids.length === 0) return;
     const dbCardId = cardId || null;
-    const { error } = await supabase.from('transactions').update({ card_id: dbCardId }).in('id', ids);
-    if (!error) {
-      set((state) => ({
-        transactions: state.transactions.map((t) =>
-          ids.includes(t.id) ? { ...t, cardId: dbCardId } : t
-        ),
-      }));
+    
+    const cards = useCreditCardStore.getState().cards;
+    const card = dbCardId ? cards.find(c => c.id === dbCardId) : null;
+    
+    const transactionsToUpdate = get().transactions.filter(t => ids.includes(t.id));
+    toast.loading('Asignando tarjeta...', { id: 'bulk-update' });
+    
+    const dbUpdatesPromises = transactionsToUpdate.map(t => {
+      let cashback = 0;
+      if (card && card.cashbackRules && card.cashbackRules.length > 0 && t.amount && !isNaN(Number(t.amount))) {
+        const specificRule = card.cashbackRules.find(r => r.categoryId === t.categoryId);
+        const allRule = card.cashbackRules.find(r => r.categoryId === 'all');
+        const ruleToApply = specificRule || allRule;
+        if (ruleToApply) {
+          cashback = (Number(t.amount) * ruleToApply.percentage) / 100;
+        }
+      }
+      
+      return supabase.from('transactions').update({ 
+        card_id: dbCardId,
+        cashback_earned: cashback 
+      }).eq('id', t.id).then(({error}) => ({ id: t.id, error, cashback }));
+    });
+    
+    const results = await Promise.all(dbUpdatesPromises);
+    const hasError = results.some(r => r.error);
+    
+    if (hasError) {
+      console.error('Bulk update error', results);
+      toast.error('Error actualizando algunas transacciones', { id: 'bulk-update' });
     } else {
-      console.error('Bulk update error:', error);
-      toast.error('Error al actualizar transacciones');
+      toast.success('Transacciones actualizadas', { id: 'bulk-update' });
     }
+    
+    set((state) => ({
+      transactions: state.transactions.map((t) => {
+        if (ids.includes(t.id)) {
+          const result = results.find(r => r.id === t.id);
+          if (!result || result.error) return t;
+          return { ...t, cardId: dbCardId, cashbackEarned: result.cashback };
+        }
+        return t;
+      }),
+    }));
   },
 
   bulkAddTransactions: async (transactions) => {
