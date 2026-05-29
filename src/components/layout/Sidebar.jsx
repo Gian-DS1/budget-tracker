@@ -14,7 +14,6 @@ import {
   Settings,
   ChevronLeft,
   ChevronRight,
-  TrendingUp,
   LogOut,
   MessageSquare,
 } from 'lucide-react';

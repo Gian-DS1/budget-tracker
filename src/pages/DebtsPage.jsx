@@ -1,9 +1,8 @@
 // FinTrack RD — Debts Page
 
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Plus, CreditCard, TrendingDown, DollarSign, Edit2, Trash2 } from 'lucide-react';
 import useDebtStore from '../stores/useDebtStore';
-import useTransactionStore from '../stores/useTransactionStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -23,7 +22,6 @@ export default function DebtsPage() {
     getTotalDebt,
     getTotalMonthlyPayment,
   } = useDebtStore();
-  const { addTransaction } = useTransactionStore();
 
   const [showForm, setShowForm] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
@@ -42,8 +40,8 @@ export default function DebtsPage() {
     startDate: todayISO(),
   });
 
-  const totalDebt = useMemo(() => getTotalDebt(), [getTotalDebt, debts]);
-  const totalMonthly = useMemo(() => getTotalMonthlyPayment(), [getTotalMonthlyPayment, debts]);
+  const totalDebt = getTotalDebt();
+  const totalMonthly = getTotalMonthlyPayment();
 
   const openEditForm = (debt) => {
     setForm({
