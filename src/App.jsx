@@ -10,6 +10,7 @@ import useBudgetStore from './stores/useBudgetStore';
 import useSavingsStore from './stores/useSavingsStore';
 import useDebtStore from './stores/useDebtStore';
 import usePlanStore from './stores/usePlanStore';
+import useCreditCardStore from './stores/useCreditCardStore';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import AuthPage from './pages/AuthPage';
@@ -26,6 +27,7 @@ const ReportsPage = lazy(() => import('./pages/ReportsPage'));
 const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
+const CreditCardsPage = lazy(() => import('./pages/CreditCardsPage'));
 import TourGuide from './components/ui/TourGuide';
 
 const PageLoader = () => (
@@ -44,6 +46,7 @@ function App() {
   const fetchGoals = useSavingsStore((state) => state.fetchGoals);
   const fetchDebtsAndPayments = useDebtStore((state) => state.fetchDebtsAndPayments);
   const fetchPlans = usePlanStore((state) => state.fetchPlans);
+  const fetchCards = useCreditCardStore((state) => state.fetchCards);
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -78,8 +81,9 @@ function App() {
       fetchGoals();
       fetchDebtsAndPayments();
       fetchPlans();
+      fetchCards();
     }
-  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchPlans]);
+  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchPlans, fetchCards]);
 
   if (loading) {
     return <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--bg-primary)', color: 'var(--text-primary)' }}>Cargando aplicación...</div>;
@@ -131,6 +135,7 @@ function App() {
             <Route path="calendario" element={<CalendarPage />} />
             <Route path="ajustes" element={<SettingsPage />} />
             <Route path="feedback" element={<FeedbackPage />} />
+            <Route path="tarjetas" element={<CreditCardsPage />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
