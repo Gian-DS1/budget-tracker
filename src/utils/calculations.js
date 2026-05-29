@@ -162,6 +162,84 @@ export function movingAverage(data, windowSize = 3) {
 }
 
 /**
+ * Fuente única de verdad del resumen mensual del presupuesto base cero.
+ * Todos los montos están en moneda base (DOP); el llamante debe pasar los
+ * totales de deuda ya convertidos a DOP.
+ *
+ * Clasifica ingresos/gastos/ahorro por el TIPO DE LA CATEGORÍA (resuelto vía
+ * categoryId), igual que BudgetPage, para garantizar cifras consistentes.
+ *
+ * @param {Object} params
+ * @param {Array}  params.monthTransactions - transacciones del mes (DOP)
+ * @param {Array}  params.monthBudgets - filas de presupuesto del mes ({categoryId, estimatedAmount})
+ * @param {Array}  params.categories - todas las categorías ({id, type})
+ * @param {number} params.debtPlanned - pago mensual de deuda planificado (DOP)
+ * @param {number} params.debtPaid - pago de deuda real del mes (DOP)
+ */
+export function getBudgetSummary({
+  monthTransactions = [],
+  monthBudgets = [],
+  categories = [],
+  debtPlanned = 0,
+  debtPaid = 0,
+}) {
+  const typeById = new Map(categories.map((c) => [c.id, c.type]));
+
+  const estimatedByType = { income: 0, fixed_expense: 0, variable_expense: 0, savings: 0 };
+  for (const b of monthBudgets) {
+    const type = typeById.get(b.categoryId);
+    if (type && type in estimatedByType) {
+      estimatedByType[type] += Number(b.estimatedAmount) || 0;
+    }
+  }
+
+  const actualByType = { income: 0, fixed_expense: 0, variable_expense: 0, savings: 0 };
+  for (const t of monthTransactions) {
+    const type = typeById.get(t.categoryId);
+    if (type && type in actualByType) {
+      actualByType[type] += Number(t.amount) || 0;
+    }
+  }
+
+  const ingresoRecibido = actualByType.income;
+  const ingresoEstimado = estimatedByType.income;
+  const gastosFijosPlan = estimatedByType.fixed_expense;
+  const gastosVariablesPlan = estimatedByType.variable_expense;
+  const ahorroPlan = estimatedByType.savings;
+  const variableGastado = actualByType.variable_expense;
+  const planDebt = Number(debtPlanned) || 0;
+
+  const comprometido = gastosFijosPlan + planDebt + ahorroPlan;
+  const disponible = ingresoRecibido - comprometido - variableGastado;
+  const puedesGastar = Math.max(0, disponible);
+
+  const porAsignar =
+    ingresoEstimado - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - planDebt;
+
+  let estado;
+  if (ingresoRecibido === 0) estado = 'neutral';
+  else if (disponible < 0) estado = 'danger';
+  else if (disponible < 0.1 * ingresoRecibido) estado = 'warning';
+  else estado = 'good';
+
+  return {
+    ingresoRecibido,
+    ingresoEstimado,
+    gastosFijosPlan,
+    gastosVariablesPlan,
+    ahorroPlan,
+    variableGastado,
+    debtPlanned: planDebt,
+    debtPaid: Number(debtPaid) || 0,
+    comprometido,
+    disponible,
+    puedesGastar,
+    porAsignar,
+    estado,
+  };
+}
+
+/**
  * Detect anomalies (values 2+ standard deviations from mean)
  */
 export function detectAnomalies(values, threshold = 2) {
