@@ -300,7 +300,7 @@ export default function BudgetPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header flex items-center justify-between" id="tour-budget-header">
+      <div className="page-header flex items-center justify-between">
         <div>
           <h1 className="page-title">Presupuesto</h1>
           <p className="page-subtitle">Planificación base cero mensual</p>
@@ -386,7 +386,7 @@ export default function BudgetPage() {
         </div>
 
         {/* Card 3: Por Asignar (Zero-based rule) */}
-        <div className="kpi-card" style={{ 
+        <div className="kpi-card" id="tour-budget-unassigned" style={{ 
           '--kpi-accent': balanceEstimated === 0 ? 'var(--color-success)' : balanceEstimated > 0 ? 'var(--color-warning)' : 'var(--color-danger)'
         }}>
           <div className="kpi-label">Por Asignar</div>

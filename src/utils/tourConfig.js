@@ -17,19 +17,19 @@ export const tourSteps = [
     }
   },
   {
-    element: '#tour-transactions-header',
+    element: '#tour-transactions-content',
     popover: {
       title: 'Transacciones',
-      description: 'Registra y categoriza todos tus ingresos y gastos aquí para mantener tu presupuesto al día.',
+      description: 'Aquí registrarás todos tus ingresos y gastos. Al crear un gasto, si tienes Tarjetas de Crédito creadas, podrás asignárselas directamente para mantener tu balance y fechas de pago sincronizados automáticamente.',
       side: 'bottom',
       align: 'start'
     }
   },
   {
-    element: '#tour-budget-header',
+    element: '#tour-budget-unassigned',
     popover: {
       title: 'Presupuesto Base Cero',
-      description: 'Asigna cada peso ganado a una categoría. El objetivo es que "Por Asignar" siempre sea 0.00.',
+      description: 'Asigna cada peso ganado a una categoría antes de gastarlo. El objetivo es que "Por Asignar" siempre llegue a 0.00 al finalizar tu planificación.',
       side: 'bottom',
       align: 'start'
     }
@@ -53,10 +53,10 @@ export const tourSteps = [
     }
   },
   {
-    element: '#tour-creditcards-header',
+    element: '#tour-creditcards-content',
     popover: {
       title: 'Tarjetas de Crédito',
-      description: 'Monitorea tus fechas de corte, fechas de pago y el estado de cuenta de tus tarjetas de crédito.',
+      description: 'Registra tus tarjetas de crédito indicando sus fechas de corte y pago. El sistema calculará tu deuda total a pagar este mes tomando en cuenta cada gasto que registres con esa tarjeta en la pestaña de Transacciones.',
       side: 'bottom',
       align: 'start'
     }

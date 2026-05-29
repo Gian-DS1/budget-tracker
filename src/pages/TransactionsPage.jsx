@@ -192,8 +192,8 @@ export default function TransactionsPage() {
   }, [categories]);
 
   return (
-    <div className="page-container">
-      <div className="page-header flex items-center justify-between" id="tour-transactions-header">
+    <div className="page-container" id="tour-transactions-content">
+      <div className="page-header flex items-center justify-between">
         <div>
           <h1 className="page-title">Transacciones</h1>
           <p className="page-subtitle">Gestiona tus ingresos y gastos</p>
