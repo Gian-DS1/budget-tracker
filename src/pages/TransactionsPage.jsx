@@ -12,6 +12,7 @@ import CurrencyInput from '../components/ui/CurrencyInput';
 import { autoCategorize } from '../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel } from '../utils/formatters';
 import { USD_TO_DOP_RATE } from '../utils/constants';
+import { computeCashback } from '../utils/creditCards';
 
 export default function TransactionsPage() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkAssignCard } =
@@ -92,21 +93,14 @@ export default function TransactionsPage() {
     });
   };
 
+  // Preview del cashback. Para USD se aproxima con la tasa fija; el monto real
+  // guardado lo recalcula el store sobre el monto convertido a DOP.
   const calculatedCashback = useMemo(() => {
-    if (!form.cardId || !form.amount || isNaN(Number(form.amount))) return 0;
+    if (!form.cardId) return 0;
     const card = cards.find(c => c.id === form.cardId);
-    if (!card || !card.cashbackRules || card.cashbackRules.length === 0) return 0;
-
-    // Check specific category rule first, then 'all'
-    const specificRule = card.cashbackRules.find(r => r.categoryId === form.categoryId);
-    const allRule = card.cashbackRules.find(r => r.categoryId === 'all');
-    
-    const ruleToApply = specificRule || allRule;
-    if (ruleToApply) {
-      return (Number(form.amount) * ruleToApply.percentage) / 100;
-    }
-    return 0;
-  }, [form.cardId, form.categoryId, form.amount, cards]);
+    const baseAmount = form.currency === 'USD' ? Number(form.amount) * USD_TO_DOP_RATE : Number(form.amount);
+    return computeCashback(card, form.categoryId, baseAmount);
+  }, [form.cardId, form.categoryId, form.amount, form.currency, cards]);
 
   const handleSubmit = (e) => {
     e.preventDefault();

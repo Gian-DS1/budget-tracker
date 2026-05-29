@@ -76,3 +76,19 @@ export function getStatementAmount(transactions, cardId, startISO, endISO) {
 export function isStatementPaid(card, closedEndISO) {
   return Array.isArray(card.paidCycles) && card.paidCycles.includes(closedEndISO);
 }
+
+/**
+ * Cashback (en DOP) que genera un monto en una tarjeta, según sus reglas.
+ * Busca primero la regla de la categoría exacta y, si no hay, la regla 'all'.
+ * `amount` debe estar en la moneda base (DOP); redondea a 2 decimales.
+ * Fuente única de verdad — usado por el formulario (preview) y el store (guardado).
+ */
+export function computeCashback(card, categoryId, amount) {
+  const amt = Number(amount);
+  if (!card || !Array.isArray(card.cashbackRules) || !amt || isNaN(amt)) return 0;
+  const rule =
+    card.cashbackRules.find((r) => r.categoryId === categoryId) ||
+    card.cashbackRules.find((r) => r.categoryId === 'all');
+  if (!rule) return 0;
+  return Math.round((amt * Number(rule.percentage)) / 100 * 100) / 100;
+}

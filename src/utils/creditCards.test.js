@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardCycles, getStatementAmount, isStatementPaid } from './creditCards';
+import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback } from './creditCards';
 
 describe('getCardCycles', () => {
   it('corte 20 / pago 5: el pago cae el mes siguiente al corte', () => {
@@ -46,5 +46,32 @@ describe('isStatementPaid', () => {
     const card = { paidCycles: ['2026-05-20'] };
     expect(isStatementPaid(card, '2026-05-20')).toBe(true);
     expect(isStatementPaid(card, '2026-06-20')).toBe(false);
+  });
+});
+
+describe('computeCashback', () => {
+  const card = {
+    cashbackRules: [
+      { categoryId: 'super', percentage: 3 },
+      { categoryId: 'all', percentage: 1 },
+    ],
+  };
+
+  it('aplica la regla de la categoría específica', () => {
+    expect(computeCashback(card, 'super', 1000)).toBe(30);
+  });
+
+  it("usa la regla 'all' cuando no hay regla específica", () => {
+    expect(computeCashback(card, 'otra', 1000)).toBe(10);
+  });
+
+  it('devuelve 0 si la tarjeta no tiene reglas o el monto es inválido', () => {
+    expect(computeCashback({ cashbackRules: [] }, 'super', 1000)).toBe(0);
+    expect(computeCashback(card, 'super', 0)).toBe(0);
+    expect(computeCashback(null, 'super', 1000)).toBe(0);
+  });
+
+  it('soporta porcentajes con decimales', () => {
+    expect(computeCashback({ cashbackRules: [{ categoryId: 'all', percentage: 1.5 }] }, 'x', 150)).toBe(2.25);
   });
 });

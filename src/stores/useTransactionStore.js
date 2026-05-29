@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 import toast from 'react-hot-toast';
 import useCreditCardStore from './useCreditCardStore';
+import { computeCashback } from '../utils/creditCards';
 
 export async function fetchUSDRate(dateStr) {
   let rate = USD_TO_DOP_RATE;
@@ -91,6 +92,14 @@ const useTransactionStore = create(
       notes = notes ? `${notes} (${conversionNote})` : conversionNote;
     }
 
+    // Cashback se calcula sobre el monto YA convertido a DOP (no sobre el monto
+    // ingresado, que puede estar en USD) y solo para gastos.
+    let cashbackEarned = 0;
+    if (transaction.cardId && transaction.type === 'expense') {
+      const card = useCreditCardStore.getState().cards.find((c) => c.id === transaction.cardId);
+      cashbackEarned = computeCashback(card, transaction.categoryId, amount);
+    }
+
     const dbTx = {
       user_id: user.id,
       category_id: transaction.categoryId || null,
@@ -101,7 +110,7 @@ const useTransactionStore = create(
       date: transaction.date,
       notes: notes,
       currency: 'DOP',
-      cashback_earned: transaction.cashbackEarned || 0
+      cashback_earned: cashbackEarned
     };
 
     const { data, error } = await supabase.from('transactions').insert(dbTx).select().single();
@@ -186,17 +195,12 @@ const useTransactionStore = create(
     toast.loading('Asignando tarjeta...', { id: 'bulk-update' });
     
     const dbUpdatesPromises = transactionsToUpdate.map(t => {
-      let cashback = 0;
-      if (card && card.cashbackRules && card.cashbackRules.length > 0 && t.amount && !isNaN(Number(t.amount))) {
-        const specificRule = card.cashbackRules.find(r => r.categoryId === t.categoryId);
-        const allRule = card.cashbackRules.find(r => r.categoryId === 'all');
-        const ruleToApply = specificRule || allRule;
-        if (ruleToApply) {
-          cashback = (Number(t.amount) * ruleToApply.percentage) / 100;
-        }
-      }
-      
-      return supabase.from('transactions').update({ 
+      // Cashback solo para gastos; el monto ya está en DOP.
+      const cashback = (card && t.type === 'expense')
+        ? computeCashback(card, t.categoryId, t.amount)
+        : 0;
+
+      return supabase.from('transactions').update({
         card_id: dbCardId,
         cashback_earned: cashback 
       }).eq('id', t.id).then(({error}) => ({ id: t.id, error, cashback }));
