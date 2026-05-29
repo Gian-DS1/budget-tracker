@@ -11,7 +11,7 @@ import EmptyState from '../components/ui/EmptyState';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { autoCategorize } from '../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel } from '../utils/formatters';
-import { USD_TO_DOP_RATE } from '../utils/constants';
+import useRateStore from '../stores/useRateStore';
 import { computeCashback } from '../utils/creditCards';
 
 export default function TransactionsPage() {
@@ -19,6 +19,7 @@ export default function TransactionsPage() {
     useTransactionStore();
   const { categories } = useCategoryStore();
   const { cards } = useCreditCardStore();
+  const fxRate = useRateStore((s) => s.getRate());
 
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -98,9 +99,9 @@ export default function TransactionsPage() {
   const calculatedCashback = useMemo(() => {
     if (!form.cardId) return 0;
     const card = cards.find(c => c.id === form.cardId);
-    const baseAmount = form.currency === 'USD' ? Number(form.amount) * USD_TO_DOP_RATE : Number(form.amount);
+    const baseAmount = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
     return computeCashback(card, form.categoryId, baseAmount);
-  }, [form.cardId, form.categoryId, form.amount, form.currency, cards]);
+  }, [form.cardId, form.categoryId, form.amount, form.currency, cards, fxRate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -585,7 +586,7 @@ export default function TransactionsPage() {
               </select>
               {form.currency === 'USD' && form.amount && (
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
-                  ≈ {formatCurrency(Number(form.amount) * USD_TO_DOP_RATE)} (tasa: {USD_TO_DOP_RATE})
+                  ≈ {formatCurrency(Number(form.amount) * fxRate)} (tasa: {fxRate}) — valor final según la tasa del día
                 </p>
               )}
             </div>

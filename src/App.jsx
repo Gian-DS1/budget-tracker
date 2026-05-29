@@ -11,6 +11,7 @@ import useSavingsStore from './stores/useSavingsStore';
 import useDebtStore from './stores/useDebtStore';
 import usePlanStore from './stores/usePlanStore';
 import useCreditCardStore from './stores/useCreditCardStore';
+import useRateStore from './stores/useRateStore';
 import { useAuth } from './contexts/AuthContext';
 import { supabase } from './lib/supabase';
 import AuthPage from './pages/AuthPage';
@@ -48,9 +49,17 @@ function App() {
   const fetchPlans = usePlanStore((state) => state.fetchPlans);
   const fetchCards = useCreditCardStore((state) => state.fetchCards);
 
+  const fetchRate = useRateStore((state) => state.fetchRate);
+
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
+
+  // Tasa USD→DOP actual: se obtiene una vez al cargar (es pública, no depende
+  // de la sesión) y queda cacheada para valorar deudas/balances en USD.
+  useEffect(() => {
+    fetchRate();
+  }, [fetchRate]);
 
   // Supabase Database Keep-Alive Trigger to prevent sleep on the free tier
   useEffect(() => {

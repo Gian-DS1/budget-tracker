@@ -47,6 +47,7 @@ const useCategoryStore = create(
           type: c.type,
           icon: c.icon,
           color: c.color,
+          slug: c.slug || null,
           keywords: c.keywords || [],
           is_active: true,
           sort_order: index
@@ -66,9 +67,9 @@ const useCategoryStore = create(
 
         if (insertedData) {
           const formattedData = insertedData.map(c => ({
-            ...c, 
-            isActive: c.is_active, 
-            sortOrder: c.sort_order 
+            ...c,
+            isActive: c.is_active,
+            sortOrder: c.sort_order
           }));
           set({ categories: formattedData, loading: false });
           return;
@@ -126,6 +127,7 @@ const useCategoryStore = create(
           type: c.type,
           icon: c.icon,
           color: c.color,
+          slug: c.slug || null,
           keywords: c.keywords || [],
           is_active: true,
           sort_order: cleanData.length + index
@@ -223,6 +225,7 @@ const useCategoryStore = create(
         type: c.type,
         icon: c.icon,
         color: c.color,
+        slug: c.slug || null,
         keywords: c.keywords || [],
         is_active: true,
         sort_order: index
@@ -242,9 +245,9 @@ const useCategoryStore = create(
 
       if (insertedData) {
         const formattedData = insertedData.map(c => ({
-          ...c, 
-          isActive: c.is_active, 
-          sortOrder: c.sort_order 
+          ...c,
+          isActive: c.is_active,
+          sortOrder: c.sort_order
         }));
         set({ categories: formattedData, loading: false });
         toast.success("Categorías restablecidas con éxito");

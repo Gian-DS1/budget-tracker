@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 
 const useSavingsStore = create(
   persist(

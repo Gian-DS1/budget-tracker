@@ -79,6 +79,18 @@ export const AuthProvider = ({ children }) => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setIsRecoveringPassword(false);
+    // Clear cached financial data so another person on this same device/browser
+    // can't see the previous user's transactions, budgets, debts, etc. The theme
+    // preference (fintrack-theme) is intentionally kept — it's not sensitive.
+    [
+      'fintrack-transactions-cache',
+      'fintrack-budgets-cache',
+      'fintrack-categories-cache',
+      'fintrack-savings-cache',
+      'fintrack-debts-cache',
+      'fintrack-plans-cache',
+      'fintrack-cards-cache',
+    ].forEach((key) => localStorage.removeItem(key));
     toast.success('Sesión cerrada');
   };
 

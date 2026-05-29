@@ -20,7 +20,8 @@ import CurrencyInput from '../components/ui/CurrencyInput';
 import Modal from '../components/ui/Modal';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance } from '../utils/calculations';
-import { MONTHS_ES, USD_TO_DOP_RATE } from '../utils/constants';
+import { MONTHS_ES } from '../utils/constants';
+import useRateStore from '../stores/useRateStore';
 import toast from 'react-hot-toast';
 
 // Local state input that only persists on blur (avoids upsert on every keystroke)
@@ -86,6 +87,7 @@ export default function BudgetPage() {
   const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
+  const fxRate = useRateStore((s) => s.getRate());
 
 
   const debtPlanned = getTotalMonthlyPayment();
@@ -96,9 +98,9 @@ export default function BudgetPage() {
       if (d.getFullYear() !== year || d.getMonth() !== month) return sum;
       const debt = debts.find((dd) => dd.id === p.debtId);
       const val = Number(p.amount) || 0;
-      return sum + (debt && debt.currency === 'USD' ? val * USD_TO_DOP_RATE : val);
+      return sum + (debt && debt.currency === 'USD' ? val * fxRate : val);
     }, 0);
-  }, [payments, debts, year, month]);
+  }, [payments, debts, year, month, fxRate]);
 
   const monthBudgets = useMemo(() => {
     return budgets.filter((b) => b.year === year && b.month === month);

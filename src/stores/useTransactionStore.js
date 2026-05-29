@@ -1,13 +1,16 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import { USD_TO_DOP_RATE } from '../utils/constants';
 import toast from 'react-hot-toast';
 import useCreditCardStore from './useCreditCardStore';
+import useRateStore from './useRateStore';
 import { computeCashback } from '../utils/creditCards';
 
+// Conversión histórica por fecha (para guardar la transacción al valor del día).
+// Si la red falla, cae a la tasa efectiva del rate store (que respeta el
+// override manual del usuario), no a un número fijo.
 export async function fetchUSDRate(dateStr) {
-  let rate = USD_TO_DOP_RATE;
+  let rate = useRateStore.getState().getRate();
   try {
     const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${dateStr}/v1/currencies/usd.json`);
     if (response.ok) {
@@ -67,6 +70,8 @@ const useTransactionStore = create(
       }));
       set({ transactions: formattedData, loading: false });
     } else {
+      console.error('Error fetching transactions:', error);
+      toast.error('No se pudieron cargar las transacciones');
       set({ loading: false });
     }
   },
@@ -298,7 +303,10 @@ const useTransactionStore = create(
 }),
 {
   name: 'fintrack-transactions-cache',
-  partialize: (state) => ({ transactions: state.transactions }),
+  // Cachear solo las 500 transacciones más recientes (ya vienen ordenadas
+  // desc por fecha) para no exceder el límite de ~5MB de localStorage en
+  // usuarios con mucho historial. Supabase sigue siendo la fuente completa.
+  partialize: (state) => ({ transactions: state.transactions.slice(0, 500) }),
 }
 )
 );

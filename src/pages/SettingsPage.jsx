@@ -1,11 +1,12 @@
 // FinTrack RD — Settings & Utilities Page
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet } from 'lucide-react';
+import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useThemeStore from '../stores/useThemeStore';
+import useRateStore from '../stores/useRateStore';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { autoCategorize } from '../data/defaultCategories';
 import { supabase } from '../lib/supabase';
@@ -14,9 +15,36 @@ export default function SettingsPage() {
   const { theme, setTheme } = useThemeStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
+  const liveRate = useRateStore((s) => s.liveRate);
+  const manualRate = useRateStore((s) => s.manualRate);
+  const setManualRate = useRateStore((s) => s.setManualRate);
+  const fetchRate = useRateStore((s) => s.fetchRate);
+  const [rateInput, setRateInput] = useState('');
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
   const exportMenuRef = useRef(null);
+
+  const handleSaveRate = () => {
+    if (rateInput === '') {
+      setManualRate(null);
+      toast.success('Usando la tasa de mercado automática');
+      return;
+    }
+    const v = Number(rateInput);
+    if (isNaN(v) || v <= 0) {
+      toast.error('Ingresa una tasa válida');
+      return;
+    }
+    setManualRate(v);
+    toast.success(`Tasa fijada manualmente: RD$ ${v}`);
+  };
+
+  const handleAutoRate = async () => {
+    setManualRate(null);
+    setRateInput('');
+    await fetchRate();
+    toast.success('Tasa actualizada desde el mercado');
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -244,6 +272,38 @@ export default function SettingsPage() {
               onClick={() => setTheme('dark')}
             >
               <Moon size={16} /> Oscuro
+            </button>
+          </div>
+        </div>
+
+        {/* Exchange Rate Settings */}
+        <div className="card flex flex-col justify-between">
+          <div className="card-header border-b border-secondary pb-4 mb-4">
+            <h3 className="card-title flex items-center gap-2">
+              <DollarSign size={20} /> Tasa de cambio (USD → DOP)
+            </h3>
+          </div>
+          <div className="text-sm text-muted mb-4">
+            Se usa para valorar deudas y balances en dólares. Tasa de mercado
+            actual: <span className="font-semibold amount-neutral">RD$ {liveRate}</span>.
+            {manualRate != null && (
+              <> Usando override manual: <span className="font-semibold amount-neutral">RD$ {manualRate}</span>.</>
+            )}
+          </div>
+          <div className="flex gap-2 mt-auto" style={{ flexWrap: 'wrap' }}>
+            <input
+              type="number"
+              className="no-spinners"
+              style={{ flex: '1 1 120px', minWidth: 0 }}
+              placeholder={manualRate != null ? String(manualRate) : 'Tasa manual'}
+              value={rateInput}
+              onChange={(e) => setRateInput(e.target.value)}
+            />
+            <button className="btn btn-primary justify-center" onClick={handleSaveRate} style={{ flex: '1 1 100px' }}>
+              Fijar tasa
+            </button>
+            <button className="btn btn-secondary justify-center" onClick={handleAutoRate} style={{ flex: '1 1 100px' }}>
+              Automática
             </button>
           </div>
         </div>

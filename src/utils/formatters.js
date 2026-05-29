@@ -117,7 +117,7 @@ export function formatChange(value) {
  * Generate a unique ID
  */
 export function generateId() {
-  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).substr(2);
+  return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
 }
 
 /**

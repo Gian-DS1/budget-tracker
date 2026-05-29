@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import { USD_TO_DOP_RATE } from '../utils/constants';
+import useRateStore from './useRateStore';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
 
@@ -25,17 +25,22 @@ const useDebtStore = create(
     let formattedDebts = [];
     if (!debtsRes.error && debtsRes.data) {
       formattedDebts = debtsRes.data.map(d => {
-        const isUSD = d.creditor_name && d.creditor_name.endsWith(' [USD]');
+        // Moneda desde la columna `currency`. Para filas legadas (creadas antes
+        // de la migración) que aún llevan el sufijo " [USD]" en el nombre, se
+        // detecta por el sufijo y se limpia el nombre al mostrarlo.
+        const hasSuffix = d.creditor_name && d.creditor_name.endsWith(' [USD]');
+        const currency = d.currency || (hasSuffix ? 'USD' : 'DOP');
+        const creditorName = hasSuffix ? d.creditor_name.slice(0, -6) : d.creditor_name;
         return {
           id: d.id,
-          creditorName: isUSD ? d.creditor_name.slice(0, -6) : d.creditor_name,
+          creditorName,
           originalAmount: Number(d.total_amount),
           currentBalance: Number(d.current_balance),
           interestRate: Number(d.interest_rate),
           monthlyPayment: Number(d.minimum_payment),
           due_date: d.due_date,
           status: d.status,
-          currency: isUSD ? 'USD' : 'DOP',
+          currency,
           createdAt: d.created_at
         };
       });
@@ -63,31 +68,32 @@ const useDebtStore = create(
 
     const currentBal = Number(debt.currentBalance !== undefined ? debt.currentBalance : debt.originalAmount);
     const initialStatus = currentBal <= 0 ? 'paid_off' : 'active';
-    const dbName = debt.currency === 'USD' ? `${debt.creditorName} [USD]` : debt.creditorName;
+    const currency = debt.currency || 'DOP';
 
     const dbPayload = {
       user_id: user.id,
-      creditor_name: dbName,
+      creditor_name: debt.creditorName,
       total_amount: Number(debt.originalAmount),
       current_balance: currentBal,
       interest_rate: Number(debt.interestRate) || 0,
       minimum_payment: Number(debt.monthlyPayment) || 0,
       due_date: debt.dueDate || null,
-      status: initialStatus
+      status: initialStatus,
+      currency,
     };
 
     const { data, error } = await supabase.from('debts').insert(dbPayload).select().single();
     if (!error && data) {
       const formatted = {
         id: data.id,
-        creditorName: debt.currency === 'USD' ? data.creditor_name.slice(0, -6) : data.creditor_name,
+        creditorName: data.creditor_name,
         originalAmount: Number(data.total_amount),
         currentBalance: Number(data.current_balance),
         interestRate: Number(data.interest_rate),
         monthlyPayment: Number(data.minimum_payment),
-        dueDate: data.due_date,
+        due_date: data.due_date,
         status: data.status,
-        currency: debt.currency || 'DOP',
+        currency: data.currency || currency,
         createdAt: data.created_at
       };
       set((state) => ({ debts: [...state.debts, formatted] }));
@@ -99,20 +105,20 @@ const useDebtStore = create(
     const currentCurrency = updates.currency !== undefined ? updates.currency : (goal?.currency || 'DOP');
 
     const dbUpdates = {};
-    if (updates.creditorName !== undefined || updates.currency !== undefined) {
-      const name = updates.creditorName !== undefined ? updates.creditorName : (goal?.creditorName || '');
-      dbUpdates.creditor_name = currentCurrency === 'USD' ? `${name} [USD]` : name;
-    }
-    
+    if (updates.creditorName !== undefined) dbUpdates.creditor_name = updates.creditorName;
+    if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+
     if (updates.originalAmount !== undefined) dbUpdates.total_amount = Number(updates.originalAmount);
 
     let newCurrent = goal?.currentBalance || 0;
+    // Track the resulting status in a local variable instead of mutating the
+    // caller's `updates` object (mutating function args is a side-effect trap).
+    let nextStatus = goal?.status || 'active';
     if (updates.currentBalance !== undefined) {
       newCurrent = Number(updates.currentBalance);
       dbUpdates.current_balance = newCurrent;
-      const newStatus = newCurrent <= 0 ? 'paid_off' : 'active';
-      dbUpdates.status = newStatus;
-      updates.status = newStatus;
+      nextStatus = newCurrent <= 0 ? 'paid_off' : 'active';
+      dbUpdates.status = nextStatus;
     }
 
     if (updates.interestRate !== undefined) dbUpdates.interest_rate = Number(updates.interestRate);
@@ -122,7 +128,7 @@ const useDebtStore = create(
     const { error } = await supabase.from('debts').update(dbUpdates).eq('id', id);
     if (!error) {
       set((state) => ({
-        debts: state.debts.map((d) => (d.id === id ? { ...d, ...updates, currentBalance: newCurrent, status: updates.status || d.status, currency: currentCurrency } : d)),
+        debts: state.debts.map((d) => (d.id === id ? { ...d, ...updates, currentBalance: newCurrent, status: nextStatus, currency: currentCurrency } : d)),
       }));
     }
   },
@@ -189,7 +195,11 @@ const useDebtStore = create(
       // Sync with Transactions
       try {
         const categories = useCategoryStore.getState().categories;
-        const loanCategory = categories.find(c => c.name === 'Pago de Préstamos y Deudas' || c.name.includes('Préstamos'));
+        // Buscar por slug estable; respaldo por nombre para cuentas previas a la
+        // migración del slug.
+        const loanCategory =
+          categories.find((c) => c.slug === 'pago-deuda') ||
+          categories.find((c) => c.name === 'Pago de Préstamos y Deudas' || (c.name && c.name.includes('Préstamos')));
         
         if (loanCategory) {
           const addTransaction = useTransactionStore.getState().addTransaction;
@@ -216,7 +226,7 @@ const useDebtStore = create(
   },
 
   getTotalDebt: () => {
-    const rate = USD_TO_DOP_RATE;
+    const rate = useRateStore.getState().getRate();
     return get()
       .debts.filter((d) => d.status === 'active')
       .reduce((sum, d) => {
@@ -226,7 +236,7 @@ const useDebtStore = create(
   },
 
   getTotalMonthlyPayment: () => {
-    const rate = USD_TO_DOP_RATE;
+    const rate = useRateStore.getState().getRate();
     return get()
       .debts.filter((d) => d.status === 'active')
       .reduce((sum, d) => {

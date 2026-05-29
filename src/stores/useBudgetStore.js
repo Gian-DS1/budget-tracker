@@ -30,6 +30,8 @@ const useBudgetStore = create(
       });
       set({ budgets: formatted, loading: false });
     } else {
+      console.error('Error fetching budgets:', error);
+      toast.error('No se pudieron cargar los presupuestos');
       set({ loading: false });
     }
   },

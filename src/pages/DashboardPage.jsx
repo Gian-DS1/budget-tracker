@@ -37,7 +37,7 @@ import {
 } from '../utils/formatters';
 import { getBudgetSummary } from '../utils/calculations';
 import { getCardCycles, getStatementAmount, isStatementPaid } from '../utils/creditCards';
-import { USD_TO_DOP_RATE } from '../utils/constants';
+import useRateStore from '../stores/useRateStore';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -69,6 +69,7 @@ export default function DashboardPage() {
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
 
   const cards = useCreditCardStore((s) => s.cards);
+  const fxRate = useRateStore((s) => s.getRate());
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -94,9 +95,9 @@ export default function DashboardPage() {
       if (d.getFullYear() !== currentYear || d.getMonth() !== currentMonth) return sum;
       const debt = debts.find((dd) => dd.id === p.debtId);
       const val = Number(p.amount) || 0;
-      return sum + (debt && debt.currency === 'USD' ? val * USD_TO_DOP_RATE : val);
+      return sum + (debt && debt.currency === 'USD' ? val * fxRate : val);
     }, 0);
-  }, [payments, debts, currentYear, currentMonth]);
+  }, [payments, debts, currentYear, currentMonth, fxRate]);
 
   const summary = useMemo(
     () =>
