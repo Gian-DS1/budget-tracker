@@ -58,16 +58,6 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Electricidad',
-    type: 'fixed_expense',
-    icon: '⚡',
-    color: '#f59e0b',
-    keywords: ['luz', 'edenorte', 'edesur', 'edeeste', 'electricidad', 'cdeee'],
-    isActive: true,
-    sortOrder: 5,
-  },
-  {
-    id: generateId(),
     name: 'Internet y Comunicaciones',
     type: 'fixed_expense',
     icon: '📶',
@@ -307,4 +297,34 @@ export function autoCategorize(description, categories) {
   }
 
   return bestMatch;
+}
+
+/**
+ * Find exact duplicate categories (same normalized name + type). Keeps the
+ * FIRST occurrence of each group as canonical and returns the remapping needed
+ * to reassign references (transactions, budgets) before deleting the rest.
+ *
+ * @param {Array} categories - list of {id, name, type}
+ * @returns {{ remap: {fromId: string, toId: string}[], deleteIds: string[] }}
+ */
+export function findDuplicateCategories(categories) {
+  const groups = new Map();
+  for (const c of categories) {
+    const key = `${(c.name || '').trim().toLowerCase()}|${c.type}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(c);
+  }
+
+  const remap = [];
+  const deleteIds = [];
+  for (const list of groups.values()) {
+    if (list.length <= 1) continue;
+    const keeper = list[0];
+    for (let i = 1; i < list.length; i++) {
+      remap.push({ fromId: list[i].id, toId: keeper.id });
+      deleteIds.push(list[i].id);
+    }
+  }
+
+  return { remap, deleteIds };
 }

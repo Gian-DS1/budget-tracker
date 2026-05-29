@@ -1,7 +1,7 @@
 // FinTrack RD — Settings & Utilities Page
 
 import { useState, useRef, useEffect } from 'react';
-import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet } from 'lucide-react';
+import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet, Layers } from 'lucide-react';
 import toast from 'react-hot-toast';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
@@ -13,9 +13,10 @@ import { supabase } from '../lib/supabase';
 export default function SettingsPage() {
   const { theme, setTheme, viewMode, setViewMode } = useThemeStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
+  const { categories, dedupeCategories } = useCategoryStore();
   const [showClearDataConfirm, setShowClearDataConfirm] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
+  const [deduping, setDeduping] = useState(false);
   const exportMenuRef = useRef(null);
 
   useEffect(() => {
@@ -180,6 +181,22 @@ export default function SettingsPage() {
     e.target.value = null;
   };
 
+  // ─── Category Dedupe ──────────────────────────────────────────
+
+  const handleDedupe = async () => {
+    setDeduping(true);
+    toast.loading('Limpiando categorías duplicadas...', { id: 'dedupe' });
+    const removed = await dedupeCategories();
+    if (removed > 0) {
+      toast.success(`Se eliminaron ${removed} categorías duplicadas`, { id: 'dedupe' });
+      // Reload so transactions/budgets re-read the reassigned category ids.
+      setTimeout(() => window.location.reload(), 900);
+    } else {
+      toast.success('No hay categorías duplicadas', { id: 'dedupe' });
+      setDeduping(false);
+    }
+  };
+
   // ─── Data Clear ──────────────────────────────────────────────
 
   const handleClearData = async () => {
@@ -272,7 +289,7 @@ export default function SettingsPage() {
           <div className="text-sm text-muted mb-4">
             Reinicia el recorrido guiado para aprender a utilizar las funciones de FinTrack.
           </div>
-          <button 
+          <button
             className="btn btn-secondary w-full justify-center mt-auto"
             onClick={() => {
               localStorage.removeItem('fintrack-tour-seen');
@@ -280,6 +297,27 @@ export default function SettingsPage() {
             }}
           >
             <PlayCircle size={16} /> Repetir Recorrido Guiado
+          </button>
+        </div>
+
+        {/* Category Maintenance */}
+        <div className="card flex flex-col justify-between">
+          <div className="card-header border-b border-secondary pb-4 mb-4">
+            <h3 className="card-title flex items-center gap-2">
+              <Layers size={20} /> Categorías
+            </h3>
+          </div>
+          <div className="text-sm text-muted mb-4">
+            Une las categorías repetidas (mismo nombre y tipo) en una sola.
+            Tus transacciones y presupuestos se reasignan automáticamente; no se
+            pierde ningún dato.
+          </div>
+          <button
+            className="btn btn-secondary w-full justify-center mt-auto"
+            onClick={handleDedupe}
+            disabled={deduping}
+          >
+            <Layers size={16} /> {deduping ? 'Limpiando...' : 'Limpiar Duplicados'}
           </button>
         </div>
 

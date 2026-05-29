@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
-import { defaultCategories } from '../data/defaultCategories';
+import { defaultCategories, findDuplicateCategories } from '../data/defaultCategories';
 import toast from 'react-hot-toast';
+
+// Shared across all calls: dedupes concurrent fetchCategories invocations so the
+// seeding logic can never run twice in parallel and double-seed categories.
+let fetchInFlight = null;
 
 const useCategoryStore = create(
   persist(
@@ -12,6 +16,8 @@ const useCategoryStore = create(
   error: null,
 
   fetchCategories: async () => {
+    if (fetchInFlight) return fetchInFlight;
+    fetchInFlight = (async () => {
     set({ loading: true, error: null });
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
@@ -110,11 +116,49 @@ const useCategoryStore = create(
     }
 
     const formattedData = finalCategories.map(c => ({
-      ...c, 
-      isActive: c.is_active, 
-      sortOrder: c.sort_order 
+      ...c,
+      isActive: c.is_active,
+      sortOrder: c.sort_order
     }));
     set({ categories: formattedData, loading: false });
+    })();
+
+    try {
+      await fetchInFlight;
+    } finally {
+      fetchInFlight = null;
+    }
+  },
+
+  dedupeCategories: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    // Pull a fresh copy ordered oldest-first so the canonical keeper is stable.
+    const { data: cats, error } = await supabase
+      .from('categories')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+    if (error || !cats) return 0;
+
+    const { remap, deleteIds } = findDuplicateCategories(cats);
+    if (deleteIds.length === 0) return 0;
+
+    // Reassign references from each duplicate to its canonical category BEFORE
+    // deleting, so no transaction or budget is orphaned.
+    for (const { fromId, toId } of remap) {
+      await supabase.from('transactions').update({ category_id: toId }).eq('user_id', user.id).eq('category_id', fromId);
+      await supabase.from('budgets').update({ category_id: toId }).eq('user_id', user.id).eq('category_id', fromId);
+    }
+
+    const { error: delError } = await supabase.from('categories').delete().in('id', deleteIds);
+    if (delError) {
+      console.error('Error deleting duplicate categories:', delError);
+      return 0;
+    }
+
+    return deleteIds.length;
   },
 
   resetCategoriesToDefault: async () => {
