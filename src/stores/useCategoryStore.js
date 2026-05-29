@@ -79,17 +79,48 @@ const useCategoryStore = create(
         return;
       }
     }
+    // ── Auto-clean duplicates already in the database ───────────
+    const { remap, deleteIds } = findDuplicateCategories(data);
+    if (deleteIds.length > 0) {
+      try {
+        for (const { fromId, toId } of remap) {
+          await supabase.from('transactions').update({ category_id: toId }).eq('user_id', user.id).eq('category_id', fromId);
+          await supabase.from('budgets').update({ category_id: toId }).eq('user_id', user.id).eq('category_id', fromId);
+        }
+        await supabase.from('categories').delete().in('id', deleteIds);
+      } catch (err) {
+        console.error('Auto-dedupe error:', err);
+      }
+    }
 
-    // Auto-update: Seed any missing default categories if the user has some categories but is missing new ones
-    const missingCategories = defaultCategories.filter(
-      (dc) => !data.some((dbCat) => dbCat.name.toLowerCase() === dc.name.toLowerCase() && dbCat.type === dc.type)
+    // After cleaning, work only with the de-duplicated list.
+    const cleanData = data.filter((c) => !deleteIds.includes(c.id));
+
+    // Build a set of (normalised name|type) keys from existing DB categories so
+    // the missing-check is resilient to duplicates already in the database.
+    const existingKeys = new Set(
+      cleanData.map((c) => `${(c.name || '').trim().toLowerCase()}|${c.type}`)
     );
 
-    let finalCategories = [...data];
+    const missingCategories = defaultCategories.filter(
+      (dc) => !existingKeys.has(`${dc.name.trim().toLowerCase()}|${dc.type}`)
+    );
+
+    let finalCategories = [...cleanData];
 
     if (missingCategories.length > 0) {
       try {
-        const seedMissing = missingCategories.map((c, index) => ({
+        // Dedupe the insert payload itself so we never send two rows with
+        // the same name|type in a single batch.
+        const seen = new Set();
+        const uniqueMissing = missingCategories.filter((c) => {
+          const k = `${c.name.trim().toLowerCase()}|${c.type}`;
+          if (seen.has(k)) return false;
+          seen.add(k);
+          return true;
+        });
+
+        const seedMissing = uniqueMissing.map((c, index) => ({
           user_id: user.id,
           name: c.name,
           type: c.type,
@@ -97,7 +128,7 @@ const useCategoryStore = create(
           color: c.color,
           keywords: c.keywords || [],
           is_active: true,
-          sort_order: data.length + index
+          sort_order: cleanData.length + index
         }));
 
         const { data: insertedMissing, error: insertError } = await supabase
