@@ -4,6 +4,7 @@ import { useState, useMemo } from 'react';
 import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3 } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
+import useCreditCardStore from '../stores/useCreditCardStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
@@ -16,6 +17,7 @@ export default function TransactionsPage() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction } =
     useTransactionStore();
   const { categories } = useCategoryStore();
+  const { cards } = useCreditCardStore();
 
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
@@ -37,6 +39,7 @@ export default function TransactionsPage() {
     amount: '',
     type: 'expense',
     categoryId: '',
+    cardId: '',
     description: '',
     notes: '',
     currency: 'DOP',
@@ -50,6 +53,7 @@ export default function TransactionsPage() {
       amount: '',
       type: 'expense',
       categoryId: '',
+      cardId: '',
       description: '',
       notes: '',
       currency: 'DOP',
@@ -524,6 +528,21 @@ export default function TransactionsPage() {
               )}
             </select>
           </div>
+
+          {form.type === 'expense' && cards.length > 0 && (
+            <div className="form-group">
+              <label className="form-label">Tarjeta (opcional)</label>
+              <select
+                value={form.cardId}
+                onChange={(e) => setForm({ ...form, cardId: e.target.value })}
+              >
+                <option value="">Sin tarjeta / efectivo</option>
+                {cards.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}{c.bank ? ` — ${c.bank}` : ''}</option>
+                ))}
+              </select>
+            </div>
+          )}
 
           <div className="form-group">
             <label className="form-label">Notas (opcional)</label>
