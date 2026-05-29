@@ -321,9 +321,23 @@ table {
   /* min-width:0 lets this flex child shrink below its content width instead of
      forcing horizontal page scroll on small laptops and phones. */
   min-width: 0;
+  /* clip (not hidden) kills any residual horizontal overflow without turning
+     the vertical axis into a scroll container or breaking sticky headers. */
+  overflow-x: clip;
   margin-left: var(--sidebar-width);
   padding-top: var(--header-height);
   transition: margin-left var(--transition-base);
+}
+
+/* CSS-grid blowout guard: grid items default to min-width:auto, which refuses
+   to shrink below their content's intrinsic width and pushes the page wider
+   than the viewport on phones. Allowing them to shrink keeps cards (recent
+   transactions, mini-calendar, KPIs) inside the screen. */
+.grid-2 > *,
+.grid-3 > *,
+.grid-auto > *,
+.kpi-grid > * {
+  min-width: 0;
 }
 
 .app-content.collapsed {
