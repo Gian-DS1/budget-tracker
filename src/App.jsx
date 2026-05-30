@@ -31,6 +31,9 @@ const CalendarPage = lazy(() => import('./pages/CalendarPage'));
 const SettingsPage = lazy(() => import('./pages/SettingsPage'));
 const FeedbackPage = lazy(() => import('./pages/FeedbackPage'));
 const CreditCardsPage = lazy(() => import('./pages/CreditCardsPage'));
+// Landing pública (visitantes no logueados). Lazy para mantener framer-motion
+// fuera del bundle de la app interna.
+const LandingPage = lazy(() => import('./pages/LandingPage'));
 import TourGuide from './components/ui/TourGuide';
 
 const PageLoader = () => (
@@ -124,19 +127,31 @@ function App() {
   if (!user || isRecoveringPassword) {
     return (
       <BrowserRouter>
-        <Toaster 
-          position="top-right" 
+        <Toaster
+          position="top-right"
           toastOptions={{
             style: {
               background: 'var(--bg-card)',
               color: 'var(--text-primary)',
               border: '1px solid var(--border-primary)',
             }
-          }} 
+          }}
         />
-        <Routes>
-          <Route path="*" element={<AuthPage />} />
-        </Routes>
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            {isRecoveringPassword ? (
+              // Recuperación de contraseña: AuthPage en cualquier ruta (intacto).
+              <Route path="*" element={<AuthPage />} />
+            ) : (
+              <>
+                {/* Visitante no logueado: la raíz muestra la landing; los CTA
+                    navegan a /acceder, que renderiza el flujo de auth. */}
+                <Route path="/" element={<LandingPage />} />
+                <Route path="*" element={<AuthPage />} />
+              </>
+            )}
+          </Routes>
+        </Suspense>
       </BrowserRouter>
     );
   }

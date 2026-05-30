@@ -1,11 +1,15 @@
 import { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { TrendingUp } from 'lucide-react';
 
 export default function AuthPage() {
   const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecoveringPassword } = useAuth();
-  const [mode, setMode] = useState('login'); // 'login' | 'signup' | 'forgot_password'
+  const location = useLocation();
+  // Modo inicial: los CTA de la landing pasan { mode } por router state
+  // ('signup' para "Crear cuenta"); por defecto, login.
+  const [mode, setMode] = useState(location.state?.mode === 'signup' ? 'signup' : 'login'); // 'login' | 'signup' | 'forgot_password'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
