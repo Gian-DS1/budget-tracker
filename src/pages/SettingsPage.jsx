@@ -16,7 +16,6 @@ export default function SettingsPage() {
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const liveRate = useRateStore((s) => s.liveRate);
-  const rateSource = useRateStore((s) => s.source);
   const manualRate = useRateStore((s) => s.manualRate);
   const setManualRate = useRateStore((s) => s.setManualRate);
   const fetchRate = useRateStore((s) => s.fetchRate);
@@ -290,9 +289,8 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="text-sm text-muted mb-4">
-            Tasa de <strong>venta</strong> (la que pagas como consumidor), se actualiza sola:{' '}
-            <span className="font-semibold amount-neutral">RD$ {liveRate}</span>{' '}
-            ({rateSource === 'popular' ? 'Banco Popular vía TasaReal' : 'mercado'}).
+            Tasa de <strong>venta</strong>, se actualiza sola:{' '}
+            <span className="font-semibold amount-neutral">RD$ {liveRate}</span>.
             <div className="text-xs" style={{ marginTop: 'var(--space-1)' }}>
               Es una aproximación; tu banco puede tener un valor un poco distinto. Si lo prefieres, fíjala manualmente.
             </div>
