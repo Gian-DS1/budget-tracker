@@ -37,7 +37,7 @@ export default function DebtsPage() {
     interestRate: '',
     monthlyPayment: '',
     currency: 'DOP',
-    startDate: todayISO(),
+    dueDate: '',
   });
 
   const totalDebt = getTotalDebt();
@@ -51,7 +51,7 @@ export default function DebtsPage() {
       interestRate: debt.interestRate,
       monthlyPayment: debt.monthlyPayment,
       currency: debt.currency || 'DOP',
-      startDate: debt.startDate || todayISO(),
+      dueDate: debt.due_date || '',
     });
     setEditingDebt(debt.id);
     setShowForm(true);
@@ -84,7 +84,7 @@ export default function DebtsPage() {
       interestRate: '',
       monthlyPayment: '',
       currency: 'DOP',
-      startDate: todayISO(),
+      dueDate: '',
     });
     setEditingDebt(null);
     setShowForm(false);
@@ -127,7 +127,7 @@ export default function DebtsPage() {
               interestRate: '',
               monthlyPayment: '',
               currency: 'DOP',
-              startDate: todayISO(),
+              dueDate: '',
             });
             setShowForm(true);
           }}>
@@ -184,7 +184,7 @@ export default function DebtsPage() {
                 interestRate: '',
                 monthlyPayment: '',
                 currency: 'DOP',
-                startDate: todayISO(),
+                dueDate: '',
               });
               setShowForm(true);
             }}>
@@ -415,12 +415,15 @@ export default function DebtsPage() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha de Inicio</label>
+              <label className="form-label">Fecha de pago</label>
               <input
                 type="date"
-                value={form.startDate}
-                onChange={(e) => setForm({ ...form, startDate: e.target.value })}
+                value={form.dueDate}
+                onChange={(e) => setForm({ ...form, dueDate: e.target.value })}
               />
+              <p className="text-xs text-muted" style={{ marginTop: 'var(--space-1)' }}>
+                Para recibir un aviso en la 🔔 cuando se acerque.
+              </p>
             </div>
           </div>
           <div className="modal-footer">

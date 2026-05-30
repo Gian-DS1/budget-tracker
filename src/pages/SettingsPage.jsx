@@ -244,7 +244,7 @@ export default function SettingsPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
+      <div className="page-header" id="tour-settings-header">
         <h1 className="page-title">Ajustes y Utilidades</h1>
         <p className="page-subtitle">Configuración de la app e importación/exportación de datos</p>
       </div>

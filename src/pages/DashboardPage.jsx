@@ -267,7 +267,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Héroe: Puedes gastar */}
-      <div className="kpi-card" style={{
+      <div className="kpi-card" id="tour-dashboard-hero" style={{
         marginBottom: 'var(--space-6)',
         '--kpi-accent':
           summary.estado === 'danger' ? 'var(--color-danger)'
@@ -463,7 +463,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Mini Calendar */}
-        <div className="card">
+        <div className="card" id="tour-dashboard-calendar">
           <div className="card-header">
             <h3 className="card-title flex items-center gap-2">
               <CalendarIcon size={18} /> Actividad del Mes

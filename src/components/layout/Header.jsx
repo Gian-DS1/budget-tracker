@@ -112,7 +112,7 @@ export default function Header() {
       </div>
 
       <div className="header-actions">
-        <div className="relative" ref={panelRef}>
+        <div className="relative" ref={panelRef} id="tour-reminders">
           <button
             className="btn-icon"
             onClick={() => setOpen((v) => !v)}

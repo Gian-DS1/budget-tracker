@@ -56,7 +56,9 @@ export default function CalendarPage() {
       let expense = 0;
       dayTxs.forEach(t => {
         if (t.type === 'income') income += Number(t.amount);
-        else expense += Number(t.amount);
+        else if (t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense') {
+          expense += Number(t.amount);
+        }
       });
 
       days.push({

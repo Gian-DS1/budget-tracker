@@ -15,6 +15,21 @@ export default function TourGuide() {
     const hasSeenTour = localStorage.getItem('fintrack-tour-seen');
     if (hasSeenTour) return;
 
+    // Navega (si hace falta) a la página del paso `index` y luego lo resalta.
+    // La ruta de cada paso vive en `tourConfig` (campo `route`), así no hay
+    // índices cableados: agregar o reordenar pasos no rompe la navegación.
+    const goToStep = (index) => {
+      const step = tourSteps[index];
+      if (!step || !driverRef.current) return;
+      const needsNav = step.route && window.location.pathname !== step.route;
+      if (needsNav) navigate(step.route);
+      // Si cambiamos de página, esperamos a que React monte el nuevo DOM
+      // (incluye la carga diferida de la ruta) antes de resaltar la zona.
+      setTimeout(() => {
+        if (driverRef.current) driverRef.current.drive(index);
+      }, needsNav ? 400 : 0);
+    };
+
     const timer = setTimeout(() => {
       driverRef.current = driver({
         showProgress: true,
@@ -24,52 +39,12 @@ export default function TourGuide() {
         allowClose: true,
         showButtons: ['next', 'previous', 'close'],
         overlayColor: 'rgba(0, 0, 0, 0.7)',
+        stagePadding: 6,
+        stageRadius: 8,
         steps: tourSteps,
-        
-        onNextClick: (element, step, { state }) => {
-          const currentStepIndex = state.activeIndex;
-          const nextIndex = currentStepIndex + 1;
-          
-          // Navegar a la nueva pagina
-          if (currentStepIndex === 1) navigate('/transacciones');
-          if (currentStepIndex === 2) navigate('/presupuesto');
-          if (currentStepIndex === 3) navigate('/ahorros');
-          if (currentStepIndex === 4) navigate('/deudas');
-          if (currentStepIndex === 5) navigate('/tarjetas');
-          if (currentStepIndex === 6) navigate('/plan');
-          if (currentStepIndex === 7) navigate('/calendario');
-          if (currentStepIndex === 8) navigate('/reportes');
-          if (currentStepIndex === 9) navigate('/');
-          
-          // Mover al siguiente paso (se centrara si el elemento aun no existe)
-          driverRef.current.moveNext();
 
-          // Esperar a que React renderice el nuevo DOM y re-evaluar la posicion
-          setTimeout(() => {
-             driverRef.current.drive(nextIndex);
-          }, 150);
-        },
-        
-        onPrevClick: (element, step, { state }) => {
-          const currentStepIndex = state.activeIndex;
-          const prevIndex = currentStepIndex - 1;
-          
-          if (currentStepIndex === 2) navigate('/');
-          if (currentStepIndex === 3) navigate('/transacciones');
-          if (currentStepIndex === 4) navigate('/presupuesto');
-          if (currentStepIndex === 5) navigate('/ahorros');
-          if (currentStepIndex === 6) navigate('/deudas');
-          if (currentStepIndex === 7) navigate('/tarjetas');
-          if (currentStepIndex === 8) navigate('/plan');
-          if (currentStepIndex === 9) navigate('/calendario');
-          if (currentStepIndex === 10) navigate('/reportes');
-          
-          driverRef.current.movePrevious();
-
-          setTimeout(() => {
-             driverRef.current.drive(prevIndex);
-          }, 150);
-        },
+        onNextClick: (element, step, { state }) => goToStep(state.activeIndex + 1),
+        onPrevClick: (element, step, { state }) => goToStep(state.activeIndex - 1),
 
         onDestroyStarted: () => {
           if (!driverRef.current.hasNextStep() || window.confirm("¿Seguro que quieres saltar el tutorial?")) {
