@@ -275,7 +275,7 @@ export default function DashboardPage() {
           : summary.estado === 'good' ? 'var(--color-success)'
           : 'var(--text-tertiary)'
       }}>
-        <div className="kpi-label">💚 Puedes gastar este mes</div>
+        <div className="kpi-label">Puedes gastar este mes</div>
         <div className="kpi-value" style={{
           fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
           color:
@@ -290,6 +290,9 @@ export default function DashboardPage() {
           {summary.estado === 'neutral'
             ? 'Aún no has registrado ingresos este mes.'
             : 'Disponible sin atrasarte en pagos ni metas.'}
+        </div>
+        <div className="kpi-icon" style={{ background: 'var(--accent-primary-subtle)', color: 'var(--kpi-accent)' }}>
+          <Wallet size={20} />
         </div>
       </div>
 
