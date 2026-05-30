@@ -2157,3 +2157,76 @@ table {
     grid-template-columns: 1fr;
   }
 }
+
+/* ============================================================
+   Páginas que caben en una sola pantalla (sin scroll global).
+   Solo en pantallas grandes; en móvil se deja el scroll natural
+   porque un calendario mensual completo no cabe en un teléfono.
+   ============================================================ */
+@media (min-width: 769px) {
+  .page-fit {
+    box-sizing: border-box;
+    height: calc(100vh - var(--header-height));
+    padding: var(--space-5) var(--space-8);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .page-fit .page-header {
+    margin-bottom: var(--space-4);
+  }
+
+  /* ── Calendario ── */
+  .calendar-page-fit .calendar-summary-strip {
+    margin-bottom: var(--space-4);
+  }
+  .calendar-page-fit .calendar-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-4) var(--space-5);
+  }
+  .calendar-page-fit .calendar-nav {
+    margin-bottom: var(--space-4);
+  }
+  /* El grid de días llena el alto disponible repartiendo las filas por igual. */
+  .calendar-page-fit .calendar-grid:not(.calendar-weekdays) {
+    flex: 1;
+    min-height: 0;
+    grid-auto-rows: 1fr;
+  }
+  .calendar-page-fit .calendar-cell {
+    min-height: 0;
+    padding: var(--space-2);
+    overflow: hidden;
+  }
+  .calendar-page-fit .calendar-footer-hint {
+    padding-top: var(--space-2);
+    margin-top: var(--space-2);
+  }
+
+  /* ── Reportes ── */
+  .reports-page-fit .tabs {
+    margin-bottom: var(--space-4);
+  }
+  /* Pestaña que llena el alto (Proyecciones: el gráfico crece). */
+  .reports-tab {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  /* Pestañas con listas (Anomalías/Deuda): hacen scroll interno, no la página. */
+  .reports-tab-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  .reports-chart-card {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+}

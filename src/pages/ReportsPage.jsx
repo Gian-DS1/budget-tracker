@@ -1,11 +1,10 @@
 // FinTrack RD — Reports & Analytics Page
 
 import { useState, useMemo } from 'react';
-import { 
-  TrendingUp, 
-  AlertOctagon, 
-  Lightbulb, 
-  BarChart2,
+import {
+  TrendingUp,
+  AlertOctagon,
+  Lightbulb,
   AlertTriangle
 } from 'lucide-react';
 import {
@@ -22,7 +21,7 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
 import { formatCurrency, formatCurrencyCompact, MONTHS_SHORT_ES } from '../utils/formatters';
-import { detectAnomalies, movingAverage } from '../utils/calculations';
+import { detectAnomalies, movingAverage, getMonthlySavingCapacity, getFinancialHealthScore } from '../utils/calculations';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -47,6 +46,7 @@ export default function ReportsPage() {
   const { transactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const { debts } = useDebtStore();
+  const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
 
   const [activeTab, setActiveTab] = useState('projections');
 
@@ -183,10 +183,32 @@ export default function ReportsPage() {
     return { avalanche, snowball };
   }, [debts]);
 
+  // ─── Salud financiera y promedios (KPIs inteligentes) ───────────
+
+  const cap = useMemo(
+    () => getMonthlySavingCapacity(transactions, new Date(), 3),
+    [transactions]
+  );
+  const monthlyDebt = getTotalMonthlyPayment();
+  const health = useMemo(
+    () => getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt }),
+    [cap, monthlyDebt]
+  );
+  const savingsRatePct = cap.avgIncome > 0 ? (cap.capacity / cap.avgIncome) * 100 : 0;
+  const healthColor =
+    health.score >= 80 ? 'var(--color-success)'
+    : health.score >= 60 ? 'var(--color-info)'
+    : health.score >= 40 ? 'var(--color-warning)'
+    : 'var(--color-danger)';
+
+  const lastProj = projectionData[projectionData.length - 1] || {};
+  const forecastInc = lastProj.IngresosEstimados || 0;
+  const forecastExp = lastProj.GastosEstimados || 0;
+
   // ─── Render ─────────────────────────────────────────────────────
 
   return (
-    <div className="page-container">
+    <div className="page-container page-fit reports-page-fit">
       <div className="page-header" id="tour-reports-header">
         <h1 className="page-title">Análisis e Inteligencia</h1>
         <p className="page-subtitle">Proyecciones predictivas y recomendaciones</p>
@@ -216,41 +238,44 @@ export default function ReportsPage() {
 
       {/* ─── TAB: Projections ─── */}
       {activeTab === 'projections' && (
-        <div className="space-y-6">
-          <div className="grid-2 mb-6">
-            <div className="card" style={{ background: 'var(--color-income-bg)' }}>
-              <h4 className="font-bold mb-2 flex items-center gap-2 text-success">
-                <TrendingUp size={18} /> Forecast de Ingresos
-              </h4>
-              <p className="text-sm">
-                Basado en tu historial, se estima que tus ingresos el próximo mes serán de{' '}
-                <strong className="text-lg amount-positive">
-                  {formatCurrency(projectionData[projectionData.length - 1]?.IngresosEstimados || 0)}
-                </strong>
-              </p>
+        <div className="reports-tab">
+          {/* KPIs inteligentes */}
+          <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+            <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
+              <div className="kpi-label">Ingreso prom. / mes</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>{formatCurrency(cap.avgIncome)}</div>
+              <div className="text-xs text-muted mt-2">Últimos {cap.monthsCounted || 0} mes(es) con datos</div>
             </div>
-            <div className="card" style={{ background: 'var(--color-expense-bg)' }}>
-              <h4 className="font-bold mb-2 flex items-center gap-2 text-danger">
-                <BarChart2 size={18} /> Forecast de Gastos
-              </h4>
-              <p className="text-sm">
-                Se proyecta que tus gastos alcancen{' '}
-                <strong className="text-lg amount-negative">
-                  {formatCurrency(projectionData[projectionData.length - 1]?.GastosEstimados || 0)}
-                </strong>. ¡Ajusta tu presupuesto de antemano!
-              </p>
+            <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-expense)' }}>
+              <div className="kpi-label">Gasto prom. / mes</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>{formatCurrency(cap.avgExpense)}</div>
+              <div className="text-xs text-muted mt-2">Proyección próx.: {formatCurrency(forecastExp)}</div>
+            </div>
+            <div className="kpi-card" style={{ '--kpi-accent': 'var(--accent-primary)' }}>
+              <div className="kpi-label">Tasa de ahorro</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)', color: savingsRatePct >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                {savingsRatePct.toFixed(1)}%
+              </div>
+              <div className="text-xs text-muted mt-2">De tus ingresos promedio</div>
+            </div>
+            <div className="kpi-card" style={{ '--kpi-accent': healthColor }}>
+              <div className="kpi-label">Salud financiera</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)', color: healthColor }}>{health.score}/100</div>
+              <div className="text-xs mt-2" style={{ color: healthColor, fontWeight: 600 }}>{health.label}</div>
             </div>
           </div>
 
-          <div className="card">
+          <div className="card reports-chart-card">
             <div className="card-header">
               <div>
                 <h3 className="card-title">Proyección de Ingresos y Gastos</h3>
-                <p className="text-sm text-muted">Evolución histórica y estimaciones para el próximo mes</p>
+                <p className="text-sm text-muted">
+                  Histórico de 12 meses. Estimado próx. mes — ingresos ~{formatCurrency(forecastInc)}, gastos ~{formatCurrency(forecastExp)}
+                </p>
               </div>
             </div>
-            
-            <div style={{ height: 400 }}>
+
+            <div style={{ flex: 1, minHeight: 320 }}>
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={projectionData} margin={{ top: 20, right: 20, left: 10, bottom: 20 }}>
                   <defs>
@@ -285,7 +310,7 @@ export default function ReportsPage() {
 
       {/* ─── TAB: Anomalies ─── */}
       {activeTab === 'anomalies' && (
-        <div>
+        <div className="reports-tab-scroll">
           <div className="alert alert-info">
             <Lightbulb size={16} />
             <span>
@@ -354,7 +379,7 @@ export default function ReportsPage() {
 
       {/* ─── TAB: Debts ─── */}
       {activeTab === 'debts' && (
-        <div>
+        <div className="reports-tab-scroll">
           {!debtStrategies ? (
             <div className="card text-center py-12">
               <h3 className="font-bold text-lg mb-2">No tienes deudas activas</h3>

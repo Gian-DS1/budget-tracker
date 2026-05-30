@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBudgetSummary, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions } from './calculations';
+import { getBudgetSummary, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions, getFinancialHealthScore } from './calculations';
 
 const categories = [
   { id: 'inc', type: 'income' },
@@ -284,5 +284,32 @@ describe('getBudgetSuggestions', () => {
     ];
     const r = getBudgetSuggestions(txs, cats, 2026, 4, 3);
     expect(r).toEqual([]);
+  });
+});
+
+describe('getFinancialHealthScore', () => {
+  it('da score alto (Excelente) con buen ahorro y sin deuda', () => {
+    const r = getFinancialHealthScore({ avgIncome: 50000, avgExpense: 30000, monthlyDebt: 0 });
+    expect(r.score).toBeGreaterThanOrEqual(80);
+    expect(r.label).toBe('Excelente');
+    expect(Math.round(r.savingsRate * 100)).toBe(40);
+  });
+
+  it('da score bajo cuando los gastos casi igualan los ingresos y hay deuda', () => {
+    const r = getFinancialHealthScore({ avgIncome: 50000, avgExpense: 48000, monthlyDebt: 5000 });
+    expect(r.score).toBeLessThan(40);
+    expect(r.label).toBe('Necesita atención');
+  });
+
+  it('devuelve "Sin datos" si no hay ingresos', () => {
+    const r = getFinancialHealthScore({ avgIncome: 0, avgExpense: 0, monthlyDebt: 0 });
+    expect(r.score).toBe(0);
+    expect(r.label).toBe('Sin datos');
+  });
+
+  it('está acotado entre 0 y 100', () => {
+    const r = getFinancialHealthScore({ avgIncome: 100000, avgExpense: 0, monthlyDebt: 0 });
+    expect(r.score).toBeLessThanOrEqual(100);
+    expect(r.score).toBeGreaterThanOrEqual(0);
   });
 });

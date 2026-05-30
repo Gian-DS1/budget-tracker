@@ -371,6 +371,38 @@ export function getBudgetSuggestions(transactions = [], categories = [], year, m
 }
 
 /**
+ * Score de salud financiera (0-100) a partir de promedios mensuales en DOP.
+ * Combina tres factores reconocidos:
+ *   - Tasa de ahorro (45 pts): (ingreso − gasto) / ingreso; 20%+ = máximo.
+ *   - Ratio de gasto (30 pts): gasto / ingreso; ≤50% = máximo, ≥100% = 0.
+ *   - Carga de deuda / DTI (25 pts): pago mensual de deuda / ingreso; 0 = máximo, ≥36% = 0.
+ * Devuelve { score, label, savingsRate }.
+ */
+export function getFinancialHealthScore({ avgIncome = 0, avgExpense = 0, monthlyDebt = 0 }) {
+  if (!avgIncome || avgIncome <= 0) {
+    return { score: 0, label: 'Sin datos', savingsRate: 0 };
+  }
+
+  const savingsRate = (avgIncome - avgExpense) / avgIncome;
+  const savingsPts = Math.max(0, Math.min(1, savingsRate / 0.2)) * 45;
+
+  const expenseRatio = avgExpense / avgIncome;
+  const expensePts = Math.max(0, Math.min(1, (1 - expenseRatio) / 0.5)) * 30;
+
+  const dti = monthlyDebt / avgIncome;
+  const debtPts = Math.max(0, Math.min(1, 1 - dti / 0.36)) * 25;
+
+  const score = Math.round(savingsPts + expensePts + debtPts);
+  let label;
+  if (score >= 80) label = 'Excelente';
+  else if (score >= 60) label = 'Buena';
+  else if (score >= 40) label = 'Regular';
+  else label = 'Necesita atención';
+
+  return { score, label, savingsRate };
+}
+
+/**
  * Detect anomalies (values 2+ standard deviations from mean)
  */
 export function detectAnomalies(values, threshold = 2) {
