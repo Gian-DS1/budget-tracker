@@ -766,14 +766,14 @@
 .lp-finalcta__title {
   font-size: clamp(2rem, 4.5vw, 3rem);
   line-height: 1.2;
-  margin: 1.75rem 0 0;
+  margin: 1.5rem 0 0;
 }
 .lp-finalcta__sub {
   font-size: 1.0625rem;
   line-height: 1.75;
   color: var(--lp-text-2);
   max-width: 44ch;
-  margin: 1.75rem 0 2.75rem;
+  margin: 2.5rem 0 3.5rem;
 }
 
 /* ── Footer ────────────────────────────────────────────────── */
