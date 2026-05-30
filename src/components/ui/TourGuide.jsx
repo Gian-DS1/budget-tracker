@@ -30,6 +30,13 @@ export default function TourGuide() {
       }, needsNav ? 400 : 0);
     };
 
+    // Marca el tour como visto y lo cierra. Usado tanto por el botón final
+    // ("¡Empezar!") como al saltarlo.
+    const finishTour = () => {
+      localStorage.setItem('fintrack-tour-seen', 'true');
+      if (driverRef.current) driverRef.current.destroy();
+    };
+
     const timer = setTimeout(() => {
       driverRef.current = driver({
         showProgress: true,
@@ -43,13 +50,20 @@ export default function TourGuide() {
         stageRadius: 8,
         steps: tourSteps,
 
-        onNextClick: (element, step, { state }) => goToStep(state.activeIndex + 1),
+        onNextClick: (element, step, { state }) => {
+          // En el último paso, "Siguiente"/"¡Empezar!" finaliza el tour en vez
+          // de intentar ir a un paso inexistente (que no hacía nada).
+          if (!driverRef.current || !driverRef.current.hasNextStep()) {
+            finishTour();
+            return;
+          }
+          goToStep(state.activeIndex + 1);
+        },
         onPrevClick: (element, step, { state }) => goToStep(state.activeIndex - 1),
 
         onDestroyStarted: () => {
           if (!driverRef.current.hasNextStep() || window.confirm("¿Seguro que quieres saltar el tutorial?")) {
-            localStorage.setItem('fintrack-tour-seen', 'true');
-            driverRef.current.destroy();
+            finishTour();
           }
         },
       });

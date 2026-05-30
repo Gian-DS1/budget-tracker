@@ -57,6 +57,11 @@ export default function SettingsPage() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Refresca la tasa de venta automáticamente al abrir Ajustes.
+  useEffect(() => {
+    fetchRate();
+  }, [fetchRate]);
+
   // ─── Data Export ──────────────────────────────────────────────
 
   const exportData = async (format = 'xlsx') => {
@@ -285,11 +290,16 @@ export default function SettingsPage() {
             </h3>
           </div>
           <div className="text-sm text-muted mb-4">
-            Se usa para valorar deudas y balances en dólares. Tasa actual
-            ({rateSource === 'popular' ? 'Banco Popular' : 'mercado'}):{' '}
-            <span className="font-semibold amount-neutral">RD$ {liveRate}</span>.
+            Tasa de <strong>venta</strong> (la que pagas como consumidor), se actualiza sola:{' '}
+            <span className="font-semibold amount-neutral">RD$ {liveRate}</span>{' '}
+            ({rateSource === 'popular' ? 'Banco Popular vía TasaReal' : 'mercado'}).
+            <div className="text-xs" style={{ marginTop: 'var(--space-1)' }}>
+              Es una aproximación; tu banco puede tener un valor un poco distinto. Si lo prefieres, fíjala manualmente.
+            </div>
             {manualRate != null && (
-              <> Usando override manual: <span className="font-semibold amount-neutral">RD$ {manualRate}</span>.</>
+              <div style={{ marginTop: 'var(--space-1)' }}>
+                Usando override manual: <span className="font-semibold amount-neutral">RD$ {manualRate}</span>.
+              </div>
             )}
           </div>
           <div className="flex gap-2 mt-auto" style={{ flexWrap: 'wrap' }}>
