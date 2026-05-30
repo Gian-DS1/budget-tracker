@@ -1,6 +1,6 @@
-﻿// FinTrack RD â€” Transacciones recurrentes (plantillas)
+// FinTrack RD — Transacciones recurrentes (plantillas)
 //
-// Una plantilla describe una transacciÃ³n que se repite (semanal/quincenal/
+// Una plantilla describe una transacción que se repite (semanal/quincenal/
 // mensual). Al abrir la app, `materializeDue` crea las transacciones reales de
 // las ocurrencias vencidas (recuperando las que se saltaron) y avanza `nextDate`.
 
@@ -13,7 +13,7 @@ import { advanceDate } from '../utils/recurrence';
 import useTransactionStore from './useTransactionStore';
 import useRateStore from './useRateStore';
 
-// Re-export para que los consumidores que ya lo importan desde aquÃ­ sigan funcionando.
+// Re-export para que los consumidores que ya lo importan desde aquí sigan funcionando.
 export { advanceDate };
 
 // Dedupe de llamadas concurrentes a materializeDue (StrictMode, doble montaje)
@@ -150,7 +150,7 @@ const useRecurringStore = create(
               type: t.type,
               description: t.description,
               date: next,
-              notes: t.notes || 'Generado automÃ¡ticamente (recurrente)',
+              notes: t.notes || 'Generado automáticamente (recurrente)',
             });
             next = advanceDate(next, t.frequency);
             guard++;
@@ -164,7 +164,7 @@ const useRecurringStore = create(
         await useTransactionStore.getState().bulkAddTransactions(toCreate);
 
         // Avanzar next_date de cada plantilla (en DB y en estado). Se avanza
-        // siempre para no recrear duplicados en la prÃ³xima carga.
+        // siempre para no recrear duplicados en la próxima carga.
         for (const a of advanced) {
           await supabase.from('recurring_transactions').update({ next_date: a.nextDate }).eq('id', a.id);
         }
@@ -175,7 +175,7 @@ const useRecurringStore = create(
           }),
         }));
 
-        return { count: toCreate.length, created: toCreate.map((t) => t.description || 'TransacciÃ³n') };
+        return { count: toCreate.length, created: toCreate.map((t) => t.description || 'Transacción') };
       },
     }),
     {

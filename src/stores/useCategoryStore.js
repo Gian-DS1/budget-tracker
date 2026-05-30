@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { defaultCategories, findDuplicateCategories } from '../data/defaultCategories';
@@ -61,7 +61,7 @@ const useCategoryStore = create(
 
         if (insertError) {
           console.error("Supabase insert error:", insertError);
-          toast.error("Error cargando categorÃ­as iniciales");
+          toast.error("Error cargando categorías iniciales");
           set({ categories: defaultCategories, loading: false });
           return;
         }
@@ -81,7 +81,7 @@ const useCategoryStore = create(
         return;
       }
     }
-    // â”€â”€ Auto-clean duplicates already in the database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Auto-clean duplicates already in the database ───────────
     const { remap, deleteIds } = findDuplicateCategories(data);
     if (deleteIds.length > 0) {
       try {
@@ -216,7 +216,7 @@ const useCategoryStore = create(
 
       if (deleteError) {
         console.error("Error deleting categories:", deleteError);
-        toast.error("Error al borrar categorÃ­as existentes");
+        toast.error("Error al borrar categorías existentes");
         set({ loading: false });
         return false;
       }
@@ -241,7 +241,7 @@ const useCategoryStore = create(
 
       if (insertError) {
         console.error("Error seeding default categories:", insertError);
-        toast.error("Error insertando nuevas categorÃ­as por defecto");
+        toast.error("Error insertando nuevas categorías por defecto");
         set({ loading: false });
         return false;
       }
@@ -253,12 +253,12 @@ const useCategoryStore = create(
           sortOrder: c.sort_order
         }));
         set({ categories: formattedData, loading: false });
-        toast.success("CategorÃ­as restablecidas con Ã©xito");
+        toast.success("Categorías restablecidas con éxito");
         return true;
       }
     } catch (err) {
       console.error("Failed to reset categories", err);
-      toast.error("Error al restablecer categorÃ­as");
+      toast.error("Error al restablecer categorías");
       set({ loading: false });
       return false;
     }

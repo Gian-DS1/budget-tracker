@@ -15,6 +15,10 @@ import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel, 
 import useRateStore from '../stores/useRateStore';
 import { computeCashback } from '../utils/creditCards';
 
+// Valor centinela del filtro de categoría para las transacciones SIN categoría
+// (categoryId nulo o apuntando a una categoría que ya fue eliminada).
+const UNCATEGORIZED = '__uncategorized__';
+
 export default function TransactionsPage() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkAssignCard } =
     useTransactionStore();
@@ -167,7 +171,12 @@ export default function TransactionsPage() {
     }
 
     if (filterCategory) {
-      result = result.filter((t) => t.categoryId === filterCategory);
+      if (filterCategory === UNCATEGORIZED) {
+        const validIds = new Set(categories.map((c) => c.id));
+        result = result.filter((t) => !t.categoryId || !validIds.has(t.categoryId));
+      } else {
+        result = result.filter((t) => t.categoryId === filterCategory);
+      }
     }
 
     if (filterDateFrom) {
@@ -197,7 +206,7 @@ export default function TransactionsPage() {
     });
 
     return result;
-  }, [transactions, searchQuery, filterType, filterCategory, filterDateFrom, filterDateTo, sortField, sortDir]);
+  }, [transactions, categories, searchQuery, filterType, filterCategory, filterDateFrom, filterDateTo, sortField, sortDir]);
 
   // Bulk Action Handlers
   const handleSelectAll = (e) => {
@@ -251,6 +260,13 @@ export default function TransactionsPage() {
   };
 
   const hasActiveFilters = filterType || filterCategory || filterDateFrom || filterDateTo;
+
+  // Cuántas transacciones no tienen categoría (o apuntan a una ya eliminada),
+  // para mostrarlo en el filtro y facilitar su reasignación.
+  const uncategorizedCount = useMemo(() => {
+    const validIds = new Set(categories.map((c) => c.id));
+    return transactions.filter((t) => !t.categoryId || !validIds.has(t.categoryId)).length;
+  }, [transactions, categories]);
 
   // Group categories by type for form select
   const categoryGroups = useMemo(() => {
@@ -351,6 +367,9 @@ export default function TransactionsPage() {
               <label className="form-label">Categoría</label>
               <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                 <option value="">Todas</option>
+                <option value={UNCATEGORIZED}>
+                  🏷️ Sin categoría{uncategorizedCount > 0 ? ` (${uncategorizedCount})` : ''}
+                </option>
                 {categories.filter(c => c.isActive).map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.icon} {c.name}

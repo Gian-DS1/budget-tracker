@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -150,8 +150,8 @@ const useBudgetStore = create(
 
   // Aplica varios presupuestos de un mes de una sola vez (usado por el
   // auto-presupuesto sugerido). Inserta los nuevos en lote y actualiza los
-  // existentes; sin toasts por Ã­tem (el llamante muestra un resumen).
-  // entries: [{ categoryId, amount }]. Devuelve cuÃ¡ntas categorÃ­as se aplicaron.
+  // existentes; sin toasts por ítem (el llamante muestra un resumen).
+  // entries: [{ categoryId, amount }]. Devuelve cuántas categorías se aplicaron.
   bulkSetBudgets: async (year, month, entries) => {
     if (!entries || entries.length === 0) return 0;
     const { data: { session } } = await supabase.auth.getSession();

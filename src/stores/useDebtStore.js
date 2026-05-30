@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -33,7 +33,7 @@ const useDebtStore = create(
     if (!debtsRes.error && debtsRes.data) {
       formattedDebts = debtsRes.data.map(d => {
         // Moneda desde la columna `currency`. Para filas legadas (creadas antes
-        // de la migraciÃ³n) que aÃºn llevan el sufijo " [USD]" en el nombre, se
+        // de la migración) que aún llevan el sufijo " [USD]" en el nombre, se
         // detecta por el sufijo y se limpia el nombre al mostrarlo.
         const hasSuffix = d.creditor_name && d.creditor_name.endsWith(' [USD]');
         const currency = d.currency || (hasSuffix ? 'USD' : 'DOP');
@@ -205,10 +205,10 @@ const useDebtStore = create(
       try {
         const categories = useCategoryStore.getState().categories;
         // Buscar por slug estable; respaldo por nombre para cuentas previas a la
-        // migraciÃ³n del slug.
+        // migración del slug.
         const loanCategory =
           categories.find((c) => c.slug === 'pago-deuda') ||
-          categories.find((c) => c.name === 'Pago de PrÃ©stamos y Deudas' || (c.name && c.name.includes('PrÃ©stamos')));
+          categories.find((c) => c.name === 'Pago de Préstamos y Deudas' || (c.name && c.name.includes('Préstamos')));
         
         if (loanCategory) {
           const addTransaction = useTransactionStore.getState().addTransaction;
@@ -221,7 +221,7 @@ const useDebtStore = create(
             date: date,
             categoryId: loanCategory.id,
             currency: currency,
-            notes: notes || 'Generado automÃ¡ticamente desde Deudas'
+            notes: notes || 'Generado automáticamente desde Deudas'
           });
         }
       } catch (err) {

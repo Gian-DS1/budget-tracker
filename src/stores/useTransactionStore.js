@@ -1,4 +1,4 @@
-﻿import { create } from 'zustand';
+import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -6,9 +6,9 @@ import useCreditCardStore from './useCreditCardStore';
 import useRateStore from './useRateStore';
 import { computeCashback } from '../utils/creditCards';
 
-// ConversiÃ³n histÃ³rica por fecha (para guardar la transacciÃ³n al valor del dÃ­a).
+// Conversión histórica por fecha (para guardar la transacción al valor del día).
 // Si la red falla, cae a la tasa efectiva del rate store (que respeta el
-// override manual del usuario), no a un nÃºmero fijo.
+// override manual del usuario), no a un número fijo.
 export async function fetchUSDRate(dateStr) {
   let rate = useRateStore.getState().getRate();
   try {
@@ -95,7 +95,7 @@ const useTransactionStore = create(
       const formattedConverted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
       const formattedRate = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate);
 
-      const conversionNote = `US$ ${formattedOriginal} â†’ RD$ ${formattedConverted} - Tasa del dÃ­a: ${formattedRate}`;
+      const conversionNote = `US$ ${formattedOriginal} → RD$ ${formattedConverted} - Tasa del día: ${formattedRate}`;
       notes = notes ? `${notes} (${conversionNote})` : conversionNote;
     }
 
@@ -136,7 +136,7 @@ const useTransactionStore = create(
         createdAt: data.created_at 
       };
       set((state) => ({ transactions: [newTx, ...state.transactions] }));
-      toast.success("TransacciÃ³n guardada exitosamente");
+      toast.success("Transacción guardada exitosamente");
     }
   },
 
@@ -166,7 +166,7 @@ const useTransactionStore = create(
         t.id === id ? { ...t, ...updates } : t
       ),
     }));
-    toast.success('TransacciÃ³n actualizada');
+    toast.success('Transacción actualizada');
   },
 
   deleteTransaction: async (id) => {
@@ -202,7 +202,7 @@ const useTransactionStore = create(
     toast.loading('Asignando tarjeta...', { id: 'bulk-update' });
     
     const dbUpdatesPromises = transactionsToUpdate.map(t => {
-      // Cashback solo para gastos; el monto ya estÃ¡ en DOP.
+      // Cashback solo para gastos; el monto ya está en DOP.
       const cashback = (card && t.type === 'expense')
         ? computeCashback(card, t.categoryId, t.amount)
         : 0;
@@ -317,8 +317,8 @@ const useTransactionStore = create(
 }),
 {
   name: 'fintrack-transactions-cache',
-  // Cachear solo las 500 transacciones mÃ¡s recientes (ya vienen ordenadas
-  // desc por fecha) para no exceder el lÃ­mite de ~5MB de localStorage en
+  // Cachear solo las 500 transacciones más recientes (ya vienen ordenadas
+  // desc por fecha) para no exceder el límite de ~5MB de localStorage en
   // usuarios con mucho historial. Supabase sigue siendo la fuente completa.
   partialize: (state) => ({ transactions: state.transactions.slice(0, 500) }),
 }

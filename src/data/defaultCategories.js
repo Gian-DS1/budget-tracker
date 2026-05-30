@@ -16,16 +16,6 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Freelance',
-    type: 'income',
-    icon: '💻',
-    color: '#06b6d4',
-    keywords: ['freelance', 'proyecto', 'consultoría', 'cliente'],
-    isActive: true,
-    sortOrder: 1,
-  },
-  {
-    id: generateId(),
     name: 'Inversiones',
     type: 'income',
     icon: '📈',
@@ -48,7 +38,7 @@ export const defaultCategories = [
   // ── Fixed Expenses ──────────────────────────────────────────
   {
     id: generateId(),
-    name: 'Alquiler / Renta',
+    name: 'Alquiler',
     type: 'fixed_expense',
     icon: '🏠',
     color: '#6366f1',
@@ -58,7 +48,7 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Internet y Comunicaciones',
+    name: 'Internet/Cable/Teléfono',
     type: 'fixed_expense',
     icon: '📶',
     color: '#3b82f6',
@@ -68,7 +58,7 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Salud y Seguro Médico',
+    name: 'Seguro',
     type: 'fixed_expense',
     icon: '🏥',
     color: '#10b981',
@@ -98,7 +88,7 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Servicios Públicos (Luz/Agua/Gas)',
+    name: 'Servicios (Luz/Agua/Gas)',
     type: 'fixed_expense',
     icon: '💡',
     color: '#f59e0b',
@@ -173,16 +163,6 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Entretenimiento y Ocio',
-    type: 'variable_expense',
-    icon: '🎬',
-    color: '#8b5cf6',
-    keywords: ['cine', 'película', 'fiesta', 'bar', 'discoteca', 'concierto', 'evento', 'boletos', 'teatro', 'karaoke', 'billar', 'boliche', 'salida'],
-    isActive: true,
-    sortOrder: 15,
-  },
-  {
-    id: generateId(),
     name: 'Ropa y Calzado',
     type: 'variable_expense',
     icon: '👗',
@@ -223,16 +203,6 @@ export const defaultCategories = [
   },
   {
     id: generateId(),
-    name: 'Cuidado Personal y Pelo',
-    type: 'variable_expense',
-    icon: '💇',
-    color: '#ec4899',
-    keywords: ['pelo', 'barbería', 'barber', 'salon', 'peluquería', 'spa'],
-    isActive: true,
-    sortOrder: 20,
-  },
-  {
-    id: generateId(),
     name: 'Belleza',
     type: 'variable_expense',
     icon: '💅',
@@ -240,16 +210,6 @@ export const defaultCategories = [
     keywords: ['belleza', 'maquillaje', 'uñas', 'manicure', 'pedicure', 'cosméticos', 'crema', 'skincare', 'perfume', 'nail'],
     isActive: true,
     sortOrder: 21,
-  },
-  {
-    id: generateId(),
-    name: 'Educación y Estudios',
-    type: 'variable_expense',
-    icon: '📚',
-    color: '#0ea5e9',
-    keywords: ['estudios', 'universidad', 'colegio', 'curso', 'libro', 'matrícula', 'diplomado', 'maestría'],
-    isActive: true,
-    sortOrder: 22,
   },
   {
     id: generateId(),
@@ -280,16 +240,6 @@ export const defaultCategories = [
     keywords: ['regalo', 'regalos', 'donación', 'donacion', 'cumpleaños'],
     isActive: true,
     sortOrder: 25,
-  },
-  {
-    id: generateId(),
-    name: 'Otros Gastos',
-    type: 'variable_expense',
-    icon: '💸',
-    color: '#94a3b8',
-    keywords: ['otros', 'emision de tarjeta', 'courier', 'inbox', 'envio', 'paquete', 'eps', 'vimenpaq', 'domex', 'acta de nacimiento', 'record de notas', 'fotos 2x2', 'trámite', 'documento'],
-    isActive: true,
-    sortOrder: 26,
   },
 
   // ── Savings ─────────────────────────────────────────────────
