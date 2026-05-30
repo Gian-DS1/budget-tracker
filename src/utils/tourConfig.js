@@ -93,7 +93,7 @@ export const tourSteps = [
     popover: {
       title: 'Presupuesto base cero',
       description:
-        'Aquí decides, ANTES de gastar, a qué va cada peso que ganas. La meta es que "Por Asignar" llegue a 0.00: cada peso tiene un trabajo (gasto, ahorro o pagar deuda). Abajo asignas un monto a cada categoría y comparas lo planificado con lo gastado real. Así nunca te preguntas "¿en qué se me fue el dinero?".',
+        'Aquí decides, ANTES de gastar, a qué va cada peso que ganas. La meta es que "Por Asignar" llegue a 0.00: cada peso tiene un trabajo (gasto, ahorro o pagar deuda). Abajo asignas un monto a cada categoría y comparas lo planificado con lo gastado real. Para empezar más rápido usa "Auto-sugerir" (rellena con el promedio de tus últimos 3 meses) o "Copiar Mes Anterior". Así nunca te preguntas "¿en qué se me fue el dinero?".',
       side: 'bottom',
       align: 'start',
     },

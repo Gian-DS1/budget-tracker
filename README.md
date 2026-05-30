@@ -8,7 +8,7 @@ Aplicación web de finanzas personales pensada para República Dominicana. Reemp
 
 ## ✨ Características
 
-- **Presupuesto base cero** — asigna cada peso por categoría hasta que "Por Asignar" llegue a 0; compara planificado vs. real.
+- **Presupuesto base cero** — asigna cada peso por categoría hasta que "Por Asignar" llegue a 0; compara planificado vs. real. Incluye **auto-sugerencia** que rellena el presupuesto con el promedio de tus últimos 3 meses, y copiar el del mes anterior.
 - **Transacciones** — registro rápido con auto-categorización, descripción con formato automático, soporte multimoneda (USD→DOP a la tasa del día) y **transacciones recurrentes** que se crean solas.
 - **Tarjetas de crédito** — ciclos de corte/pago automáticos, cálculo de cashback por reglas, **historial de estados de cuenta** y cashback acumulado de por vida.
 - **Deudas** — saldos, intereses, historial de pagos, estimación de meses para liquidar y fecha de pago con recordatorio.
@@ -46,6 +46,7 @@ git clone https://github.com/Gian-DS1/budget-tracker.git
 cd budget-tracker
 npm install
 ```
+> Nota: la dependencia `xlsx` se instala desde el **CDN oficial de SheetJS** (build mantenido y sin las vulnerabilidades del paquete publicado en npm). `npm install` la descarga automáticamente — solo necesita acceso a `cdn.sheetjs.com`.
 
 ### 2. Crear el proyecto Supabase
 1. Crea un proyecto en [supabase.com](https://supabase.com).
