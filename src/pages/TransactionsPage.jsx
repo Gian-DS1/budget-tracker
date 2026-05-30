@@ -516,6 +516,11 @@ export default function TransactionsPage() {
                         {t.type === 'income' ? '+' : '-'}
                         {formatCurrency(Math.abs(t.amount), t.currency)}
                       </span>
+                      {t.cashbackEarned > 0 && t.type !== 'income' && (
+                        <span className="text-xs" style={{ display: 'block', color: 'var(--color-income)', marginTop: 2 }}>
+                          Neto: -{formatCurrency(Math.abs(t.amount) - t.cashbackEarned, t.currency)}
+                        </span>
+                      )}
                     </td>
                     <td>
                       <div className="flex items-center justify-center gap-1">

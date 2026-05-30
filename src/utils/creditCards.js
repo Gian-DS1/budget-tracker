@@ -61,11 +61,25 @@ export function getCardCycles(card, refDate = new Date()) {
 
 /**
  * Suma (en DOP) las transacciones de una tarjeta cuya fecha cae en [startISO, endISO].
+ * Monto BRUTO (lo consumido); el cashback se calcula aparte con getStatementCashback.
  */
 export function getStatementAmount(transactions, cardId, startISO, endISO) {
   return transactions.reduce((sum, t) => {
     if (t.cardId !== cardId) return sum;
     if (t.date >= startISO && t.date <= endISO) return sum + (Number(t.amount) || 0);
+    return sum;
+  }, 0);
+}
+
+/**
+ * Suma (en DOP) el cashback generado por las transacciones de una tarjeta en
+ * [startISO, endISO]. Muchas tarjetas acreditan el cashback de inmediato, por lo
+ * que el balance efectivo del estado de cuenta es getStatementAmount − este valor.
+ */
+export function getStatementCashback(transactions, cardId, startISO, endISO) {
+  return transactions.reduce((sum, t) => {
+    if (t.cardId !== cardId) return sum;
+    if (t.date >= startISO && t.date <= endISO) return sum + (Number(t.cashbackEarned) || 0);
     return sum;
   }, 0);
 }

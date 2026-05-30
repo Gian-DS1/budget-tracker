@@ -36,7 +36,7 @@ import {
   MONTHS_SHORT_ES,
 } from '../utils/formatters';
 import { getBudgetSummary } from '../utils/calculations';
-import { getCardCycles, getStatementAmount, isStatementPaid } from '../utils/creditCards';
+import { getCardCycles, getStatementAmount, getStatementCashback, isStatementPaid } from '../utils/creditCards';
 import useRateStore from '../stores/useRateStore';
 import Modal from '../components/ui/Modal';
 
@@ -127,7 +127,10 @@ export default function DashboardPage() {
     return cards
       .map((card) => {
         const cy = getCardCycles(card, today);
-        const amount = getStatementAmount(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
+        // Monto que vence: neto del cashback (muchas tarjetas lo acreditan al instante).
+        const gross = getStatementAmount(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
+        const cashback = getStatementCashback(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
+        const amount = gross - cashback;
         const due = new Date(cy.dueDateISO + 'T00:00:00');
         const days = Math.round((due - todayMidnight) / 86400000);
         return { card, amount, dueISO: cy.dueDateISO, days, paid: isStatementPaid(card, cy.closedEndISO) };

@@ -157,18 +157,36 @@ export default function CreditCardsPage() {
                     <span className="font-semibold text-primary">{formatCurrency(openAmount)}</span>
                   </div>
                   {openCashback > 0 && (
-                    <div className="flex justify-between items-center text-xs mt-1" style={{ color: 'var(--color-income)' }}>
-                      <span>Cashback de este ciclo</span>
-                      <span className="font-semibold">+{formatCurrency(openCashback)}</span>
-                    </div>
+                    <>
+                      <div className="flex justify-between items-center text-xs mt-1" style={{ color: 'var(--color-income)' }}>
+                        <span>Cashback de este ciclo</span>
+                        <span className="font-semibold">+{formatCurrency(openCashback)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs mt-1 font-semibold">
+                        <span className="text-muted">Neto a deber</span>
+                        <span className="text-primary">{formatCurrency(openAmount - openCashback)}</span>
+                      </div>
+                    </>
                   )}
                 </div>
 
                 <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
                   <div className="kpi-label">Estado de cuenta {paid ? '(pagado)' : 'por pagar'}</div>
                   <div className="kpi-value" style={{ color: paid ? 'var(--color-success)' : 'var(--text-primary)' }}>
-                    {formatCurrency(closedAmount)}
+                    {formatCurrency(closedAmount - closedCashback)}
                   </div>
+                  {closedCashback > 0 && (
+                    <>
+                      <div className="flex justify-between items-center text-xs mt-2" style={{ color: 'var(--color-income)' }}>
+                        <span>Cashback aplicado</span>
+                        <span className="font-semibold">−{formatCurrency(closedCashback)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-xs mt-1 text-muted">
+                        <span>Consumo bruto</span>
+                        <span>{formatCurrency(closedAmount)}</span>
+                      </div>
+                    </>
+                  )}
                   <div className="text-xs text-muted mt-2 flex items-center gap-1">
                     <Calendar size={12} /> Vence el {formatDate(cy.dueDateISO)}
                   </div>
