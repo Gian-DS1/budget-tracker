@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -11,7 +11,8 @@ const useBudgetStore = create(
 
   fetchBudgets: async () => {
     set({ loading: true });
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return set({ budgets: [], loading: false });
 
     const { data, error } = await supabase.from('budgets').select('*').eq('user_id', user.id);
@@ -68,7 +69,8 @@ const useBudgetStore = create(
     });
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) {
         throw new Error("Usuario no autenticado");
       }
@@ -148,11 +150,12 @@ const useBudgetStore = create(
 
   // Aplica varios presupuestos de un mes de una sola vez (usado por el
   // auto-presupuesto sugerido). Inserta los nuevos en lote y actualiza los
-  // existentes; sin toasts por ítem (el llamante muestra un resumen).
-  // entries: [{ categoryId, amount }]. Devuelve cuántas categorías se aplicaron.
+  // existentes; sin toasts por Ã­tem (el llamante muestra un resumen).
+  // entries: [{ categoryId, amount }]. Devuelve cuÃ¡ntas categorÃ­as se aplicaron.
   bulkSetBudgets: async (year, month, entries) => {
     if (!entries || entries.length === 0) return 0;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return 0;
 
     const dbMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -249,7 +252,8 @@ const useBudgetStore = create(
 
     if (newBudgetsToCopy.length === 0) return true;
 
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return false;
 
     const dbPayload = newBudgetsToCopy.map(pb => ({

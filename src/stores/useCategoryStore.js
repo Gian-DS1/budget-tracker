@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { defaultCategories, findDuplicateCategories } from '../data/defaultCategories';
@@ -19,7 +19,8 @@ const useCategoryStore = create(
     if (fetchInFlight) return fetchInFlight;
     fetchInFlight = (async () => {
     set({ loading: true, error: null });
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       set({ categories: [], loading: false });
       return;
@@ -60,7 +61,7 @@ const useCategoryStore = create(
 
         if (insertError) {
           console.error("Supabase insert error:", insertError);
-          toast.error("Error cargando categorías iniciales");
+          toast.error("Error cargando categorÃ­as iniciales");
           set({ categories: defaultCategories, loading: false });
           return;
         }
@@ -80,7 +81,7 @@ const useCategoryStore = create(
         return;
       }
     }
-    // ── Auto-clean duplicates already in the database ───────────
+    // â”€â”€ Auto-clean duplicates already in the database â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     const { remap, deleteIds } = findDuplicateCategories(data);
     if (deleteIds.length > 0) {
       try {
@@ -166,7 +167,8 @@ const useCategoryStore = create(
   },
 
   dedupeCategories: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return 0;
 
     // Pull a fresh copy ordered oldest-first so the canonical keeper is stable.
@@ -198,7 +200,8 @@ const useCategoryStore = create(
 
   resetCategoriesToDefault: async () => {
     set({ loading: true, error: null });
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) {
       set({ loading: false });
       return false;
@@ -213,7 +216,7 @@ const useCategoryStore = create(
 
       if (deleteError) {
         console.error("Error deleting categories:", deleteError);
-        toast.error("Error al borrar categorías existentes");
+        toast.error("Error al borrar categorÃ­as existentes");
         set({ loading: false });
         return false;
       }
@@ -238,7 +241,7 @@ const useCategoryStore = create(
 
       if (insertError) {
         console.error("Error seeding default categories:", insertError);
-        toast.error("Error insertando nuevas categorías por defecto");
+        toast.error("Error insertando nuevas categorÃ­as por defecto");
         set({ loading: false });
         return false;
       }
@@ -250,19 +253,20 @@ const useCategoryStore = create(
           sortOrder: c.sort_order
         }));
         set({ categories: formattedData, loading: false });
-        toast.success("Categorías restablecidas con éxito");
+        toast.success("CategorÃ­as restablecidas con Ã©xito");
         return true;
       }
     } catch (err) {
       console.error("Failed to reset categories", err);
-      toast.error("Error al restablecer categorías");
+      toast.error("Error al restablecer categorÃ­as");
       set({ loading: false });
       return false;
     }
   },
 
   addCategory: async (category) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
     if (!user) return;
     
     const dbCategory = {

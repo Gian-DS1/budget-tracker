@@ -1,4 +1,4 @@
-import { create } from 'zustand';
+﻿import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -11,7 +11,8 @@ const usePlanStore = create(
 
       fetchPlans: async () => {
         set({ loading: true });
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (!user) return set({ plans: [], loading: false });
 
         const { data, error } = await supabase.from('plans').select('*').eq('user_id', user.id);
@@ -37,7 +38,8 @@ const usePlanStore = create(
       },
 
       addPlan: async (plan) => {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         if (!user) return;
 
         const dbPayload = {
