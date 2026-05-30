@@ -291,11 +291,11 @@ export default function TransactionsPage() {
             <Repeat size={16} /> Recurrentes{recurring.length > 0 ? ` (${recurring.length})` : ''}
           </button>
           {transactions.length > 0 && (
-            <button className="btn btn-primary btn-lg" onClick={() => {
+            <button className="btn btn-primary" onClick={() => {
               resetForm();
               setShowForm(true);
             }}>
-              <Plus size={18} /> Nueva Transacción
+              <Plus size={16} /> Nueva Transacción
             </button>
           )}
         </div>
