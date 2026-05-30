@@ -77,7 +77,8 @@ export default function ReportsPage() {
       monthTxs.forEach((t) => {
         if (t.type === 'income') income += Number(t.amount);
         if (t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense') {
-          expense += Number(t.amount);
+          // Gasto efectivo: neto del cashback generado por la transacción.
+          expense += Number(t.amount) - Number(t.cashbackEarned || 0);
         }
       });
       
@@ -138,7 +139,7 @@ export default function ReportsPage() {
           const d = new Date(t.date + 'T00:00:00');
           return d.getFullYear() === md.year && d.getMonth() === md.monthIndex && t.categoryId === cat.id;
         });
-        return txs.reduce((sum, t) => sum + Number(t.amount), 0);
+        return txs.reduce((sum, t) => sum + Number(t.amount) - Number(t.cashbackEarned || 0), 0);
       });
 
       // Need at least 3 months of data to find anomalies

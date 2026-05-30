@@ -1,10 +1,21 @@
 // FinTrack RD — Financial Calculations
 
 /**
- * Calculate the sum of amounts for given transactions
+ * Gasto/monto EFECTIVO de una transacción: el monto menos el cashback que
+ * generó. El cashback solo existe en gastos con tarjeta (es 0 en ingresos,
+ * ahorro y deuda), así que restarlo es seguro para cualquier tipo. Refleja
+ * "lo que realmente gastaste" (p. ej. RD$1000 con RD$10 de cashback = RD$990).
+ * No afecta lo que debes a la tarjeta (eso usa el monto bruto en creditCards.js).
+ */
+export function getEffectiveAmount(t) {
+  return (Number(t?.amount) || 0) - (Number(t?.cashbackEarned) || 0);
+}
+
+/**
+ * Calculate the sum of effective amounts for given transactions (neto de cashback)
  */
 export function sumAmounts(transactions) {
-  return transactions.reduce((sum, t) => sum + Number(t.amount), 0);
+  return transactions.reduce((sum, t) => sum + getEffectiveAmount(t), 0);
 }
 
 /**
@@ -92,7 +103,7 @@ export function groupByCategory(transactions, categories) {
       };
     }
     grouped[catId].transactions.push(t);
-    grouped[catId].total += Number(t.amount);
+    grouped[catId].total += getEffectiveAmount(t);
   });
   return Object.values(grouped);
 }
@@ -200,7 +211,8 @@ export function getBudgetSummary({
   for (const t of monthTransactions) {
     const cat = catById.get(t.categoryId);
     if (!cat) continue;
-    const amt = Number(t.amount) || 0;
+    // Gasto efectivo (neto de cashback); en ingresos/ahorro el cashback es 0.
+    const amt = getEffectiveAmount(t);
     if (cat.isAccumulative) { accumulativeSpent += amt; continue; }
     if (cat.type in actualByType) actualByType[cat.type] += amt;
   }
@@ -287,7 +299,7 @@ export function getAccumulatedBalance({
   let spent = 0;
   for (const t of transactions) {
     if (t.categoryId !== categoryId) continue;
-    if (t.date >= startISO && t.date < endExclusiveISO) spent += Number(t.amount) || 0;
+    if (t.date >= startISO && t.date < endExclusiveISO) spent += getEffectiveAmount(t);
   }
 
   return { budgeted, spent, available: budgeted - spent };
@@ -320,7 +332,7 @@ export function getMonthlySavingCapacity(transactions = [], refDate = new Date()
     const idx = d.getFullYear() * 12 + d.getMonth();
     const bucket = buckets.get(idx);
     if (!bucket) continue;
-    const amt = Number(t.amount) || 0;
+    const amt = getEffectiveAmount(t);
     if (t.type === 'income') bucket.income += amt;
     else if (t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense') {
       bucket.expense += amt;

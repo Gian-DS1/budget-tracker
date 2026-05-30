@@ -154,7 +154,8 @@ export default function DashboardPage() {
     txs.forEach((t) => {
       if (t.type === 'income') income += Number(t.amount);
       if (t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense') {
-        expense += Number(t.amount);
+        // Gasto efectivo: neto del cashback generado por la transacción.
+        expense += Number(t.amount) - Number(t.cashbackEarned || 0);
       }
     });
     return { income, expense, balance: income - expense };
@@ -215,7 +216,8 @@ export default function DashboardPage() {
       if (!grouped[t.categoryId]) {
         grouped[t.categoryId] = 0;
       }
-      grouped[t.categoryId] += Number(t.amount);
+      // Gasto efectivo: neto del cashback generado por la transacción.
+      grouped[t.categoryId] += Number(t.amount) - Number(t.cashbackEarned || 0);
     });
 
     return Object.entries(grouped)
