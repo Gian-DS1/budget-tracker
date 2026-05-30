@@ -237,17 +237,28 @@ const useTransactionStore = create(
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return 0;
 
-    const dbTxs = transactions.map(t => ({
-      user_id: user.id,
-      category_id: t.categoryId || null,
-      card_id: null,
-      amount: t.amount,
-      type: t.type,
-      description: t.description,
-      date: t.date,
-      notes: t.notes || null,
-      currency: 'DOP'
-    }));
+    // Las filas pueden traer cardId (p. ej. recurrentes pagadas con tarjeta).
+    // El monto ya viene en DOP; el cashback solo aplica a gastos con tarjeta.
+    const cards = useCreditCardStore.getState().cards;
+    const dbTxs = transactions.map(t => {
+      const cardId = t.cardId || null;
+      const card = cardId ? cards.find((c) => c.id === cardId) : null;
+      const cashback = (card && t.type === 'expense')
+        ? computeCashback(card, t.categoryId, t.amount)
+        : 0;
+      return {
+        user_id: user.id,
+        category_id: t.categoryId || null,
+        card_id: cardId,
+        amount: t.amount,
+        type: t.type,
+        description: t.description,
+        date: t.date,
+        notes: t.notes || null,
+        currency: 'DOP',
+        cashback_earned: cashback,
+      };
+    });
 
     // Insert in batches of 100 to avoid payload limits
     const batchSize = 100;
@@ -269,7 +280,7 @@ const useTransactionStore = create(
     }
 
     if (allInserted.length > 0) {
-      const newTxs = allInserted.map(d => ({ ...d, categoryId: d.category_id, cardId: d.card_id || null, createdAt: d.created_at }));
+      const newTxs = allInserted.map(d => ({ ...d, categoryId: d.category_id, cardId: d.card_id || null, cashbackEarned: d.cashback_earned ? Number(d.cashback_earned) : 0, createdAt: d.created_at }));
       set((state) => ({ transactions: [...newTxs, ...state.transactions] }));
     }
 

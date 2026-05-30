@@ -143,6 +143,7 @@ const useRecurringStore = create(
                 : Number(t.amount);
             toCreate.push({
               categoryId: t.categoryId,
+              cardId: t.cardId || null,
               amount: amountDOP,
               type: t.type,
               description: t.description,
