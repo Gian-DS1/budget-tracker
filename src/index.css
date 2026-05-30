@@ -371,11 +371,13 @@ table {
 /* ── Cards ─────────────────────────────────────────────────── */
 
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-primary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--glass-shadow);
   transition: all var(--transition-base);
 }
 
@@ -843,11 +845,13 @@ table {
 /* ── Charts Container ──────────────────────────────────────── */
 
 .chart-container {
-  background: var(--bg-card);
-  border: 1px solid var(--border-primary);
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
-  box-shadow: var(--shadow-card);
+  box-shadow: var(--glass-shadow);
 }
 
 .chart-header {

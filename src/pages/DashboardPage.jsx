@@ -327,7 +327,7 @@ export default function DashboardPage() {
             {Math.abs(expenseChange).toFixed(1)}% vs mes ant.
           </div>
           <div className="kpi-icon" style={{ background: 'var(--color-expense-bg)', color: 'var(--color-expense)' }}>
-            <Wallet size={20} />
+            <TrendingDown size={20} />
           </div>
         </div>
 

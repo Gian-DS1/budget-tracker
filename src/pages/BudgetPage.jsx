@@ -443,7 +443,7 @@ export default function BudgetPage() {
             : summary.estado === 'good' ? 'var(--color-success)'
             : 'var(--text-tertiary)'
         }}>
-          <div className="kpi-label">💚 Puedes gastar</div>
+          <div className="kpi-label">Puedes gastar</div>
           <div className="kpi-value" style={{
             fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)',
             color:
