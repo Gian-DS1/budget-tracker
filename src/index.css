@@ -4,6 +4,22 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap');
 
+/* ── Dígitos uniformes en TODO el sistema ──────────────────────
+   Una sola familia para los números: pase lo que pase, los dígitos
+   (0-9) y sus separadores se renderizan con JetBrains Mono vía
+   unicode-range, mientras el resto del texto sigue en Inter. Esto
+   unifica TODOS los números (fechas, %, montos, contadores, etc.)
+   sin tener que etiquetar cada elemento. Variable (100-800) para
+   que el peso acompañe al texto circundante. */
+@font-face {
+  font-family: 'TabularNums';
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url('https://cdn.jsdelivr.net/npm/@fontsource-variable/jetbrains-mono@5/files/jetbrains-mono-latin-wght-normal.woff2') format('woff2');
+  unicode-range: U+0030-0039, U+002B, U+002D, U+002C, U+002E, U+0025, U+0024, U+00A2-00A5;
+}
+
 /* ── CSS Custom Properties ─────────────────────────────────── */
 
 :root {
@@ -1623,9 +1639,12 @@ table {
    Modern Tech / Numerical Data Styling (Plus Jakarta Sans & JetBrains Mono)
    ============================================================ */
 
-/* Universal Reset: Force Inter globally for all text, headings, UI and sidebar components */
+/* Universal Reset: Force Inter globally for all text, headings, UI and sidebar
+   components. 'TabularNums' va primero para que SOLO los dígitos (vía
+   unicode-range) salgan en JetBrains Mono y el resto del texto en Inter:
+   así todos los números del sistema comparten el mismo font. */
 * {
-  font-family: var(--font-family) !important;
+  font-family: 'TabularNums', var(--font-family) !important;
   letter-spacing: -0.015em;
 }
 
