@@ -10,6 +10,7 @@ import {
   TrendingUp,
   TrendingDown,
   PiggyBank,
+  Sparkles,
 } from 'lucide-react';
 import useBudgetStore from '../stores/useBudgetStore';
 import useTransactionStore from '../stores/useTransactionStore';
@@ -18,8 +19,9 @@ import useDebtStore from '../stores/useDebtStore';
 
 import CurrencyInput from '../components/ui/CurrencyInput';
 import Modal from '../components/ui/Modal';
+import ConfirmDialog from '../components/ui/ConfirmDialog';
 import { formatCurrency, formatPercent } from '../utils/formatters';
-import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance } from '../utils/calculations';
+import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance, getBudgetSuggestions } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
 import useRateStore from '../stores/useRateStore';
 import toast from 'react-hot-toast';
@@ -77,12 +79,16 @@ export default function BudgetPage() {
   const [month, setMonth] = useState(now.getMonth());
 
   const budgets = useBudgetStore((state) => state.budgets);
-  const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
+  const { setBudget, copyBudgetFromPreviousMonth, bulkSetBudgets } = useBudgetStore();
   const { transactions } = useTransactionStore();
   const { categories, updateCategory } = useCategoryStore();
 
   const [configCat, setConfigCat] = useState(null);
   const [configForm, setConfigForm] = useState({ isAccumulative: false, accumulationStart: '' });
+  const [showSuggestConfirm, setShowSuggestConfirm] = useState(false);
+  // Cambia al aplicar operaciones masivas (copiar/sugerir) para remontar los
+  // inputs y que reflejen los nuevos montos al instante.
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
@@ -213,9 +219,23 @@ export default function BudgetPage() {
   const handleCopyPrevious = async () => {
     const success = await copyBudgetFromPreviousMonth(year, month);
     if (success) {
+      setRefreshKey((k) => k + 1);
       toast.success('Presupuesto copiado del mes anterior');
     } else {
       toast.error('No hay presupuesto en el mes anterior');
+    }
+  };
+
+  const handleAutoSuggest = async () => {
+    const suggestions = getBudgetSuggestions(transactions, categories, year, month, 3);
+    if (suggestions.length === 0) {
+      toast.error('No hay suficiente historial (últimos 3 meses) para sugerir un presupuesto');
+      return;
+    }
+    const applied = await bulkSetBudgets(year, month, suggestions);
+    if (applied > 0) {
+      setRefreshKey((k) => k + 1);
+      toast.success(`Presupuesto sugerido aplicado a ${applied} categoría${applied === 1 ? '' : 's'}`);
     }
   };
 
@@ -289,7 +309,7 @@ export default function BudgetPage() {
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <BudgetEstimatedInput
-                      key={`${row.category.id}-${year}-${month}`}
+                      key={`${row.category.id}-${year}-${month}-${refreshKey}`}
                       initialValue={row.estimated}
                       onSave={(value) => handleEstimatedChange(row.category.id, value)}
                     />
@@ -378,9 +398,14 @@ export default function BudgetPage() {
           <h1 className="page-title">Presupuesto</h1>
           <p className="page-subtitle">Planificación base cero mensual</p>
         </div>
-        <button className="btn btn-secondary" onClick={handleCopyPrevious}>
-          <Copy size={16} /> Copiar Mes Anterior
-        </button>
+        <div className="flex items-center gap-2">
+          <button className="btn btn-secondary" onClick={() => setShowSuggestConfirm(true)} title="Sugerir presupuesto con el promedio de tus últimos 3 meses">
+            <Sparkles size={16} /> Auto-sugerir
+          </button>
+          <button className="btn btn-secondary" onClick={handleCopyPrevious}>
+            <Copy size={16} /> Copiar Mes Anterior
+          </button>
+        </div>
       </div>
 
       {/* Month Selector */}
@@ -563,6 +588,16 @@ export default function BudgetPage() {
           <button type="button" className="btn btn-primary" onClick={handleSaveConfig}>Guardar</button>
         </div>
       </Modal>
+
+      <ConfirmDialog
+        isOpen={showSuggestConfirm}
+        onClose={() => setShowSuggestConfirm(false)}
+        onConfirm={handleAutoSuggest}
+        title="Auto-sugerir presupuesto"
+        message={`Se asignará a cada categoría el promedio de lo registrado en los últimos 3 meses. Esto reemplazará los montos estimados que ya tengas en ${MONTHS_ES[month]} ${year}. ¿Continuar?`}
+        confirmText="Sí, sugerir"
+        danger={false}
+      />
 
     </div>
   );

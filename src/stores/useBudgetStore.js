@@ -146,6 +146,75 @@ const useBudgetStore = create(
     }
   },
 
+  // Aplica varios presupuestos de un mes de una sola vez (usado por el
+  // auto-presupuesto sugerido). Inserta los nuevos en lote y actualiza los
+  // existentes; sin toasts por ítem (el llamante muestra un resumen).
+  // entries: [{ categoryId, amount }]. Devuelve cuántas categorías se aplicaron.
+  bulkSetBudgets: async (year, month, entries) => {
+    if (!entries || entries.length === 0) return 0;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return 0;
+
+    const dbMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
+    const current = get().budgets;
+
+    const toInsert = [];
+    const toUpdate = []; // { id, categoryId, amount }
+    for (const e of entries) {
+      const amount = Number(e.amount) || 0;
+      const existing = current.find(
+        (b) => b.categoryId === e.categoryId && b.year === year && b.month === month
+      );
+      if (existing && !String(existing.id).startsWith('temp-')) {
+        toUpdate.push({ id: existing.id, categoryId: e.categoryId, amount });
+      } else {
+        toInsert.push({ user_id: user.id, category_id: e.categoryId, amount, month: dbMonth });
+      }
+    }
+
+    try {
+      // Actualizaciones en paralelo.
+      await Promise.all(
+        toUpdate.map((u) => supabase.from('budgets').update({ amount: u.amount }).eq('id', u.id))
+      );
+
+      // Inserciones en lote.
+      let insertedRows = [];
+      if (toInsert.length > 0) {
+        const { data, error } = await supabase.from('budgets').insert(toInsert).select();
+        if (error) throw error;
+        insertedRows = data || [];
+      }
+
+      // Reflejar en el estado local.
+      set((state) => {
+        let next = state.budgets.map((b) => {
+          const u = toUpdate.find((x) => x.id === b.id);
+          return u ? { ...b, estimatedAmount: u.amount } : b;
+        });
+        const formattedInserts = insertedRows.map((b) => {
+          const [y, m] = b.month.split('-');
+          return {
+            id: b.id,
+            categoryId: b.category_id,
+            year: parseInt(y, 10),
+            month: parseInt(m, 10) - 1,
+            estimatedAmount: Number(b.amount),
+            currency: 'DOP',
+            createdAt: b.created_at,
+          };
+        });
+        return { budgets: [...next, ...formattedInserts] };
+      });
+
+      return toUpdate.length + toInsert.length;
+    } catch (error) {
+      console.error('Bulk set budgets error:', error);
+      toast.error('Error al aplicar el presupuesto sugerido');
+      return 0;
+    }
+  },
+
   getBudgetsByMonth: (year, month) => {
     return get().budgets.filter((b) => b.year === year && b.month === month);
   },

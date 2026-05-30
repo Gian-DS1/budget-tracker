@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBudgetSummary, getAccumulatedBalance, getMonthlySavingCapacity } from './calculations';
+import { getBudgetSummary, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions } from './calculations';
 
 const categories = [
   { id: 'inc', type: 'income' },
@@ -251,5 +251,38 @@ describe('getMonthlySavingCapacity', () => {
     const r = getMonthlySavingCapacity([], ref, 3);
     expect(r.capacity).toBe(0);
     expect(r.monthsCounted).toBe(0);
+  });
+});
+
+describe('getBudgetSuggestions', () => {
+  const cats = [
+    { id: 'super', isActive: true },
+    { id: 'luz', isActive: true },
+    { id: 'vieja', isActive: false },
+  ];
+
+  it('promedia los 3 meses anteriores al mes objetivo (mayo 2026)', () => {
+    const txs = [
+      // super: feb 3000, mar 3000, abr 3000 → promedio 3000
+      { categoryId: 'super', amount: 3000, date: '2026-02-10' },
+      { categoryId: 'super', amount: 3000, date: '2026-03-10' },
+      { categoryId: 'super', amount: 3000, date: '2026-04-10' },
+      // luz: solo abr 1500 → promedio 1500/3 = 500
+      { categoryId: 'luz', amount: 1500, date: '2026-04-10' },
+    ];
+    const r = getBudgetSuggestions(txs, cats, 2026, 4, 3);
+    const byId = Object.fromEntries(r.map((x) => [x.categoryId, x.amount]));
+    expect(byId.super).toBe(3000);
+    expect(byId.luz).toBe(500);
+  });
+
+  it('excluye el mes objetivo y meses fuera de la ventana, y categorías inactivas', () => {
+    const txs = [
+      { categoryId: 'super', amount: 9999, date: '2026-05-10' }, // mes objetivo: ignorado
+      { categoryId: 'super', amount: 9999, date: '2026-01-10' }, // fuera de ventana (3 meses): ignorado
+      { categoryId: 'vieja', amount: 6000, date: '2026-04-10' }, // categoría inactiva: ignorada
+    ];
+    const r = getBudgetSuggestions(txs, cats, 2026, 4, 3);
+    expect(r).toEqual([]);
   });
 });

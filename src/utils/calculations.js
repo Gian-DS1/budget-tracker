@@ -341,6 +341,36 @@ export function getMonthlySavingCapacity(transactions = [], refDate = new Date()
 }
 
 /**
+ * Sugerencia de presupuesto base cero: para cada categoría activa, propone el
+ * promedio de lo registrado en los `monthsBack` meses ANTERIORES al mes objetivo
+ * (year, month). El promedio se divide siempre entre `monthsBack` para que un
+ * gasto esporádico no infle el presupuesto mensual. Devuelve solo categorías con
+ * historial positivo: [{ categoryId, amount }].
+ */
+export function getBudgetSuggestions(transactions = [], categories = [], year, month, monthsBack = 3) {
+  const targetIdx = year * 12 + month;
+  const startIdx = targetIdx - monthsBack; // inclusivo
+  const activeIds = new Set(categories.filter((c) => c.isActive).map((c) => c.id));
+
+  const totals = new Map();
+  for (const t of transactions) {
+    if (!t.date || !t.categoryId || !activeIds.has(t.categoryId)) continue;
+    const d = new Date(t.date + 'T00:00:00');
+    const idx = d.getFullYear() * 12 + d.getMonth();
+    if (idx >= startIdx && idx < targetIdx) {
+      totals.set(t.categoryId, (totals.get(t.categoryId) || 0) + (Number(t.amount) || 0));
+    }
+  }
+
+  const result = [];
+  for (const [categoryId, sum] of totals) {
+    const avg = Math.round((sum / monthsBack) * 100) / 100;
+    if (avg > 0) result.push({ categoryId, amount: avg });
+  }
+  return result;
+}
+
+/**
  * Detect anomalies (values 2+ standard deviations from mean)
  */
 export function detectAnomalies(values, threshold = 2) {
