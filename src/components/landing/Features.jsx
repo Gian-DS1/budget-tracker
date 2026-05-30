@@ -60,7 +60,7 @@ export default function Features() {
           <h2 className="lp-section__title">Todo lo que necesitas para tu dinero</h2>
           <p className="lp-section__sub">
             Una sola app para presupuestar, controlar tarjetas, eliminar deudas y ahorrar
-            con intención — adaptada a la realidad dominicana.
+            con intención — todo desde una interfaz simple y clara.
           </p>
         </div>
 

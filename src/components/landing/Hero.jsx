@@ -53,7 +53,7 @@ export default function Hero({ onAuth }) {
 
           <motion.p className="lp-hero__subtitle" variants={item}>
             Presupuesto base cero, transacciones en RD$ y US$, tarjetas con cashback,
-            deudas y metas — todo en un solo lugar, pensado para República Dominicana.
+            deudas y metas — todo en un solo lugar, simple y bajo tu control.
           </motion.p>
 
           <motion.div className="lp-hero__cta" variants={item}>
