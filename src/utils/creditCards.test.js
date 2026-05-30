@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback } from './creditCards';
+import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback } from './creditCards';
 
 describe('getCardCycles', () => {
   it('corte 20 / pago 5: el pago cae el mes siguiente al corte', () => {
@@ -42,10 +42,41 @@ describe('getStatementAmount', () => {
 });
 
 describe('isStatementPaid', () => {
-  it('detecta el ciclo marcado como pagado', () => {
+  it('detecta el ciclo marcado como pagado (formato legado: strings)', () => {
     const card = { paidCycles: ['2026-05-20'] };
     expect(isStatementPaid(card, '2026-05-20')).toBe(true);
     expect(isStatementPaid(card, '2026-06-20')).toBe(false);
+  });
+
+  it('detecta el ciclo pagado (formato nuevo: objetos snapshot)', () => {
+    const card = { paidCycles: [{ cycleEnd: '2026-05-20', amount: 1000, cashback: 30 }] };
+    expect(isStatementPaid(card, '2026-05-20')).toBe(true);
+    expect(isStatementPaid(card, '2026-06-20')).toBe(false);
+  });
+
+  it('soporta historiales mixtos (string + objeto)', () => {
+    const card = { paidCycles: ['2026-04-20', { cycleEnd: '2026-05-20', cashback: 30 }] };
+    expect(isStatementPaid(card, '2026-04-20')).toBe(true);
+    expect(isStatementPaid(card, '2026-05-20')).toBe(true);
+  });
+});
+
+describe('getStatementHistory / getLifetimeCashback', () => {
+  it('ordena del más reciente al más antiguo y normaliza strings legados', () => {
+    const card = { paidCycles: ['2026-03-20', { cycleEnd: '2026-05-20', amount: 1000, cashback: 30 }] };
+    const hist = getStatementHistory(card);
+    expect(hist.map((h) => h.cycleEnd)).toEqual(['2026-05-20', '2026-03-20']);
+    expect(hist[1].cashback).toBe(0); // el legado no tenía cashback
+  });
+
+  it('suma el cashback acumulado de por vida', () => {
+    const card = { paidCycles: [{ cycleEnd: '2026-04-20', cashback: 12.5 }, { cycleEnd: '2026-05-20', cashback: 30 }] };
+    expect(getLifetimeCashback(card)).toBe(42.5);
+  });
+
+  it('devuelve vacío/0 si no hay historial', () => {
+    expect(getStatementHistory({})).toEqual([]);
+    expect(getLifetimeCashback({})).toBe(0);
   });
 });
 

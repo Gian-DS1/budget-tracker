@@ -71,10 +71,57 @@ export function getStatementAmount(transactions, cardId, startISO, endISO) {
 }
 
 /**
+ * Normaliza una entrada de `paidCycles`. Soporta dos formatos:
+ *  - legado: string ISO con la fecha de cierre del ciclo.
+ *  - nuevo:  objeto con la foto del estado de cuenta { cycleEnd, amount, cashback, ... }.
+ */
+function normalizePaidEntry(entry) {
+  if (typeof entry === 'string') {
+    return { cycleEnd: entry, periodStart: null, periodEnd: entry, amount: 0, cashback: 0, paidAt: null };
+  }
+  if (entry && typeof entry === 'object') {
+    return {
+      cycleEnd: entry.cycleEnd,
+      periodStart: entry.periodStart ?? null,
+      periodEnd: entry.periodEnd ?? entry.cycleEnd,
+      amount: Number(entry.amount) || 0,
+      cashback: Number(entry.cashback) || 0,
+      paidAt: entry.paidAt ?? null,
+    };
+  }
+  return null;
+}
+
+/**
  * ¿El estado de cuenta que cerró en `closedEndISO` ya fue marcado como pagado?
+ * Compatible con entradas en formato string (legado) u objeto (nuevo).
  */
 export function isStatementPaid(card, closedEndISO) {
-  return Array.isArray(card.paidCycles) && card.paidCycles.includes(closedEndISO);
+  if (!card || !Array.isArray(card.paidCycles)) return false;
+  return card.paidCycles.some((p) => {
+    const n = normalizePaidEntry(p);
+    return n && n.cycleEnd === closedEndISO;
+  });
+}
+
+/**
+ * Historial de estados de cuenta pagados de una tarjeta, normalizado y ordenado
+ * del más reciente al más antiguo.
+ */
+export function getStatementHistory(card) {
+  if (!card || !Array.isArray(card.paidCycles)) return [];
+  return card.paidCycles
+    .map(normalizePaidEntry)
+    .filter(Boolean)
+    .sort((a, b) => String(b.cycleEnd || '').localeCompare(String(a.cycleEnd || '')));
+}
+
+/**
+ * Cashback acumulado de por vida (suma del cashback de todos los estados de
+ * cuenta ya pagados/guardados en el historial de la tarjeta).
+ */
+export function getLifetimeCashback(card) {
+  return getStatementHistory(card).reduce((sum, p) => sum + (Number(p.cashback) || 0), 0);
 }
 
 /**

@@ -1,6 +1,6 @@
 // FinTrack RD — Dashboard Page
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -38,6 +38,7 @@ import {
 import { getBudgetSummary } from '../utils/calculations';
 import { getCardCycles, getStatementAmount, isStatementPaid } from '../utils/creditCards';
 import useRateStore from '../stores/useRateStore';
+import Modal from '../components/ui/Modal';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -70,6 +71,15 @@ export default function DashboardPage() {
 
   const cards = useCreditCardStore((s) => s.cards);
   const fxRate = useRateStore((s) => s.getRate());
+
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  const selectedDayTransactions = useMemo(() => {
+    if (!selectedDay) return [];
+    return transactions
+      .filter((t) => t.date === selectedDay)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  }, [selectedDay, transactions]);
 
   const now = new Date();
   const currentMonth = now.getMonth();
@@ -476,9 +486,10 @@ export default function DashboardPage() {
 
             {/* Days */}
             {calendarDays.days.map((day) => (
-              <div 
-                key={day.day} 
+              <div
+                key={day.day}
                 className="tooltip-container flex items-center justify-center"
+                onClick={() => day.hasActivity && setSelectedDay(day.date)}
                 style={{
                   aspectRatio: '1',
                   borderRadius: 'var(--radius-sm)',
@@ -487,7 +498,7 @@ export default function DashboardPage() {
                   fontSize: 'var(--font-xs)',
                   fontWeight: day.hasActivity ? 'bold' : 'normal',
                   color: day.hasActivity ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                  cursor: 'pointer'
+                  cursor: day.hasActivity ? 'pointer' : 'default'
                 }}
               >
                 {day.day}
@@ -504,6 +515,41 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Detalle del día (al hacer clic en el calendario) */}
+      <Modal
+        isOpen={!!selectedDay}
+        onClose={() => setSelectedDay(null)}
+        title={selectedDay ? `Transacciones del ${formatDate(selectedDay)}` : 'Transacciones'}
+      >
+        {selectedDayTransactions.length > 0 ? (
+          <div className="flex flex-col gap-3">
+            {selectedDayTransactions.map((t) => {
+              const cat = categories.find((c) => c.id === t.categoryId);
+              return (
+                <div key={t.id} className="flex items-center justify-between gap-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)', padding: 'var(--space-3)', minWidth: 0 }}>
+                  <div className="flex items-center gap-3" style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ fontSize: '1.3rem', background: 'var(--bg-card)', padding: '6px', borderRadius: 'var(--radius-sm)', flexShrink: 0, lineHeight: 1 }}>
+                      {cat?.icon || '💸'}
+                    </div>
+                    <div style={{ minWidth: 0, flex: 1, overflow: 'hidden' }}>
+                      <div className="font-semibold" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {t.description || 'Sin descripción'}
+                      </div>
+                      <div className="text-xs text-muted">{cat?.name || 'Sin categoría'}</div>
+                    </div>
+                  </div>
+                  <div className={`font-bold ${t.type === 'income' ? 'amount-positive' : 'amount-negative'}`} style={{ flexShrink: 0, whiteSpace: 'nowrap' }}>
+                    {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center text-muted p-8">No hay transacciones registradas este día.</div>
+        )}
+      </Modal>
 
     </div>
   );

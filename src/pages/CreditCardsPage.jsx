@@ -1,15 +1,15 @@
 // FinTrack RD — Credit Cards Page
 
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar, X } from 'lucide-react';
+import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar, X, History } from 'lucide-react';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
-import { formatCurrency, formatDate } from '../utils/formatters';
-import { getCardCycles, getStatementAmount, isStatementPaid } from '../utils/creditCards';
+import { formatCurrency, formatDate, todayISO } from '../utils/formatters';
+import { getCardCycles, getStatementAmount, isStatementPaid, getStatementHistory, getLifetimeCashback } from '../utils/creditCards';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899'];
 
@@ -24,7 +24,8 @@ export default function CreditCardsPage() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  
+  const [historyCard, setHistoryCard] = useState(null);
+
   // Cashback Rule UI State
   const [newRuleCategory, setNewRuleCategory] = useState('all');
   const [newRulePercentage, setNewRulePercentage] = useState('');
@@ -94,8 +95,15 @@ export default function CreditCardsPage() {
       const openCashback = transactions
         .filter(t => t.cardId === card.id && t.date >= cy.openStartISO && t.date <= cy.openEndISO)
         .reduce((sum, t) => sum + (t.cashbackEarned || 0), 0);
-        
-      return { card, cy, openAmount, closedAmount, paid, openCashback };
+
+      const closedCashback = transactions
+        .filter(t => t.cardId === card.id && t.date >= cy.closedStartISO && t.date <= cy.closedEndISO)
+        .reduce((sum, t) => sum + (t.cashbackEarned || 0), 0);
+
+      const history = getStatementHistory(card);
+      const lifetimeCashback = getLifetimeCashback(card);
+
+      return { card, cy, openAmount, closedAmount, paid, openCashback, closedCashback, history, lifetimeCashback };
     });
   }, [cards, transactions]);
 
@@ -126,7 +134,7 @@ export default function CreditCardsPage() {
         />
       ) : (
         <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-          {rows.map(({ card, cy, openAmount, closedAmount, paid, openCashback }) => (
+          {rows.map(({ card, cy, openAmount, closedAmount, paid, openCashback, closedCashback, history, lifetimeCashback }) => (
             <div key={card.id} className="card" style={{ '--kpi-accent': card.color }}>
               <div className="card-header">
                 <h3 className="card-title flex items-center gap-2">
@@ -150,7 +158,7 @@ export default function CreditCardsPage() {
                   </div>
                   {openCashback > 0 && (
                     <div className="flex justify-between items-center text-xs mt-1" style={{ color: 'var(--color-income)' }}>
-                      <span>Cashback Acumulado</span>
+                      <span>Cashback de este ciclo</span>
                       <span className="font-semibold">+{formatCurrency(openCashback)}</span>
                     </div>
                   )}
@@ -167,7 +175,14 @@ export default function CreditCardsPage() {
                   {!paid && closedAmount > 0 && (
                     <button
                       className="btn btn-secondary btn-sm mt-4"
-                      onClick={() => markStatementPaid(card.id, cy.closedEndISO)}
+                      onClick={() => markStatementPaid(card.id, {
+                        cycleEnd: cy.closedEndISO,
+                        periodStart: cy.closedStartISO,
+                        periodEnd: cy.closedEndISO,
+                        amount: closedAmount,
+                        cashback: closedCashback,
+                        paidAt: todayISO(),
+                      })}
                     >
                       <CheckCircle2 size={14} /> Marcar como pagado
                     </button>
@@ -178,6 +193,26 @@ export default function CreditCardsPage() {
                     </div>
                   )}
                 </div>
+
+                {/* Historial y cashback acumulado de por vida */}
+                {history.length > 0 && (
+                  <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <div className="kpi-label" style={{ marginBottom: 2 }}>Cashback acumulado</div>
+                        <div className="font-bold" style={{ color: 'var(--color-income)' }}>
+                          +{formatCurrency(lifetimeCashback)}
+                        </div>
+                      </div>
+                      <button
+                        className="btn btn-secondary btn-sm"
+                        onClick={() => setHistoryCard(card)}
+                      >
+                        <History size={14} /> Historial ({history.length})
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           ))}
@@ -236,10 +271,7 @@ export default function CreditCardsPage() {
                 onChange={(e) => setNewRuleCategory(e.target.value)}
                 style={{ padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
               >
-                <option value="all">Todas las categorías</option>
-                <optgroup label="Ingresos">
-                  {categories.filter(c => c.type === 'income' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </optgroup>
+                <option value="all">Todas las categorías de gasto</option>
                 <optgroup label="Gastos">
                   {categories.filter(c => c.type !== 'income' && c.type !== 'savings' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </optgroup>
@@ -287,6 +319,46 @@ export default function CreditCardsPage() {
             <button type="submit" className="btn btn-primary">{editingId ? 'Guardar Cambios' : 'Agregar'}</button>
           </div>
         </form>
+      </Modal>
+
+      {/* Historial de estados de cuenta */}
+      <Modal
+        isOpen={!!historyCard}
+        onClose={() => setHistoryCard(null)}
+        title={historyCard ? `Historial — ${historyCard.name}` : 'Historial'}
+      >
+        {historyCard && (() => {
+          const history = getStatementHistory(historyCard);
+          const lifetime = getLifetimeCashback(historyCard);
+          return (
+            <>
+              <div className="flex justify-between items-center mb-4 p-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                <span className="text-sm text-muted">Cashback acumulado de por vida</span>
+                <span className="font-bold" style={{ color: 'var(--color-income)' }}>+{formatCurrency(lifetime)}</span>
+              </div>
+              <div className="flex flex-col gap-2">
+                {history.map((s, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                    <div>
+                      <div className="font-semibold text-sm">
+                        {s.periodStart ? `${formatDate(s.periodStart)} → ${formatDate(s.periodEnd)}` : `Corte ${formatDate(s.cycleEnd)}`}
+                      </div>
+                      <div className="text-xs text-muted">
+                        {s.paidAt ? `Pagado el ${formatDate(s.paidAt)}` : 'Sin fecha de pago registrada'}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-bold">{formatCurrency(s.amount)}</div>
+                      {s.cashback > 0 && (
+                        <div className="text-xs" style={{ color: 'var(--color-income)' }}>+{formatCurrency(s.cashback)} cashback</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          );
+        })()}
       </Modal>
 
       <ConfirmDialog

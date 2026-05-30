@@ -294,6 +294,53 @@ export function getAccumulatedBalance({
 }
 
 /**
+ * Capacidad de ahorro mensual estimada: promedio de (ingresos − gastos) de los
+ * últimos `monthsBack` meses COMPLETOS (excluye el mes en curso, que está a
+ * medias). Los ahorros no cuentan como gasto: son justamente lo que queremos
+ * estimar que puedes apartar. Todo en moneda base (DOP).
+ *
+ * @returns {{ capacity:number, monthsCounted:number, avgIncome:number, avgExpense:number }}
+ */
+export function getMonthlySavingCapacity(transactions = [], refDate = new Date(), monthsBack = 3) {
+  const refYear = refDate.getFullYear();
+  const refMonth = refDate.getMonth();
+
+  // Índices (year*12+month) de los últimos `monthsBack` meses completos.
+  const buckets = new Map(); // idx -> { income, expense }
+  for (let i = 1; i <= monthsBack; i++) {
+    let m = refMonth - i;
+    let y = refYear;
+    while (m < 0) { m += 12; y -= 1; }
+    buckets.set(y * 12 + m, { income: 0, expense: 0 });
+  }
+
+  for (const t of transactions) {
+    if (!t.date) continue;
+    const d = new Date(t.date + 'T00:00:00');
+    const idx = d.getFullYear() * 12 + d.getMonth();
+    const bucket = buckets.get(idx);
+    if (!bucket) continue;
+    const amt = Number(t.amount) || 0;
+    if (t.type === 'income') bucket.income += amt;
+    else if (t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense') {
+      bucket.expense += amt;
+    }
+  }
+
+  // Solo promediamos meses con alguna actividad, para no diluir con meses vacíos.
+  const active = [...buckets.values()].filter((b) => b.income > 0 || b.expense > 0);
+  const monthsCounted = active.length;
+  if (monthsCounted === 0) {
+    return { capacity: 0, monthsCounted: 0, avgIncome: 0, avgExpense: 0 };
+  }
+  const totalIncome = active.reduce((s, b) => s + b.income, 0);
+  const totalExpense = active.reduce((s, b) => s + b.expense, 0);
+  const avgIncome = totalIncome / monthsCounted;
+  const avgExpense = totalExpense / monthsCounted;
+  return { capacity: avgIncome - avgExpense, monthsCounted, avgIncome, avgExpense };
+}
+
+/**
  * Detect anomalies (values 2+ standard deviations from mean)
  */
 export function detectAnomalies(values, threshold = 2) {

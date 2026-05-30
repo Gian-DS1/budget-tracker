@@ -420,7 +420,7 @@ export default function BudgetPage() {
         }}>
           <div className="kpi-label">💚 Puedes gastar</div>
           <div className="kpi-value" style={{
-            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+            fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)',
             color:
               summary.estado === 'danger' ? 'var(--color-danger)'
               : summary.estado === 'warning' ? 'var(--color-warning)'
@@ -439,7 +439,7 @@ export default function BudgetPage() {
         {/* Card 1: Ingresos */}
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
           <div className="kpi-label">Ingresos Reales</div>
-          <div className="kpi-value" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)' }}>
+          <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>
             {formatCurrency(totalIncomeActual)}
           </div>
           <div className="text-xs text-muted mt-2 font-semibold">
@@ -450,7 +450,7 @@ export default function BudgetPage() {
         {/* Card 2: Total Asignado */}
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-fixed)' }}>
           <div className="kpi-label">Presupuesto (Gastos + Ahorros)</div>
-          <div className="kpi-value" style={{ fontSize: 'clamp(1.1rem, 2vw, 1.4rem)' }}>
+          <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>
             {formatCurrency(totalExpenseEstimated + totalSavingsEstimated)}
           </div>
           <div className="text-xs text-muted mt-2 font-semibold">
@@ -464,7 +464,7 @@ export default function BudgetPage() {
         }}>
           <div className="kpi-label">Por Asignar</div>
           <div className="kpi-value" style={{ 
-            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)',
+            fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)',
             color: balanceEstimated === 0 ? 'var(--color-success)' : balanceEstimated > 0 ? 'var(--color-warning)' : 'var(--color-danger)'
           }}>
             {formatCurrency(balanceEstimated)}
@@ -480,7 +480,7 @@ export default function BudgetPage() {
         }}>
           <div className="kpi-label">Efectivo Disponible</div>
           <div className="kpi-value" style={{ 
-            fontSize: 'clamp(1.1rem, 2vw, 1.4rem)'
+            fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)'
           }}>
             {formatCurrency(balanceActual)}
           </div>

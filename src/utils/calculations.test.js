@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBudgetSummary, getAccumulatedBalance } from './calculations';
+import { getBudgetSummary, getAccumulatedBalance, getMonthlySavingCapacity } from './calculations';
 
 const categories = [
   { id: 'inc', type: 'income' },
@@ -211,5 +211,45 @@ describe('getBudgetSummary — categorías acumulativas', () => {
     expect(r.variableGastado).toBe(2000);
     expect(r.comprometido).toBe(1000);
     expect(r.puedesGastar).toBe(47000);
+  });
+});
+
+describe('getMonthlySavingCapacity', () => {
+  const ref = new Date('2026-05-15T00:00:00'); // mes en curso: mayo 2026
+
+  it('promedia ingresos − gastos de los meses completos previos', () => {
+    const txs = [
+      // Febrero: +40000 / -20000
+      { type: 'income', amount: 40000, date: '2026-02-10' },
+      { type: 'expense', amount: 20000, date: '2026-02-12' },
+      // Marzo: +40000 / -30000
+      { type: 'income', amount: 40000, date: '2026-03-10' },
+      { type: 'fixed_expense', amount: 30000, date: '2026-03-12' },
+      // Abril: +40000 / -10000
+      { type: 'income', amount: 40000, date: '2026-04-10' },
+      { type: 'variable_expense', amount: 10000, date: '2026-04-12' },
+    ];
+    const r = getMonthlySavingCapacity(txs, ref, 3);
+    expect(r.monthsCounted).toBe(3);
+    // promedio neto = (20000 + 10000 + 30000) / 3 = 20000
+    expect(r.capacity).toBe(20000);
+  });
+
+  it('excluye el mes en curso y los ahorros no cuentan como gasto', () => {
+    const txs = [
+      { type: 'income', amount: 40000, date: '2026-05-10' }, // mes en curso: ignorado
+      { type: 'income', amount: 30000, date: '2026-04-10' },
+      { type: 'savings', amount: 5000, date: '2026-04-11' }, // no resta
+      { type: 'expense', amount: 10000, date: '2026-04-12' },
+    ];
+    const r = getMonthlySavingCapacity(txs, ref, 3);
+    expect(r.monthsCounted).toBe(1); // solo abril tuvo actividad
+    expect(r.capacity).toBe(20000); // 30000 - 10000
+  });
+
+  it('devuelve 0 cuando no hay actividad', () => {
+    const r = getMonthlySavingCapacity([], ref, 3);
+    expect(r.capacity).toBe(0);
+    expect(r.monthsCounted).toBe(0);
   });
 });

@@ -11,7 +11,7 @@ import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { autoCategorize } from '../data/defaultCategories';
-import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel } from '../utils/formatters';
+import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel, titleCase } from '../utils/formatters';
 import useRateStore from '../stores/useRateStore';
 import { computeCashback } from '../utils/creditCards';
 
@@ -103,18 +103,22 @@ export default function TransactionsPage() {
   // Preview del cashback. Para USD se aproxima con la tasa fija; el monto real
   // guardado lo recalcula el store sobre el monto convertido a DOP.
   const calculatedCashback = useMemo(() => {
-    if (!form.cardId) return 0;
+    // El cashback solo aplica a gastos, nunca a ingresos ni ahorros.
+    if (!form.cardId || form.type !== 'expense') return 0;
     const card = cards.find(c => c.id === form.cardId);
     const baseAmount = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
     return computeCashback(card, form.categoryId, baseAmount);
-  }, [form.cardId, form.categoryId, form.amount, form.currency, cards, fxRate]);
+  }, [form.cardId, form.type, form.categoryId, form.amount, form.currency, cards, fxRate]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.amount || !form.date) return;
 
+    const formattedDescription = titleCase(form.description);
+
     const data = {
       ...form,
+      description: formattedDescription,
       amount: Number(form.amount),
       cashbackEarned: calculatedCashback,
     };
@@ -132,7 +136,7 @@ export default function TransactionsPage() {
           cardId: form.cardId,
           amount: Number(form.amount),
           type: form.type,
-          description: form.description,
+          description: formattedDescription,
           notes: form.notes,
           currency: form.currency,
           frequency: form.recurrencePattern,
@@ -582,6 +586,7 @@ export default function TransactionsPage() {
               type="text"
               value={form.description}
               onChange={(e) => handleDescriptionChange(e.target.value)}
+              onBlur={(e) => setForm((prev) => ({ ...prev, description: titleCase(e.target.value) }))}
               placeholder="Ej: Supermercado Nacional, Uber, Salario..."
               autoComplete="off"
             />

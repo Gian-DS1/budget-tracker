@@ -129,6 +129,16 @@ export function capitalize(str) {
 }
 
 /**
+ * Pone en mayúscula la primera letra de cada palabra, dejando el resto tal cual
+ * (no fuerza minúsculas, para no dañar siglas como "ATM" o "USD").
+ * Ej: "supermercado nacional" → "Supermercado Nacional".
+ */
+export function titleCase(str) {
+  if (!str) return '';
+  return str.replace(/(^|\s)(\p{L})/gu, (m, sep, ch) => sep + ch.toUpperCase());
+}
+
+/**
  * Get transaction type label in Spanish
  */
 export function getTypeLabel(type) {

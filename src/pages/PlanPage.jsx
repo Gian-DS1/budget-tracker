@@ -1,12 +1,16 @@
 // FinTrack RD — Plan Page
 
-import { useState } from 'react';
-import { Plus, Target, Trash2, Clock, CheckCircle2, Circle, Edit2 } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { Plus, Target, Trash2, Clock, CheckCircle2, Circle, Edit2, Sparkles, AlertTriangle, TrendingUp, ShieldCheck } from 'lucide-react';
 import usePlanStore from '../stores/usePlanStore';
+import useTransactionStore from '../stores/useTransactionStore';
+import useDebtStore from '../stores/useDebtStore';
+import useSavingsStore from '../stores/useSavingsStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import { formatCurrency, formatDate } from '../utils/formatters';
+import { getMonthlySavingCapacity } from '../utils/calculations';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import toast from 'react-hot-toast';
 
@@ -24,6 +28,10 @@ const STATUS_CONFIG = {
 
 export default function PlanPage() {
   const { plans, addPlan, updatePlan, deletePlan, updateStatus } = usePlanStore();
+  const transactions = useTransactionStore((s) => s.transactions);
+  const debts = useDebtStore((s) => s.debts);
+  const getTotalDebt = useDebtStore((s) => s.getTotalDebt);
+  const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
   const [showForm, setShowForm] = useState(false);
   const [editingPlan, setEditingPlan] = useState(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
@@ -83,6 +91,66 @@ export default function PlanPage() {
     return diff;
   };
 
+  // ─── Resumen inteligente ──────────────────────────────────────
+  // Cruza datos reales de transacciones, deudas y ahorros para dar
+  // recomendaciones objetivas sobre la viabilidad del plan.
+  const smart = useMemo(() => {
+    const cap = getMonthlySavingCapacity(transactions, new Date(), 3);
+    const totalDebt = getTotalDebt();
+    const totalSaved = getTotalSaved();
+    const maxInterest = debts
+      .filter((d) => d.status === 'active')
+      .reduce((mx, d) => Math.max(mx, Number(d.interestRate) || 0), 0);
+
+    // Cuánto piden por mes las metas activas con plazo y monto objetivo.
+    let requiredMonthly = 0;
+    for (const p of plans) {
+      if (p.status === 'completed') continue;
+      const target = Number(p.targetAmount) || 0;
+      if (target <= 0) continue;
+      const remaining = Math.max(0, target - (Number(p.currentAmount) || 0));
+      if (remaining <= 0) continue;
+      const days = getDaysRemaining(p.deadline);
+      const months = days && days > 0 ? Math.max(1, Math.ceil(days / 30.44)) : 1;
+      requiredMonthly += remaining / months;
+    }
+
+    const margin = cap.capacity - requiredMonthly;
+    const emergencyTarget = cap.avgExpense * 3;
+
+    const insights = [];
+    if (cap.monthsCounted === 0) {
+      insights.push({ tone: 'info', text: 'Registra algunas transacciones para estimar tu capacidad de ahorro real y darte recomendaciones.' });
+    } else {
+      if (cap.capacity <= 0) {
+        insights.push({ tone: 'danger', text: `En promedio tus gastos igualan o superan tus ingresos (≈ ${formatCurrency(cap.avgExpense)}/mes en gastos vs ${formatCurrency(cap.avgIncome)}/mes en ingresos). Libera flujo antes de comprometer metas.` });
+      } else if (requiredMonthly > cap.capacity) {
+        insights.push({ tone: 'warning', text: `Tus metas activas piden ${formatCurrency(requiredMonthly)}/mes, pero tu capacidad estimada es de ${formatCurrency(cap.capacity)}/mes. Extiende plazos o reduce montos para que sea realista.` });
+      } else if (requiredMonthly > 0) {
+        insights.push({ tone: 'success', text: `Tus metas son alcanzables con tu flujo actual: te queda un margen de ${formatCurrency(margin)}/mes después de aportar a ellas.` });
+      } else {
+        insights.push({ tone: 'info', text: `Tu capacidad de ahorro estimada es de ${formatCurrency(cap.capacity)}/mes. Crea metas con monto y fecha para que te calculemos el aporte ideal.` });
+      }
+    }
+
+    if (totalDebt > 0 && maxInterest >= 15) {
+      insights.push({ tone: 'warning', text: `Tienes deuda activa a una tasa de hasta ${maxInterest}%. Matemáticamente conviene priorizar pagarla antes que metas de ahorro no urgentes (ahorras más en intereses de lo que rendiría el ahorro).` });
+    }
+
+    if (cap.monthsCounted > 0 && cap.avgExpense > 0 && totalSaved < emergencyTarget) {
+      insights.push({ tone: 'info', text: `Fondo de emergencia recomendado: ${formatCurrency(emergencyTarget)} (3 meses de gastos). Llevas ${formatCurrency(totalSaved)} ahorrado.` });
+    }
+
+    return { cap, requiredMonthly, margin, insights };
+  }, [transactions, plans, debts, getTotalDebt, getTotalSaved]);
+
+  const toneStyles = {
+    success: { color: 'var(--color-success)', bg: 'var(--color-income-bg)' },
+    warning: { color: 'var(--color-warning)', bg: 'rgba(245, 158, 11, 0.12)' },
+    danger: { color: 'var(--color-danger)', bg: 'var(--color-expense-bg)' },
+    info: { color: 'var(--color-info)', bg: 'rgba(59, 130, 246, 0.12)' },
+  };
+
   return (
     <div className="page-container">
       <div className="page-header flex items-center justify-between" id="tour-plan-header">
@@ -102,6 +170,56 @@ export default function PlanPage() {
           </button>
         )}
       </div>
+
+      {/* Resumen inteligente */}
+      {(transactions.length > 0 || plans.length > 0) && (
+        <div className="card" style={{ marginBottom: 'var(--space-6)' }}>
+          <div className="card-header">
+            <h3 className="card-title flex items-center gap-2">
+              <Sparkles size={18} style={{ color: 'var(--accent-primary)' }} /> Resumen inteligente
+            </h3>
+          </div>
+
+          <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+            <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
+              <div className="kpi-label flex items-center gap-1"><TrendingUp size={12} /> Capacidad de ahorro</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)', color: smart.cap.capacity > 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                {formatCurrency(smart.cap.capacity)}<span className="text-xs text-muted">/mes</span>
+              </div>
+              <div className="text-xs text-muted mt-2">
+                {smart.cap.monthsCounted > 0 ? `Promedio de ${smart.cap.monthsCounted} mes(es)` : 'Sin datos suficientes'}
+              </div>
+            </div>
+            <div className="kpi-card" style={{ '--kpi-accent': 'var(--accent-primary)' }}>
+              <div className="kpi-label flex items-center gap-1"><Target size={12} /> Requerido por metas</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>
+                {formatCurrency(smart.requiredMonthly)}<span className="text-xs text-muted">/mes</span>
+              </div>
+              <div className="text-xs text-muted mt-2">Suma de aportes de metas activas</div>
+            </div>
+            <div className="kpi-card" style={{ '--kpi-accent': smart.margin >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+              <div className="kpi-label flex items-center gap-1"><ShieldCheck size={12} /> Margen disponible</div>
+              <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)', color: smart.margin >= 0 ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                {formatCurrency(smart.margin)}<span className="text-xs text-muted">/mes</span>
+              </div>
+              <div className="text-xs text-muted mt-2">Capacidad menos lo que piden tus metas</div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {smart.insights.map((ins, idx) => {
+              const ts = toneStyles[ins.tone] || toneStyles.info;
+              const Icon = ins.tone === 'success' ? CheckCircle2 : ins.tone === 'danger' || ins.tone === 'warning' ? AlertTriangle : Sparkles;
+              return (
+                <div key={idx} className="flex items-start gap-3" style={{ padding: 'var(--space-3)', background: ts.bg, borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${ts.color}` }}>
+                  <Icon size={16} style={{ color: ts.color, flexShrink: 0, marginTop: 2 }} />
+                  <span className="text-sm">{ins.text}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {plans.length === 0 ? (
         <EmptyState

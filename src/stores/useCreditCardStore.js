@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { todayISO } from '../utils/formatters';
 
 const mapFromDb = (c) => ({
   id: c.id,
@@ -93,12 +94,34 @@ const useCreditCardStore = create(
         }
       },
 
-      markStatementPaid: async (cardId, cycleEndISO) => {
+      // `snapshot` puede ser un string ISO (legado) o un objeto con la foto del
+      // estado de cuenta: { cycleEnd, periodStart, periodEnd, amount, cashback }.
+      // Guardamos el objeto para construir el historial y el cashback acumulado.
+      markStatementPaid: async (cardId, snapshot) => {
         const card = get().cards.find((c) => c.id === cardId);
         if (!card) return;
-        if (card.paidCycles.includes(cycleEndISO)) return;
 
-        const newPaid = [...card.paidCycles, cycleEndISO];
+        const cycleEnd = typeof snapshot === 'string' ? snapshot : snapshot?.cycleEnd;
+        if (!cycleEnd) return;
+
+        const already = card.paidCycles.some(
+          (p) => (typeof p === 'string' ? p : p?.cycleEnd) === cycleEnd
+        );
+        if (already) return;
+
+        const entry =
+          typeof snapshot === 'string'
+            ? { cycleEnd, amount: 0, cashback: 0, paidAt: todayISO() }
+            : {
+                cycleEnd,
+                periodStart: snapshot.periodStart ?? null,
+                periodEnd: snapshot.periodEnd ?? cycleEnd,
+                amount: Number(snapshot.amount) || 0,
+                cashback: Number(snapshot.cashback) || 0,
+                paidAt: snapshot.paidAt || todayISO(),
+              };
+
+        const newPaid = [...card.paidCycles, entry];
         const { error } = await supabase.from('credit_cards').update({ paid_cycles: newPaid }).eq('id', cardId);
         if (error) {
           console.error('Mark paid error:', error);

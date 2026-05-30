@@ -114,7 +114,7 @@ export default function DebtsPage() {
         <div>
           <h1 className="page-title">Control de Deudas</h1>
           <p className="page-subtitle">
-            Deuda total: <span className="amount-negative">{formatCurrency(totalDebt)}</span>
+            Da seguimiento a tus préstamos y planifica cuándo quedarás libre de deudas.
           </p>
         </div>
         {debts.length > 0 && (
@@ -387,6 +387,7 @@ export default function DebtsPage() {
                 type="number"
                 min="0"
                 step="0.01"
+                className="no-spinners"
                 value={form.interestRate}
                 onChange={(e) => setForm({ ...form, interestRate: e.target.value })}
                 placeholder="0.00"
