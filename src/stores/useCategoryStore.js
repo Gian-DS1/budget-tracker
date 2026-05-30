@@ -72,7 +72,7 @@ const useCategoryStore = create(
             isActive: c.is_active,
             sortOrder: c.sort_order
           }));
-          set({ categories: formattedData, loading: false });
+          set({ categories: formattedData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })), loading: false });
           return;
         }
       } catch (err) {
@@ -156,7 +156,7 @@ const useCategoryStore = create(
       isAccumulative: c.is_accumulative || false,
       accumulationStart: c.accumulation_start || null
     }));
-    set({ categories: formattedData, loading: false });
+    set({ categories: formattedData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })), loading: false });
     })();
 
     try {
@@ -252,7 +252,7 @@ const useCategoryStore = create(
           isActive: c.is_active,
           sortOrder: c.sort_order
         }));
-        set({ categories: formattedData, loading: false });
+        set({ categories: formattedData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })), loading: false });
         toast.success("Categorías restablecidas con éxito");
         return true;
       }
@@ -283,7 +283,11 @@ const useCategoryStore = create(
     const { data, error } = await supabase.from('categories').insert(dbCategory).select().single();
     if (!error && data) {
       const newCat = { ...data, isActive: data.is_active, sortOrder: data.sort_order };
-      set((state) => ({ categories: [...state.categories, newCat] }));
+      set((state) => ({
+        categories: [...state.categories, newCat].sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })
+        ),
+      }));
     }
   },
 

@@ -10,9 +10,8 @@ export const defaultCategories = [
     type: 'income',
     icon: '💼',
     color: '#10b981',
-    keywords: ['salario', 'sueldo', 'nómina', 'quincena', 'pago'],
+    keywords: ['salario', 'sueldo', 'nomina', 'quincena', 'pago de nomina', 'pago quincenal'],
     isActive: true,
-    sortOrder: 0,
   },
   {
     id: generateId(),
@@ -20,9 +19,8 @@ export const defaultCategories = [
     type: 'income',
     icon: '📈',
     color: '#3b82f6',
-    keywords: ['darwinex', 'inversión', 'inversiones', 'dividendo', 'intereses', 'trading'],
+    keywords: ['darwinex', 'inversion', 'inversiones', 'dividendo', 'intereses', 'trading', 'acciones', 'broker', 'etf', 'cripto', 'bitcoin'],
     isActive: true,
-    sortOrder: 2,
   },
   {
     id: generateId(),
@@ -30,9 +28,8 @@ export const defaultCategories = [
     type: 'income',
     icon: '💰',
     color: '#8b5cf6',
-    keywords: ['bono', 'regalo', 'reembolso', 'transferencia'],
+    keywords: ['bono', 'reembolso', 'transferencia recibida', 'devolucion', 'freelance', 'proyecto', 'consultoria', 'cliente', 'pago cliente'],
     isActive: true,
-    sortOrder: 3,
   },
 
   // ── Fixed Expenses ──────────────────────────────────────────
@@ -42,39 +39,80 @@ export const defaultCategories = [
     type: 'fixed_expense',
     icon: '🏠',
     color: '#6366f1',
-    keywords: ['alquiler', 'renta', 'apartamento', 'casa', 'ver apartamento'],
+    keywords: ['alquiler', 'renta', 'apartamento', 'mensualidad apartamento', 'inquilino'],
     isActive: true,
-    sortOrder: 4,
   },
   {
     id: generateId(),
-    name: 'Internet/Cable/Teléfono',
+    name: 'Internet',
     type: 'fixed_expense',
     icon: '📶',
     color: '#3b82f6',
-    keywords: ['claro', 'altice', 'teléfono', 'telefono', 'celular', 'plan', 'recarga', 'internet', 'wind', 'viva'],
+    keywords: ['internet', 'wifi', 'fibra', 'claro internet', 'altice internet', 'wind internet', 'viva internet', 'modem', 'router', 'banda ancha'],
     isActive: true,
-    sortOrder: 5,
+  },
+  {
+    id: generateId(),
+    name: 'Teléfono',
+    type: 'fixed_expense',
+    icon: '📱',
+    color: '#0ea5e9',
+    keywords: ['telefono', 'celular', 'plan movil', 'recarga', 'minutos', 'datos moviles', 'factura claro', 'factura altice', 'prepago', 'postpago'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Luz',
+    type: 'fixed_expense',
+    icon: '💡',
+    color: '#f59e0b',
+    keywords: ['luz', 'electricidad', 'edenorte', 'edesur', 'edeeste', 'cdeee', 'factura luz', 'energia', 'corriente'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Agua',
+    type: 'fixed_expense',
+    icon: '🚿',
+    color: '#06b6d4',
+    keywords: ['agua', 'caasd', 'coraasan', 'inapa', 'coraapplata', 'factura agua', 'botellon', 'camion de agua'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Gas',
+    type: 'fixed_expense',
+    icon: '🔥',
+    color: '#f97316',
+    keywords: ['gas', 'propano', 'gas propano', 'tropigas', 'cilindro de gas', 'planta de gas', 'gas del hogar'],
+    isActive: true,
   },
   {
     id: generateId(),
     name: 'Seguro',
     type: 'fixed_expense',
-    icon: '🏥',
+    icon: '🛡️',
     color: '#10b981',
-    keywords: ['seguro médico', 'seguro medico', 'ARS', 'senasa', 'humano', 'palic', 'unigold', 'universal', 'médico', 'doctor', 'hospital', 'clínica', 'dentista', 'óptica', 'cemdoe', 'consulta médica'],
+    keywords: ['seguro', 'poliza', 'aseguradora', 'seguro medico', 'ars', 'senasa', 'humano', 'palic', 'universal', 'mapfre', 'seguros', 'primas seguro'],
     isActive: true,
-    sortOrder: 6,
   },
   {
     id: generateId(),
-    name: 'Mantenimiento y Seguro de Vehículo',
+    name: 'Mantenimiento de Vehículo',
+    type: 'fixed_expense',
+    icon: '🔧',
+    color: '#f43f5e',
+    keywords: ['mantenimiento vehiculo', 'aceite', 'cambio de aceite', 'taller', 'mecanico', 'repuesto', 'goma', 'neumatico', 'llanta', 'lavado de carro', 'vehicas', 'marbete', 'revista'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Seguro de Vehículo',
     type: 'fixed_expense',
     icon: '🚗',
-    color: '#f43f5e',
-    keywords: ['pago vehículo', 'pago vehiculo', 'seguro vehículo', 'seguro vehiculo', 'vehicas', 'marbete', 'lavado', 'mantenimiento', 'repuesto', 'taller'],
+    color: '#fb7185',
+    keywords: ['seguro vehiculo', 'seguro carro', 'seguro de auto', 'poliza vehiculo', 'seguro vehicular', 'seguro de motor'],
     isActive: true,
-    sortOrder: 7,
   },
   {
     id: generateId(),
@@ -82,29 +120,17 @@ export const defaultCategories = [
     type: 'fixed_expense',
     icon: '📺',
     color: '#a855f7',
-    keywords: ['apple music', 'netflix', 'spotify', 'disney', 'hbo', 'suscripción', 'youtube premium', 'cvwizard'],
+    keywords: ['netflix', 'spotify', 'apple music', 'disney', 'hbo', 'max', 'youtube premium', 'suscripcion', 'prime video', 'icloud', 'google one', 'chatgpt', 'cvwizard', 'crunchyroll'],
     isActive: true,
-    sortOrder: 8,
   },
   {
     id: generateId(),
-    name: 'Servicios (Luz/Agua/Gas)',
-    type: 'fixed_expense',
-    icon: '💡',
-    color: '#f59e0b',
-    keywords: ['luz', 'edenorte', 'edesur', 'edeeste', 'electricidad', 'cdeee', 'caasd', 'agua', 'gas', 'propano'],
-    isActive: true,
-    sortOrder: 9,
-  },
-  {
-    id: generateId(),
-    name: 'Gimnasio y Deporte',
+    name: 'Gimnasio',
     type: 'fixed_expense',
     icon: '🏋️',
     color: '#22c55e',
-    keywords: ['gimnasio', 'gym', 'crossfit', 'yoga', 'pilates', 'membresía gym', 'deporte'],
+    keywords: ['gimnasio', 'gym', 'crossfit', 'yoga', 'pilates', 'membresia', 'gobody', 'world gym', 'smart fit', 'spinning'],
     isActive: true,
-    sortOrder: 10,
   },
   {
     id: generateId(),
@@ -115,9 +141,8 @@ export const defaultCategories = [
     // slug estable: la sincronización Deudas→Transacciones la busca por aquí, no
     // por el nombre (que el usuario puede renombrar).
     slug: 'pago-deuda',
-    keywords: ['prestamo', 'préstamo', 'cuota', 'intereses', 'capital', 'abono a deuda', 'financiamiento', 'tarjeta de crédito', 'prestamos'],
+    keywords: ['prestamo', 'prestamos', 'cuota', 'capital', 'abono a deuda', 'financiamiento', 'tarjeta de credito', 'pago tarjeta', 'asociacion', 'cooperativa'],
     isActive: true,
-    sortOrder: 10.5,
   },
 
   // ── Variable Expenses ───────────────────────────────────────
@@ -127,9 +152,8 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '🛒',
     color: '#ef4444',
-    keywords: ['supermercado', 'nacional', 'jumbo', 'bravo', 'sirena', 'ole', 'la sirena', 'pricesmart', 'colmado', 'almacen'],
+    keywords: ['supermercado', 'nacional', 'jumbo', 'bravo', 'sirena', 'la sirena', 'pricesmart', 'colmado', 'almacen', 'plaza lama', 'aprovisiones', 'super', 'pola'],
     isActive: true,
-    sortOrder: 11,
   },
   {
     id: generateId(),
@@ -137,19 +161,17 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '🍕',
     color: '#ec4899',
-    keywords: ['restaurante', 'pizza', 'jade', 'teriyaki', 'mcdonald', 'burger', 'eats', 'uber eats', 'pedidosya', 'delivery', 'empanada', 'hotdog', 'cafe', 'american cafe', 'rico hotdog', 'empanadas mañon', 'pasta ubereats'],
+    keywords: ['restaurante', 'pizza', 'jade', 'teriyaki', 'mcdonald', 'burger', 'kfc', 'wendy', 'uber eats', 'pedidosya', 'delivery', 'empanada', 'hotdog', 'cafe', 'american cafe', 'adrian tropical', 'comida', 'almuerzo', 'cena', 'desayuno', 'pollo'],
     isActive: true,
-    sortOrder: 12,
   },
   {
     id: generateId(),
     name: 'Combustible',
     type: 'variable_expense',
-    icon: '🛵',
+    icon: '⛽',
     color: '#f97316',
-    keywords: ['gasolina', 'combustible', 'gasoil', 'estacion de servicio', 'texaco', 'shell', 'sunix', 'total'],
+    keywords: ['gasolina', 'combustible', 'gasoil', 'bomba', 'estacion de servicio', 'texaco', 'shell', 'sunix', 'isla', 'gasolinera', 'tanque lleno'],
     isActive: true,
-    sortOrder: 13,
   },
   {
     id: generateId(),
@@ -157,39 +179,44 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '🚕',
     color: '#fbbf24',
-    keywords: ['uber', 'taxi', 'didi', 'indriver', 'cabify', 'transporte', 'pasaje', 'peajes', 'parqueo', 'estacionamiento'],
+    keywords: ['uber', 'taxi', 'didi', 'indriver', 'cabify', 'transporte', 'pasaje', 'peaje', 'parqueo', 'estacionamiento', 'metro', 'telecabina', 'omsa', 'concho', 'motoconcho'],
     isActive: true,
-    sortOrder: 14,
   },
   {
     id: generateId(),
-    name: 'Ropa y Calzado',
+    name: 'Ropa',
     type: 'variable_expense',
     icon: '👗',
     color: '#e11d48',
-    keywords: ['ropa', 'zapatos', 'calzado', 'tenis', 'zapatillas', 'camisa', 'pantalón', 'vestido', 'zara', 'hm', 'forever 21', 'tienda ropa'],
+    keywords: ['ropa', 'camisa', 'pantalon', 'vestido', 'zara', 'forever 21', 'tienda de ropa', 'zapatos', 'tenis', 'zapatillas', 'calzado', 'medias', 'ropa interior', 'bermuda'],
     isActive: true,
-    sortOrder: 16,
   },
   {
     id: generateId(),
-    name: 'Hogar y Reparaciones',
+    name: 'Hogar',
     type: 'variable_expense',
     icon: '🛠️',
     color: '#14b8a6',
-    keywords: ['ferreteria', 'ferretería', 'pintor', 'instalacion', 'reparacion', 'nevera', 'corripio', 'ikea', 'colchones', 'gabetero', 'mueble', 'decoración', 'casa cuesta', 'plomero', 'electricista'],
+    keywords: ['ferreteria', 'pintura', 'plomero', 'electricista', 'reparacion', 'nevera', 'estufa', 'corripio', 'ikea', 'mueble', 'colchon', 'decoracion', 'casa cuesta', 'sodimac', 'utensilios', 'bombillo', 'herramienta', 'abanico'],
     isActive: true,
-    sortOrder: 17,
   },
   {
     id: generateId(),
-    name: 'Tecnología y Accesorios',
+    name: 'Amazon',
     type: 'variable_expense',
-    icon: '🎧',
+    icon: '📦',
     color: '#6366f1',
-    keywords: ['amazon headset', 'cable hdmi', 'air duster', 'tecnología', 'gadget', 'computadora', 'audifonos', 'celular nuevo'],
+    keywords: ['amazon', 'aliexpress', 'shein', 'temu', 'ebay', 'compra online', 'headset', 'cable hdmi', 'accesorio', 'gadget', 'electronica', 'audifonos', 'mouse', 'teclado', 'wish', 'air duster'],
     isActive: true,
-    sortOrder: 18,
+  },
+  {
+    id: generateId(),
+    name: 'Compras',
+    type: 'variable_expense',
+    icon: '🛍️',
+    color: '#f59e0b',
+    keywords: ['compras', 'tienda', 'plaza', 'centro comercial', 'agora', 'sambil', 'blue mall', 'megacentro', 'shopping', 'varios', 'miscelaneos', 'galeria'],
+    isActive: true,
   },
   {
     id: generateId(),
@@ -197,9 +224,8 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '💊',
     color: '#ef4444',
-    keywords: ['farmacia', 'medicamento', 'carol', 'suchel', 'medicina', 'pastilla'],
+    keywords: ['farmacia', 'medicamento', 'carol', 'los hidalgos', 'gbc', 'medicina', 'pastilla', 'vitamina', 'suplemento', 'receta', 'gelofen', 'acetaminofen'],
     isActive: true,
-    sortOrder: 19,
   },
   {
     id: generateId(),
@@ -207,9 +233,8 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '💅',
     color: '#f472b6',
-    keywords: ['belleza', 'maquillaje', 'uñas', 'manicure', 'pedicure', 'cosméticos', 'crema', 'skincare', 'perfume', 'nail'],
+    keywords: ['belleza', 'maquillaje', 'unas', 'manicure', 'pedicure', 'cosmeticos', 'crema', 'skincare', 'perfume', 'nail', 'spa', 'cejas', 'pestanas'],
     isActive: true,
-    sortOrder: 21,
   },
   {
     id: generateId(),
@@ -217,9 +242,8 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '✈️',
     color: '#0891b2',
-    keywords: ['vuelo', 'hotel', 'airbnb', 'excursión', 'viaje', 'aeropuerto', 'maleta', 'resort', 'playa', 'turismo', 'booking'],
+    keywords: ['vuelo', 'hotel', 'airbnb', 'excursion', 'viaje', 'aeropuerto', 'maleta', 'resort', 'playa', 'turismo', 'booking', 'despegar', 'pasaje aereo'],
     isActive: true,
-    sortOrder: 23,
   },
   {
     id: generateId(),
@@ -227,9 +251,8 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '🐾',
     color: '#a3e635',
-    keywords: ['mascota', 'veterinario', 'perro', 'gato', 'comida mascota', 'veterinaria', 'pet'],
+    keywords: ['mascota', 'veterinario', 'perro', 'gato', 'comida de mascota', 'veterinaria', 'pet', 'petfood', 'consulta veterinaria'],
     isActive: true,
-    sortOrder: 24,
   },
   {
     id: generateId(),
@@ -237,9 +260,53 @@ export const defaultCategories = [
     type: 'variable_expense',
     icon: '🎁',
     color: '#d946ef',
-    keywords: ['regalo', 'regalos', 'donación', 'donacion', 'cumpleaños'],
+    keywords: ['regalo', 'donacion', 'cumpleanos', 'aguinaldo', 'propina', 'ofrenda', 'iglesia', 'caridad', 'diezmo'],
     isActive: true,
-    sortOrder: 25,
+  },
+  {
+    id: generateId(),
+    name: 'Courier',
+    type: 'variable_expense',
+    icon: '🚚',
+    color: '#94a3b8',
+    keywords: ['courier', 'envio', 'paquete', 'eps', 'vimenpaq', 'domex', 'aeropaq', 'casillero', 'inbox', 'encomienda', 'box'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Cuidado Personal',
+    type: 'variable_expense',
+    icon: '💇',
+    color: '#ec4899',
+    keywords: ['pelo', 'barberia', 'barber', 'salon', 'peluqueria', 'corte de pelo', 'tinte', 'keratina', 'higiene', 'desodorante'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Educación',
+    type: 'variable_expense',
+    icon: '📚',
+    color: '#0ea5e9',
+    keywords: ['estudios', 'universidad', 'colegio', 'curso', 'libro', 'matricula', 'diplomado', 'maestria', 'clases', 'udemy', 'platzi', 'inscripcion', 'mensualidad colegio'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Entretenimiento',
+    type: 'variable_expense',
+    icon: '🎬',
+    color: '#8b5cf6',
+    keywords: ['cine', 'pelicula', 'fiesta', 'bar', 'discoteca', 'concierto', 'evento', 'boletos', 'teatro', 'karaoke', 'billar', 'boliche', 'salida', 'juego', 'videojuego', 'steam', 'playstation'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Salud',
+    type: 'variable_expense',
+    icon: '🏥',
+    color: '#10b981',
+    keywords: ['medico', 'doctor', 'hospital', 'clinica', 'dentista', 'optica', 'cemdoe', 'consulta medica', 'laboratorio', 'analisis', 'radiografia', 'terapia', 'psicologo', 'cirugia'],
+    isActive: true,
   },
 
   // ── Savings ─────────────────────────────────────────────────
@@ -249,9 +316,8 @@ export const defaultCategories = [
     type: 'savings',
     icon: '🏦',
     color: '#06b6d4',
-    keywords: ['ahorro', 'depósito', 'inversión'],
+    keywords: ['ahorro', 'deposito', 'meta de ahorro', 'guardar', 'ahorrar'],
     isActive: true,
-    sortOrder: 27,
   },
   {
     id: generateId(),
@@ -259,18 +325,39 @@ export const defaultCategories = [
     type: 'savings',
     icon: '🆘',
     color: '#f59e0b',
-    keywords: ['emergencia', 'reserva'],
+    keywords: ['emergencia', 'reserva', 'fondo de emergencia', 'imprevisto'],
     isActive: true,
-    sortOrder: 28,
   },
 ];
 
+// Quita acentos y normaliza a minúsculas para un matcheo robusto e insensible a
+// tildes ("educacion" matchea "Educación", "telefono" matchea "Teléfono").
+function normalize(str) {
+  return (str || '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .trim();
+}
+
+function escapeRegExp(str) {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
 /**
- * Auto-categorize a transaction description based on keywords
+ * Auto-categorize a transaction description based on keywords.
+ *
+ * Mejoras de inteligencia frente a la versión anterior:
+ *   - Insensible a acentos y mayúsculas (normaliza ambos lados).
+ *   - Una coincidencia de PALABRA COMPLETA pesa mucho más que una subcadena
+ *     suelta, evitando falsos positivos (p. ej. "total" dentro de "subtotal").
+ *   - El puntaje favorece keywords más largas/específicas, así "uber eats"
+ *     (Restaurantes) gana sobre "uber" (Taxi) cuando ambas aparecen.
  */
 export function autoCategorize(description, categories) {
   if (!description) return null;
-  const lowerDesc = description.toLowerCase();
+  const desc = normalize(description);
+  if (!desc) return null;
 
   let bestMatch = null;
   let bestScore = 0;
@@ -278,13 +365,17 @@ export function autoCategorize(description, categories) {
   for (const category of categories) {
     if (!category.isActive || !category.keywords) continue;
 
-    for (const keyword of category.keywords) {
-      if (lowerDesc.includes(keyword.toLowerCase())) {
-        const score = keyword.length; // Longer keywords = more specific match
-        if (score > bestScore) {
-          bestScore = score;
-          bestMatch = category;
-        }
+    for (const rawKeyword of category.keywords) {
+      const keyword = normalize(rawKeyword);
+      if (!keyword || !desc.includes(keyword)) continue;
+
+      // Palabra completa (rodeada de límites no alfanuméricos) vale 10x.
+      const wholeWord = new RegExp(`(^|[^a-z0-9])${escapeRegExp(keyword)}([^a-z0-9]|$)`).test(desc);
+      const score = keyword.length * (wholeWord ? 10 : 1);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMatch = category;
       }
     }
   }

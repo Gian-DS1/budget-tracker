@@ -525,19 +525,21 @@ export default function TransactionsPage() {
                       </span>
                     </td>
                     <td className="text-right">
-                      <span
-                        className={
-                          t.type === 'income'
-                            ? 'amount-positive'
-                            : 'amount-negative'
-                        }
-                      >
-                        {t.type === 'income' ? '+' : '-'}
-                        {formatCurrency(Math.abs(t.amount), t.currency)}
-                      </span>
-                      {t.cashbackEarned > 0 && t.type !== 'income' && (
-                        <span className="text-xs" style={{ display: 'block', color: 'var(--color-income)', marginTop: 2 }}>
-                          Neto: -{formatCurrency(Math.abs(t.amount) - t.cashbackEarned, t.currency)}
+                      {t.cashbackEarned > 0 && t.type !== 'income' ? (
+                        <>
+                          {/* Bruto: monto introducido, en naranja tirando a rojo */}
+                          <span className="font-semibold" style={{ color: '#f4511e' }}>
+                            Bruto: -{formatCurrency(Math.abs(t.amount), t.currency)}
+                          </span>
+                          {/* Neto: monto tras cashback, todo en rojo */}
+                          <span className="text-xs font-semibold" style={{ display: 'block', color: 'var(--color-danger)', marginTop: 2 }}>
+                            Neto: -{formatCurrency(Math.abs(t.amount) - t.cashbackEarned, t.currency)}
+                          </span>
+                        </>
+                      ) : (
+                        <span className={t.type === 'income' ? 'amount-positive' : 'amount-negative'}>
+                          {t.type === 'income' ? '+' : '-'}
+                          {formatCurrency(Math.abs(t.amount), t.currency)}
                         </span>
                       )}
                     </td>
