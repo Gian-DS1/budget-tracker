@@ -102,7 +102,16 @@ export const defaultCategories = [
     type: 'fixed_expense',
     icon: '🔧',
     color: '#f43f5e',
-    keywords: ['mantenimiento vehiculo', 'aceite', 'cambio de aceite', 'taller', 'mecanico', 'repuesto', 'goma', 'neumatico', 'llanta', 'lavado de carro', 'vehicas', 'marbete', 'revista'],
+    keywords: ['mantenimiento vehiculo', 'aceite', 'cambio de aceite', 'taller', 'mecanico', 'repuesto', 'goma', 'neumatico', 'llanta', 'vehicas', 'marbete', 'revista'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Lavado de Vehículo',
+    type: 'fixed_expense',
+    icon: '🧼',
+    color: '#38bdf8',
+    keywords: ['lavado de vehiculo', 'lavado de carro', 'lavado de auto', 'autolavado', 'lavadero', 'car wash', 'detailing', 'pulido'],
     isActive: true,
   },
   {
@@ -171,6 +180,15 @@ export const defaultCategories = [
     icon: '⛽',
     color: '#f97316',
     keywords: ['gasolina', 'combustible', 'gasoil', 'bomba', 'estacion de servicio', 'texaco', 'shell', 'sunix', 'isla', 'gasolinera', 'tanque lleno'],
+    isActive: true,
+  },
+  {
+    id: generateId(),
+    name: 'Reparación de Vehículo',
+    type: 'variable_expense',
+    icon: '🔩',
+    color: '#fb923c',
+    keywords: ['reparacion de vehiculo', 'reparacion de carro', 'reparacion de auto', 'reparacion motor', 'chapisteria', 'desabolladura', 'pintura de carro', 'grua', 'embrague', 'transmision', 'frenos', 'bomba de agua', 'radiador', 'alternador'],
     isActive: true,
   },
   {
