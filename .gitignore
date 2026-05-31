@@ -34,3 +34,9 @@ coverage
 .env.production.local
 
 .vercel
+
+# Claude Code skills & local settings (no versionar)
+.claude/skills/
+.claude/settings.local.json
+.agents/
+skills-lock.json
