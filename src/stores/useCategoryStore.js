@@ -291,6 +291,63 @@ const useCategoryStore = create(
     }
   },
 
+  // Crea (si no existe) una categoría a partir de una definición
+  // {slug, name, type, icon, color, keywords} y devuelve su id. Si ya existe (por
+  // slug o nombre+tipo) devuelve el id existente sin duplicar. Al crear una
+  // categoría de ecosistema, quita sus keywords del Supermercado del usuario para
+  // que el auto-categorizador rutee la compra a la categoría dedicada.
+  ensureCategory: async (def) => {
+    const norm = (s) => (s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+
+    const found = get().categories.find(
+      (c) => (def.slug && c.slug === def.slug) || (norm(c.name) === norm(def.name) && c.type === def.type)
+    );
+    if (found) return found.id;
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return null;
+
+    const payload = {
+      user_id: user.id,
+      name: def.name,
+      type: def.type,
+      icon: def.icon,
+      color: def.color,
+      slug: def.slug || null,
+      keywords: def.keywords || [],
+      is_active: true,
+      sort_order: get().categories.length,
+    };
+
+    const { data, error } = await supabase.from('categories').insert(payload).select().single();
+    if (error || !data) {
+      console.error('ensureCategory error:', error);
+      return null;
+    }
+
+    const newCat = { ...data, isActive: data.is_active, sortOrder: data.sort_order };
+    set((state) => ({
+      categories: [...state.categories, newCat].sort((a, b) =>
+        (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })),
+    }));
+
+    // Quitar del Supermercado del usuario las keywords que ahora pertenecen a esta
+    // categoría dedicada (solo afecta a usuarios cuyo Supermercado aún las tenga).
+    const ecoKeys = new Set((def.keywords || []).map(norm));
+    const sup = get().categories.find(
+      (c) => c.slug === 'supermercado' || (norm(c.name) === 'supermercado' && c.type === 'variable_expense')
+    );
+    if (sup && Array.isArray(sup.keywords)) {
+      const filtered = sup.keywords.filter((k) => !ecoKeys.has(norm(k)));
+      if (filtered.length !== sup.keywords.length) {
+        await get().updateCategory(sup.id, { keywords: filtered });
+      }
+    }
+
+    return data.id;
+  },
+
   updateCategory: async (id, updates) => {
     const dbUpdates = { ...updates };
     if (updates.isActive !== undefined) {
