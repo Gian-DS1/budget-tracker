@@ -12,7 +12,10 @@ export default function FeedbackPage() {
   const [copied, setCopied] = useState(false);
   const [sending, setSending] = useState(false);
 
-  const DEVELOPER_EMAIL = 'giancarlos.estevez@gmail.com';
+  // Access key público de Web3Forms (está diseñado para vivir en el frontend; la
+  // protección anti-spam corre del lado del servicio). El correo destino
+  // (giancarlos.estevez@gmail.com) está ligado a esta key en la cuenta de Web3Forms.
+  const WEB3FORMS_ACCESS_KEY = '446c31a3-399d-4d75-81e9-5e6344334122';
 
   const handleCopyText = () => {
     const textToCopy = `Tipo: ${form.type === 'bug' ? 'Reportar Error (Bug)' : form.type === 'improvement' ? 'Sugerencia de Mejora' : 'Comentario General'}\nAsunto: ${form.subject}\n\nDescripción:\n${form.description}`;
@@ -34,27 +37,28 @@ export default function FeedbackPage() {
     const emailSubject = `${typeLabel} Feedback Beta - ${form.subject}`;
 
     try {
-      // Use FormSubmit.co AJAX endpoint to send directly to developer email
-      const response = await fetch(`https://formsubmit.co/ajax/${DEVELOPER_EMAIL}`, {
-        method: "POST",
+      // Web3Forms entrega el feedback directo al correo ligado a la access key,
+      // sin abrir el cliente de correo del usuario.
+      const response = await fetch('https://api.web3forms.com/submit', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
-          "Accept": "application/json"
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
         },
         body: JSON.stringify({
-          _subject: emailSubject,
-          _captcha: "false", // Disable captcha for seamless AJAX submission
-          _template: "box", // Sleek dark/light styled card in email
-          "Tipo de Feedback": form.type === 'bug' ? '🔴 Reportar un Error (Bug)' : form.type === 'improvement' ? '💡 Sugerencia de Mejora' : '💬 Comentario General',
-          "Asunto": form.subject,
-          "Descripción": form.description,
-          "Entorno": "FinTrack RD Portal Beta Client"
-        })
+          access_key: WEB3FORMS_ACCESS_KEY,
+          subject: emailSubject,
+          from_name: 'FinTrack RD — Feedback Beta',
+          'Tipo de Feedback': form.type === 'bug' ? '🔴 Reportar un Error (Bug)' : form.type === 'improvement' ? '💡 Sugerencia de Mejora' : '💬 Comentario General',
+          'Asunto': form.subject,
+          'Descripción': form.description,
+          'Entorno': 'FinTrack RD Portal Beta',
+        }),
       });
 
       const result = await response.json();
 
-      if (response.ok && result.success === "true") {
+      if (response.ok && result.success) {
         toast.success('¡Feedback enviado directamente al desarrollador!');
         // Reset form
         setForm({
@@ -63,21 +67,13 @@ export default function FeedbackPage() {
           description: '',
         });
       } else {
-        throw new Error(result.message || "La API no devolvió éxito");
+        throw new Error(result.message || 'La API no devolvió éxito');
       }
     } catch (err) {
-      console.warn("Fallo en envío directo de FormSubmit. Reintentando con cliente nativo...", err);
-      // Fail-safe: Fallback to pre-filled mailto redirection
-      toast.error('No se pudo enviar directo. Abriendo cliente de correo...');
-      
-      const emailBody = `Hola,\n\nAquí tienes mis comentarios sobre la fase Beta de FinTrack RD:\n\n-------------------------------------------------\nASUNTO: ${form.subject}\nTIPO: ${typeLabel}\n-------------------------------------------------\n\nDESCRIPCIÓN:\n${form.description}\n\n-------------------------------------------------\nEnviado desde mi panel de FinTrack RD`;
-      const mailtoUrl = `mailto:${DEVELOPER_EMAIL}?subject=${encodeURIComponent(emailSubject)}&body=${encodeURIComponent(emailBody)}`;
-      
-      // Copy to clipboard as a double safety measure
-      const textToCopy = `Tipo: ${typeLabel}\nAsunto: ${form.subject}\n\nDescripción:\n${form.description}`;
-      navigator.clipboard.writeText(textToCopy);
-      
-      window.location.href = mailtoUrl;
+      console.error('Error al enviar feedback con Web3Forms:', err);
+      // Sin redirección a mailto: si falla, el usuario reintenta o usa "Copiar al
+      // Portapapeles". Los datos del formulario se conservan.
+      toast.error('No se pudo enviar. Revisa tu conexión e inténtalo de nuevo, o usa "Copiar al Portapapeles".');
     } finally {
       setSending(false);
     }
