@@ -17,14 +17,15 @@
 --            resultado que la app hace sola al recargar; correrlo aquí lo deja
 --            listo de inmediato y no duplica nada.
 --
--- Está acotado a TU usuario por email. Si cambia tu email, edítalo abajo.
+-- IMPORTANTE: reemplaza 'TU-EMAIL-AQUI@ejemplo.com' por el email de tu cuenta
+-- (puedes usar Reemplazar todo en el editor) antes de correr el script.
 -- Idempotente: puedes correrlo varias veces sin crear duplicados.
 -- ============================================================================
 
 -- ── PASO 1 · Quitar 'lavado de carro' de "Mantenimiento de Vehículo" ────────
 update public.categories
 set keywords = array_remove(keywords, 'lavado de carro')
-where user_id = (select id from auth.users where email = 'giancarlos.estevez@gmail.com')
+where user_id = (select id from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com')
   and name = 'Mantenimiento de Vehículo'
   and 'lavado de carro' = any(keywords);
 
@@ -42,7 +43,7 @@ select
   array['lavado de vehiculo','lavado de carro','lavado de auto','autolavado','lavadero','car wash','detailing','pulido'],
   true,
   (select coalesce(max(sort_order), 0) + 1 from public.categories where user_id = u.uid)
-from (select id as uid from auth.users where email = 'giancarlos.estevez@gmail.com') u
+from (select id as uid from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com') u
 where not exists (
   select 1 from public.categories c
   where c.user_id = u.uid and c.name = 'Lavado de Vehículo' and c.type = 'fixed_expense'
@@ -60,7 +61,7 @@ select
   array['reparacion de vehiculo','reparacion de carro','reparacion de auto','reparacion motor','chapisteria','desabolladura','pintura de carro','grua','embrague','transmision','frenos','bomba de agua','radiador','alternador'],
   true,
   (select coalesce(max(sort_order), 0) + 1 from public.categories where user_id = u.uid)
-from (select id as uid from auth.users where email = 'giancarlos.estevez@gmail.com') u
+from (select id as uid from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com') u
 where not exists (
   select 1 from public.categories c
   where c.user_id = u.uid and c.name = 'Reparación de Vehículo' and c.type = 'variable_expense'
@@ -70,6 +71,6 @@ where not exists (
 -- ── PASO 3 · Verificar el resultado ─────────────────────────────────────────
 select name, type, keywords
 from public.categories
-where user_id = (select id from auth.users where email = 'giancarlos.estevez@gmail.com')
+where user_id = (select id from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com')
   and name in ('Mantenimiento de Vehículo', 'Lavado de Vehículo', 'Reparación de Vehículo')
 order by type, name;

@@ -9,7 +9,8 @@
 --   4. Corre los PASOS 2 y 3 (puedes correr todo el archivo de una vez).
 --   5. Corre el PASO 4 para verificar el resultado.
 --
--- Está acotado a TU usuario por email. Si cambia tu email, edítalo abajo.
+-- IMPORTANTE: reemplaza 'TU-EMAIL-AQUI@ejemplo.com' por el email de tu cuenta
+-- (puedes usar Reemplazar todo en el editor) antes de correr el script.
 --
 -- Qué hace al borrar una categoría (según el esquema):
 --   - transactions.category_id  -> ON DELETE SET NULL  (la transacción queda
@@ -28,7 +29,7 @@
 -- ── PASO 1 · Revisar tus categorías actuales (solo lectura) ─────────────────
 select name, type, created_at
 from public.categories
-where user_id = (select id from auth.users where email = 'giancarlos.estevez@gmail.com')
+where user_id = (select id from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com')
 order by type, name;
 
 
@@ -37,7 +38,7 @@ order by type, name;
 -- quedará "Sin categoría" automáticamente al borrarse en el PASO 3.
 -- Edita esta tabla `mapping` si quieres mover alguna a otra categoría.
 with u as (
-  select id as uid from auth.users where email = 'giancarlos.estevez@gmail.com'
+  select id as uid from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com'
 ),
 mapping(del_name, keep_name) as (
   values
@@ -77,7 +78,7 @@ where t.user_id = u.uid
 
 -- Reasignar también las plantillas recurrentes (misma lógica)
 with u as (
-  select id as uid from auth.users where email = 'giancarlos.estevez@gmail.com'
+  select id as uid from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com'
 ),
 mapping(del_name, keep_name) as (
   values
@@ -116,7 +117,7 @@ where r.user_id = u.uid
 -- (los presupuestos asociados se borran en cascada; las transacciones no
 --  reasignadas quedan "Sin categoría").
 delete from public.categories
-where user_id = (select id from auth.users where email = 'giancarlos.estevez@gmail.com')
+where user_id = (select id from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com')
   and name in (
     'Electricidad',
     'Alquiler / Renta',
@@ -140,5 +141,5 @@ where user_id = (select id from auth.users where email = 'giancarlos.estevez@gma
 -- ── PASO 4 · Verificar el resultado ─────────────────────────────────────────
 select name, type
 from public.categories
-where user_id = (select id from auth.users where email = 'giancarlos.estevez@gmail.com')
+where user_id = (select id from auth.users where email = 'TU-EMAIL-AQUI@ejemplo.com')
 order by type, name;
