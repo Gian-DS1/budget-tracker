@@ -147,7 +147,29 @@ create table if not exists public.recurring_transactions (
 );
 
 -- ============================================================================
+-- Índices sobre foreign keys (acelera JOINs y DELETE en cascada).
+-- transactions.user_id ya queda cubierto por transactions_user_date_idx.
+-- ============================================================================
+create index if not exists categories_user_id_idx                 on public.categories (user_id);
+create index if not exists credit_cards_user_id_idx               on public.credit_cards (user_id);
+create index if not exists transactions_category_id_idx           on public.transactions (category_id);
+create index if not exists transactions_card_id_idx               on public.transactions (card_id);
+create index if not exists budgets_user_id_idx                    on public.budgets (user_id);
+create index if not exists budgets_category_id_idx                on public.budgets (category_id);
+create index if not exists savings_user_id_idx                    on public.savings (user_id);
+create index if not exists debts_user_id_idx                      on public.debts (user_id);
+create index if not exists debt_payments_user_id_idx              on public.debt_payments (user_id);
+create index if not exists debt_payments_debt_id_idx              on public.debt_payments (debt_id);
+create index if not exists plans_user_id_idx                      on public.plans (user_id);
+create index if not exists recurring_transactions_user_id_idx     on public.recurring_transactions (user_id);
+create index if not exists recurring_transactions_category_id_idx on public.recurring_transactions (category_id);
+create index if not exists recurring_transactions_card_id_idx     on public.recurring_transactions (card_id);
+
+-- ============================================================================
 -- Row Level Security + políticas "solo mis filas" + grants para cada tabla.
+-- auth.uid() se envuelve en (select ...) para que Postgres lo evalúe una vez
+-- por consulta y no por fila (recomendación de performance de Supabase).
+-- No se otorgan privilegios a `anon`: el cliente anónimo no toca estas tablas.
 -- ============================================================================
 do $$
 declare
@@ -162,11 +184,12 @@ begin
     execute format('drop policy if exists %I on public.%I;', t || '_own', t);
     execute format(
       'create policy %I on public.%I for all to authenticated
-         using (auth.uid() = user_id) with check (auth.uid() = user_id);',
+         using ((select auth.uid()) = user_id) with check ((select auth.uid()) = user_id);',
       t || '_own', t
     );
+    execute format('revoke all on public.%I from anon;', t);
     execute format(
-      'grant select, insert, update, delete on public.%I to anon, authenticated, service_role;',
+      'grant select, insert, update, delete on public.%I to authenticated, service_role;',
       t
     );
   end loop;

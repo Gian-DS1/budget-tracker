@@ -4,7 +4,8 @@ import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
-import { formatCurrency, MONTHS_ES, DAYS_SHORT_ES, todayISO } from '../utils/formatters';
+import { formatCurrency, todayISO } from '../utils/formatters';
+import { MONTHS_ES, DAYS_SHORT_ES } from '../utils/constants';
 import Modal from '../components/ui/Modal';
 
 export default function CalendarPage() {

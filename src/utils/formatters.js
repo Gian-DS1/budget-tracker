@@ -2,18 +2,6 @@
 
 import { CURRENCIES } from './constants';
 
-export const MONTHS_ES = [
-  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-];
-
-export const MONTHS_SHORT_ES = [
-  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
-  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
-];
-
-export const DAYS_SHORT_ES = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-
 /**
  * Format a number as currency
  */
@@ -71,18 +59,6 @@ export function formatDate(dateStr) {
 }
 
 /**
- * Format date as "15 May"
- */
-export function formatDateShort(dateStr) {
-  if (!dateStr) return '';
-  const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('es-DO', {
-    day: 'numeric',
-    month: 'short',
-  });
-}
-
-/**
  * Format date as ISO (YYYY-MM-DD)
  */
 export function toISODate(date) {
@@ -106,26 +82,10 @@ export function todayISO() {
 }
 
 /**
- * Format a number with sign (e.g., +12.5% or -3.2%)
- */
-export function formatChange(value) {
-  const sign = value > 0 ? '+' : '';
-  return `${sign}${value.toFixed(1)}%`;
-}
-
-/**
  * Generate a unique ID
  */
 export function generateId() {
   return crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
-}
-
-/**
- * Capitalize first letter
- */
-export function capitalize(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 /**

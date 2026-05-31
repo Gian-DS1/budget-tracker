@@ -20,7 +20,8 @@ import {
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
-import { formatCurrency, formatCurrencyCompact, MONTHS_SHORT_ES } from '../utils/formatters';
+import { formatCurrency, formatCurrencyCompact } from '../utils/formatters';
+import { MONTHS_SHORT_ES } from '../utils/constants';
 import { detectAnomalies, movingAverage, getMonthlySavingCapacity, getFinancialHealthScore } from '../utils/calculations';
 
 const CustomTooltip = ({ active, payload, label }) => {

@@ -33,8 +33,8 @@ import {
   formatCurrency,
   formatPercent,
   formatDate,
-  MONTHS_SHORT_ES,
 } from '../utils/formatters';
+import { MONTHS_SHORT_ES } from '../utils/constants';
 import { getBudgetSummary } from '../utils/calculations';
 import { getCardCycles, getStatementAmount, getStatementCashback, isStatementPaid } from '../utils/creditCards';
 import useRateStore from '../stores/useRateStore';
