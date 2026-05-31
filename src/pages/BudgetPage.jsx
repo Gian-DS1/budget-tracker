@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Copy,
-  AlertTriangle,
   Wallet,
   TrendingUp,
   TrendingDown,
@@ -386,11 +385,6 @@ export default function BudgetPage() {
     );
   };
 
-  // Alerts for categories over 90%
-  const overBudgetAlerts = budgetRows.filter(
-    (r) => r.estimated > 0 && r.progress >= 90 && r.category.type !== 'income'
-  );
-
   return (
     <div className="page-container">
       <div className="page-header flex items-center justify-between">
@@ -420,17 +414,6 @@ export default function BudgetPage() {
           <ChevronRight size={20} />
         </button>
       </div>
-
-      {/* Alerts */}
-      {overBudgetAlerts.map((alert) => (
-        <div key={alert.category.id} className={`alert ${alert.progress >= 100 ? 'alert-danger' : 'alert-warning'}`}>
-          <AlertTriangle size={16} />
-          <span>
-            <strong>{alert.category.icon} {alert.category.name}</strong>: {formatPercent(alert.progress, 0)} del presupuesto utilizado
-            ({formatCurrency(alert.actual)} de {formatCurrency(alert.estimated)})
-          </span>
-        </div>
-      ))}
 
       {/* Zero-Based Budget Summary Cards */}
       <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 'var(--space-6)' }}>
