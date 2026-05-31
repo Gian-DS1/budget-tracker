@@ -167,3 +167,55 @@ export function getCatalogCardsByBank(bank) {
 export function getCatalogCard(catalogId) {
   return CREDIT_CARD_CATALOG.find((c) => c.id === catalogId) || null;
 }
+
+// Quita acentos y normaliza a minúsculas (mismo criterio que defaultCategories).
+function normalize(str) {
+  return (str || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+}
+
+/**
+ * Traduce las reglas de cashback de un template del catálogo a reglas guardables
+ * [{categoryId, percentage}] usando los UUIDs de las categorías del usuario.
+ *
+ * @param {object} template        Entrada de CREDIT_CARD_CATALOG.
+ * @param {Array}  userCategories  Categorías del usuario [{id, name, type, slug?}].
+ * @param {(def) => Promise<string|null>} ensureCategory  Crea (si falta) una categoría
+ *        de ecosistema a partir de su definición (CATALOG_CATEGORIES[key]) y devuelve su id.
+ * @returns {Promise<Array<{categoryId:string, percentage:number}>>}
+ */
+export async function resolveCardCashback(template, userCategories, ensureCategory) {
+  const cats = Array.isArray(userCategories) ? userCategories : [];
+  const findCat = (def) =>
+    (def.slug && cats.find((c) => c.slug === def.slug)) ||
+    cats.find((c) => normalize(c.name) === normalize(def.name) && c.type === def.type) ||
+    null;
+
+  const rules = [];
+  for (const rule of template?.cashback || []) {
+    const key = rule.categoryKey;
+    const pct = Number(rule.percentage);
+
+    if (key === 'all') {
+      rules.push({ categoryId: 'all', percentage: pct });
+      continue;
+    }
+
+    const ecoDef = CATALOG_CATEGORIES[key];
+    if (ecoDef) {
+      const existing = findCat(ecoDef);
+      const id = existing ? existing.id : await ensureCategory(ecoDef);
+      if (id) rules.push({ categoryId: id, percentage: pct });
+      continue;
+    }
+
+    const def = DEFAULT_CATEGORY_KEYS[key];
+    if (def) {
+      const match = findCat(def);
+      if (match) rules.push({ categoryId: match.id, percentage: pct });
+      // sin match (categoría borrada) → se omite la regla.
+      continue;
+    }
+    // key inválida → ignorada (el test de integridad evita que ocurra).
+  }
+  return rules;
+}
