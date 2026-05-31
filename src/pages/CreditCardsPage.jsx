@@ -1,24 +1,26 @@
 // FinTrack RD — Credit Cards Page
 
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar, X, History } from 'lucide-react';
+import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar, History, RotateCcw } from 'lucide-react';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import CashbackRulesEditor from '../components/creditcards/CashbackRulesEditor';
 import { formatCurrency, formatDate, todayISO } from '../utils/formatters';
 import { getCardCycles, getStatementAmount, isStatementPaid, getStatementHistory, getLifetimeCashback } from '../utils/creditCards';
+import { getCatalogBanks, getCatalogCardsByBank, getCatalogCard, resolveCardCashback } from '../data/creditCardCatalog';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899'];
 
-const emptyForm = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#6366f1', cashbackRules: [] };
+const emptyForm = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#6366f1', cashbackRules: [], catalogId: null, note: '' };
 
 export default function CreditCardsPage() {
   const { cards, addCard, updateCard, deleteCard, markStatementPaid } = useCreditCardStore();
   const { transactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
+  const { categories, ensureCategory } = useCategoryStore();
 
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
@@ -26,50 +28,73 @@ export default function CreditCardsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [historyCard, setHistoryCard] = useState(null);
 
-  // Cashback Rule UI State
-  const [newRuleCategory, setNewRuleCategory] = useState('all');
-  const [newRulePercentage, setNewRulePercentage] = useState('');
+  // Flujo de creación: 'predefinida' | 'personalizada' (solo aplica al crear).
+  const [cardType, setCardType] = useState('predefinida');
+  const [selectedBank, setSelectedBank] = useState('');
+  const [showCashback, setShowCashback] = useState(false);
+
+  const banks = getCatalogBanks();
 
   const openCreate = () => {
     setForm(emptyForm);
     setEditingId(null);
+    setCardType('predefinida');
+    setSelectedBank('');
+    setShowCashback(false);
     setShowForm(true);
   };
 
   const openEdit = (card) => {
-    setForm({ 
-      name: card.name, 
-      bank: card.bank, 
-      cutoffDay: String(card.cutoffDay), 
-      dueDay: String(card.dueDay), 
+    setForm({
+      name: card.name,
+      bank: card.bank,
+      cutoffDay: String(card.cutoffDay),
+      dueDay: String(card.dueDay),
       color: card.color,
-      cashbackRules: card.cashbackRules || []
+      cashbackRules: card.cashbackRules || [],
+      catalogId: card.catalogId || null,
+      note: card.catalogId ? (getCatalogCard(card.catalogId)?.note || '') : '',
     });
     setEditingId(card.id);
+    setShowCashback(false);
     setShowForm(true);
   };
 
-  const handleAddRule = () => {
-    if (!newRulePercentage || isNaN(Number(newRulePercentage))) return;
-    const rules = [...(form.cashbackRules || [])];
-    
-    // Check if rule for this category already exists and update it
-    const existingIdx = rules.findIndex(r => r.categoryId === newRuleCategory);
-    if (existingIdx >= 0) {
-      rules[existingIdx].percentage = Number(newRulePercentage);
-    } else {
-      rules.push({ categoryId: newRuleCategory, percentage: Number(newRulePercentage) });
+  // El usuario elige una tarjeta del catálogo: pre-llena nombre/banco/color/reglas.
+  // Resuelve las reglas (crea categorías de ecosistema si faltan) en este momento.
+  const handleSelectTemplate = async (catalogId) => {
+    const template = getCatalogCard(catalogId);
+    if (!template) {
+      setForm((f) => ({ ...emptyForm, cutoffDay: f.cutoffDay, dueDay: f.dueDay }));
+      return;
     }
-    
-    setForm({ ...form, cashbackRules: rules });
-    setNewRuleCategory('all');
-    setNewRulePercentage('');
+    const resolved = await resolveCardCashback(template, categories, ensureCategory);
+    setForm((f) => ({
+      ...emptyForm,
+      cutoffDay: f.cutoffDay,
+      dueDay: f.dueDay,
+      name: template.name,
+      bank: template.bank,
+      color: template.color,
+      catalogId: template.id,
+      cashbackRules: resolved,
+      note: template.note || '',
+    }));
   };
 
-  const handleRemoveRule = (index) => {
-    const rules = [...(form.cashbackRules || [])];
-    rules.splice(index, 1);
-    setForm({ ...form, cashbackRules: rules });
+  const handleRestoreTemplate = async () => {
+    const template = getCatalogCard(form.catalogId);
+    if (!template) return;
+    const resolved = await resolveCardCashback(template, categories, ensureCategory);
+    setForm((f) => ({ ...f, cashbackRules: resolved, note: template.note || '' }));
+  };
+
+  const closeForm = () => {
+    setShowForm(false);
+    setForm(emptyForm);
+    setEditingId(null);
+    setSelectedBank('');
+    setShowCashback(false);
   };
 
   const handleSubmit = (e) => {
@@ -77,13 +102,21 @@ export default function CreditCardsPage() {
     const cutoffDay = parseInt(form.cutoffDay, 10);
     const dueDay = parseInt(form.dueDay, 10);
     if (!form.name || !(cutoffDay >= 1 && cutoffDay <= 31) || !(dueDay >= 1 && dueDay <= 31)) return;
-    const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color, cashbackRules: form.cashbackRules || [] };
+    const payload = {
+      name: form.name,
+      bank: form.bank,
+      cutoffDay,
+      dueDay,
+      color: form.color,
+      cashbackRules: form.cashbackRules || [],
+      catalogId: form.catalogId || null,
+    };
     if (editingId) updateCard(editingId, payload);
     else addCard(payload);
-    setShowForm(false);
-    setForm(emptyForm);
-    setEditingId(null);
+    closeForm();
   };
+
+  const isPredefined = editingId ? !!form.catalogId : cardType === 'predefinida';
 
   const rows = useMemo(() => {
     return cards.map((card) => {
@@ -239,102 +272,170 @@ export default function CreditCardsPage() {
 
       <Modal
         isOpen={showForm}
-        onClose={() => { setShowForm(false); setForm(emptyForm); setEditingId(null); }}
+        onClose={closeForm}
         title={editingId ? 'Editar Tarjeta' : 'Nueva Tarjeta'}
       >
         <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label className="form-label">Nombre *</label>
-            <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Visa Clásica" required />
-          </div>
-          <div className="form-group">
-            <label className="form-label">Banco</label>
-            <input type="text" value={form.bank} onChange={(e) => setForm({ ...form, bank: e.target.value })} placeholder="Ej: Banco Popular" />
-          </div>
-          <div className="form-row">
+          {/* Selector de tipo (solo al crear) */}
+          {!editingId && (
             <div className="form-group">
-              <label className="form-label">Día de corte *</label>
-              <input type="number" min="1" max="31" value={form.cutoffDay} onChange={(e) => setForm({ ...form, cutoffDay: e.target.value })} placeholder="20" required />
-            </div>
-            <div className="form-group">
-              <label className="form-label">Día de pago *</label>
-              <input type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} placeholder="5" required />
-            </div>
-          </div>
-          <div className="form-group">
-            <label className="form-label">Color</label>
-            <div className="flex items-center gap-2">
-              {COLORS.map((c) => (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setForm({ ...form, color: c })}
-                  style={{
-                    width: 28, height: 28, borderRadius: '50%', background: c,
-                    border: form.color === c ? '3px solid var(--text-primary)' : '2px solid var(--border-secondary)',
-                    cursor: 'pointer',
-                  }}
-                  aria-label={`Color ${c}`}
-                />
-              ))}
-            </div>
-          </div>
-          
-          <div className="form-group" style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
-            <label className="form-label font-semibold">Reglas de Cashback</label>
-            <div className="flex items-center gap-2 mb-3">
-              <select 
-                className="flex-1" 
-                value={newRuleCategory} 
-                onChange={(e) => setNewRuleCategory(e.target.value)}
-                style={{ padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
-              >
-                <option value="all">Todas las categorías de gasto</option>
-                <optgroup label="Gastos">
-                  {categories.filter(c => c.type !== 'income' && c.type !== 'savings' && c.isActive).map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </optgroup>
-              </select>
               <div className="flex items-center gap-2">
-                <input 
-                  type="number" 
-                  min="0" max="100" step="0.1"
-                  value={newRulePercentage} 
-                  onChange={(e) => setNewRulePercentage(e.target.value)} 
-                  placeholder="5"
-                  className="no-spinners text-center"
-                  style={{ width: '60px', padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)' }}
-                />
-                <span className="text-muted font-medium">%</span>
+                <button
+                  type="button"
+                  className={`btn ${cardType === 'predefinida' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1 }}
+                  onClick={() => { setCardType('predefinida'); setForm({ ...emptyForm, cutoffDay: form.cutoffDay, dueDay: form.dueDay }); setSelectedBank(''); }}
+                >
+                  Predefinida
+                </button>
+                <button
+                  type="button"
+                  className={`btn ${cardType === 'personalizada' ? 'btn-primary' : 'btn-secondary'}`}
+                  style={{ flex: 1 }}
+                  onClick={() => { setCardType('personalizada'); setForm({ ...emptyForm, cutoffDay: form.cutoffDay, dueDay: form.dueDay }); }}
+                >
+                  Personalizada
+                </button>
               </div>
-              <button type="button" className="btn btn-secondary" onClick={handleAddRule}>
-                <Plus size={16} />
-              </button>
             </div>
-            
-            {form.cashbackRules && form.cashbackRules.length > 0 ? (
-              <div className="flex flex-col gap-2">
-                {form.cashbackRules.map((rule, idx) => {
-                  const cat = categories.find(c => c.id === rule.categoryId);
-                  const label = rule.categoryId === 'all' ? 'Todas las categorías' : (cat ? `${cat.icon} ${cat.name}` : 'Categoría desconocida');
-                  return (
-                    <div key={idx} className="flex items-center justify-between p-2 rounded-md" style={{ background: 'var(--bg-card-hover)', border: '1px solid var(--border-primary)' }}>
-                      <span className="text-sm">{label}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="font-semibold text-sm" style={{ color: 'var(--color-income)' }}>{rule.percentage}%</span>
-                        <button type="button" className="text-danger" onClick={() => handleRemoveRule(idx)}><X size={14} /></button>
-                      </div>
-                    </div>
-                  );
-                })}
+          )}
+
+          {/* Predefinida (crear): selección de banco + tarjeta */}
+          {!editingId && cardType === 'predefinida' && (
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Banco *</label>
+                <select
+                  value={selectedBank}
+                  onChange={(e) => { setSelectedBank(e.target.value); handleSelectTemplate(''); }}
+                  style={{ padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)', width: '100%' }}
+                >
+                  <option value="">Selecciona un banco</option>
+                  {banks.map((b) => <option key={b} value={b}>{b}</option>)}
+                </select>
               </div>
-            ) : (
-              <div className="text-xs text-muted">Añade beneficios de cashback para que el sistema los calcule automáticamente en tus gastos.</div>
-            )}
-          </div>
-          
+              <div className="form-group">
+                <label className="form-label">Tarjeta *</label>
+                <select
+                  value={form.catalogId || ''}
+                  disabled={!selectedBank}
+                  onChange={(e) => handleSelectTemplate(e.target.value)}
+                  style={{ padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)', width: '100%' }}
+                >
+                  <option value="">Selecciona una tarjeta</option>
+                  {getCatalogCardsByBank(selectedBank).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Nombre/Banco: solo-lectura para predefinida, editable para personalizada */}
+          {isPredefined ? (
+            form.catalogId && (
+              <div className="form-group">
+                <label className="form-label">Tarjeta</label>
+                <div className="flex items-center gap-2" style={{ padding: '10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-secondary)' }}>
+                  <CreditCard size={16} style={{ color: form.color }} />
+                  <span className="font-semibold">{form.name}</span>
+                  <span className="text-xs text-muted">· {form.bank}</span>
+                </div>
+              </div>
+            )
+          ) : (
+            <>
+              <div className="form-group">
+                <label className="form-label">Nombre *</label>
+                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Visa Clásica" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Banco</label>
+                <input type="text" value={form.bank} onChange={(e) => setForm({ ...form, bank: e.target.value })} placeholder="Ej: Banco Popular" />
+              </div>
+            </>
+          )}
+
+          {/* Corte / Pago: siempre editables (visibles una vez elegida la tarjeta en predefinida) */}
+          {(!isPredefined || form.catalogId) && (
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label">Día de corte *</label>
+                <input type="number" min="1" max="31" value={form.cutoffDay} onChange={(e) => setForm({ ...form, cutoffDay: e.target.value })} placeholder="20" required />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Día de pago *</label>
+                <input type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} placeholder="5" required />
+              </div>
+            </div>
+          )}
+
+          {/* Color: editable siempre (cosmético) */}
+          {(!isPredefined || form.catalogId) && (
+            <div className="form-group">
+              <label className="form-label">Color</label>
+              <div className="flex items-center gap-2">
+                {COLORS.map((c) => (
+                  <button
+                    key={c}
+                    type="button"
+                    onClick={() => setForm({ ...form, color: c })}
+                    style={{
+                      width: 28, height: 28, borderRadius: '50%', background: c,
+                      border: form.color === c ? '3px solid var(--text-primary)' : '2px solid var(--border-secondary)',
+                      cursor: 'pointer',
+                    }}
+                    aria-label={`Color ${c}`}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Cashback */}
+          {(!isPredefined || form.catalogId) && (
+            <div className="form-group" style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)', marginTop: 'var(--space-4)' }}>
+              {isPredefined ? (
+                <>
+                  <button
+                    type="button"
+                    className="flex items-center justify-between w-full"
+                    onClick={() => setShowCashback((v) => !v)}
+                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
+                  >
+                    <span className="form-label font-semibold" style={{ margin: 0 }}>Personalizar cashback</span>
+                    <span className="text-xs text-muted">{showCashback ? 'Ocultar' : 'Mostrar'}</span>
+                  </button>
+                  {form.note && <div className="text-xs text-muted mt-2">{form.note}</div>}
+                  {showCashback && (
+                    <div className="mt-3">
+                      <CashbackRulesEditor
+                        rules={form.cashbackRules}
+                        categories={categories}
+                        onChange={(r) => setForm({ ...form, cashbackRules: r })}
+                      />
+                      <button type="button" className="btn btn-secondary btn-sm mt-3" onClick={handleRestoreTemplate}>
+                        <RotateCcw size={14} /> Restaurar valores del banco
+                      </button>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <>
+                  <label className="form-label font-semibold">Reglas de Cashback</label>
+                  <CashbackRulesEditor
+                    rules={form.cashbackRules}
+                    categories={categories}
+                    onChange={(r) => setForm({ ...form, cashbackRules: r })}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setForm(emptyForm); setEditingId(null); }}>Cancelar</button>
-            <button type="submit" className="btn btn-primary">{editingId ? 'Guardar Cambios' : 'Agregar'}</button>
+            <button type="button" className="btn btn-secondary" onClick={closeForm}>Cancelar</button>
+            <button type="submit" className="btn btn-primary" disabled={isPredefined && !form.catalogId}>
+              {editingId ? 'Guardar Cambios' : 'Agregar'}
+            </button>
           </div>
         </form>
       </Modal>
