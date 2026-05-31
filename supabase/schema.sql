@@ -43,6 +43,7 @@ create table if not exists public.credit_cards (
   color          text default '#6366f1',
   paid_cycles    jsonb not null default '[]'::jsonb,  -- historial de estados de cuenta pagados
   cashback_rules jsonb not null default '[]'::jsonb,  -- [{ categoryId, percentage }]
+  catalog_id     text,                                 -- id del template del catálogo (NULL = personalizada)
   created_at     timestamptz not null default now()
 );
 
