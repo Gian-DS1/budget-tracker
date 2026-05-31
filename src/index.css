@@ -767,6 +767,60 @@ table {
   opacity: 1;
 }
 
+/* ── Info tooltip (explicación de KPIs) ────────────────────── */
+
+.info-tip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-tertiary);
+  cursor: help;
+  vertical-align: middle;
+  margin-left: var(--space-1);
+}
+
+.info-tip:hover,
+.info-tip:focus-visible {
+  color: var(--text-secondary);
+  outline: none;
+}
+
+.info-tip-content {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(4px);
+  width: max-content;
+  max-width: 230px;
+  /* el tooltip vive dentro de .kpi-label (mayúsculas); reseteamos el formato. */
+  text-transform: none;
+  letter-spacing: normal;
+  text-align: left;
+  font-weight: 500;
+  line-height: 1.5;
+  white-space: normal;
+  background: var(--bg-card);
+  color: var(--text-secondary);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--font-xs);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-secondary);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--transition-fast), transform var(--transition-fast), visibility var(--transition-fast);
+  z-index: var(--z-tooltip);
+}
+
+.info-tip:hover .info-tip-content,
+.info-tip:focus-within .info-tip-content {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
+}
+
 /* ── KPI Cards ─────────────────────────────────────────────── */
 
 .kpi-grid {
@@ -786,7 +840,9 @@ table {
   box-shadow: var(--glass-shadow);
   transition: all var(--transition-base);
   position: relative;
-  overflow: hidden;
+  /* visible para que los tooltips informativos no se recorten; la barra de
+     acento se redondea abajo para conservar las esquinas de la tarjeta. */
+  overflow: visible;
 }
 
 .kpi-card::before {
@@ -798,6 +854,7 @@ table {
   height: 3px;
   background: var(--kpi-accent, var(--accent-primary));
   opacity: 0.8;
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
 }
 
 .kpi-card:hover {

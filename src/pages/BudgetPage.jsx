@@ -19,6 +19,7 @@ import useDebtStore from '../stores/useDebtStore';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance, getBudgetSuggestions } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
@@ -426,7 +427,10 @@ export default function BudgetPage() {
             : summary.estado === 'good' ? 'var(--color-success)'
             : 'var(--text-tertiary)'
         }}>
-          <div className="kpi-label">Puedes gastar</div>
+          <div className="kpi-label">
+            Puedes gastar
+            <InfoTooltip text="Ingresos reales recibidos − (gastos fijos + ahorro + sobres + pago de deuda planificados) − gastos variables ya gastados. Es lo que te queda para gastar este mes sin atrasar pagos ni metas." />
+          </div>
           <div className="kpi-value" style={{
             fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)',
             color:
@@ -446,7 +450,10 @@ export default function BudgetPage() {
 
         {/* Card 1: Ingresos */}
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
-          <div className="kpi-label">Ingresos Reales</div>
+          <div className="kpi-label">
+            Ingresos Reales
+            <InfoTooltip text="Suma de todas las transacciones de ingreso registradas este mes. 'Planificado' es la suma de los montos estimados de tus categorías de ingreso." />
+          </div>
           <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>
             {formatCurrency(totalIncomeActual)}
           </div>
@@ -457,7 +464,10 @@ export default function BudgetPage() {
 
         {/* Card 2: Total Asignado */}
         <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-fixed)' }}>
-          <div className="kpi-label">Presupuesto (Gastos + Ahorros)</div>
+          <div className="kpi-label">
+            Presupuesto
+            <InfoTooltip text="Suma de los montos estimados de tus categorías de gastos (fijos y variables) y de ahorro. 'Uso Real' es lo que llevas gastado en ellas este mes." />
+          </div>
           <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)' }}>
             {formatCurrency(totalExpenseEstimated + totalSavingsEstimated)}
           </div>
@@ -470,7 +480,10 @@ export default function BudgetPage() {
         <div className="kpi-card" id="tour-budget-unassigned" style={{ 
           '--kpi-accent': balanceEstimated === 0 ? 'var(--color-success)' : balanceEstimated > 0 ? 'var(--color-warning)' : 'var(--color-danger)'
         }}>
-          <div className="kpi-label">Por Asignar</div>
+          <div className="kpi-label">
+            Por Asignar
+            <InfoTooltip text="Ingreso planificado − todo lo presupuestado (gastos fijos + variables + ahorro + sobres + pago de deuda). En el método base cero debe llegar a 0: a cada peso se le asigna un destino." />
+          </div>
           <div className="kpi-value" style={{ 
             fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)',
             color: balanceEstimated === 0 ? 'var(--color-success)' : balanceEstimated > 0 ? 'var(--color-warning)' : 'var(--color-danger)'
@@ -486,7 +499,10 @@ export default function BudgetPage() {
         <div className="kpi-card" style={{ 
           '--kpi-accent': balanceActual >= 0 ? 'var(--color-info)' : 'var(--color-danger)'
         }}>
-          <div className="kpi-label">Efectivo Disponible</div>
+          <div className="kpi-label">
+            Efectivo Disponible
+            <InfoTooltip text="Ingresos reales − gastos reales − ahorro real de este mes. Es el dinero que realmente sobró (o faltó) según lo ya ocurrido, no lo planificado." />
+          </div>
           <div className="kpi-value" style={{ 
             fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)'
           }}>
