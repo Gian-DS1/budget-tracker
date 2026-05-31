@@ -45,6 +45,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Internet',
+    slug: 'internet',
     type: 'fixed_expense',
     icon: '📶',
     color: '#3b82f6',
@@ -54,6 +55,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Teléfono',
+    slug: 'telefono',
     type: 'fixed_expense',
     icon: '📱',
     color: '#0ea5e9',
@@ -126,6 +128,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Suscripciones Digitales',
+    slug: 'suscripciones',
     type: 'fixed_expense',
     icon: '📺',
     color: '#a855f7',
@@ -158,15 +161,17 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Supermercado',
+    slug: 'supermercado',
     type: 'variable_expense',
     icon: '🛒',
     color: '#ef4444',
-    keywords: ['supermercado', 'nacional', 'jumbo', 'bravo', 'sirena', 'la sirena', 'pricesmart', 'colmado', 'almacen', 'plaza lama', 'aprovisiones', 'super', 'pola'],
+    keywords: ['supermercado', 'pricesmart', 'colmado', 'almacen', 'aprovisiones', 'super', 'pola'],
     isActive: true,
   },
   {
     id: generateId(),
     name: 'Restaurantes y Delivery',
+    slug: 'restaurantes',
     type: 'variable_expense',
     icon: '🍕',
     color: '#ec4899',
@@ -176,6 +181,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Combustible',
+    slug: 'combustible',
     type: 'variable_expense',
     icon: '⛽',
     color: '#f97316',
@@ -194,6 +200,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Taxi y Transporte',
+    slug: 'transporte',
     type: 'variable_expense',
     icon: '🚕',
     color: '#fbbf24',
@@ -212,6 +219,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Hogar',
+    slug: 'hogar',
     type: 'variable_expense',
     icon: '🛠️',
     color: '#14b8a6',
@@ -221,6 +229,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Amazon',
+    slug: 'amazon',
     type: 'variable_expense',
     icon: '📦',
     color: '#6366f1',
@@ -239,6 +248,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Farmacia y Medicamentos',
+    slug: 'farmacia',
     type: 'variable_expense',
     icon: '💊',
     color: '#ef4444',
@@ -266,6 +276,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Mascotas',
+    slug: 'mascotas',
     type: 'variable_expense',
     icon: '🐾',
     color: '#a3e635',
@@ -302,6 +313,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Educación',
+    slug: 'educacion',
     type: 'variable_expense',
     icon: '📚',
     color: '#0ea5e9',
@@ -311,6 +323,7 @@ export const defaultCategories = [
   {
     id: generateId(),
     name: 'Entretenimiento',
+    slug: 'entretenimiento',
     type: 'variable_expense',
     icon: '🎬',
     color: '#8b5cf6',

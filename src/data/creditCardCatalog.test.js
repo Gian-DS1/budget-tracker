@@ -8,6 +8,7 @@ import {
   getCatalogCard,
   resolveCardCashback,
 } from './creditCardCatalog';
+import { defaultCategories } from './defaultCategories';
 
 describe('CREDIT_CARD_CATALOG — integridad', () => {
   it('tiene ids únicos', () => {
@@ -107,5 +108,22 @@ describe('resolveCardCashback', () => {
     const rules = await resolveCardCashback(tpl, cats, async () => 'x');
     expect(rules).toContainEqual({ categoryId: 'u-net', percentage: 5 });
     expect(rules).toContainEqual({ categoryId: 'u-tel', percentage: 5 });
+  });
+});
+
+describe('DEFAULT_CATEGORY_KEYS ↔ defaultCategories', () => {
+  it('cada slug del catálogo existe en defaultCategories con el mismo nombre y tipo', () => {
+    for (const [key, def] of Object.entries(DEFAULT_CATEGORY_KEYS)) {
+      const match = defaultCategories.find((c) => c.slug === def.slug);
+      expect(match, `slug faltante: ${key}/${def.slug}`).toBeTruthy();
+      expect(match.name, key).toBe(def.name);
+      expect(match.type, key).toBe(def.type);
+    }
+  });
+
+  it('Supermercado por defecto no conserva keywords de ecosistemas dedicados', () => {
+    const sup = defaultCategories.find((c) => c.slug === 'supermercado');
+    const banned = ['bravo', 'sirena', 'la sirena', 'plaza lama', 'nacional', 'jumbo'];
+    for (const k of banned) expect(sup.keywords, k).not.toContain(k);
   });
 });
