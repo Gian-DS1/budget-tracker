@@ -235,6 +235,40 @@ const useTransactionStore = create(
     }));
   },
 
+  // Cambia la categoría de varias transacciones a la vez. Recalcula el cashback
+  // de cada una según la nueva categoría y la tarjeta que ya tuviera asignada.
+  bulkAssignCategory: async (ids, categoryId) => {
+    if (!ids || ids.length === 0) return;
+    const dbCategoryId = categoryId || null;
+    const cards = useCreditCardStore.getState().cards;
+    const transactionsToUpdate = get().transactions.filter((t) => ids.includes(t.id));
+    toast.loading('Asignando categoría...', { id: 'bulk-update' });
+    const dbUpdatesPromises = transactionsToUpdate.map((t) => {
+      const card = t.cardId ? cards.find((c) => c.id === t.cardId) : null;
+      const cashback = (card && t.type === 'expense')
+        ? computeCashback(card, dbCategoryId, t.amount) : 0;
+      return supabase.from('transactions').update({
+        category_id: dbCategoryId, cashback_earned: cashback,
+      }).eq('id', t.id).then(({ error }) => ({ id: t.id, error, cashback }));
+    });
+    const results = await Promise.all(dbUpdatesPromises);
+    if (results.some((r) => r.error)) {
+      toast.error('Error actualizando algunas transacciones', { id: 'bulk-update' });
+    } else {
+      toast.success('Categorías actualizadas', { id: 'bulk-update' });
+    }
+    set((state) => ({
+      transactions: state.transactions.map((t) => {
+        if (ids.includes(t.id)) {
+          const result = results.find((r) => r.id === t.id);
+          if (!result || result.error) return t;
+          return { ...t, categoryId: dbCategoryId, cashbackEarned: result.cashback };
+        }
+        return t;
+      }),
+    }));
+  },
+
   bulkAddTransactions: async (transactions) => {
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;

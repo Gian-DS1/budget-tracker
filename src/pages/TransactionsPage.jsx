@@ -20,7 +20,7 @@ import { computeCashback } from '../utils/creditCards';
 const UNCATEGORIZED = '__uncategorized__';
 
 export default function TransactionsPage() {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkAssignCard } =
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkAssignCard, bulkAssignCategory } =
     useTransactionStore();
   const { categories } = useCategoryStore();
   const { cards } = useCreditCardStore();
@@ -39,6 +39,7 @@ export default function TransactionsPage() {
   const [selectedIds, setSelectedIds] = useState([]);
   const [showBulkDeleteConfirm, setShowBulkDeleteConfirm] = useState(false);
   const [bulkCardId, setBulkCardId] = useState('');
+  const [bulkCategoryId, setBulkCategoryId] = useState('');
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
@@ -237,6 +238,13 @@ export default function TransactionsPage() {
     setBulkCardId('');
   };
 
+  const handleBulkAssignCategory = () => {
+    if (!bulkCategoryId) return;
+    bulkAssignCategory(selectedIds, bulkCategoryId);
+    setSelectedIds([]);
+    setBulkCategoryId('');
+  };
+
   const toggleSort = (field) => {
     if (sortField === field) {
       setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
@@ -406,8 +414,49 @@ export default function TransactionsPage() {
             </div>
             <div className="flex items-center gap-4" style={{ flexWrap: 'wrap' }}>
               <div className="flex items-center gap-2">
-                <select 
-                  value={bulkCardId} 
+                <select
+                  value={bulkCategoryId}
+                  onChange={(e) => setBulkCategoryId(e.target.value)}
+                  style={{ padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--font-sm)' }}
+                >
+                  <option value="">Seleccionar categoría</option>
+                  {categoryGroups.income.length > 0 && (
+                    <optgroup label="💰 Ingresos">
+                      {categoryGroups.income.map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {categoryGroups.fixed_expense.length > 0 && (
+                    <optgroup label="📌 Gastos Fijos">
+                      {categoryGroups.fixed_expense.map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {categoryGroups.variable_expense.length > 0 && (
+                    <optgroup label="🔄 Gastos Variables">
+                      {categoryGroups.variable_expense.map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                  {categoryGroups.savings.length > 0 && (
+                    <optgroup label="🏦 Ahorros">
+                      {categoryGroups.savings.map(c => (
+                        <option key={c.id} value={c.id}>{c.icon} {c.name}</option>
+                      ))}
+                    </optgroup>
+                  )}
+                </select>
+                <button className="btn btn-primary" onClick={handleBulkAssignCategory} style={{ padding: 'var(--space-2) var(--space-4)' }}>
+                  Asignar Categoría
+                </button>
+              </div>
+              <div style={{ width: '1px', height: '24px', background: 'var(--border-primary)' }}></div>
+              <div className="flex items-center gap-2">
+                <select
+                  value={bulkCardId}
                   onChange={(e) => setBulkCardId(e.target.value)}
                   style={{ padding: 'var(--space-2) var(--space-3)', fontSize: 'var(--font-sm)' }}
                 >
