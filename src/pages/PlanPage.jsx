@@ -408,7 +408,7 @@ export default function PlanPage() {
       <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingPlan(null); }} title={editingPlan ? "Editar Meta del Plan" : "Nueva Meta del Plan"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Título *</label>
+            <label className="form-label">Nombre de la Meta *</label>
             <input
               type="text"
               value={form.title}
@@ -416,15 +416,21 @@ export default function PlanPage() {
               placeholder="Ej: Comprar laptop, Liquidar tarjeta, Fondo 6 meses..."
               required
             />
+            <div className="text-xs text-muted mt-2">
+              Ej: "Viaje a Punta Cana", "Pago inicial moto", "Emergencias"
+            </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Descripción</label>
+            <label className="form-label">Descripción (opcional)</label>
             <textarea
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
-              placeholder="Detalles opcionales..."
+              placeholder="Detalles opcionales de por qué esta meta es importante..."
               rows={2}
             />
+            <div className="text-xs text-muted mt-2">
+              Añade contexto personal para recordar por qué vale la pena esta meta.
+            </div>
           </div>
           <div className="form-row">
             <div className="form-group">
@@ -437,14 +443,20 @@ export default function PlanPage() {
                 <option value="medium">📅 Mediano Plazo (3-12 meses)</option>
                 <option value="long">🏔️ Largo Plazo (1+ años)</option>
               </select>
+              <div className="text-xs text-muted mt-2">
+                Agrupa tus metas por escala de tiempo. Define la fecha objetivo para que podamos calcular cuánto necesitas ahorrar cada mes.
+              </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Monto Objetivo</label>
+              <label className="form-label">Monto Objetivo *</label>
               <CurrencyInput
                 value={form.targetAmount}
                 onChange={(val) => setForm({ ...form, targetAmount: val })}
                 placeholder="0.00"
               />
+              <div className="text-xs text-muted mt-2">
+                Cuánto dinero necesitas alcanzar en total.
+              </div>
             </div>
           </div>
           <div className="form-row">
@@ -455,14 +467,20 @@ export default function PlanPage() {
                 onChange={(val) => setForm({ ...form, currentAmount: val })}
                 placeholder="0.00"
               />
+              <div className="text-xs text-muted mt-2">
+                Dinero que ya has reservado para esta meta (opcional).
+              </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha Objetivo</label>
+              <label className="form-label">Fecha Objetivo *</label>
               <input
                 type="date"
                 value={form.deadline}
                 onChange={(e) => setForm({ ...form, deadline: e.target.value })}
               />
+              <div className="text-xs text-muted mt-2">
+                Cuándo quieres alcanzar esta meta. Usaremos esto para calcular tu aporte mensual.
+              </div>
             </div>
           </div>
           <div className="modal-footer">

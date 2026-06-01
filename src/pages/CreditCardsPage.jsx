@@ -375,10 +375,16 @@ export default function CreditCardsPage() {
               <div className="form-group">
                 <label className="form-label">Día de corte *</label>
                 <input type="number" min="1" max="31" value={form.cutoffDay} onChange={(e) => setForm({ ...form, cutoffDay: e.target.value })} placeholder="20" required />
+                <div className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
+                  Último día que se incluyen gastos en el ciclo actual. Ej: si es el 20, los gastos del 1-20 se cierran; gastos del 21-31 van al siguiente ciclo.
+                </div>
               </div>
               <div className="form-group">
                 <label className="form-label">Día de pago *</label>
                 <input type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} placeholder="5" required />
+                <div className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
+                  Fecha límite para pagar sin intereses. Ej: si es el 5 del mes siguiente al corte, ese es tu vencimiento.
+                </div>
               </div>
             </div>
           )}
