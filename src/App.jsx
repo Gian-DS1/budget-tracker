@@ -15,6 +15,7 @@ import useCreditCardStore from './stores/useCreditCardStore';
 import useRateStore from './stores/useRateStore';
 import useRecurringStore from './stores/useRecurringStore';
 import { useAuth } from './contexts/AuthContext';
+import { ShortcutsProvider } from './contexts/ShortcutsContext';
 import { supabase } from './lib/supabase';
 import AuthPage from './pages/AuthPage';
 
@@ -169,7 +170,8 @@ function App() {
         }} 
       />
       {user && !loading && <TourGuide />}
-      <Suspense fallback={<PageLoader />}>
+      <ShortcutsProvider>
+        <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/" element={<Layout />}>
             <Route index element={<DashboardPage />} />
@@ -186,7 +188,8 @@ function App() {
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>
-      </Suspense>
+        </Suspense>
+      </ShortcutsProvider>
     </BrowserRouter>
   );
 }

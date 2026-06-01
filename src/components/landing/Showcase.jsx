@@ -38,7 +38,6 @@ export default function Showcase() {
             viewport={{ once: true, amount: 0.4 }}
             transition={{ duration: 0.6, ease: 'easeOut' }}
           >
-            <span className="lp__eyebrow">Calendario y reportes</span>
             <h2 className="lp-section__title" style={{ textAlign: 'left' }}>
               Mira tu dinero moverse en el tiempo
             </h2>

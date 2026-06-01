@@ -21,6 +21,7 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
 import { Skeleton } from '../components/ui/Skeleton';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import { formatCurrency, formatCurrencyCompact } from '../utils/formatters';
 import { MONTHS_SHORT_ES } from '../utils/constants';
 import { detectAnomalies, movingAverage, getMonthlySavingCapacity, getFinancialHealthScore } from '../utils/calculations';
@@ -288,7 +289,10 @@ export default function ReportsPage() {
               <div className="text-xs text-muted mt-2">De tus ingresos promedio</div>
             </div>
             <div className="kpi-card" style={{ '--kpi-accent': healthColor }}>
-              <div className="kpi-label">Salud financiera</div>
+              <div className="kpi-label flex items-center gap-1">
+                Salud financiera
+                <InfoTooltip text="Score del 0 al 100 que combina tu tasa de ahorro, el peso de tus deudas y tu cumplimiento de gastos sobre los últimos meses. Más alto es mejor." label="Cómo se calcula la salud financiera" />
+              </div>
               <div className="kpi-value" style={{ fontSize: 'clamp(0.95rem, 1.7vw, 1.25rem)', color: healthColor }}>{health.score}/100</div>
               <div className="text-xs mt-2" style={{ color: healthColor, fontWeight: 600 }}>{health.label}</div>
             </div>

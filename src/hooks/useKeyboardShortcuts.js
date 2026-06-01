@@ -1,84 +1,83 @@
-import { useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useShortcutsRegistry } from '../contexts/ShortcutsContext';
 
-// Custom hook to handle global keyboard shortcuts
-// Pages can pass a callbacks object to override default behavior
-export function useKeyboardShortcuts(callbacks = {}) {
+// Atajos globales. Vive una sola vez (en el Layout) y lee el registro de la
+// página activa al momento de pulsar la tecla, así que siempre dispara la acción
+// más reciente sin closures obsoletos.
+//
+//   Cmd/Ctrl + T   → nueva transacción (modal si la página lo registra; si no, navega)
+//   Cmd/Ctrl + E   → ajustes / exportar
+//   Ctrl + ← / →   → mes anterior / siguiente (páginas con navegación por mes)
+//
+// Escape lo maneja cada Modal por su cuenta; no se intercepta aquí.
+export function useKeyboardShortcuts() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const registry = useShortcutsRegistry();
 
   useEffect(() => {
     const handleKeyDown = (e) => {
+      const cb = registry ? registry.getCallbacks() : {};
       const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
-      const isCtrlOrCmd = isMac ? e.metaKey : e.ctrlKey;
+      const mod = isMac ? e.metaKey : e.ctrlKey;
 
-      // Esc: Close any open modal
-      if (e.key === 'Escape') {
-        // Find any open modal and trigger its close button or callback
-        const modal = document.querySelector('[role="dialog"]');
-        if (modal) {
-          e.preventDefault();
-          const closeBtn = modal.querySelector('[aria-label="Close"]') || modal.querySelector('.modal-close');
-          if (closeBtn) {
-            closeBtn.click();
-          }
-          // Fallback: look for a cancel/close button
-          const cancelBtn = modal.querySelector('.btn-secondary, [type="button"]:last-of-type');
-          if (cancelBtn) {
-            cancelBtn.click();
-          }
-        }
-        // Allow normal Esc behavior if no modal
-        return;
-      }
+      // No secuestrar teclas mientras el usuario escribe.
+      const el = e.target;
+      const tag = (el?.tagName || '').toLowerCase();
+      const typing =
+        tag === 'input' || tag === 'textarea' || tag === 'select' || el?.isContentEditable;
 
-      // Cmd/Ctrl + T: New transaction (page-specific or navigate to transactions)
-      if (isCtrlOrCmd && e.key === 't') {
+      if (mod && e.key.toLowerCase() === 't') {
         e.preventDefault();
-        if (callbacks.newTransaction) {
-          callbacks.newTransaction();
-        } else {
-          navigate('/transacciones');
-        }
+        if (cb.newTransaction) cb.newTransaction();
+        else navigate('/transacciones');
         return;
       }
 
-      // Cmd/Ctrl + E: Export / Settings
-      if (isCtrlOrCmd && e.key === 'e') {
+      if (mod && e.key.toLowerCase() === 'e') {
         e.preventDefault();
         navigate('/ajustes');
         return;
       }
 
-      // Cmd/Ctrl + B: Toggle budget view (page-specific)
-      if (isCtrlOrCmd && e.key === 'b') {
+      // Navegación por mes: Ctrl+flechas, solo si la página la registró y el
+      // foco no está en un campo (donde las flechas mueven el cursor).
+      if (e.ctrlKey && !typing && e.key === 'ArrowLeft' && cb.previousMonth) {
         e.preventDefault();
-        if (callbacks.toggleBudgetView) {
-          callbacks.toggleBudgetView();
-        }
+        cb.previousMonth();
         return;
       }
-
-      // Arrow keys: Navigate months (page-specific)
-      if ((e.key === 'ArrowLeft' || e.key === 'ArrowRight') && e.ctrlKey) {
+      if (e.ctrlKey && !typing && e.key === 'ArrowRight' && cb.nextMonth) {
         e.preventDefault();
-        if (e.key === 'ArrowLeft' && callbacks.previousMonth) {
-          callbacks.previousMonth();
-        } else if (e.key === 'ArrowRight' && callbacks.nextMonth) {
-          callbacks.nextMonth();
-        }
-        return;
-      }
-
-      // Cmd/Ctrl + /: Open help (future enhancement)
-      if (isCtrlOrCmd && e.key === '/') {
-        e.preventDefault();
-        // TODO: Open help dialog
+        cb.nextMonth();
         return;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [navigate, callbacks, location]);
+  }, [navigate, registry]);
+}
+
+// Hook para páginas: registra las acciones que sus atajos pueden disparar.
+// Usa una ref para que los wrappers registrados llamen siempre a la última
+// versión del callback (sin closures obsoletos ni re-registros por render).
+export function usePageShortcuts(callbacks) {
+  const registry = useShortcutsRegistry();
+  const ref = useRef(callbacks);
+
+  // Mantener la ref con la última versión de los callbacks (fuera de render).
+  useEffect(() => {
+    ref.current = callbacks;
+  });
+
+  useEffect(() => {
+    if (!registry) return undefined;
+    const keys = Object.keys(ref.current);
+    const wrappers = {};
+    keys.forEach((key) => {
+      wrappers[key] = (...args) => ref.current[key]?.(...args);
+    });
+    return registry.register(wrappers);
+  }, [registry]);
 }

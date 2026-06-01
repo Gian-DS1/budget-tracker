@@ -47,6 +47,7 @@ import { getCardBalances } from '../utils/creditCards';
 import useRateStore from '../stores/useRateStore';
 import Modal from '../components/ui/Modal';
 import { SkeletonDashboard } from '../components/ui/Skeleton';
+import { usePageShortcuts } from '../hooks/useKeyboardShortcuts';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -120,6 +121,12 @@ export default function DashboardPage() {
     setCurrentMonth(newMonth);
     setCurrentYear(newYear);
   };
+
+  // Ctrl+← / Ctrl+→ navegan entre meses (sin pasar del mes actual).
+  usePageShortcuts({
+    previousMonth: () => navigateMonth(-1),
+    nextMonth: () => navigateMonth(1),
+  });
 
   // ─── KPIs Calculation ─────────────────────────────────────────
 

@@ -71,7 +71,6 @@ export default function HealthScore() {
             </div>
 
             <div className="lp-health__content">
-              <span className="lp__eyebrow">Salud financiera</span>
               <h2 className="lp-section__title" style={{ textAlign: 'left' }}>
                 Tu salud financiera en un número
               </h2>

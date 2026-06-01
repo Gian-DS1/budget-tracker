@@ -25,6 +25,7 @@ import { formatCurrency, formatPercent } from '../utils/formatters';
 import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance, getBudgetSuggestions } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
 import useRateStore from '../stores/useRateStore';
+import { usePageShortcuts } from '../hooks/useKeyboardShortcuts';
 import toast from 'react-hot-toast';
 
 // Local state input that only persists on blur (avoids upsert on every keystroke)
@@ -222,6 +223,12 @@ export default function BudgetPage() {
     setMonth(newMonth);
     setYear(newYear);
   };
+
+  // Ctrl+← / Ctrl+→ navegan entre meses del presupuesto.
+  usePageShortcuts({
+    previousMonth: () => navigateMonth(-1),
+    nextMonth: () => navigateMonth(1),
+  });
 
   const handleCopyPrevious = async () => {
     const success = await copyBudgetFromPreviousMonth(year, month);

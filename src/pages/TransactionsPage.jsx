@@ -16,6 +16,7 @@ import { autoCategorize } from '../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel, titleCase } from '../utils/formatters';
 import useRateStore from '../stores/useRateStore';
 import { computeCashback } from '../utils/creditCards';
+import { usePageShortcuts } from '../hooks/useKeyboardShortcuts';
 
 // Valor centinela del filtro de categoría para las transacciones SIN categoría
 // (categoryId nulo o apuntando a una categoría que ya fue eliminada).
@@ -94,6 +95,14 @@ export default function TransactionsPage() {
     setEditingTransaction(transaction.id);
     setShowForm(true);
   };
+
+  // Cmd/Ctrl+T abre el formulario de nueva transacción desde esta página.
+  usePageShortcuts({
+    newTransaction: () => {
+      resetForm();
+      setShowForm(true);
+    },
+  });
 
   const handleDescriptionChange = (description) => {
     setForm((prev) => {

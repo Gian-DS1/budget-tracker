@@ -6,6 +6,7 @@ import useDebtStore from '../stores/useDebtStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import { Skeleton } from '../components/ui/Skeleton';
 import { formatCurrency, formatDate, todayISO, formatPercent } from '../utils/formatters';
@@ -381,8 +382,9 @@ export default function DebtsPage() {
                     {formatPercent(paidPercentage, 0)} pagado
                   </span>
                   {monthsToPayOff > 0 && debt.status === 'active' && (
-                    <span className="text-xs text-muted">
+                    <span className="text-xs text-muted flex items-center gap-1">
                       ~{monthsToPayOff} meses restantes
+                      <InfoTooltip text="Estimado según tu saldo actual, la tasa de interés y tu pago mensual, asumiendo que mantienes ese pago cada mes." label="Cómo se estiman los meses restantes" />
                     </span>
                   )}
                 </div>

@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 import { TrendingUp } from 'lucide-react';
+import { friendlyAuthError } from '../utils/authErrors';
 
 export default function AuthPage() {
   const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecoveringPassword } = useAuth();
@@ -47,7 +48,7 @@ export default function AuthPage() {
       }
     } catch (error) {
       console.error(error);
-      toast.error(error.message || 'Ocurrió un error.');
+      toast.error(friendlyAuthError(error));
     } finally {
       setLoading(false);
     }
@@ -79,7 +80,8 @@ export default function AuthPage() {
                 try {
                   await signInWithGoogle();
                 } catch (error) {
-                  toast.error(error.message || 'Error con Google');
+                  console.error(error);
+                  toast.error(friendlyAuthError(error));
                 }
               }}
               className="btn auth-btn-google w-full flex items-center justify-center gap-2"

@@ -34,7 +34,6 @@ export default function HowItWorks() {
     <section className="lp-section" id="como-funciona" style={{ paddingTop: 0 }}>
       <div className="lp__container">
         <div className="lp-section__head">
-          <span className="lp__eyebrow">Cómo funciona</span>
           <h2 className="lp-section__title">Tres pasos para crecer</h2>
           <p className="lp-section__sub">
             Sin hojas de cálculo ni fórmulas. Un método claro que puedes empezar hoy mismo.

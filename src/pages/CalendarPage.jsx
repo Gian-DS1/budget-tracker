@@ -7,6 +7,7 @@ import useCategoryStore from '../stores/useCategoryStore';
 import { formatCurrency, todayISO } from '../utils/formatters';
 import { MONTHS_ES, DAYS_SHORT_ES } from '../utils/constants';
 import Modal from '../components/ui/Modal';
+import { usePageShortcuts } from '../hooks/useKeyboardShortcuts';
 
 export default function CalendarPage() {
   const { transactions } = useTransactionStore();
@@ -35,6 +36,12 @@ export default function CalendarPage() {
     setMonth(now.getMonth());
     setYear(now.getFullYear());
   };
+
+  // Ctrl+← / Ctrl+→ navegan entre meses del calendario.
+  usePageShortcuts({
+    previousMonth: () => navigateMonth(-1),
+    nextMonth: () => navigateMonth(1),
+  });
 
   const getDaysInMonth = (year, month) => new Date(year, month + 1, 0).getDate();
   const getFirstDayOfMonth = (year, month) => new Date(year, month, 1).getDay();
