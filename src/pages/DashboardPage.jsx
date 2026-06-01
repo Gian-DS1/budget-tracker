@@ -14,6 +14,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Target,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   BarChart,
@@ -41,7 +42,7 @@ import {
   formatDate,
 } from '../utils/formatters';
 import { MONTHS_SHORT_ES, MONTHS_ES } from '../utils/constants';
-import { getBudgetSummary } from '../utils/calculations';
+import { getBudgetSummary, getMonthlySavingCapacity } from '../utils/calculations';
 import { getCardBalances } from '../utils/creditCards';
 import useRateStore from '../stores/useRateStore';
 import Modal from '../components/ui/Modal';
@@ -253,6 +254,72 @@ export default function DashboardPage() {
       nextTitle: planDates.length > 0 ? planDates[0].title : null,
     };
   }, [plans]);
+
+  // ─── Financial Readiness: Capacity - Cards - Plan Contributions ─
+  const financialReadiness = useMemo(() => {
+    // Calculate monthly saving capacity (from transaction history)
+    const cap = getMonthlySavingCapacity(transactions, new Date(), 3);
+
+    // Calculate required monthly contributions from active plans
+    let requiredMonthly = 0;
+    const today = new Date();
+    for (const p of plans) {
+      if (p.status === 'completed') continue;
+      const target = Number(p.targetAmount) || 0;
+      if (target <= 0) continue;
+      const remaining = Math.max(0, target - (Number(p.currentAmount) || 0));
+      if (remaining <= 0) continue;
+      if (p.deadline) {
+        const deadline = new Date(p.deadline + 'T00:00:00');
+        const days = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+        const months = days && days > 0 ? Math.max(1, Math.ceil(days / 30.44)) : 1;
+        requiredMonthly += remaining / months;
+      }
+    }
+
+    // Real margin: capacity - pending cards - required plan contributions
+    const realMargin = cap.capacity - totalPendingCards - requiredMonthly;
+
+    // Determine readiness state
+    let state = 'good';
+    let tone = 'Tienes margen para tus metas y discreción.';
+    if (realMargin < 0) {
+      state = 'critical';
+      tone = 'Tus tarjetas + metas superan tu capacidad. Ajusta alguna meta o paga tarjetas primero.';
+    } else if (realMargin < 500000) {
+      state = 'tight';
+      tone = 'Tus metas y gastos se ajustan, pero sin mucho colchón.';
+    }
+
+    // Smart alert: if significant conflict
+    let alert = null;
+    if (requiredMonthly > 0 && totalPendingCards > 0) {
+      const cardsRatio = totalPendingCards / cap.capacity;
+      const plansRatio = requiredMonthly / cap.capacity;
+      if (cardsRatio + plansRatio > 0.8) {
+        alert = {
+          type: 'warning',
+          text: `Tus metas piden ${formatCurrency(requiredMonthly)}/mes pero tienes ${formatCurrency(totalPendingCards)} en tarjetas pendientes. Considera extender plazo o pagar tarjetas primero.`,
+        };
+      }
+    } else if (requiredMonthly > cap.capacity) {
+      alert = {
+        type: 'warning',
+        text: `Tus metas activas piden ${formatCurrency(requiredMonthly)}/mes, pero tu capacidad estimada es de ${formatCurrency(cap.capacity)}/mes. Extiende plazos o reduce montos.`,
+      };
+    }
+
+    return {
+      capacity: cap.capacity,
+      pendingCards: totalPendingCards,
+      requiredMonthly,
+      realMargin,
+      state,
+      tone,
+      alert,
+      hasData: cap.monthsCounted > 0,
+    };
+  }, [transactions, plans, totalPendingCards]);
 
   // Signo explícito para los deltas: el color nunca viaja solo (daltonismo).
   const signedPct = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`;
@@ -609,6 +676,126 @@ export default function DashboardPage() {
             </a>
           </div>
         </section>
+
+        {/* ── Readiness: Margen disponible considerando tarjetas + metas ── */}
+        {financialReadiness.hasData && (
+          <section className="overview-panel animate-panel-entrance" style={{'--i': 2}} aria-labelledby="ov-readiness">
+            <h2 className="overview-panel-head" id="ov-readiness">
+              <Wallet size={14} /> Margen disponible
+            </h2>
+
+            {/* Hero Metric */}
+            <div style={{ marginBottom: 'var(--space-5)' }}>
+              <div className="flow-result-label" style={{ marginBottom: 'var(--space-2)' }}>
+                Este mes (después de tarjetas y metas)
+              </div>
+              <div
+                style={{
+                  fontSize: 'clamp(1.5rem, 3vw, 2rem)',
+                  fontWeight: 700,
+                  color:
+                    financialReadiness.state === 'critical' ? 'var(--color-danger)'
+                    : financialReadiness.state === 'tight' ? 'var(--color-warning)'
+                    : 'var(--color-success)',
+                }}
+              >
+                {formatCurrency(financialReadiness.realMargin)}
+              </div>
+              <div className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
+                {financialReadiness.tone}
+              </div>
+            </div>
+
+            {/* Breakdown Row */}
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: '1fr 1fr 1fr',
+              gap: 'var(--space-3)',
+              paddingTop: 'var(--space-4)',
+              borderTop: '1px solid var(--border-primary)',
+            }}>
+              <div
+                className="tooltip-container"
+                title="Promedio de (ingresos - gastos) últimos 3 meses"
+              >
+                <div className="text-xs text-muted">Capacidad</div>
+                <div style={{ fontSize: 'var(--font-md)', fontWeight: 700, color: 'var(--text-secondary)', marginTop: 'var(--space-1)' }}>
+                  {formatCurrency(financialReadiness.capacity)}
+                </div>
+              </div>
+
+              <div
+                className="tooltip-container"
+                title="Saldo a pagar antes del vencimiento en todas tus tarjetas"
+              >
+                <div className="text-xs text-muted">− Tarjetas</div>
+                <div style={{
+                  fontSize: 'var(--font-md)',
+                  fontWeight: 700,
+                  color: financialReadiness.pendingCards > 0 ? 'var(--color-warning)' : 'var(--text-secondary)',
+                  marginTop: 'var(--space-1)',
+                }}>
+                  {formatCurrency(financialReadiness.pendingCards)}
+                </div>
+              </div>
+
+              <div
+                className="tooltip-container"
+                title="Suma de lo que necesitas ahorrar mensualmente por tus metas activas"
+              >
+                <div className="text-xs text-muted">− Metas</div>
+                <div style={{
+                  fontSize: 'var(--font-md)',
+                  fontWeight: 700,
+                  color: financialReadiness.requiredMonthly > 0 ? 'var(--accent-primary)' : 'var(--text-secondary)',
+                  marginTop: 'var(--space-1)',
+                }}>
+                  {formatCurrency(financialReadiness.requiredMonthly)}
+                </div>
+              </div>
+            </div>
+
+            {/* Smart Alert */}
+            {financialReadiness.alert && (
+              <div style={{
+                marginTop: 'var(--space-4)',
+                padding: 'var(--space-3)',
+                background: 'rgba(245, 158, 11, 0.12)',
+                borderLeft: '3px solid var(--color-warning)',
+                borderRadius: 'var(--radius-md)',
+                display: 'flex',
+                gap: 'var(--space-2)',
+              }}>
+                <AlertTriangle size={16} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 2 }} />
+                <span className="text-xs" style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}>
+                  {financialReadiness.alert.text}
+                </span>
+              </div>
+            )}
+
+            {/* CTA Links */}
+            <div style={{ display: 'flex', gap: 'var(--space-3)', marginTop: 'var(--space-4)' }}>
+              <a href="/tarjetas" style={{
+                fontSize: 'var(--font-xs)',
+                fontWeight: 600,
+                color: 'var(--accent-primary)',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}>
+                Ver tarjetas →
+              </a>
+              <a href="/plan" style={{
+                fontSize: 'var(--font-xs)',
+                fontWeight: 600,
+                color: 'var(--accent-primary)',
+                textDecoration: 'none',
+                cursor: 'pointer',
+              }}>
+                Ver metas →
+              </a>
+            </div>
+          </section>
+        )}
       </div>
 
 
