@@ -114,8 +114,16 @@ create table if not exists public.debt_payments (
   date              date not null,
   remaining_balance numeric,
   notes             text,
+  -- Enlace a la transacción autogenerada por el pago, para poder revertirla
+  -- exactamente al eliminar el pago. set null: si la transacción se borra por
+  -- otro lado, el pago no se cae, solo pierde el enlace.
+  transaction_id    uuid references public.transactions(id) on delete set null,
   created_at        timestamptz not null default now()
 );
+
+-- Migración para proyectos creados antes de esta columna (idempotente).
+alter table public.debt_payments
+  add column if not exists transaction_id uuid references public.transactions(id) on delete set null;
 
 -- ── Plan financiero (metas a corto/mediano/largo plazo) ─────────────────────
 create table if not exists public.plans (
@@ -162,6 +170,7 @@ create index if not exists savings_user_id_idx                    on public.savi
 create index if not exists debts_user_id_idx                      on public.debts (user_id);
 create index if not exists debt_payments_user_id_idx              on public.debt_payments (user_id);
 create index if not exists debt_payments_debt_id_idx              on public.debt_payments (debt_id);
+create index if not exists debt_payments_transaction_id_idx       on public.debt_payments (transaction_id);
 create index if not exists plans_user_id_idx                      on public.plans (user_id);
 create index if not exists recurring_transactions_user_id_idx     on public.recurring_transactions (user_id);
 create index if not exists recurring_transactions_category_id_idx on public.recurring_transactions (category_id);

@@ -124,20 +124,37 @@ const useTransactionStore = create(
     if (error) {
       console.error("Transaction insert error:", error);
       toast.error("Error al guardar: " + error.message);
-      return;
+      return null;
     }
 
     if (data) {
-      const newTx = { 
-        ...data, 
-        categoryId: data.category_id, 
-        cardId: data.card_id || null, 
+      const newTx = {
+        ...data,
+        categoryId: data.category_id,
+        cardId: data.card_id || null,
         cashbackEarned: data.cashback_earned ? Number(data.cashback_earned) : 0,
-        createdAt: data.created_at 
+        createdAt: data.created_at
       };
       set((state) => ({ transactions: [newTx, ...state.transactions] }));
       toast.success("Transacción guardada exitosamente");
+      // Devuelve el id de la fila creada para que quien la origina (p. ej. un
+      // pago de deuda) pueda enlazarla y revertirla luego.
+      return data.id;
     }
+    return null;
+  },
+
+  // Borra una transacción por id sin toast ni confirmación (uso interno: revertir
+  // un pago de deuda enlazado). Devuelve true/false.
+  deleteTransactionSilent: async (id) => {
+    if (!id) return false;
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) {
+      console.error('Silent transaction delete error:', error);
+      return false;
+    }
+    set((state) => ({ transactions: state.transactions.filter((t) => t.id !== id) }));
+    return true;
   },
 
   updateTransaction: async (id, updates) => {

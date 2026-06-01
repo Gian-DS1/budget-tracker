@@ -62,6 +62,7 @@ const useDebtStore = create(
         date: p.date,
         remainingBalance: Number(p.remaining_balance),
         notes: p.notes,
+        transactionId: p.transaction_id || null,
         createdAt: p.created_at
       }));
     }
@@ -189,6 +190,7 @@ const useDebtStore = create(
         date: paymentData.date,
         remainingBalance: Number(paymentData.remaining_balance),
         notes: paymentData.notes,
+        transactionId: null,
         createdAt: paymentData.created_at
       };
 
@@ -200,8 +202,9 @@ const useDebtStore = create(
             : d
         ),
       }));
-      
-      // Sync with Transactions
+
+      // Sync with Transactions y guarda el enlace (transaction_id) en el pago,
+      // para poder revertir EXACTAMENTE esta transacción si el pago se elimina.
       try {
         const categories = useCategoryStore.getState().categories;
         // Buscar por slug estable; respaldo por nombre para cuentas previas a la
@@ -209,12 +212,12 @@ const useDebtStore = create(
         const loanCategory =
           categories.find((c) => c.slug === 'pago-deuda') ||
           categories.find((c) => c.name === 'Pago de Préstamos y Deudas' || (c.name && c.name.includes('Préstamos')));
-        
+
         if (loanCategory) {
           const addTransaction = useTransactionStore.getState().addTransaction;
           const currency = debt.currency || 'DOP';
-          
-          addTransaction({
+
+          const txId = await addTransaction({
             amount: Number(amount),
             type: 'fixed_expense',
             description: `Pago cuota - ${debt.creditorName}`,
@@ -223,11 +226,87 @@ const useDebtStore = create(
             currency: currency,
             notes: notes || 'Generado automáticamente desde Deudas'
           });
+
+          if (txId) {
+            // Enlaza el pago con la transacción (DB + estado local).
+            await supabase.from('debt_payments').update({ transaction_id: txId }).eq('id', paymentData.id);
+            set((state) => ({
+              payments: state.payments.map((p) =>
+                p.id === paymentData.id ? { ...p, transactionId: txId } : p
+              ),
+            }));
+          }
         }
       } catch (err) {
         console.error('Error syncing debt payment with transactions:', err);
       }
     }
+  },
+
+  // Elimina un pago y revierte todo lo que addPayment hizo: devuelve el monto al
+  // saldo de la deuda, recalcula el estado, borra la fila del pago y, si está
+  // enlazada, borra también la transacción generada. Pagos legados sin
+  // transaction_id revierten el saldo pero conservan su transacción (se avisa).
+  // Devuelve { ok, payment, hadLinkedTx } para que la UI ofrezca "Deshacer".
+  deletePayment: async (paymentId) => {
+    const payment = get().payments.find((p) => p.id === paymentId);
+    if (!payment) return { ok: false };
+    const debt = get().debts.find((d) => d.id === payment.debtId);
+
+    // Revertir saldo + estado de la deuda (si la deuda aún existe).
+    if (debt) {
+      const restoredBalance = Number(debt.currentBalance) + Number(payment.amount);
+      const restoredStatus = restoredBalance > 0 ? 'active' : 'paid_off';
+      const { error: debtErr } = await supabase
+        .from('debts')
+        .update({ current_balance: restoredBalance, status: restoredStatus })
+        .eq('id', debt.id);
+      if (debtErr) {
+        console.error('Error reverting debt balance on payment delete:', debtErr);
+        toast.error('No se pudo revertir el saldo de la deuda');
+        return { ok: false };
+      }
+    }
+
+    // Borrar la fila del pago.
+    const { error: payErr } = await supabase.from('debt_payments').delete().eq('id', paymentId);
+    if (payErr) {
+      console.error('Error deleting payment:', payErr);
+      toast.error('No se pudo eliminar el pago');
+      return { ok: false };
+    }
+
+    // Borrar la transacción enlazada (solo pagos nuevos la tienen).
+    let hadLinkedTx = false;
+    if (payment.transactionId) {
+      const ok = await useTransactionStore.getState().deleteTransactionSilent(payment.transactionId);
+      hadLinkedTx = ok;
+    }
+
+    set((state) => ({
+      payments: state.payments.filter((p) => p.id !== paymentId),
+      debts: debt
+        ? state.debts.map((d) =>
+            d.id === debt.id
+              ? {
+                  ...d,
+                  currentBalance: Number(d.currentBalance) + Number(payment.amount),
+                  status: Number(d.currentBalance) + Number(payment.amount) > 0 ? 'active' : 'paid_off',
+                }
+              : d
+          )
+        : state.debts,
+    }));
+
+    return { ok: true, payment, hadLinkedTx, hadTransactionLink: !!payment.transactionId };
+  },
+
+  // Restaura un pago eliminado (para "Deshacer"): re-aplica el pago tal cual,
+  // recreando su transacción enlazada vía el flujo normal de addPayment.
+  restorePayment: async (payment) => {
+    if (!payment) return false;
+    await get().addPayment(payment.debtId, payment.amount, payment.date, payment.notes || '');
+    return true;
   },
 
   getPaymentsByDebt: (debtId) => {
