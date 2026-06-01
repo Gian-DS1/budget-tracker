@@ -171,24 +171,111 @@ const useTransactionStore = create(
 
   deleteTransaction: async (id) => {
     const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (!error) {
-      set((state) => ({
-        transactions: state.transactions.filter((t) => t.id !== id),
-      }));
+    if (error) {
+      console.error('Transaction delete error:', error);
+      toast.error('Error al eliminar: ' + error.message);
+      return false;
     }
+    set((state) => ({
+      transactions: state.transactions.filter((t) => t.id !== id),
+    }));
+    return true;
+  },
+
+  // Re-inserta una transacción borrada (para "Deshacer"). Preserva los valores
+  // ya procesados (monto en DOP, cashback) sin re-convertir ni recalcular, así
+  // que restaurar devuelve exactamente lo que se eliminó. El id cambia (fila
+  // nueva), lo cual es seguro: nada referencia una transacción por id.
+  restoreTransaction: async (tx) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return false;
+
+    const dbTx = {
+      user_id: user.id,
+      category_id: tx.categoryId || null,
+      card_id: tx.cardId || null,
+      amount: Number(tx.amount),
+      type: tx.type,
+      description: tx.description,
+      date: tx.date,
+      notes: tx.notes || null,
+      currency: 'DOP',
+      cashback_earned: Number(tx.cashbackEarned) || 0,
+    };
+
+    const { data, error } = await supabase.from('transactions').insert(dbTx).select().single();
+    if (error) {
+      console.error('Transaction restore error:', error);
+      toast.error('No se pudo restaurar la transacción');
+      return false;
+    }
+    if (data) {
+      const newTx = {
+        ...data,
+        categoryId: data.category_id,
+        cardId: data.card_id || null,
+        cashbackEarned: data.cashback_earned ? Number(data.cashback_earned) : 0,
+        createdAt: data.created_at,
+      };
+      set((state) => ({ transactions: [newTx, ...state.transactions] }));
+    }
+    return true;
   },
 
   bulkDeleteTransactions: async (ids) => {
-    if (!ids || ids.length === 0) return;
+    if (!ids || ids.length === 0) return [];
+    // Capturamos las filas antes de borrarlas para poder ofrecer "Deshacer".
+    const removed = get().transactions.filter((t) => ids.includes(t.id));
     const { error } = await supabase.from('transactions').delete().in('id', ids);
-    if (!error) {
-      set((state) => ({
-        transactions: state.transactions.filter((t) => !ids.includes(t.id)),
-      }));
-    } else {
+    if (error) {
       console.error('Bulk delete error:', error);
       toast.error('Error al eliminar transacciones');
+      return [];
     }
+    set((state) => ({
+      transactions: state.transactions.filter((t) => !ids.includes(t.id)),
+    }));
+    return removed;
+  },
+
+  // Re-inserta varias transacciones borradas (para "Deshacer" en bloque).
+  restoreManyTransactions: async (txs) => {
+    if (!txs || txs.length === 0) return false;
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return false;
+
+    const dbTxs = txs.map((tx) => ({
+      user_id: user.id,
+      category_id: tx.categoryId || null,
+      card_id: tx.cardId || null,
+      amount: Number(tx.amount),
+      type: tx.type,
+      description: tx.description,
+      date: tx.date,
+      notes: tx.notes || null,
+      currency: 'DOP',
+      cashback_earned: Number(tx.cashbackEarned) || 0,
+    }));
+
+    const { data, error } = await supabase.from('transactions').insert(dbTxs).select();
+    if (error) {
+      console.error('Bulk restore error:', error);
+      toast.error('No se pudieron restaurar las transacciones');
+      return false;
+    }
+    if (data) {
+      const newTxs = data.map((d) => ({
+        ...d,
+        categoryId: d.category_id,
+        cardId: d.card_id || null,
+        cashbackEarned: d.cashback_earned ? Number(d.cashback_earned) : 0,
+        createdAt: d.created_at,
+      }));
+      set((state) => ({ transactions: [...newTxs, ...state.transactions] }));
+    }
+    return true;
   },
 
   bulkAssignCard: async (ids, cardId) => {

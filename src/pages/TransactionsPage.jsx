@@ -1,7 +1,8 @@
 // FinTrack RD — Transactions Page
 
 import { useState, useMemo } from 'react';
-import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUpDown, Edit3, Repeat, Play, Pause } from 'lucide-react';
+import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUp, ArrowDown, ArrowUpDown, Edit3, Repeat, Play, Pause } from 'lucide-react';
+import toast from 'react-hot-toast';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
@@ -10,6 +11,7 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import CurrencyInput from '../components/ui/CurrencyInput';
+import { SkeletonTable } from '../components/ui/Skeleton';
 import { autoCategorize } from '../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, getTypeBadgeClass, getTypeLabel, titleCase } from '../utils/formatters';
 import useRateStore from '../stores/useRateStore';
@@ -20,8 +22,12 @@ import { computeCashback } from '../utils/creditCards';
 const UNCATEGORIZED = '__uncategorized__';
 
 export default function TransactionsPage() {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, bulkDeleteTransactions, bulkAssignCard, bulkAssignCategory } =
+  const { transactions, addTransaction, updateTransaction, deleteTransaction, restoreTransaction, bulkDeleteTransactions, restoreManyTransactions, bulkAssignCard, bulkAssignCategory } =
     useTransactionStore();
+  const txLoading = useTransactionStore((s) => s.loading);
+  // Solo mostramos esqueleto en carga en frío: cargando Y sin nada en caché. Si
+  // ya hay datos (caché local), nunca los reemplazamos por placeholders.
+  const showSkeleton = txLoading && transactions.length === 0;
   const { categories } = useCategoryStore();
   const { cards } = useCreditCardStore();
   const fxRate = useRateStore((s) => s.getRate());
@@ -33,7 +39,6 @@ export default function TransactionsPage() {
 
   const [showForm, setShowForm] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState(null);
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
 
   // Bulk Actions State
   const [selectedIds, setSelectedIds] = useState([]);
@@ -64,6 +69,8 @@ export default function TransactionsPage() {
     isRecurring: false,
     recurrencePattern: 'monthly',
   });
+  // Errores de validación por campo, visibles e inline (WCAG 3.3.1).
+  const [formErrors, setFormErrors] = useState({});
 
   const resetForm = () => {
     setForm({
@@ -78,6 +85,7 @@ export default function TransactionsPage() {
       isRecurring: false,
       recurrencePattern: 'monthly',
     });
+    setFormErrors({});
     setEditingTransaction(null);
   };
 
@@ -117,7 +125,22 @@ export default function TransactionsPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.amount || !form.date) return;
+
+    // Validación visible: en vez de un return silencioso, marcamos cada campo
+    // que falta y enfocamos el primero para que el usuario sepa qué corregir.
+    const errors = {};
+    if (!form.date) errors.date = 'La fecha es obligatoria.';
+    if (!form.amount || Number(form.amount) <= 0) errors.amount = 'Ingresa un monto mayor que 0.';
+    if (!form.categoryId) errors.categoryId = 'Elige una categoría.';
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      const firstField = ['date', 'amount', 'categoryId'].find((f) => errors[f]);
+      const el = document.getElementById(`tx-field-${firstField}`);
+      if (el) el.focus();
+      return;
+    }
+    setFormErrors({});
 
     const formattedDescription = titleCase(form.description);
 
@@ -226,10 +249,53 @@ export default function TransactionsPage() {
     }
   };
 
-  const handleBulkDelete = () => {
-    bulkDeleteTransactions(selectedIds);
+  // Borrado de una transacción con opción de deshacer. La fila desaparece y un
+  // toast ofrece restaurarla; nada se pierde sin una segunda oportunidad.
+  const handleDeleteWithUndo = async (tx) => {
+    const ok = await deleteTransaction(tx.id);
+    if (!ok) return;
+    toast.success(
+      (t) => (
+        <span className="flex items-center gap-3">
+          Transacción eliminada
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => {
+              restoreTransaction(tx);
+              toast.dismiss(t.id);
+            }}
+          >
+            Deshacer
+          </button>
+        </span>
+      ),
+      { duration: 6000 }
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    const removed = await bulkDeleteTransactions(selectedIds);
     setSelectedIds([]);
     setShowBulkDeleteConfirm(false);
+    if (removed && removed.length > 0) {
+      toast.success(
+        (t) => (
+          <span className="flex items-center gap-3">
+            {removed.length} transacciones eliminadas
+            <button
+              className="btn btn-sm btn-secondary"
+              onClick={() => {
+                restoreManyTransactions(removed);
+                toast.dismiss(t.id);
+              }}
+            >
+              Deshacer
+            </button>
+          </span>
+        ),
+        { duration: 6000 }
+      );
+    }
   };
 
   const handleBulkAssignCard = () => {
@@ -286,6 +352,18 @@ export default function TransactionsPage() {
     };
     return groups;
   }, [categories]);
+
+  // Icono de orden: muestra la dirección activa en la columna ordenada y un
+  // icono neutro y atenuado en las demás (recognition, Nielsen #6). Es una
+  // función que devuelve JSX (no un componente) para no remontar en cada render.
+  const renderSortIcon = (field) => {
+    if (sortField !== field) {
+      return <ArrowUpDown size={12} style={{ opacity: 0.4 }} aria-hidden="true" />;
+    }
+    return sortDir === 'asc'
+      ? <ArrowUp size={12} style={{ color: 'var(--accent-primary)' }} aria-hidden="true" />
+      : <ArrowDown size={12} style={{ color: 'var(--accent-primary)' }} aria-hidden="true" />;
+  };
 
   return (
     <div className="page-container" id="tour-transactions-content">
@@ -481,7 +559,9 @@ export default function TransactionsPage() {
       )}
 
       {/* Transactions Table */}
-      {filtered.length === 0 ? (
+      {showSkeleton ? (
+        <SkeletonTable rows={6} />
+      ) : filtered.length === 0 ? (
         <EmptyState
           icon={ArrowLeftRight}
           title={transactions.length === 0 ? 'Sin transacciones aún' : 'No hay resultados'}
@@ -515,15 +595,20 @@ export default function TransactionsPage() {
                       type="checkbox"
                       checked={filtered.length > 0 && selectedIds.length === filtered.length}
                       onChange={handleSelectAll}
+                      aria-label="Seleccionar todas las transacciones"
                       style={{ cursor: 'pointer' }}
                     />
                   </th>
                   <th
                     style={{ cursor: 'pointer' }}
                     onClick={() => toggleSort('date')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('date'); } }}
+                    tabIndex={0}
+                    role="columnheader"
+                    aria-sort={sortField === 'date' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     <span className="flex items-center gap-1">
-                      Fecha <ArrowUpDown size={12} />
+                      Fecha {renderSortIcon('date')}
                     </span>
                   </th>
                   <th>Descripción</th>
@@ -532,9 +617,13 @@ export default function TransactionsPage() {
                   <th
                     style={{ cursor: 'pointer', textAlign: 'right' }}
                     onClick={() => toggleSort('amount')}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleSort('amount'); } }}
+                    tabIndex={0}
+                    role="columnheader"
+                    aria-sort={sortField === 'amount' ? (sortDir === 'asc' ? 'ascending' : 'descending') : 'none'}
                   >
                     <span className="flex items-center gap-1" style={{ justifyContent: 'flex-end' }}>
-                      Monto <ArrowUpDown size={12} />
+                      Monto {renderSortIcon('amount')}
                     </span>
                   </th>
                   <th style={{ width: 80, textAlign: 'center' }}>Acciones</th>
@@ -548,6 +637,7 @@ export default function TransactionsPage() {
                         type="checkbox"
                         checked={selectedIds.includes(t.id)}
                         onChange={(e) => handleSelectOne(e, t.id)}
+                        aria-label={`Seleccionar ${t.description || 'transacción'}`}
                         style={{ cursor: 'pointer' }}
                       />
                     </td>
@@ -576,8 +666,8 @@ export default function TransactionsPage() {
                     <td className="text-right">
                       {t.cashbackEarned > 0 && t.type !== 'income' ? (
                         <>
-                          {/* Bruto: monto introducido, en naranja tirando a rojo */}
-                          <span className="font-semibold" style={{ color: '#f4511e' }}>
+                          {/* Bruto: monto introducido, en el ámbar semántico (gasto antes de cashback) */}
+                          <span className="font-semibold" style={{ color: 'var(--color-variable)' }}>
                             Bruto: -{formatCurrency(Math.abs(t.amount), t.currency)}
                           </span>
                           {/* Neto: monto tras cashback, todo en rojo */}
@@ -603,8 +693,9 @@ export default function TransactionsPage() {
                         </button>
                         <button
                           className="btn-icon"
-                          onClick={() => setShowDeleteConfirm(t.id)}
+                          onClick={() => handleDeleteWithUndo(t)}
                           title="Eliminar"
+                          aria-label={`Eliminar ${t.description || 'transacción'}`}
                           style={{ color: 'var(--color-danger)' }}
                         >
                           <Trash2 size={15} />
@@ -631,14 +722,21 @@ export default function TransactionsPage() {
         <form onSubmit={handleSubmit}>
           <div className="form-row">
             <div className="form-group" style={{ minWidth: 0 }}>
-              <label className="form-label">Fecha *</label>
+              <label className="form-label" htmlFor="tx-field-date">Fecha *</label>
               <input
+                id="tx-field-date"
                 type="date"
                 value={form.date}
-                onChange={(e) => setForm({ ...form, date: e.target.value })}
+                onChange={(e) => {
+                  setForm({ ...form, date: e.target.value });
+                  if (formErrors.date) setFormErrors((p) => ({ ...p, date: undefined }));
+                }}
                 required
+                aria-invalid={!!formErrors.date}
+                aria-describedby={formErrors.date ? 'tx-err-date' : undefined}
                 style={{ width: '100%' }}
               />
+              {formErrors.date && <p className="form-error" id="tx-err-date">{formErrors.date}</p>}
             </div>
             <div className="form-group" style={{ minWidth: 0 }}>
               <label className="form-label">Tipo</label>
@@ -674,13 +772,18 @@ export default function TransactionsPage() {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Monto *</label>
+              <label className="form-label" htmlFor="tx-field-amount">Monto *</label>
               <CurrencyInput
+                id="tx-field-amount"
                 value={form.amount}
-                onChange={(val) => setForm({ ...form, amount: val })}
+                onChange={(val) => {
+                  setForm({ ...form, amount: val });
+                  if (formErrors.amount) setFormErrors((p) => ({ ...p, amount: undefined }));
+                }}
                 placeholder="0.00"
                 required
               />
+              {formErrors.amount && <p className="form-error" id="tx-err-amount">{formErrors.amount}</p>}
             </div>
             <div className="form-group">
               <label className="form-label">Moneda</label>
@@ -700,10 +803,16 @@ export default function TransactionsPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Categoría (Total: {categories.length})</label>
+            <label className="form-label" htmlFor="tx-field-categoryId">Categoría *</label>
             <select
+              id="tx-field-categoryId"
               value={form.categoryId}
-              onChange={(e) => setForm({ ...form, categoryId: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, categoryId: e.target.value });
+                if (formErrors.categoryId) setFormErrors((p) => ({ ...p, categoryId: undefined }));
+              }}
+              aria-invalid={!!formErrors.categoryId}
+              aria-describedby={formErrors.categoryId ? 'tx-err-categoryId' : undefined}
             >
               <option value="">Seleccionar categoría</option>
               {categoryGroups.income.length > 0 && (
@@ -735,6 +844,7 @@ export default function TransactionsPage() {
                 </optgroup>
               )}
             </select>
+            {formErrors.categoryId && <p className="form-error" id="tx-err-categoryId">{formErrors.categoryId}</p>}
           </div>
 
           {form.type === 'expense' && cards.length > 0 && (
@@ -811,15 +921,7 @@ export default function TransactionsPage() {
         </form>
       </Modal>
 
-      {/* Delete Confirmation */}
-      <ConfirmDialog
-        isOpen={!!showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(null)}
-        onConfirm={() => deleteTransaction(showDeleteConfirm)}
-        title="Eliminar Transacción"
-        message="¿Seguro que quieres eliminar esta transacción? Esta acción no se puede deshacer."
-      />
-
+      {/* Bulk delete sí conserva confirmación: borra muchas filas de una vez. */}
       <ConfirmDialog
         isOpen={showBulkDeleteConfirm}
         onClose={() => setShowBulkDeleteConfirm(false)}

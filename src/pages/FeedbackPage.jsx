@@ -185,7 +185,7 @@ export default function FeedbackPage() {
 
         {/* Info Card */}
         <div className="flex flex-col gap-6">
-          <div className="card-glass" style={{ borderLeft: '4px solid var(--accent-secondary)' }}>
+          <div className="card" style={{ background: 'var(--accent-secondary-subtle)', borderColor: 'rgba(6, 182, 212, 0.25)' }}>
             <h4 className="font-bold flex items-center gap-2 mb-3 text-base" style={{ color: 'var(--accent-secondary)' }}>
               <AlertCircle size={20} /> Envío Directo y Autónomo
             </h4>
