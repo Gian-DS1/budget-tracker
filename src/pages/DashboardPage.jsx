@@ -13,6 +13,7 @@ import {
   Landmark,
   ChevronLeft,
   ChevronRight,
+  Target,
 } from 'lucide-react';
 import {
   BarChart,
@@ -32,7 +33,7 @@ import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useBudgetStore from '../stores/useBudgetStore';
-
+import usePlanStore from '../stores/usePlanStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import {
   formatCurrency,
@@ -76,6 +77,7 @@ export default function DashboardPage() {
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
 
   const cards = useCreditCardStore((s) => s.cards);
+  const plans = usePlanStore((s) => s.plans);
   const fxRate = useRateStore((s) => s.getRate());
   const txLoading = useTransactionStore((s) => s.loading);
   // Esqueleto solo en carga en frío (cargando y sin transacciones en caché).
@@ -214,6 +216,43 @@ export default function DashboardPage() {
   const totalSaved = getTotalSaved();
   const totalDebt = getTotalDebt();
   const netWorth = totalSaved - totalDebt;
+
+  // ─── Tarjetas Pendientes (pending credit card balances) ─────────
+  const totalPendingCards = useMemo(() => {
+    const today = new Date();
+    return cards.reduce((sum, card) => {
+      const bal = getCardBalances(card, transactions, today);
+      return sum + (bal.pendingBilled || 0);
+    }, 0);
+  }, [cards, transactions]);
+
+  // ─── Plan Financiero (active goals and next deadline) ──────────
+  const planStatus = useMemo(() => {
+    const activePlans = plans.filter((p) => p.status !== 'completed');
+    if (activePlans.length === 0) {
+      return { count: 0, nextDeadline: null, daysUntilDeadline: null };
+    }
+
+    const today = new Date();
+    const planDates = activePlans
+      .filter((p) => p.deadline)
+      .map((p) => ({
+        deadline: new Date(p.deadline + 'T00:00:00'),
+        daysRemaining: Math.ceil(
+          (new Date(p.deadline + 'T00:00:00') - today) / (1000 * 60 * 60 * 24)
+        ),
+        title: p.title,
+      }))
+      .filter((p) => p.daysRemaining > 0)
+      .sort((a, b) => a.daysRemaining - b.daysRemaining);
+
+    return {
+      count: activePlans.length,
+      nextDeadline: planDates.length > 0 ? planDates[0].deadline : null,
+      daysUntilDeadline: planDates.length > 0 ? planDates[0].daysRemaining : null,
+      nextTitle: planDates.length > 0 ? planDates[0].title : null,
+    };
+  }, [plans]);
 
   // Signo explícito para los deltas: el color nunca viaja solo (daltonismo).
   const signedPct = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`;
@@ -450,12 +489,13 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* ── Patrimonio (más callado) ── */}
+        {/* ── Patrimonio: Net Worth + Savings + Debt + Cards + Plan ── */}
         <section className="overview-panel animate-panel-entrance" style={{'--i': 1}} aria-labelledby="ov-patrimonio">
           <h2 className="overview-panel-head" id="ov-patrimonio">
-            <Scale size={14} /> Patrimonio
+            <Scale size={14} /> Posición Financiera
           </h2>
 
+          {/* Net Worth Hero */}
           <div className="networth-lead">
             <div className="flow-result-label" style={{ marginBottom: 'var(--space-1)' }}>
               Patrimonio neto
@@ -468,25 +508,105 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          <div className="networth-rows">
-            <div className="networth-row">
-              <div className="networth-row-label">
-                <span className="networth-row-dot" style={{ background: 'var(--color-savings)' }} />
-                <PiggyBank size={15} style={{ color: 'var(--text-tertiary)' }} /> Ahorros
+          {/* Four-Element Grid: Ahorros, Deuda, Tarjetas Pendientes, Plan */}
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(2, 1fr)',
+            gap: 'var(--space-4)',
+            marginTop: 'var(--space-5)'
+          }}>
+            {/* Ahorros */}
+            <a href="/ahorros" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                padding: 'var(--space-3) var(--space-4)',
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                  <PiggyBank size={14} style={{ color: 'var(--color-savings)' }} />
+                  <span className="text-xs text-muted">Ahorros</span>
+                </div>
+                <div style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--color-savings)' }}>
+                  {formatCurrency(totalSaved)}
+                </div>
               </div>
-              <div className="networth-row-value" style={{ color: 'var(--color-savings)' }}>
-                {formatCurrency(totalSaved)}
+            </a>
+
+            {/* Deuda Total */}
+            <a href="/deudas" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                padding: 'var(--space-3) var(--space-4)',
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                  <Landmark size={14} style={{ color: 'var(--color-debt)' }} />
+                  <span className="text-xs text-muted">Deuda total</span>
+                </div>
+                <div style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: totalDebt > 0 ? 'var(--color-debt)' : 'var(--text-secondary)' }}>
+                  {totalDebt > 0 ? '−' : ''}{formatCurrency(totalDebt)}
+                </div>
               </div>
-            </div>
-            <div className="networth-row">
-              <div className="networth-row-label">
-                <span className="networth-row-dot" style={{ background: 'var(--color-debt)' }} />
-                <Landmark size={15} style={{ color: 'var(--text-tertiary)' }} /> Deuda total
+            </a>
+
+            {/* Tarjetas Pendientes */}
+            <a href="/tarjetas" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                padding: 'var(--space-3) var(--space-4)',
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                  <CreditCard size={14} style={{ color: 'var(--color-warning)' }} />
+                  <span className="text-xs text-muted">Pendiente tarjetas</span>
+                </div>
+                <div style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: totalPendingCards > 0 ? 'var(--color-warning)' : 'var(--text-secondary)' }}>
+                  {formatCurrency(totalPendingCards)}
+                </div>
               </div>
-              <div className="networth-row-value" style={{ color: totalDebt > 0 ? 'var(--color-debt)' : 'var(--text-secondary)' }}>
-                {totalDebt > 0 ? '−' : ''}{formatCurrency(totalDebt)}
+            </a>
+
+            {/* Plan Financiero */}
+            <a href="/plan" style={{ textDecoration: 'none', color: 'inherit' }}>
+              <div style={{
+                padding: 'var(--space-3) var(--space-4)',
+                background: 'var(--bg-secondary)',
+                borderRadius: 'var(--radius-lg)',
+                cursor: 'pointer',
+                transition: 'background var(--transition-fast)',
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', marginBottom: 'var(--space-2)' }}>
+                  <Target size={14} style={{ color: 'var(--accent-primary)' }} />
+                  <span className="text-xs text-muted">Plan activo</span>
+                </div>
+                <div style={{ fontSize: 'var(--font-lg)', fontWeight: 700, color: 'var(--accent-primary)' }}>
+                  {planStatus.count > 0 ? planStatus.count : 0}
+                </div>
+                {planStatus.daysUntilDeadline !== null && (
+                  <div style={{ fontSize: 'var(--font-xs)', color: 'var(--text-secondary)', marginTop: 'var(--space-2)' }}>
+                    Próximo en {planStatus.daysUntilDeadline} días
+                  </div>
+                )}
               </div>
-            </div>
+            </a>
           </div>
         </section>
       </div>
