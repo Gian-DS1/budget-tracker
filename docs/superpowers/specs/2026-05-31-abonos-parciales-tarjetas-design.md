@@ -118,25 +118,31 @@ billed = 10,000 · open = 5,000 · paid = 12,000
 Las cuentas existentes tienen `paidCycles` con estados de cuenta marcados como
 pagados (formato string legado u objeto `{ cycleEnd, amount, cashback, paidAt }`).
 
-Para que `billed − paid` siga cuadrando, cada entrada de `paidCycles` se convierte
-en un abono:
+**Estrategia: derivar, no reescribir.** No se migra nada en la base de datos. El
+total abonado (`paid`) se calcula sumando **dos libros que nunca se solapan**:
 
-```js
-{ id: <uuid>, amount: entry.amount, date: entry.paidAt ?? entry.cycleEnd,
-  note: "Migrado: estado de cuenta pagado" }
+```
+paid = Σ(card.payments)  +  Σ(paidCycles convertidos a abonos)
 ```
 
-- Las entradas string legado (`amount = 0`) se migran con `amount` calculado del
-  estado de cuenta de ese `cycleEnd` si es posible; si no, se omiten del cálculo
-  de saldo (no aportan deuda falsa).
-- La migración es **perezosa e idempotente en `mapFromDb`**: si una tarjeta llega
-  con `payments` vacío y `paidCycles` no vacío, se derivan los abonos a partir de
-  `paidCycles` en memoria y, una sola vez, se persiste el array `payments`
-  resultante en Supabase. La condición `payments.length === 0 && paidCycles.length > 0`
-  es el guardia de idempotencia (tras la primera migración `payments` ya no está
-  vacío, así que no se repite).
-- `paidCycles` se conserva tal cual en la base de datos (no se borra), pero deja
-  de ser la fuente de verdad del saldo.
+Esto es seguro porque el flujo viejo de "Marcar como pagado" se **elimina**: tras
+esta feature, ninguna tarjeta vuelve a escribir en `paidCycles`. Los estados de
+cuenta saldados con el sistema viejo viven en `paidCycles` (congelado); los abonos
+nuevos viven en `payments`. Son conjuntos disjuntos, así que sumarlos no cuenta
+doble.
+
+`paidCyclesToPayments(card, transactions)` convierte cada entrada legada en un
+abono `{ id, amount, date, note }`:
+
+- Formato objeto: usa `entry.amount` (preciso).
+- Formato string legado (sin monto): reconstruye el monto del estado de cuenta
+  desde las transacciones del período (`periodStart..periodEnd`, derivando
+  `periodStart` con el día de corte si falta). Entradas que dan `amount ≤ 0` se
+  descartan.
+
+Ventajas frente a reescribir: sin escrituras de migración, sin problemas de orden
+de carga entre stores, idempotente por construcción. `paidCycles` se conserva
+intacto en la base de datos pero deja de ser la fuente de verdad del saldo.
 
 **Cashback de por vida:** pasa a calcularse directo de las transacciones
 (`Σ cashbackEarned` de los consumos facturados de la tarjeta), en vez de depender
@@ -213,11 +219,15 @@ Ampliar [creditCards.test.js](../../../src/utils/creditCards.test.js) con tests 
 
 ## Resumen de archivos a tocar
 
-- `src/utils/creditCards.js` — `getCardBalances`, `getLifetimeCashback` (nueva
-  firma), migración de `paidCycles`.
-- `src/utils/creditCards.test.js` — tests nuevos.
+- `src/utils/creditCards.js` — `getCardBalances`, `paidCyclesToPayments`,
+  `getLifetimeCashback` (nueva firma `(card, transactions)`).
+- `src/utils/creditCards.test.js` — tests nuevos + actualizar los de
+  `getLifetimeCashback`.
 - `src/stores/useCreditCardStore.js` — `payments` en `mapFromDb`,
-  `addCardPayment`, `deleteCardPayment`.
+  `addCardPayment`, `deleteCardPayment` (reemplazan `markStatementPaid`).
 - `src/pages/CreditCardsPage.jsx` — UI de 3 balances, modal de abono, historial
   de abonos.
+- `src/pages/DashboardPage.jsx` y `src/components/layout/Header.jsx` — usar
+  `getCardBalances().pendingBilled`/`.isPaid` para que los abonos silencien los
+  recordatorios de "por pagar".
 - Migración SQL en Supabase — columna `payments jsonb default '[]'`.
