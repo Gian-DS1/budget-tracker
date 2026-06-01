@@ -7,7 +7,7 @@ import useCreditCardStore from '../../stores/useCreditCardStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useDebtStore from '../../stores/useDebtStore';
 import useRecurringStore from '../../stores/useRecurringStore';
-import { getCardCycles, getStatementAmount, isStatementPaid } from '../../utils/creditCards';
+import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 
 const REMINDER_WINDOW_DAYS = 7;
@@ -52,18 +52,17 @@ export default function Header() {
     const items = [];
 
     cards.forEach((card) => {
-      const cy = getCardCycles(card, now);
-      const amount = getStatementAmount(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
-      if (amount <= 0 || isStatementPaid(card, cy.closedEndISO)) return;
-      const days = daysUntil(cy.dueDateISO, todayMid);
+      const bal = getCardBalances(card, transactions, now);
+      if (bal.pendingBilled <= 0 || bal.isPaid) return;
+      const days = daysUntil(bal.cycles.dueDateISO, todayMid);
       if (days != null && days >= 0 && days <= REMINDER_WINDOW_DAYS) {
         items.push({
           id: `card-${card.id}`,
           icon: '💳',
           title: card.name,
-          detail: formatCurrency(amount),
+          detail: formatCurrency(bal.pendingBilled),
           days,
-          dueISO: cy.dueDateISO,
+          dueISO: bal.cycles.dueDateISO,
         });
       }
     });
