@@ -20,6 +20,7 @@ import {
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import useDebtStore from '../stores/useDebtStore';
+import { Skeleton } from '../components/ui/Skeleton';
 import { formatCurrency, formatCurrencyCompact } from '../utils/formatters';
 import { MONTHS_SHORT_ES } from '../utils/constants';
 import { detectAnomalies, movingAverage, getMonthlySavingCapacity, getFinancialHealthScore } from '../utils/calculations';
@@ -45,9 +46,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 
 export default function ReportsPage() {
   const { transactions } = useTransactionStore();
+  const txLoading = useTransactionStore((s) => s.loading);
   const { categories } = useCategoryStore();
   const { debts } = useDebtStore();
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
+
+  // Esqueleto solo en carga en frío: evita el falso "Salud financiera 0/100 ·
+  // Crítico" antes de que hidraten las transacciones.
+  const showSkeleton = txLoading && transactions.length === 0;
 
   const [activeTab, setActiveTab] = useState('projections');
 
@@ -216,22 +222,43 @@ export default function ReportsPage() {
         <p className="page-subtitle">Proyecciones predictivas y recomendaciones</p>
       </div>
 
+      {showSkeleton ? (
+        <div className="reports-tab" role="status" aria-label="Cargando el análisis">
+          <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={`sk-r-${i}`} className="kpi-card">
+                <Skeleton width={120} height={12} style={{ marginBottom: 'var(--space-3)' }} />
+                <Skeleton width="60%" height={22} style={{ marginBottom: 'var(--space-3)' }} />
+                <Skeleton width="85%" height={11} />
+              </div>
+            ))}
+          </div>
+          <div className="card reports-chart-card">
+            <Skeleton width="40%" height={16} style={{ marginBottom: 'var(--space-6)' }} />
+            <Skeleton width="100%" height={300} radius="var(--radius-lg)" style={{ flex: 1 }} />
+          </div>
+        </div>
+      ) : (
+       <>
       {/* Tabs */}
       <div className="tabs" style={{ maxWidth: 'fit-content' }}>
-        <button 
-          className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'projections' ? 'active' : ''}`}
+        <button
+          className={`tab flex-1 flex flex-col items-center justify-center gap-1 ${activeTab === 'projections' ? 'active' : ''}`}
+          style={{ paddingTop: 'var(--space-3)', paddingBottom: 'var(--space-3)' }}
           onClick={() => setActiveTab('projections')}
         >
           <TrendingUp size={16} /> Proyecciones
         </button>
-        <button 
-          className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'anomalies' ? 'active' : ''}`}
+        <button
+          className={`tab flex-1 flex flex-col items-center justify-center gap-1 ${activeTab === 'anomalies' ? 'active' : ''}`}
+          style={{ paddingTop: 'var(--space-3)', paddingBottom: 'var(--space-3)' }}
           onClick={() => setActiveTab('anomalies')}
         >
           <AlertOctagon size={16} /> Anomalías
         </button>
-        <button 
-          className={`tab flex-1 flex flex-col items-center justify-center gap-1 py-3 ${activeTab === 'debts' ? 'active' : ''}`}
+        <button
+          className={`tab flex-1 flex flex-col items-center justify-center gap-1 ${activeTab === 'debts' ? 'active' : ''}`}
+          style={{ paddingTop: 'var(--space-3)', paddingBottom: 'var(--space-3)' }}
           onClick={() => setActiveTab('debts')}
         >
           <Lightbulb size={16} /> Estrategia Deuda
@@ -321,12 +348,12 @@ export default function ReportsPage() {
           </div>
 
           {anomalies.length === 0 ? (
-            <div className="card flex flex-col items-center justify-center p-12 text-center">
+            <div className="card flex flex-col items-center justify-center text-center" style={{ padding: 'var(--space-12)' }}>
               <div style={{ background: 'var(--color-income-bg)', padding: 'var(--space-4)', borderRadius: '50%', marginBottom: 'var(--space-4)' }}>
                 <TrendingUp size={40} className="text-success" />
               </div>
               <h3 className="font-bold text-lg mb-2">Todo luce normal</h3>
-              <p className="text-muted max-w-md">
+              <p className="text-muted" style={{ maxWidth: '28rem' }}>
                 No hemos detectado picos inusuales en tus gastos este mes. ¡Sigue así, estás manteniendo tus finanzas estables!
               </p>
             </div>
@@ -360,12 +387,12 @@ export default function ReportsPage() {
                   </div>
 
                   <div className="progress-bar" style={{ background: 'var(--bg-tertiary)', marginBottom: 'var(--space-4)' }}>
-                    <div 
-                      className="progress-bar-fill bg-danger" 
-                      style={{ 
-                        width: '100%', 
-                        background: 'var(--color-danger)' 
-                      }} 
+                    <div
+                      className="progress-bar-fill"
+                      style={{
+                        width: '100%',
+                        background: 'var(--color-danger)'
+                      }}
                     />
                   </div>
                   
@@ -383,7 +410,7 @@ export default function ReportsPage() {
       {activeTab === 'debts' && (
         <div className="reports-tab-scroll">
           {!debtStrategies ? (
-            <div className="card text-center py-12">
+            <div className="card text-center" style={{ padding: 'var(--space-12) var(--space-6)' }}>
               <h3 className="font-bold text-lg mb-2">No tienes deudas activas</h3>
               <p className="text-muted">¡Felicidades! Mantenerte libre de deudas es excelente para tu salud financiera.</p>
             </div>
@@ -399,10 +426,10 @@ export default function ReportsPage() {
                   Se enfoca en pagar primero la deuda con el <strong>saldo más pequeño</strong>. Ideal para obtener victorias rápidas y motivación psicológica.
                 </p>
                 
-                <div className="space-y-4">
+                <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
                   {debtStrategies.snowball.map((debt, index) => (
-                    <div key={debt.id} className="flex items-center gap-4 p-3" style={{ background: index === 0 ? 'var(--color-variable-bg)' : 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                      <div className="font-bold text-lg" style={{ color: index === 0 ? 'var(--color-variable)' : 'var(--text-muted)' }}>
+                    <div key={debt.id} className="flex items-center gap-4" style={{ padding: 'var(--space-3)', background: index === 0 ? 'var(--color-variable-bg)' : 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                      <div className="font-bold text-lg" style={{ color: index === 0 ? 'var(--color-variable)' : 'var(--text-tertiary)' }}>
                         #{index + 1}
                       </div>
                       <div style={{ flex: 1 }}>
@@ -425,10 +452,10 @@ export default function ReportsPage() {
                   Se enfoca en pagar primero la deuda con la <strong>tasa de interés más alta</strong>. Matemáticamente es el método donde ahorras más dinero en intereses.
                 </p>
                 
-                <div className="space-y-4">
+                <div className="flex flex-col" style={{ gap: 'var(--space-3)' }}>
                   {debtStrategies.avalanche.map((debt, index) => (
-                    <div key={debt.id} className="flex items-center gap-4 p-3" style={{ background: index === 0 ? 'var(--color-expense-bg)' : 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                      <div className="font-bold text-lg" style={{ color: index === 0 ? 'var(--color-danger)' : 'var(--text-muted)' }}>
+                    <div key={debt.id} className="flex items-center gap-4" style={{ padding: 'var(--space-3)', background: index === 0 ? 'var(--color-expense-bg)' : 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                      <div className="font-bold text-lg" style={{ color: index === 0 ? 'var(--color-danger)' : 'var(--text-tertiary)' }}>
                         #{index + 1}
                       </div>
                       <div style={{ flex: 1 }}>
@@ -443,6 +470,8 @@ export default function ReportsPage() {
             </div>
           )}
         </div>
+      )}
+       </>
       )}
 
     </div>

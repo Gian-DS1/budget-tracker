@@ -1450,6 +1450,10 @@ table {
 .text-right { text-align: right; }
 .text-sm { font-size: var(--font-sm); }
 .text-xs { font-size: var(--font-xs); }
+/* Pasos de tamaño que faltaban en la escala (se usaban sin existir). */
+.text-md { font-size: var(--font-md); }
+.text-lg { font-size: var(--font-lg); }
+.text-xl { font-size: var(--font-xl); }
 .text-muted { color: var(--text-secondary); }
 .text-success { color: var(--color-success); }
 .text-danger { color: var(--color-danger); }
@@ -1462,13 +1466,16 @@ table {
   white-space: nowrap;
 }
 
+.mt-1 { margin-top: var(--space-1); }
 .mt-2 { margin-top: var(--space-2); }
 .mt-4 { margin-top: var(--space-4); }
 .mt-6 { margin-top: var(--space-6); }
+.mb-1 { margin-bottom: var(--space-1); }
 .mb-2 { margin-bottom: var(--space-2); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-6 { margin-bottom: var(--space-6); }
 .ml-auto { margin-left: auto; }
+.flex-1 { flex: 1; }
 
 .w-full { width: 100%; }
 .h-full { height: 100%; }
