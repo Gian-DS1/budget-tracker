@@ -760,13 +760,13 @@ export default function DashboardPage() {
               <div style={{
                 marginTop: 'var(--space-4)',
                 padding: 'var(--space-3)',
-                background: 'rgba(245, 158, 11, 0.12)',
+                background: 'var(--color-variable-bg)',
                 borderLeft: '3px solid var(--color-warning)',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 gap: 'var(--space-2)',
               }}>
-                <AlertTriangle size={16} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 2 }} />
+                <AlertTriangle size={16} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 'var(--space-1)' }} />
                 <span className="text-xs" style={{ color: 'var(--text-primary)', lineHeight: 1.5 }}>
                   {financialReadiness.alert.text}
                 </span>
@@ -781,7 +781,12 @@ export default function DashboardPage() {
                 color: 'var(--accent-primary)',
                 textDecoration: 'none',
                 cursor: 'pointer',
-              }}>
+                transition: 'opacity var(--transition-fast)',
+                opacity: 1,
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
                 Ver tarjetas →
               </a>
               <a href="/plan" style={{
@@ -790,7 +795,12 @@ export default function DashboardPage() {
                 color: 'var(--accent-primary)',
                 textDecoration: 'none',
                 cursor: 'pointer',
-              }}>
+                transition: 'opacity var(--transition-fast)',
+                opacity: 1,
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.7'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
+              >
                 Ver metas →
               </a>
             </div>
