@@ -348,7 +348,7 @@ export default function SettingsPage() {
           </div>
           <div className="text-sm text-muted mb-4">
             Respalda tus transacciones en Excel, o cárgalas desde un archivo externo.
-            <div className="mt-2 text-xs font-mono bg-[var(--bg-primary)] p-2 rounded border border-[var(--border-primary)]">
+            <div className="mt-2 text-xs font-mono p-2 rounded border" style={{ background: 'var(--bg-primary)' }}>
               Columnas: Fecha | Descripción | Monto | Tipo | Categoría
             </div>
           </div>

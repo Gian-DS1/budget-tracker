@@ -1438,6 +1438,8 @@ table {
 .flex { display: flex; }
 .flex-col { flex-direction: column; }
 .items-center { align-items: center; }
+.items-start { align-items: flex-start; }
+.items-end { align-items: flex-end; }
 .justify-between { justify-content: space-between; }
 .justify-center { justify-content: center; }
 .gap-1 { gap: var(--space-1); }
@@ -1451,13 +1453,20 @@ table {
 .text-sm { font-size: var(--font-sm); }
 .text-xs { font-size: var(--font-xs); }
 /* Pasos de tamaño que faltaban en la escala (se usaban sin existir). */
+.text-base { font-size: var(--font-base); }
 .text-md { font-size: var(--font-md); }
 .text-lg { font-size: var(--font-lg); }
 .text-xl { font-size: var(--font-xl); }
+.text-2xl { font-size: var(--font-2xl); }
 .text-muted { color: var(--text-secondary); }
+.text-primary { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
 .text-success { color: var(--color-success); }
 .text-danger { color: var(--color-danger); }
 .text-warning { color: var(--color-warning); }
+.text-info { color: var(--color-info); }
+.text-accent { color: var(--accent-primary); }
+.font-medium { font-weight: 500; }
 .font-semibold { font-weight: 600; }
 .font-bold { font-weight: 700; }
 .truncate {
@@ -1468,14 +1477,32 @@ table {
 
 .mt-1 { margin-top: var(--space-1); }
 .mt-2 { margin-top: var(--space-2); }
+.mt-3 { margin-top: var(--space-3); }
 .mt-4 { margin-top: var(--space-4); }
 .mt-6 { margin-top: var(--space-6); }
+.mt-auto { margin-top: auto; }
 .mb-1 { margin-bottom: var(--space-1); }
 .mb-2 { margin-bottom: var(--space-2); }
+.mb-3 { margin-bottom: var(--space-3); }
 .mb-4 { margin-bottom: var(--space-4); }
 .mb-6 { margin-bottom: var(--space-6); }
 .ml-auto { margin-left: auto; }
 .flex-1 { flex: 1; }
+
+/* Padding: pasos de la escala que se usaban sin existir. */
+.p-2 { padding: var(--space-2); }
+.p-3 { padding: var(--space-3); }
+.p-8 { padding: var(--space-8); }
+.py-4 { padding-top: var(--space-4); padding-bottom: var(--space-4); }
+.py-8 { padding-top: var(--space-8); padding-bottom: var(--space-8); }
+.pb-4 { padding-bottom: var(--space-4); }
+
+/* Bordes y radios utilitarios (token-based). */
+.border { border: 1px solid var(--border-primary); }
+.border-b { border-bottom: 1px solid var(--border-primary); }
+.border-secondary { border-color: var(--border-secondary); }
+.rounded { border-radius: var(--radius-md); }
+.rounded-md { border-radius: var(--radius-md); }
 
 .w-full { width: 100%; }
 .h-full { height: 100%; }

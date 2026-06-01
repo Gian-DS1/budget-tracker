@@ -105,9 +105,8 @@ export default function AuthPage() {
           {currentMode !== 'update_password' && (
             <div className="form-group">
               <label className="form-label">Correo Electrónico</label>
-              <input 
-                type="email" 
-                className="form-control" 
+              <input
+                type="email"
                 placeholder="tu@correo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
@@ -121,9 +120,8 @@ export default function AuthPage() {
               <label className="form-label">
                 {currentMode === 'update_password' ? 'Nueva Contraseña' : 'Contraseña'}
               </label>
-              <input 
-                type="password" 
-                className="form-control" 
+              <input
+                type="password"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
