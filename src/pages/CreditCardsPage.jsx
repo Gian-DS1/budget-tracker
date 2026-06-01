@@ -1,16 +1,17 @@
 // FinTrack RD — Credit Cards Page
 
 import { useState, useMemo } from 'react';
-import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar, History, RotateCcw } from 'lucide-react';
+import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, History, RotateCcw } from 'lucide-react';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useCategoryStore from '../stores/useCategoryStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import CurrencyInput from '../components/ui/CurrencyInput';
 import CashbackRulesEditor from '../components/creditcards/CashbackRulesEditor';
 import { formatCurrency, formatDate, todayISO } from '../utils/formatters';
-import { getCardCycles, getStatementAmount, isStatementPaid, getStatementHistory, getLifetimeCashback } from '../utils/creditCards';
+import { getCardBalances, getLifetimeCashback, paidCyclesToPayments } from '../utils/creditCards';
 import { getCatalogBanks, getCatalogCardsByBank, getCatalogCard, resolveCardCashback } from '../data/creditCardCatalog';
 
 const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7', '#ec4899'];
@@ -18,7 +19,7 @@ const COLORS = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#06b6d4', '#a855f7'
 const emptyForm = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#6366f1', cashbackRules: [], catalogId: null, note: '' };
 
 export default function CreditCardsPage() {
-  const { cards, addCard, updateCard, deleteCard, markStatementPaid } = useCreditCardStore();
+  const { cards, addCard, updateCard, deleteCard, addCardPayment, deleteCardPayment } = useCreditCardStore();
   const { transactions } = useTransactionStore();
   const { categories, ensureCategory } = useCategoryStore();
 
@@ -27,6 +28,10 @@ export default function CreditCardsPage() {
   const [form, setForm] = useState(emptyForm);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
   const [historyCard, setHistoryCard] = useState(null);
+  const [payingCard, setPayingCard] = useState(null);
+  const [abonoAmount, setAbonoAmount] = useState('');
+  const [abonoDate, setAbonoDate] = useState(todayISO());
+  const [abonoNote, setAbonoNote] = useState('');
 
   // Flujo de creación: 'predefinida' | 'personalizada' (solo aplica al crear).
   const [cardType, setCardType] = useState('predefinida');
@@ -118,25 +123,36 @@ export default function CreditCardsPage() {
 
   const isPredefined = editingId ? !!form.catalogId : cardType === 'predefinida';
 
+  const openAbono = (card, prefill) => {
+    setPayingCard(card);
+    setAbonoAmount(prefill ? String(Math.round(prefill * 100) / 100) : '');
+    setAbonoDate(todayISO());
+    setAbonoNote('');
+  };
+
+  const closeAbono = () => {
+    setPayingCard(null);
+    setAbonoAmount('');
+    setAbonoNote('');
+  };
+
+  const handleAbonoSubmit = async (e) => {
+    e.preventDefault();
+    const amount = parseFloat(abonoAmount);
+    if (!payingCard || !amount || amount <= 0) return;
+    await addCardPayment(payingCard.id, { amount, date: abonoDate, note: abonoNote });
+    closeAbono();
+  };
+
   const rows = useMemo(() => {
     return cards.map((card) => {
-      const cy = getCardCycles(card, new Date());
-      const openAmount = getStatementAmount(transactions, card.id, cy.openStartISO, cy.openEndISO);
-      const closedAmount = getStatementAmount(transactions, card.id, cy.closedStartISO, cy.closedEndISO);
-      const paid = isStatementPaid(card, cy.closedEndISO);
-      
-      const openCashback = transactions
-        .filter(t => t.cardId === card.id && t.date >= cy.openStartISO && t.date <= cy.openEndISO)
-        .reduce((sum, t) => sum + (t.cashbackEarned || 0), 0);
-
-      const closedCashback = transactions
-        .filter(t => t.cardId === card.id && t.date >= cy.closedStartISO && t.date <= cy.closedEndISO)
-        .reduce((sum, t) => sum + (t.cashbackEarned || 0), 0);
-
-      const history = getStatementHistory(card);
-      const lifetimeCashback = getLifetimeCashback(card);
-
-      return { card, cy, openAmount, closedAmount, paid, openCashback, closedCashback, history, lifetimeCashback };
+      const bal = getCardBalances(card, transactions, new Date());
+      const lifetimeCashback = getLifetimeCashback(card, transactions);
+      const abonos = [
+        ...(card.payments || []),
+        ...paidCyclesToPayments(card, transactions),
+      ].sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      return { card, bal, lifetimeCashback, abonos };
     });
   }, [cards, transactions]);
 
@@ -167,7 +183,7 @@ export default function CreditCardsPage() {
         />
       ) : (
         <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))' }}>
-          {rows.map(({ card, cy, openAmount, closedAmount, paid, openCashback, closedCashback, history, lifetimeCashback }) => (
+          {rows.map(({ card, bal, lifetimeCashback, abonos }) => (
             <div key={card.id} className="card" style={{ '--kpi-accent': card.color }}>
               <div className="card-header">
                 <h3 className="card-title flex items-center gap-2">
@@ -183,70 +199,61 @@ export default function CreditCardsPage() {
               {card.bank && <div className="text-xs text-muted mb-4">{card.bank}</div>}
 
               <div className="flex flex-col gap-4">
+                {/* Ciclo abierto: consumo nuevo, aún sin cortar */}
                 <div>
-                  <div className="kpi-label">Ciclo abierto (consumo)</div>
                   <div className="flex justify-between items-center text-sm">
-                    <span className="text-muted">Corte al: {formatDate(cy.openEndISO)}</span>
-                    <span className="font-semibold text-primary">{formatCurrency(openAmount)}</span>
+                    <span className="text-muted">Ciclo abierto (consumo)</span>
+                    <span className="font-semibold">{formatCurrency(bal.openCycle)}</span>
                   </div>
-                  {openCashback > 0 && (
-                    <>
-                      <div className="flex justify-between items-center text-xs mt-1" style={{ color: 'var(--color-income)' }}>
-                        <span>Cashback de este ciclo</span>
-                        <span className="font-semibold">+{formatCurrency(openCashback)}</span>
-                      </div>
-                      <div className="flex justify-between items-center text-xs mt-1 font-semibold">
-                        <span className="text-muted">Neto a deber</span>
-                        <span className="text-primary">{formatCurrency(openAmount - openCashback)}</span>
-                      </div>
-                    </>
-                  )}
+                  <div className="text-xs text-muted mt-1">Corte al: {formatDate(bal.cycles.openEndISO)}</div>
                 </div>
 
+                {/* Por pagar antes del vencimiento: la deuda urgente */}
                 <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
-                  <div className="kpi-label">Estado de cuenta {paid ? '(pagado)' : 'por pagar'}</div>
-                  <div className="kpi-value" style={{ color: paid ? 'var(--color-success)' : 'var(--text-primary)' }}>
-                    {formatCurrency(closedAmount - closedCashback)}
-                  </div>
-                  {closedCashback > 0 && (
+                  {bal.isPaid ? (
                     <>
-                      <div className="flex justify-between items-center text-xs mt-2" style={{ color: 'var(--color-income)' }}>
-                        <span>Cashback aplicado</span>
-                        <span className="font-semibold">−{formatCurrency(closedCashback)}</span>
+                      <div className="kpi-label">Estado de cuenta</div>
+                      <div className="flex items-center gap-1 font-semibold" style={{ color: 'var(--color-success)' }}>
+                        <CheckCircle2 size={16} /> Pagado
                       </div>
-                      <div className="flex justify-between items-center text-xs mt-1 text-muted">
-                        <span>Consumo bruto</span>
-                        <span>{formatCurrency(closedAmount)}</span>
+                    </>
+                  ) : (
+                    <>
+                      <div className="kpi-label">Por pagar antes del {formatDate(bal.cycles.dueDateISO)}</div>
+                      <div className="kpi-value" style={{ color: 'var(--text-primary)' }}>
+                        {formatCurrency(bal.pendingBilled)}
+                      </div>
+                      {bal.spansMultipleCycles && (
+                        <div className="text-xs text-muted mt-1">Incluye saldo de meses anteriores</div>
+                      )}
+                      <div className="flex items-center gap-2 mt-4">
+                        <button className="btn btn-primary btn-sm" onClick={() => openAbono(card, bal.pendingBilled)}>
+                          <CheckCircle2 size={14} /> Pagar todo
+                        </button>
+                        <button className="btn btn-secondary btn-sm" onClick={() => openAbono(card)}>
+                          <Plus size={14} /> Abonar
+                        </button>
                       </div>
                     </>
                   )}
-                  <div className="text-xs text-muted mt-2 flex items-center gap-1">
-                    <Calendar size={12} /> Vence el {formatDate(cy.dueDateISO)}
-                  </div>
-                  {!paid && closedAmount > 0 && (
-                    <button
-                      className="btn btn-secondary btn-sm mt-4"
-                      onClick={() => markStatementPaid(card.id, {
-                        cycleEnd: cy.closedEndISO,
-                        periodStart: cy.closedStartISO,
-                        periodEnd: cy.closedEndISO,
-                        amount: closedAmount,
-                        cashback: closedCashback,
-                        paidAt: todayISO(),
-                      })}
-                    >
-                      <CheckCircle2 size={14} /> Marcar como pagado
+                  {bal.isPaid && bal.openCycle > 0 && (
+                    <button className="btn btn-secondary btn-sm mt-3" onClick={() => openAbono(card)}>
+                      <Plus size={14} /> Abonar al ciclo abierto
                     </button>
                   )}
-                  {paid && (
-                    <div className="text-xs mt-2 flex items-center gap-1" style={{ color: 'var(--color-success)' }}>
-                      <CheckCircle2 size={14} /> Pagado
-                    </div>
-                  )}
                 </div>
 
-                {/* Historial y cashback acumulado de por vida */}
-                {history.length > 0 && (
+                {/* Saldo total acumulado de la tarjeta */}
+                <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm text-muted">Saldo total de la tarjeta</span>
+                    <span className="font-bold text-primary">{formatCurrency(bal.totalBalance)}</span>
+                  </div>
+                  <div className="text-xs text-muted mt-1">Incluye consumo nuevo aún sin cortar</div>
+                </div>
+
+                {/* Cashback acumulado e historial de abonos */}
+                {(lifetimeCashback > 0 || abonos.length > 0) && (
                   <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
                     <div className="flex justify-between items-center">
                       <div>
@@ -255,12 +262,11 @@ export default function CreditCardsPage() {
                           +{formatCurrency(lifetimeCashback)}
                         </div>
                       </div>
-                      <button
-                        className="btn btn-secondary btn-sm"
-                        onClick={() => setHistoryCard(card)}
-                      >
-                        <History size={14} /> Historial ({history.length})
-                      </button>
+                      {abonos.length > 0 && (
+                        <button className="btn btn-secondary btn-sm" onClick={() => setHistoryCard(card)}>
+                          <History size={14} /> Abonos ({abonos.length})
+                        </button>
+                      )}
                     </div>
                   </div>
                 )}
@@ -440,44 +446,88 @@ export default function CreditCardsPage() {
         </form>
       </Modal>
 
-      {/* Historial de estados de cuenta */}
+      {/* Historial de abonos */}
       <Modal
         isOpen={!!historyCard}
         onClose={() => setHistoryCard(null)}
-        title={historyCard ? `Historial — ${historyCard.name}` : 'Historial'}
+        title={historyCard ? `Abonos — ${historyCard.name}` : 'Abonos'}
       >
         {historyCard && (() => {
-          const history = getStatementHistory(historyCard);
-          const lifetime = getLifetimeCashback(historyCard);
+          const lifetime = getLifetimeCashback(historyCard, transactions);
+          const abonos = [
+            ...(historyCard.payments || []),
+            ...paidCyclesToPayments(historyCard, transactions),
+          ].sort((a, b) => String(b.date).localeCompare(String(a.date)));
           return (
             <>
               <div className="flex justify-between items-center mb-4 p-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
                 <span className="text-sm text-muted">Cashback acumulado de por vida</span>
                 <span className="font-bold" style={{ color: 'var(--color-income)' }}>+{formatCurrency(lifetime)}</span>
               </div>
-              <div className="flex flex-col gap-2">
-                {history.map((s, idx) => (
-                  <div key={idx} className="flex items-center justify-between p-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
-                    <div>
-                      <div className="font-semibold text-sm">
-                        {s.periodStart ? `${formatDate(s.periodStart)} → ${formatDate(s.periodEnd)}` : `Corte ${formatDate(s.cycleEnd)}`}
+              {abonos.length === 0 ? (
+                <div className="text-sm text-muted">Aún no hay abonos registrados.</div>
+              ) : (
+                <div className="flex flex-col gap-2">
+                  {abonos.map((a) => {
+                    const isLegacy = String(a.id).startsWith('mig-');
+                    return (
+                      <div key={a.id} className="flex items-center justify-between p-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-md)' }}>
+                        <div>
+                          <div className="font-semibold text-sm">{formatDate(a.date)}</div>
+                          <div className="text-xs text-muted">{a.note || (isLegacy ? 'Estado de cuenta pagado' : 'Abono')}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold amount-positive">{formatCurrency(a.amount)}</span>
+                          {!isLegacy && (
+                            <button
+                              className="btn-icon"
+                              title="Eliminar abono"
+                              style={{ color: 'var(--color-danger)' }}
+                              onClick={() => deleteCardPayment(historyCard.id, a.id)}
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      <div className="text-xs text-muted">
-                        {s.paidAt ? `Pagado el ${formatDate(s.paidAt)}` : 'Sin fecha de pago registrada'}
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-bold">{formatCurrency(s.amount)}</div>
-                      {s.cashback > 0 && (
-                        <div className="text-xs" style={{ color: 'var(--color-income)' }}>+{formatCurrency(s.cashback)} cashback</div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+                    );
+                  })}
+                </div>
+              )}
             </>
           );
         })()}
+      </Modal>
+
+      {/* Modal de abono */}
+      <Modal
+        isOpen={!!payingCard}
+        onClose={closeAbono}
+        title={payingCard ? `Abonar — ${payingCard.name}` : 'Abonar'}
+      >
+        <form onSubmit={handleAbonoSubmit}>
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Monto del abono *</label>
+              <CurrencyInput value={abonoAmount} onChange={(val) => setAbonoAmount(val)} placeholder="0.00" autoFocus />
+            </div>
+            <div className="form-group">
+              <label className="form-label">Fecha</label>
+              <input type="date" value={abonoDate} onChange={(e) => setAbonoDate(e.target.value)} />
+            </div>
+          </div>
+          <div className="form-group">
+            <label className="form-label">Nota (opcional)</label>
+            <input type="text" value={abonoNote} onChange={(e) => setAbonoNote(e.target.value)} placeholder="Ej: pago al corte, ingreso extra..." />
+          </div>
+          <p className="text-xs text-muted" style={{ marginTop: 'var(--space-1)' }}>
+            Un abono solo baja el saldo de la tarjeta; no se registra como gasto del presupuesto.
+          </p>
+          <div className="modal-footer">
+            <button type="button" className="btn btn-secondary" onClick={closeAbono}>Cancelar</button>
+            <button type="submit" className="btn btn-primary">Registrar abono</button>
+          </div>
+        </form>
       </Modal>
 
       <ConfirmDialog
