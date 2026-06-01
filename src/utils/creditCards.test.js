@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback } from './creditCards';
+import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances } from './creditCards';
 
 describe('getCardCycles', () => {
   it('corte 20 / pago 5: el pago cae el mes siguiente al corte', () => {
@@ -104,5 +104,36 @@ describe('computeCashback', () => {
 
   it('soporta porcentajes con decimales', () => {
     expect(computeCashback({ cashbackRules: [{ categoryId: 'all', percentage: 1.5 }] }, 'x', 150)).toBe(2.25);
+  });
+});
+
+describe('paidCyclesToPayments', () => {
+  it('convierte entradas objeto usando su monto guardado', () => {
+    const card = { id: 'c1', cutoffDay: 20, paidCycles: [
+      { cycleEnd: '2026-04-20', amount: 8000, cashback: 200, paidAt: '2026-05-01' },
+    ] };
+    const out = paidCyclesToPayments(card, []);
+    expect(out).toEqual([
+      { id: 'mig-2026-04-20', amount: 8000, date: '2026-05-01', note: 'Migrado: estado de cuenta pagado' },
+    ]);
+  });
+
+  it('reconstruye el monto de entradas string legado desde las transacciones', () => {
+    const card = { id: 'c1', cutoffDay: 20, paidCycles: ['2026-04-20'] };
+    // Ventana del ciclo que cierra el 2026-04-20: (2026-03-21 .. 2026-04-20)
+    const txs = [
+      { cardId: 'c1', date: '2026-04-10', amount: 3000, cashbackEarned: 0 },
+      { cardId: 'c1', date: '2026-05-10', amount: 9999, cashbackEarned: 0 }, // fuera de la ventana
+    ];
+    const out = paidCyclesToPayments(card, txs);
+    expect(out).toEqual([
+      { id: 'mig-2026-04-20', amount: 3000, date: '2026-04-20', note: 'Migrado: estado de cuenta pagado' },
+    ]);
+  });
+
+  it('descarta entradas que dan monto 0 y soporta tarjetas sin paidCycles', () => {
+    expect(paidCyclesToPayments({ id: 'c1', cutoffDay: 20, paidCycles: ['2026-04-20'] }, [])).toEqual([]);
+    expect(paidCyclesToPayments({ id: 'c1', cutoffDay: 20 }, [])).toEqual([]);
+    expect(paidCyclesToPayments(null, [])).toEqual([]);
   });
 });

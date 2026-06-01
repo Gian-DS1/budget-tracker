@@ -84,6 +84,18 @@ export function getStatementCashback(transactions, cardId, startISO, endISO) {
   }, 0);
 }
 
+const EPOCH_ISO = '0000-01-01';
+const PAID_EPSILON = 0.01;
+
+// Inicio del período de un estado de cuenta que cierra en `endISO` (un día de
+// corte): el día siguiente al corte anterior. Reutiliza dayInMonth/addDaysISO.
+function statementStartForEnd(card, endISO) {
+  const end = new Date(endISO + 'T00:00:00');
+  const cutoff = Number(card.cutoffDay);
+  const prevCutoff = dayInMonth(end.getFullYear(), end.getMonth() - 1, cutoff);
+  return addDaysISO(toISODate(prevCutoff), 1);
+}
+
 /**
  * Normaliza una entrada de `paidCycles`. Soporta dos formatos:
  *  - legado: string ISO con la fecha de cierre del ciclo.
@@ -104,6 +116,38 @@ function normalizePaidEntry(entry) {
     };
   }
   return null;
+}
+
+/**
+ * Convierte los estados de cuenta legados (`paidCycles`) en abonos equivalentes
+ * { id, amount, date, note }. Permite derivar el saldo sin reescribir la base de
+ * datos: estos abonos legados y los abonos nuevos (`card.payments`) son conjuntos
+ * disjuntos, porque tras esta feature ya no se escribe `paidCycles`.
+ * Para entradas string legado (sin monto) reconstruye el monto del estado de
+ * cuenta desde las transacciones del período. Descarta las que dan monto ≤ 0.
+ */
+export function paidCyclesToPayments(card, transactions = []) {
+  if (!card || !Array.isArray(card.paidCycles)) return [];
+  return card.paidCycles
+    .map((p) => {
+      const n = normalizePaidEntry(p);
+      if (!n || !n.cycleEnd) return null;
+      let amount = Number(n.amount) || 0;
+      if (amount <= 0) {
+        const periodEnd = n.periodEnd || n.cycleEnd;
+        const periodStart = n.periodStart || statementStartForEnd(card, periodEnd);
+        const gross = getStatementAmount(transactions, card.id, periodStart, periodEnd);
+        const cashback = getStatementCashback(transactions, card.id, periodStart, periodEnd);
+        amount = gross - cashback;
+      }
+      return {
+        id: `mig-${n.cycleEnd}`,
+        amount,
+        date: n.paidAt || n.cycleEnd,
+        note: 'Migrado: estado de cuenta pagado',
+      };
+    })
+    .filter((e) => e && e.amount > 0);
 }
 
 /**
