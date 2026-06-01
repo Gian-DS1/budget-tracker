@@ -185,6 +185,57 @@ export function getLifetimeCashback(card) {
 }
 
 /**
+ * Saldo derivado de una tarjeta (todo neto de cashback, en DOP). Fuente única de
+ * verdad para la página de Tarjetas, el Dashboard y los recordatorios del Header.
+ *
+ *   billed  = Σ consumo con date ≤ corte           (todo lo facturado)
+ *   open    = Σ consumo en (corte, próximo corte]   (ciclo abierto, sin cortar)
+ *   paid    = Σ abonos nuevos + Σ paidCycles legados (conjuntos disjuntos)
+ *
+ *   pendingBilled = max(0, billed − paid)   → deuda urgente (incluye arrastrado)
+ *   openCycle     = max(0, open − overpay)  → consumo nuevo (overpay = prepago)
+ *   totalBalance  = max(0, billed + open − paid)
+ *   isPaid        = (billed − paid) ≤ EPSILON
+ *
+ * Un abono nunca es un gasto del presupuesto: solo liquida este saldo. El gasto
+ * ya se contó al registrar cada consumo (modelo de devengo).
+ */
+export function getCardBalances(card, transactions = [], refDate = new Date()) {
+  const cycles = getCardCycles(card, refDate);
+
+  const billed =
+    getStatementAmount(transactions, card.id, EPOCH_ISO, cycles.closedEndISO) -
+    getStatementCashback(transactions, card.id, EPOCH_ISO, cycles.closedEndISO);
+
+  const open =
+    getStatementAmount(transactions, card.id, cycles.openStartISO, cycles.openEndISO) -
+    getStatementCashback(transactions, card.id, cycles.openStartISO, cycles.openEndISO);
+
+  const abonos = Array.isArray(card.payments) ? card.payments : [];
+  const paidFromAbonos = abonos.reduce((s, p) => s + (Number(p.amount) || 0), 0);
+  const paidFromLegacy = paidCyclesToPayments(card, transactions).reduce((s, p) => s + p.amount, 0);
+  const paid = paidFromAbonos + paidFromLegacy;
+
+  const pendingBilled = Math.max(0, billed - paid);
+  const overpay = Math.max(0, paid - billed);
+  const openCycle = Math.max(0, open - overpay);
+  const totalBalance = Math.max(0, billed + open - paid);
+  const isPaid = billed - paid <= PAID_EPSILON;
+
+  const closedStatementNet =
+    getStatementAmount(transactions, card.id, cycles.closedStartISO, cycles.closedEndISO) -
+    getStatementCashback(transactions, card.id, cycles.closedStartISO, cycles.closedEndISO);
+  const spansMultipleCycles = pendingBilled > closedStatementNet + PAID_EPSILON;
+
+  return {
+    cycles,
+    billed, open, paid, overpay,
+    pendingBilled, openCycle, totalBalance,
+    closedStatementNet, spansMultipleCycles, isPaid,
+  };
+}
+
+/**
  * Cashback (en DOP) que genera un monto en una tarjeta, según sus reglas.
  * Busca primero la regla de la categoría exacta y, si no hay, la regla 'all'.
  * `amount` debe estar en la moneda base (DOP); redondea a 2 decimales.

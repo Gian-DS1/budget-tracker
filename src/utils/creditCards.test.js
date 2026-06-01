@@ -145,3 +145,80 @@ describe('paidCyclesToPayments', () => {
     ]);
   });
 });
+
+describe('getCardBalances', () => {
+  const card = { id: 'c1', cutoffDay: 20, dueDay: 5, payments: [] };
+  const ref = new Date(2026, 4, 28); // corte 2026-05-20, pago 2026-06-05
+
+  it('caso clienta: paga al corte, arrastra el ciclo abierto', () => {
+    const txs = [
+      { cardId: 'c1', date: '2026-05-10', amount: 10000, cashbackEarned: 0 }, // facturado
+      { cardId: 'c1', date: '2026-05-25', amount: 5000, cashbackEarned: 0 },  // ciclo abierto
+    ];
+    const b0 = getCardBalances(card, txs, ref);
+    expect(b0.billed).toBe(10000);
+    expect(b0.open).toBe(5000);
+    expect(b0.pendingBilled).toBe(10000);
+    expect(b0.openCycle).toBe(5000);
+    expect(b0.totalBalance).toBe(15000);
+    expect(b0.isPaid).toBe(false);
+
+    const paidCard = { ...card, payments: [{ id: 'a1', amount: 10000, date: '2026-05-21' }] };
+    const b1 = getCardBalances(paidCard, txs, ref);
+    expect(b1.pendingBilled).toBe(0);
+    expect(b1.isPaid).toBe(true);
+    expect(b1.openCycle).toBe(5000);
+    expect(b1.totalBalance).toBe(5000);
+  });
+
+  it('caso sobregasto: abono parcial deja saldo arrastrado', () => {
+    const txs = [{ cardId: 'c1', date: '2026-05-10', amount: 20000, cashbackEarned: 0 }];
+    const c1 = { ...card, payments: [{ id: 'a1', amount: 12000, date: '2026-05-21' }] };
+    expect(getCardBalances(c1, txs, ref).pendingBilled).toBe(8000);
+    const c2 = { ...card, payments: [
+      { id: 'a1', amount: 12000, date: '2026-05-21' },
+      { id: 'a2', amount: 3000, date: '2026-05-28' },
+    ] };
+    expect(getCardBalances(c2, txs, ref).pendingBilled).toBe(5000);
+  });
+
+  it('sobre-abono (prepago): el excedente reduce el ciclo abierto, nada negativo', () => {
+    const txs = [
+      { cardId: 'c1', date: '2026-05-10', amount: 10000, cashbackEarned: 0 },
+      { cardId: 'c1', date: '2026-05-25', amount: 5000, cashbackEarned: 0 },
+    ];
+    const c = { ...card, payments: [{ id: 'a1', amount: 12000, date: '2026-05-21' }] };
+    const b = getCardBalances(c, txs, ref);
+    expect(b.pendingBilled).toBe(0);
+    expect(b.overpay).toBe(2000);
+    expect(b.openCycle).toBe(3000);
+    expect(b.totalBalance).toBe(3000);
+  });
+
+  it('spansMultipleCycles cuando hay saldo de meses anteriores sin pagar', () => {
+    const txs = [
+      { cardId: 'c1', date: '2026-03-10', amount: 5000, cashbackEarned: 0 },  // ciclo viejo
+      { cardId: 'c1', date: '2026-05-10', amount: 10000, cashbackEarned: 0 }, // ciclo actual
+    ];
+    expect(getCardBalances({ ...card }, txs, ref).spansMultipleCycles).toBe(true);
+    const conAbono = { ...card, payments: [{ id: 'a1', amount: 5000, date: '2026-05-21' }] };
+    expect(getCardBalances(conAbono, txs, ref).spansMultipleCycles).toBe(false);
+  });
+
+  it('descuenta el cashback del monto facturado', () => {
+    const txs = [{ cardId: 'c1', date: '2026-05-10', amount: 10000, cashbackEarned: 300 }];
+    expect(getCardBalances(card, txs, ref).billed).toBe(9700);
+    expect(getCardBalances(card, txs, ref).pendingBilled).toBe(9700);
+  });
+
+  it('un paidCycle legado cuenta como abonado (saldo cuadra)', () => {
+    const txs = [{ cardId: 'c1', date: '2026-04-10', amount: 8000, cashbackEarned: 0 }];
+    const legacy = { id: 'c1', cutoffDay: 20, dueDay: 5, payments: [],
+      paidCycles: [{ cycleEnd: '2026-04-20', amount: 8000, paidAt: '2026-05-01' }] };
+    const b = getCardBalances(legacy, txs, ref);
+    expect(b.billed).toBe(8000);
+    expect(b.paid).toBe(8000);
+    expect(b.pendingBilled).toBe(0);
+    expect(b.isPaid).toBe(true);
+  });
+});
