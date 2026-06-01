@@ -12,6 +12,7 @@ const mapFromDb = (c) => ({
   dueDay: Number(c.due_day),
   color: c.color || '#6366f1',
   paidCycles: Array.isArray(c.paid_cycles) ? c.paid_cycles : [],
+  payments: Array.isArray(c.payments) ? c.payments : [],
   cashbackRules: Array.isArray(c.cashback_rules) ? c.cashback_rules : [],
   catalogId: c.catalog_id || null,
   createdAt: c.created_at,
@@ -99,44 +100,49 @@ const useCreditCardStore = create(
         }
       },
 
-      // `snapshot` puede ser un string ISO (legado) o un objeto con la foto del
-      // estado de cuenta: { cycleEnd, periodStart, periodEnd, amount, cashback }.
-      // Guardamos el objeto para construir el historial y el cashback acumulado.
-      markStatementPaid: async (cardId, snapshot) => {
+      // Un abono LIQUIDA el saldo de la tarjeta; nunca es un gasto del presupuesto
+      // (el gasto ya se contó al registrar cada consumo). Se guarda en `payments`.
+      addCardPayment: async (cardId, { amount, date, note } = {}) => {
         const card = get().cards.find((c) => c.id === cardId);
         if (!card) return;
+        const value = Number(amount) || 0;
+        if (value <= 0) return;
 
-        const cycleEnd = typeof snapshot === 'string' ? snapshot : snapshot?.cycleEnd;
-        if (!cycleEnd) return;
+        const entry = {
+          id: (globalThis.crypto?.randomUUID?.() || `p-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+          amount: value,
+          date: date || todayISO(),
+          note: note || '',
+        };
+        const newPayments = [...(card.payments || []), entry];
 
-        const already = card.paidCycles.some(
-          (p) => (typeof p === 'string' ? p : p?.cycleEnd) === cycleEnd
-        );
-        if (already) return;
-
-        const entry =
-          typeof snapshot === 'string'
-            ? { cycleEnd, amount: 0, cashback: 0, paidAt: todayISO() }
-            : {
-                cycleEnd,
-                periodStart: snapshot.periodStart ?? null,
-                periodEnd: snapshot.periodEnd ?? cycleEnd,
-                amount: Number(snapshot.amount) || 0,
-                cashback: Number(snapshot.cashback) || 0,
-                paidAt: snapshot.paidAt || todayISO(),
-              };
-
-        const newPaid = [...card.paidCycles, entry];
-        const { error } = await supabase.from('credit_cards').update({ paid_cycles: newPaid }).eq('id', cardId);
+        const { error } = await supabase.from('credit_cards').update({ payments: newPayments }).eq('id', cardId);
         if (error) {
-          console.error('Mark paid error:', error);
-          toast.error('Error al marcar como pagado');
+          console.error('Add card payment error:', error);
+          toast.error('Error al registrar el abono');
           return;
         }
         set((state) => ({
-          cards: state.cards.map((c) => (c.id === cardId ? { ...c, paidCycles: newPaid } : c)),
+          cards: state.cards.map((c) => (c.id === cardId ? { ...c, payments: newPayments } : c)),
         }));
-        toast.success('Estado de cuenta marcado como pagado');
+        toast.success('Abono registrado');
+      },
+
+      deleteCardPayment: async (cardId, paymentId) => {
+        const card = get().cards.find((c) => c.id === cardId);
+        if (!card) return;
+        const newPayments = (card.payments || []).filter((p) => p.id !== paymentId);
+
+        const { error } = await supabase.from('credit_cards').update({ payments: newPayments }).eq('id', cardId);
+        if (error) {
+          console.error('Delete card payment error:', error);
+          toast.error('Error al eliminar el abono');
+          return;
+        }
+        set((state) => ({
+          cards: state.cards.map((c) => (c.id === cardId ? { ...c, payments: newPayments } : c)),
+        }));
+        toast.success('Abono eliminado');
       },
     }),
     {
