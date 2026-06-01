@@ -105,7 +105,8 @@
 
   --text-primary: #f1f5f9;
   --text-secondary: #94a3b8;
-  --text-tertiary: #64748b;
+  /* WCAG AA: 4.5:1+ sobre todas las superficies oscuras (card/primary/secondary). */
+  --text-tertiary: #8b97a8;
   --text-inverse: #0f172a;
 
   --accent-primary: #10b981;
@@ -130,6 +131,9 @@
   --color-success: #10b981;
   --color-warning: #f59e0b;
   --color-danger: #ef4444;
+  /* Rojo para TEXTO de error sobre superficies (≥4.5:1 en card). El --color-danger
+     pleno se reserva para fondos sólidos con texto blanco (botón peligro). */
+  --color-danger-text: #f87171;
   --color-info: #3b82f6;
 
   --progress-bg: rgba(255, 255, 255, 0.06);
@@ -147,6 +151,8 @@
 
   --shadow-card: 0 4px 24px rgba(0, 0, 0, 0.3);
   --shadow-card-hover: 0 8px 32px rgba(0, 0, 0, 0.4);
+  /* Contained hover elevation for flat surfaces: ≤8px blur, no ghost-card. */
+  --shadow-surface-hover: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 /* ── Light Theme ───────────────────────────────────────────── */
@@ -170,7 +176,8 @@
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
-  --text-tertiary: #94a3b8;
+  /* WCAG AA: 4.5:1+ sobre superficies claras (card #f1f5f9 y bg #e2e8f0). */
+  --text-tertiary: #5b6878;
   --text-inverse: #f8fafc;
 
   --accent-primary: #059669;
@@ -195,6 +202,8 @@
   --color-success: #059669;
   --color-warning: #d97706;
   --color-danger: #dc2626;
+  /* Rojo de texto de error legible (≥4.5:1) sobre las superficies claras. */
+  --color-danger-text: #b91c1c;
   --color-info: #2563eb;
 
   --progress-bg: rgba(0, 0, 0, 0.06);
@@ -212,6 +221,8 @@
 
   --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 4px 16px rgba(0, 0, 0, 0.04);
   --shadow-card-hover: 0 4px 24px rgba(0, 0, 0, 0.08);
+  /* Contained hover elevation for flat surfaces: ≤8px blur, no ghost-card. */
+  --shadow-surface-hover: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 /* ── Reset & Base ──────────────────────────────────────────── */
@@ -387,18 +398,16 @@ table {
 /* ── Cards ─────────────────────────────────────────────────── */
 
 .card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
-  box-shadow: var(--glass-shadow);
-  transition: all var(--transition-base);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
 }
 
 .card:hover {
-  box-shadow: var(--shadow-card-hover);
+  border-color: var(--border-secondary);
+  box-shadow: var(--shadow-surface-hover);
 }
 
 .card-glass {
@@ -700,7 +709,7 @@ table {
 
 .form-error {
   font-size: var(--font-xs);
-  color: var(--color-danger);
+  color: var(--color-danger-text);
   margin-top: var(--space-1);
 }
 
@@ -742,6 +751,17 @@ table {
 .tooltip-container {
   position: relative;
   display: inline-flex;
+}
+
+/* Foco visible por teclado cuando el contenedor es interactivo (a11y: 2.4.7). */
+.tooltip-container[role="button"]:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--accent-primary);
+}
+
+/* El tooltip aparece también con foco de teclado, no solo con hover. */
+.tooltip-container:focus-within .tooltip {
+  opacity: 1;
 }
 
 .tooltip {
@@ -831,14 +851,11 @@ table {
 }
 
 .kpi-card {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
   padding: var(--space-5) var(--space-6);
-  box-shadow: var(--glass-shadow);
-  transition: all var(--transition-base);
+  transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
   position: relative;
   /* visible para que los tooltips informativos no se recorten; la barra de
      acento se redondea abajo para conservar las esquinas de la tarjeta. */
@@ -918,13 +935,10 @@ table {
 /* ── Charts Container ──────────────────────────────────────── */
 
 .chart-container {
-  background: var(--glass-bg);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--glass-border);
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
-  box-shadow: var(--glass-shadow);
 }
 
 .chart-header {
@@ -1915,6 +1929,14 @@ table {
   z-index: 2;
 }
 
+/* Foco visible por teclado en las celdas activas (a11y: 2.4.7). */
+.calendar-cell-active:focus-visible {
+  outline: none;
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 2px var(--accent-primary-subtle), 0 0 0 1px var(--accent-primary);
+  z-index: 2;
+}
+
 .calendar-cell-today {
   border-color: var(--accent-primary);
   border-width: 2px;
@@ -2386,4 +2408,229 @@ textarea:focus {
 .card-title,
 .chart-title {
   font-weight: 700;
+}
+
+/* ============================================================
+   Dashboard Overview — jerarquía por agrupación, no por
+   cuatro tarjetas iguales. El mes (Flujo) pesa más que el
+   patrimonio (balances lentos). Lectura: héroe → flujo →
+   patrimonio.
+   ============================================================ */
+
+.overview-grid {
+  display: grid;
+  grid-template-columns: 1.8fr 1fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-8);
+  align-items: stretch;
+}
+
+.overview-panel {
+  background: var(--bg-card);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  display: flex;
+  flex-direction: column;
+}
+
+.overview-panel-head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: var(--space-5);
+}
+
+.overview-panel-head svg {
+  color: var(--text-tertiary);
+}
+
+/* ── Flujo del mes: ingresos | gastos lado a lado, balance debajo ── */
+
+.flow-pair {
+  display: grid;
+  grid-template-columns: 1fr 1px 1fr;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.flow-divider {
+  width: 1px;
+  align-self: stretch;
+  background: var(--border-primary);
+}
+
+.flow-stat-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-2);
+}
+
+.flow-stat-value {
+  font-size: clamp(1.4rem, 3.2vw, 1.9rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+.flow-stat-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: var(--font-xs);
+  font-weight: 600;
+  margin-top: var(--space-2);
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-full);
+}
+
+.flow-stat-delta.is-good {
+  color: var(--color-income);
+  background: var(--color-income-bg);
+}
+
+.flow-stat-delta.is-bad {
+  color: var(--color-expense);
+  background: var(--color-expense-bg);
+}
+
+/* Nota cuando no hay mes anterior con datos: ocupa el mismo alto que el
+   delta para que la fila no salte entre estados. */
+.flow-stat-note {
+  font-size: var(--font-xs);
+  font-weight: 500;
+  color: var(--text-tertiary);
+  margin-top: var(--space-2);
+  padding: 2px 0;
+}
+
+/* Balance neto: línea derivada, separada del par por una regla. */
+.flow-result {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  margin-top: var(--space-5);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-primary);
+}
+
+.flow-result-label {
+  font-size: var(--font-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.flow-result-sub {
+  font-size: var(--font-xs);
+  color: var(--text-tertiary);
+  font-weight: 500;
+}
+
+.flow-result-value {
+  font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+}
+
+/* ── Patrimonio: panel más callado, patrimonio neto arriba, filas debajo ── */
+
+.networth-lead {
+  margin-bottom: var(--space-5);
+}
+
+.networth-lead-value {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.networth-rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-top: auto;
+}
+
+.networth-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.networth-row-label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-sm);
+  color: var(--text-secondary);
+  min-width: 0;
+}
+
+.networth-row-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: var(--radius-full);
+  flex-shrink: 0;
+}
+
+.networth-row-value {
+  font-size: var(--font-base);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 1024px) {
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 480px) {
+  .flow-pair {
+    grid-template-columns: 1fr;
+    gap: var(--space-4);
+  }
+  .flow-divider {
+    width: auto;
+    height: 1px;
+  }
+}
+
+/* ============================================================
+   Reduced motion — política global. Respeta a quien prefiere
+   menos movimiento: las animaciones decorativas se neutralizan
+   (incluida la franja infinita del shimmer en las barras de
+   progreso) y las transiciones funcionales quedan casi instantáneas.
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* La franja de brillo es puramente decorativa: se oculta del todo. */
+  .progress-bar-fill::after {
+    display: none;
+  }
 }

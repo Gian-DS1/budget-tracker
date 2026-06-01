@@ -5,9 +5,14 @@ import {
   TrendingUp,
   TrendingDown,
   Wallet,
-  Target,
   CreditCard,
   Calendar as CalendarIcon,
+  ArrowRightLeft,
+  Scale,
+  PiggyBank,
+  Landmark,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import {
   BarChart,
@@ -34,11 +39,12 @@ import {
   formatPercent,
   formatDate,
 } from '../utils/formatters';
-import { MONTHS_SHORT_ES } from '../utils/constants';
+import { MONTHS_SHORT_ES, MONTHS_ES } from '../utils/constants';
 import { getBudgetSummary } from '../utils/calculations';
 import { getCardBalances } from '../utils/creditCards';
 import useRateStore from '../stores/useRateStore';
 import Modal from '../components/ui/Modal';
+import { SkeletonDashboard } from '../components/ui/Skeleton';
 
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
@@ -71,6 +77,9 @@ export default function DashboardPage() {
 
   const cards = useCreditCardStore((s) => s.cards);
   const fxRate = useRateStore((s) => s.getRate());
+  const txLoading = useTransactionStore((s) => s.loading);
+  // Esqueleto solo en carga en frío (cargando y sin transacciones en caché).
+  const showSkeleton = txLoading && transactions.length === 0;
 
   const [selectedDay, setSelectedDay] = useState(null);
 
@@ -81,9 +90,33 @@ export default function DashboardPage() {
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [selectedDay, transactions]);
 
+  // El mes que se está viendo. Arranca en el mes actual; el selector permite
+  // mirar meses anteriores. (Los nombres currentMonth/currentYear se conservan
+  // porque alimentan todos los cálculos de abajo.)
   const now = new Date();
-  const currentMonth = now.getMonth();
-  const currentYear = now.getFullYear();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+  const [currentMonth, setCurrentMonth] = useState(thisMonth);
+  const [currentYear, setCurrentYear] = useState(thisYear);
+
+  // No tiene sentido navegar al futuro: un dashboard de gastos no tiene datos
+  // por delante. Se topa en el mes actual.
+  const isCurrentMonth = currentMonth === thisMonth && currentYear === thisYear;
+
+  const navigateMonth = (direction) => {
+    if (direction > 0 && isCurrentMonth) return;
+    let newMonth = currentMonth + direction;
+    let newYear = currentYear;
+    if (newMonth < 0) {
+      newMonth = 11;
+      newYear--;
+    } else if (newMonth > 11) {
+      newMonth = 0;
+      newYear++;
+    }
+    setCurrentMonth(newMonth);
+    setCurrentYear(newYear);
+  };
 
   // ─── KPIs Calculation ─────────────────────────────────────────
 
@@ -163,17 +196,27 @@ export default function DashboardPage() {
   const currentTotals = calculateTotals(currentMonthTransactions);
   const previousTotals = calculateTotals(previousMonthTransactions);
 
+  // Sin mes anterior con datos no hay comparación honesta: devolvemos null y
+  // ocultamos el delta, en vez de inventar un "+100%" contra cero.
   const getPercentChange = (current, previous) => {
-    if (previous === 0) return current > 0 ? 100 : 0;
+    if (previous === 0) return null;
     return ((current - previous) / previous) * 100;
   };
 
   const incomeChange = getPercentChange(currentTotals.income, previousTotals.income);
   const expenseChange = getPercentChange(currentTotals.expense, previousTotals.expense);
 
-  const savingsRate = currentTotals.income > 0 
-    ? ((currentTotals.income - currentTotals.expense) / currentTotals.income) * 100 
+  const savingsRate = currentTotals.income > 0
+    ? ((currentTotals.income - currentTotals.expense) / currentTotals.income) * 100
     : 0;
+
+  // ─── Patrimonio (balances lentos, fuera del flujo del mes) ──────
+  const totalSaved = getTotalSaved();
+  const totalDebt = getTotalDebt();
+  const netWorth = totalSaved - totalDebt;
+
+  // Signo explícito para los deltas: el color nunca viaja solo (daltonismo).
+  const signedPct = (v) => `${v >= 0 ? '+' : '−'}${Math.abs(v).toFixed(1)}%`;
 
   // ─── Bar Chart: 6 Months Trend ──────────────────────────────
 
@@ -219,16 +262,24 @@ export default function DashboardPage() {
       grouped[t.categoryId] += Number(t.amount) - Number(t.cashbackEarned || 0);
     });
 
-    return Object.entries(grouped)
+    const sorted = Object.entries(grouped)
       .map(([categoryId, value]) => {
         const cat = categories.find((c) => c.id === categoryId);
         return {
           name: cat ? cat.name : 'Otros',
           value,
-          color: cat ? cat.color : '#94a3b8',
+          color: cat ? cat.color : '#8b97a8',
         };
       })
-      .sort((a, b) => b.value - a.value); // Sort desc
+      .sort((a, b) => b.value - a.value);
+
+    // Tope la leyenda en 6 categorías + "Otros": una lista de 15 filas no se
+    // lee y obliga a hacer scroll junto al donut.
+    const MAX_SLICES = 6;
+    if (sorted.length <= MAX_SLICES + 1) return sorted;
+    const top = sorted.slice(0, MAX_SLICES);
+    const restValue = sorted.slice(MAX_SLICES).reduce((sum, s) => sum + s.value, 0);
+    return [...top, { name: 'Otros', value: restValue, color: 'var(--text-tertiary)' }];
   }, [currentMonthTransactions, categories]);
 
   // ─── Recent Transactions ─────────────────────────────────────
@@ -262,11 +313,38 @@ export default function DashboardPage() {
 
   return (
     <div className="page-container">
-      <div className="page-header">
-        <h1 className="page-title">Dashboard</h1>
-        <p className="page-subtitle">Resumen financiero de {MONTHS_SHORT_ES[currentMonth]} {currentYear}</p>
+      <div className="page-header flex justify-between items-center">
+        <div>
+          <h1 className="page-title">Dashboard</h1>
+          <p className="page-subtitle">Resumen financiero de {MONTHS_SHORT_ES[currentMonth]} {currentYear}</p>
+        </div>
+        <div className="month-selector">
+          <button
+            className="btn-icon"
+            onClick={() => navigateMonth(-1)}
+            aria-label="Mes anterior"
+          >
+            <ChevronLeft size={20} />
+          </button>
+          <span className="month-selector-label">
+            {MONTHS_ES[currentMonth]} {currentYear}
+          </span>
+          <button
+            className="btn-icon"
+            onClick={() => navigateMonth(1)}
+            disabled={isCurrentMonth}
+            aria-label="Mes siguiente"
+            style={isCurrentMonth ? { opacity: 0.35, cursor: 'not-allowed' } : undefined}
+          >
+            <ChevronRight size={20} />
+          </button>
+        </div>
       </div>
 
+      {showSkeleton ? (
+        <SkeletonDashboard />
+      ) : (
+       <>
       {/* Héroe: Puedes gastar */}
       <div className="kpi-card" id="tour-dashboard-hero" style={{
         marginBottom: 'var(--space-6)',
@@ -276,7 +354,9 @@ export default function DashboardPage() {
           : summary.estado === 'good' ? 'var(--color-success)'
           : 'var(--text-tertiary)'
       }}>
-        <div className="kpi-label">Puedes gastar este mes</div>
+        <div className="kpi-label">
+          {isCurrentMonth ? 'Puedes gastar este mes' : `Disponible en ${MONTHS_ES[currentMonth]}`}
+        </div>
         <div className="kpi-value" style={{
           fontSize: 'clamp(1.6rem, 4vw, 2.4rem)',
           color:
@@ -289,7 +369,9 @@ export default function DashboardPage() {
         </div>
         <div className="text-sm text-muted mt-2">
           {summary.estado === 'neutral'
-            ? 'Aún no has registrado ingresos este mes.'
+            ? (isCurrentMonth
+                ? 'Aún no has registrado ingresos este mes.'
+                : `No registraste ingresos en ${MONTHS_ES[currentMonth]}.`)
             : 'Disponible sin atrasarte en pagos ni metas.'}
         </div>
         <div className="kpi-icon" style={{ background: 'var(--accent-primary-subtle)', color: 'var(--kpi-accent)' }}>
@@ -306,53 +388,107 @@ export default function DashboardPage() {
         </div>
       ))}
 
-      {/* KPI Cards */}
-      <div className="kpi-grid" id="tour-dashboard-summary">
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
-          <div className="kpi-label">Ingresos del Mes</div>
-          <div className="kpi-value">{formatCurrency(currentTotals.income)}</div>
-          <div className={`kpi-change ${incomeChange >= 0 ? 'positive' : 'negative'}`}>
-            {incomeChange >= 0 ? <TrendingUp size={12} /> : <TrendingDown size={12} />}
-            {Math.abs(incomeChange).toFixed(1)}% vs mes ant.
-          </div>
-          <div className="kpi-icon" style={{ background: 'var(--color-income-bg)', color: 'var(--color-income)' }}>
-            <TrendingUp size={20} />
-          </div>
-        </div>
+      {/* Resumen: el mes (flujo) pesa más que el patrimonio (balances lentos). */}
+      <div className="overview-grid" id="tour-dashboard-summary">
 
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-expense)' }}>
-          <div className="kpi-label">Gastos del Mes</div>
-          <div className="kpi-value">{formatCurrency(currentTotals.expense)}</div>
-          <div className={`kpi-change ${expenseChange <= 0 ? 'positive' : 'negative'}`}>
-            {expenseChange <= 0 ? <TrendingDown size={12} /> : <TrendingUp size={12} />}
-            {Math.abs(expenseChange).toFixed(1)}% vs mes ant.
-          </div>
-          <div className="kpi-icon" style={{ background: 'var(--color-expense-bg)', color: 'var(--color-expense)' }}>
-            <TrendingDown size={20} />
-          </div>
-        </div>
+        {/* ── Flujo del mes ── */}
+        <section className="overview-panel" aria-labelledby="ov-flujo">
+          <h2 className="overview-panel-head" id="ov-flujo">
+            <ArrowRightLeft size={14} /> Flujo del mes
+          </h2>
 
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-info)' }}>
-          <div className="kpi-label">Balance Neto</div>
-          <div className="kpi-value">{formatCurrency(currentTotals.balance)}</div>
-          <div className="kpi-change" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-info)' }}>
-            Tasa de ahorro: {savingsRate.toFixed(1)}%
-          </div>
-          <div className="kpi-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: 'var(--color-info)' }}>
-            <Target size={20} />
-          </div>
-        </div>
+          <div className="flow-pair">
+            <div>
+              <div className="flow-stat-label">
+                <TrendingUp size={14} style={{ color: 'var(--color-income)' }} /> Ingresos
+              </div>
+              <div className="flow-stat-value" style={{ color: 'var(--color-income)' }}>
+                +{formatCurrency(currentTotals.income)}
+              </div>
+              {incomeChange !== null ? (
+                <div className={`flow-stat-delta ${incomeChange >= 0 ? 'is-good' : 'is-bad'}`}>
+                  {incomeChange >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+                  {signedPct(incomeChange)} vs mes ant.
+                </div>
+              ) : (
+                <div className="flow-stat-note">Sin mes anterior para comparar</div>
+              )}
+            </div>
 
-        <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-warning)' }}>
-          <div className="kpi-label">Deuda Total</div>
-          <div className="kpi-value">{formatCurrency(getTotalDebt())}</div>
-          <div className="kpi-change" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--color-warning)' }}>
-            Patrimonio: {formatCurrency(getTotalSaved() - getTotalDebt())}
+            <div className="flow-divider" aria-hidden="true" />
+
+            <div>
+              <div className="flow-stat-label">
+                <TrendingDown size={14} style={{ color: 'var(--color-expense)' }} /> Gastos
+              </div>
+              <div className="flow-stat-value" style={{ color: 'var(--color-expense)' }}>
+                −{formatCurrency(currentTotals.expense)}
+              </div>
+              {/* En gastos, bajar es bueno: el color sigue al sentido, no al signo. */}
+              {expenseChange !== null ? (
+                <div className={`flow-stat-delta ${expenseChange <= 0 ? 'is-good' : 'is-bad'}`}>
+                  {expenseChange <= 0 ? <TrendingDown size={11} /> : <TrendingUp size={11} />}
+                  {signedPct(expenseChange)} vs mes ant.
+                </div>
+              ) : (
+                <div className="flow-stat-note">Sin mes anterior para comparar</div>
+              )}
+            </div>
           </div>
-          <div className="kpi-icon" style={{ background: 'rgba(245, 158, 11, 0.1)', color: 'var(--color-warning)' }}>
-            <CreditCard size={20} />
+
+          <div className="flow-result">
+            <div>
+              <div className="flow-result-label">Balance neto</div>
+              <div className="flow-result-sub">Tasa de ahorro {savingsRate.toFixed(1)}%</div>
+            </div>
+            <div
+              className="flow-result-value"
+              style={{ color: currentTotals.balance >= 0 ? 'var(--color-income)' : 'var(--color-expense)' }}
+            >
+              {currentTotals.balance >= 0 ? '+' : '−'}{formatCurrency(Math.abs(currentTotals.balance))}
+            </div>
           </div>
-        </div>
+        </section>
+
+        {/* ── Patrimonio (más callado) ── */}
+        <section className="overview-panel" aria-labelledby="ov-patrimonio">
+          <h2 className="overview-panel-head" id="ov-patrimonio">
+            <Scale size={14} /> Patrimonio
+          </h2>
+
+          <div className="networth-lead">
+            <div className="flow-result-label" style={{ marginBottom: 'var(--space-1)' }}>
+              Patrimonio neto
+            </div>
+            <div
+              className="networth-lead-value"
+              style={{ color: netWorth >= 0 ? 'var(--text-primary)' : 'var(--color-expense)' }}
+            >
+              {netWorth < 0 ? '−' : ''}{formatCurrency(Math.abs(netWorth))}
+            </div>
+          </div>
+
+          <div className="networth-rows">
+            <div className="networth-row">
+              <div className="networth-row-label">
+                <span className="networth-row-dot" style={{ background: 'var(--color-savings)' }} />
+                <PiggyBank size={15} style={{ color: 'var(--text-tertiary)' }} /> Ahorros
+              </div>
+              <div className="networth-row-value" style={{ color: 'var(--color-savings)' }}>
+                {formatCurrency(totalSaved)}
+              </div>
+            </div>
+            <div className="networth-row">
+              <div className="networth-row-label">
+                <span className="networth-row-dot" style={{ background: 'var(--color-debt)' }} />
+                <Landmark size={15} style={{ color: 'var(--text-tertiary)' }} /> Deuda total
+              </div>
+              <div className="networth-row-value" style={{ color: totalDebt > 0 ? 'var(--color-debt)' : 'var(--text-secondary)' }}>
+                {totalDebt > 0 ? '−' : ''}{formatCurrency(totalDebt)}
+              </div>
+            </div>
+          </div>
+        </section>
       </div>
 
 
@@ -479,9 +615,9 @@ export default function DashboardPage() {
             gap: 'var(--space-2)',
             textAlign: 'center' 
           }}>
-            {/* Days header */}
-            {['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d, i) => (
-              <div key={i} className="text-xs font-bold text-muted mb-2">{d}</div>
+            {/* Days header (lun-dom; X para miércoles evita la doble M ambigua) */}
+            {['L', 'M', 'X', 'J', 'V', 'S', 'D'].map((d, i) => (
+              <div key={`wd-${i}`} className="text-xs font-bold text-muted mb-2">{d}</div>
             ))}
             
             {Array.from({ length: calendarDays.offset }).map((_, i) => (
@@ -493,7 +629,16 @@ export default function DashboardPage() {
               <div
                 key={day.day}
                 className="tooltip-container flex items-center justify-center"
+                role={day.hasActivity ? 'button' : undefined}
+                tabIndex={day.hasActivity ? 0 : undefined}
+                aria-label={day.hasActivity ? `Ver transacciones del ${formatDate(day.date)}` : undefined}
                 onClick={() => day.hasActivity && setSelectedDay(day.date)}
+                onKeyDown={(e) => {
+                  if (day.hasActivity && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setSelectedDay(day.date);
+                  }
+                }}
                 style={{
                   aspectRatio: '1',
                   borderRadius: 'var(--radius-sm)',
@@ -519,6 +664,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+       </>
+      )}
 
       {/* Detalle del día (al hacer clic en el calendario) */}
       <Modal

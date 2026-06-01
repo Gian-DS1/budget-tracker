@@ -190,9 +190,18 @@ export default function CalendarPage() {
             const isSelected = cell.date === selectedDate;
 
             return (
-              <div 
+              <div
                 key={cell.key}
+                role={hasActivity ? 'button' : undefined}
+                tabIndex={hasActivity ? 0 : undefined}
+                aria-label={hasActivity ? `Ver transacciones del día ${cell.day}` : undefined}
                 onClick={() => hasActivity && setSelectedDate(cell.date)}
+                onKeyDown={(e) => {
+                  if (hasActivity && (e.key === 'Enter' || e.key === ' ')) {
+                    e.preventDefault();
+                    setSelectedDate(cell.date);
+                  }
+                }}
                 className={`calendar-cell ${isToday ? 'calendar-cell-today' : ''} ${hasActivity ? 'calendar-cell-active' : ''} ${isSelected ? 'calendar-cell-selected' : ''}`}
               >
                 <div className={`calendar-day-number ${isToday ? 'calendar-day-today' : ''}`}>

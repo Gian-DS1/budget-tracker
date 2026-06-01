@@ -40,3 +40,6 @@ coverage
 .claude/settings.local.json
 .agents/
 skills-lock.json
+
+# Impeccable: config de live-mode y snapshots de critique (estado local)
+.impeccable/
