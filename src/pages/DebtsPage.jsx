@@ -7,6 +7,7 @@ import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
 import CurrencyInput from '../components/ui/CurrencyInput';
+import { Skeleton } from '../components/ui/Skeleton';
 import { formatCurrency, formatDate, todayISO, formatPercent } from '../utils/formatters';
 import { calculateAmortization } from '../utils/calculations';
 import toast from 'react-hot-toast';
@@ -22,6 +23,11 @@ export default function DebtsPage() {
     getTotalDebt,
     getTotalMonthlyPayment,
   } = useDebtStore();
+  const debtLoading = useDebtStore((s) => s.loading);
+
+  // Esqueleto solo en carga en frío: evita que un usuario CON deudas vea
+  // "Sin deudas registradas" antes de que hidrate Supabase.
+  const showSkeleton = debtLoading && debts.length === 0;
 
   const [showForm, setShowForm] = useState(false);
   const [editingDebt, setEditingDebt] = useState(null);
@@ -29,6 +35,8 @@ export default function DebtsPage() {
   const [showPayment, setShowPayment] = useState(null);
   const [paymentAmount, setPaymentAmount] = useState('');
   const [paymentDate, setPaymentDate] = useState(todayISO());
+  const [formErrors, setFormErrors] = useState({});
+  const [paymentError, setPaymentError] = useState('');
 
   const [form, setForm] = useState({
     creditorName: '',
@@ -59,8 +67,22 @@ export default function DebtsPage() {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.creditorName || !form.originalAmount || !form.monthlyPayment) return;
-    
+
+    // Validación visible en vez de un return silencioso (WCAG 3.3.1).
+    const errors = {};
+    if (!form.creditorName) errors.creditorName = 'Indica el acreedor o nombre.';
+    if (!form.originalAmount || Number(form.originalAmount) <= 0) errors.originalAmount = 'Ingresa el monto original (> 0).';
+    if (!form.monthlyPayment || Number(form.monthlyPayment) <= 0) errors.monthlyPayment = 'Ingresa el pago mensual (> 0).';
+
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      const first = ['creditorName', 'originalAmount', 'monthlyPayment'].find((f) => errors[f]);
+      const el = document.getElementById(`debt-field-${first}`);
+      if (el) el.focus();
+      return;
+    }
+    setFormErrors({});
+
     const debtData = {
       ...form,
       originalAmount: Number(form.originalAmount),
@@ -92,12 +114,25 @@ export default function DebtsPage() {
 
   const handlePayment = (debtId) => {
     const amount = parseFloat(paymentAmount);
-    if (!amount || amount <= 0) return;
+    const debt = debts.find((d) => d.id === debtId);
+    const balance = Number(debt?.currentBalance) || 0;
+
+    // Validación visible del monto del pago.
+    if (!amount || amount <= 0) {
+      setPaymentError('Ingresa un monto mayor que 0.');
+      return;
+    }
+    // Un pago no puede superar el saldo: registrarlo de más corrompe el saldo
+    // y la transacción que se crea en paralelo. Se topa al saldo restante.
+    if (amount > balance) {
+      setPaymentError(`El pago supera el saldo restante (${formatCurrency(balance, debt?.currency)}). Ajústalo para liquidar la deuda.`);
+      return;
+    }
+    setPaymentError('');
 
     addPayment(debtId, amount, paymentDate);
 
-    const debt = debts.find((d) => d.id === debtId);
-    const newBalance = Number(debt?.currentBalance) - amount;
+    const newBalance = balance - amount;
     if (newBalance <= 0) {
       toast.success('🎉 ¡Deuda liquidada! Felicidades!', { duration: 5000 });
     } else {
@@ -136,6 +171,29 @@ export default function DebtsPage() {
         )}
       </div>
 
+      {showSkeleton ? (
+        <div role="status" aria-label="Cargando las deudas">
+          <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={`sk-d-${i}`} className="kpi-card">
+                <Skeleton width={120} height={12} style={{ marginBottom: 'var(--space-3)' }} />
+                <Skeleton width="60%" height={26} />
+              </div>
+            ))}
+          </div>
+          <div className="grid-auto">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={`sk-dc-${i}`} className="card">
+                <Skeleton width="50%" height={18} style={{ marginBottom: 'var(--space-4)' }} />
+                <Skeleton width="100%" height={12} style={{ marginBottom: 'var(--space-2)' }} />
+                <Skeleton width="100%" height={8} radius="var(--radius-full)" style={{ marginBottom: 'var(--space-4)' }} />
+                <Skeleton width="100%" height={40} radius="var(--radius-md)" />
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : (
+       <>
       {/* Summary */}
       {debts.length > 0 && (
         <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
@@ -347,29 +405,43 @@ export default function DebtsPage() {
           })}
         </div>
       )}
+       </>
+      )}
 
       {/* New/Edit Debt Form */}
-      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingDebt(null); }} title={editingDebt ? "Editar Deuda" : "Nueva Deuda"}>
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingDebt(null); setFormErrors({}); }} title={editingDebt ? "Editar Deuda" : "Nueva Deuda"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Acreedor / Nombre *</label>
+            <label className="form-label" htmlFor="debt-field-creditorName">Acreedor / Nombre *</label>
             <input
+              id="debt-field-creditorName"
               type="text"
               value={form.creditorName}
-              onChange={(e) => setForm({ ...form, creditorName: e.target.value })}
+              onChange={(e) => {
+                setForm({ ...form, creditorName: e.target.value });
+                if (formErrors.creditorName) setFormErrors((p) => ({ ...p, creditorName: undefined }));
+              }}
               placeholder="Ej: Banco Popular, Préstamo carro..."
               required
+              aria-invalid={!!formErrors.creditorName}
+              aria-describedby={formErrors.creditorName ? 'debt-err-creditorName' : undefined}
             />
+            {formErrors.creditorName && <p className="form-error" id="debt-err-creditorName">{formErrors.creditorName}</p>}
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Monto Original *</label>
+              <label className="form-label" htmlFor="debt-field-originalAmount">Monto Original *</label>
               <CurrencyInput
+                id="debt-field-originalAmount"
                 value={form.originalAmount}
-                onChange={(val) => setForm({ ...form, originalAmount: val })}
+                onChange={(val) => {
+                  setForm({ ...form, originalAmount: val });
+                  if (formErrors.originalAmount) setFormErrors((p) => ({ ...p, originalAmount: undefined }));
+                }}
                 placeholder="0.00"
                 required
               />
+              {formErrors.originalAmount && <p className="form-error" id="debt-err-originalAmount">{formErrors.originalAmount}</p>}
             </div>
             <div className="form-group">
               <label className="form-label">Saldo Actual</label>
@@ -394,13 +466,18 @@ export default function DebtsPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Pago Mensual *</label>
+              <label className="form-label" htmlFor="debt-field-monthlyPayment">Pago Mensual *</label>
               <CurrencyInput
+                id="debt-field-monthlyPayment"
                 value={form.monthlyPayment}
-                onChange={(val) => setForm({ ...form, monthlyPayment: val })}
+                onChange={(val) => {
+                  setForm({ ...form, monthlyPayment: val });
+                  if (formErrors.monthlyPayment) setFormErrors((p) => ({ ...p, monthlyPayment: undefined }));
+                }}
                 placeholder="0.00"
                 required
               />
+              {formErrors.monthlyPayment && <p className="form-error" id="debt-err-monthlyPayment">{formErrors.monthlyPayment}</p>}
             </div>
           </div>
           <div className="form-row">
@@ -427,7 +504,7 @@ export default function DebtsPage() {
             </div>
           </div>
           <div className="modal-footer">
-            <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setEditingDebt(null); }}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setShowForm(false); setEditingDebt(null); setFormErrors({}); }}>
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
@@ -443,22 +520,37 @@ export default function DebtsPage() {
         onClose={() => {
           setShowPayment(null);
           setPaymentAmount('');
+          setPaymentError('');
         }}
         title="Registrar Pago"
       >
+        {(() => {
+          const payingDebt = debts.find((d) => d.id === showPayment);
+          return payingDebt ? (
+            <p className="text-sm text-muted mb-4">
+              Saldo restante: <strong style={{ color: 'var(--text-primary)' }}>{formatCurrency(Number(payingDebt.currentBalance), payingDebt.currency)}</strong>
+            </p>
+          ) : null;
+        })()}
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label">Monto del Pago</label>
+            <label className="form-label" htmlFor="debt-field-payment">Monto del Pago</label>
             <CurrencyInput
+              id="debt-field-payment"
               value={paymentAmount}
-              onChange={(val) => setPaymentAmount(val)}
+              onChange={(val) => {
+                setPaymentAmount(val);
+                if (paymentError) setPaymentError('');
+              }}
               placeholder="0.00"
               autoFocus
             />
+            {paymentError && <p className="form-error" id="debt-err-payment">{paymentError}</p>}
           </div>
           <div className="form-group">
-            <label className="form-label">Fecha</label>
+            <label className="form-label" htmlFor="debt-field-paymentDate">Fecha</label>
             <input
+              id="debt-field-paymentDate"
               type="date"
               value={paymentDate}
               onChange={(e) => setPaymentDate(e.target.value)}
@@ -471,6 +563,7 @@ export default function DebtsPage() {
             onClick={() => {
               setShowPayment(null);
               setPaymentAmount('');
+              setPaymentError('');
             }}
           >
             Cancelar
