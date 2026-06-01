@@ -177,11 +177,15 @@ export function getStatementHistory(card) {
 }
 
 /**
- * Cashback acumulado de por vida (suma del cashback de todos los estados de
- * cuenta ya pagados/guardados en el historial de la tarjeta).
+ * Cashback acumulado de por vida: suma del cashback de TODAS las transacciones de
+ * la tarjeta. Se calcula de las transacciones (no de paidCycles), más robusto.
  */
-export function getLifetimeCashback(card) {
-  return getStatementHistory(card).reduce((sum, p) => sum + (Number(p.cashback) || 0), 0);
+export function getLifetimeCashback(card, transactions = []) {
+  if (!card || !card.id) return 0;
+  return transactions.reduce(
+    (sum, t) => (t.cardId === card.id ? sum + (Number(t.cashbackEarned) || 0) : sum),
+    0
+  );
 }
 
 /**

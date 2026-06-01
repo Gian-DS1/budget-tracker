@@ -69,14 +69,19 @@ describe('getStatementHistory / getLifetimeCashback', () => {
     expect(hist[1].cashback).toBe(0); // el legado no tenía cashback
   });
 
-  it('suma el cashback acumulado de por vida', () => {
-    const card = { paidCycles: [{ cycleEnd: '2026-04-20', cashback: 12.5 }, { cycleEnd: '2026-05-20', cashback: 30 }] };
-    expect(getLifetimeCashback(card)).toBe(42.5);
+  it('suma el cashback de por vida desde las transacciones de la tarjeta', () => {
+    const txs = [
+      { cardId: 'c1', cashbackEarned: 12.5 },
+      { cardId: 'c1', cashbackEarned: 30 },
+      { cardId: 'c2', cashbackEarned: 99 },
+    ];
+    expect(getLifetimeCashback({ id: 'c1' }, txs)).toBe(42.5);
   });
 
   it('devuelve vacío/0 si no hay historial', () => {
     expect(getStatementHistory({})).toEqual([]);
     expect(getLifetimeCashback({})).toBe(0);
+    expect(getLifetimeCashback({ id: 'c1' }, [])).toBe(0);
   });
 });
 
