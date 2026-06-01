@@ -440,7 +440,7 @@ export default function TransactionsPage() {
 
         {showFilters && (
           <div
-            className="form-row"
+            className="form-row animate-filters-panel"
             style={{
               marginTop: 'var(--space-4)',
               paddingTop: 'var(--space-4)',
@@ -596,7 +596,7 @@ export default function TransactionsPage() {
           }
         />
       ) : (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="card animate-panel-entrance" style={{ padding: 0, overflow: 'hidden' }}>
           <div style={{ overflowX: 'auto' }}>
             <table className="data-table">
               <thead>

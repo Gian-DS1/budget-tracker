@@ -185,8 +185,8 @@ export default function CalendarPage() {
           ))}
         </div>
 
-        {/* Grid Body */}
-        <div className="calendar-grid">
+        {/* Grid Body — key por mes para que el fade se replique al navegar */}
+        <div className="calendar-grid calendar-grid-animated" key={`${year}-${month}`}>
           {calendarData.map((cell) => {
             if (cell.empty) {
               return <div key={cell.key} className="calendar-cell calendar-cell-empty" />;

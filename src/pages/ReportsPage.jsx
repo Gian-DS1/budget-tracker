@@ -268,7 +268,7 @@ export default function ReportsPage() {
 
       {/* ─── TAB: Projections ─── */}
       {activeTab === 'projections' && (
-        <div className="reports-tab">
+        <div className="reports-tab animate-tab-content">
           {/* KPIs inteligentes */}
           <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)', marginBottom: 'var(--space-4)' }}>
             <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-income)' }}>
@@ -343,7 +343,7 @@ export default function ReportsPage() {
 
       {/* ─── TAB: Anomalies ─── */}
       {activeTab === 'anomalies' && (
-        <div className="reports-tab-scroll">
+        <div className="reports-tab-scroll animate-tab-content">
           <div className="alert alert-info">
             <Lightbulb size={16} />
             <span>
@@ -412,7 +412,7 @@ export default function ReportsPage() {
 
       {/* ─── TAB: Debts ─── */}
       {activeTab === 'debts' && (
-        <div className="reports-tab-scroll">
+        <div className="reports-tab-scroll animate-tab-content">
           {!debtStrategies ? (
             <div className="card text-center" style={{ padding: 'var(--space-12) var(--space-6)' }}>
               <h3 className="font-bold text-lg mb-2">No tienes deudas activas</h3>

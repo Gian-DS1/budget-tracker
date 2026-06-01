@@ -674,7 +674,7 @@ table {
   max-height: 85vh;
   overflow-y: auto;
   box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
-  animation: modalSlideIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalSlideIn 0.3s var(--ease-out-quint);
 }
 
 .modal-header {
@@ -2772,6 +2772,47 @@ textarea:focus {
 
 .day-cell-selected {
   transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
+}
+
+/* ── Reports: transición de contenido al cambiar de pestaña ──
+   El contenido entra con un fade + rise corto cada vez que se monta
+   (al cambiar de pestaña), comunicando el cambio de estado sin choreografía. */
+.animate-tab-content {
+  animation: panelEntrance 260ms var(--ease-out-quint);
+}
+
+/* ── Calendar: fade del grid al cambiar de mes + interacción de celdas ──
+   Con key={año-mes} el grid se remonta y replica este fade, así el cambio
+   de mes se siente como una transición, no un salto. */
+.calendar-grid-animated {
+  animation: fadeIn 240ms var(--ease-out-quart);
+}
+
+/* Lift sutil al pasar el mouse por un día con actividad (es clicable). */
+.calendar-cell-active {
+  cursor: pointer;
+}
+.calendar-cell-active:hover {
+  transform: translateY(-2px);
+  border-color: var(--border-accent);
+  box-shadow: var(--shadow-md);
+}
+
+/* Feedback de los botones de mes del calendario (consistente con btn-month-nav). */
+.calendar-nav-btn {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+.calendar-nav-btn:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+.calendar-nav-btn:active {
+  transform: scale(0.96);
+}
+
+/* ── Transacciones: panel de filtros entra al abrirse ── */
+.animate-filters-panel {
+  animation: slideUpFade 220ms var(--ease-out-quint);
 }
 
 /* ============================================================
