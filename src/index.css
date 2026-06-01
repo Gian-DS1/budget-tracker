@@ -59,10 +59,12 @@
   --radius-full: 9999px;
 
   /* ── Transitions ── */
-  --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-base: 250ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
-  --transition-spring: 500ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+  --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms var(--ease-out-quart);
+  --transition-base: 250ms var(--ease-out-quart);
+  --transition-slow: 350ms var(--ease-out-quart);
 
   /* ── Shadows ── */
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
@@ -939,6 +941,12 @@ table {
   border: 1px solid var(--border-primary);
   border-radius: var(--radius-xl);
   padding: var(--space-6);
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.chart-container:hover {
+  border-color: var(--border-secondary);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08);
 }
 
 .chart-header {
@@ -1315,6 +1323,68 @@ table {
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+/* ── Dashboard Entrance Animations ── */
+
+@keyframes kpiCardEntrance {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes panelEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes chartEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes alertSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes transactionItemEntrance {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes buttonHoverScale {
+  from { transform: scale(1); }
+  to { transform: scale(1.04); }
 }
 
 /* ── Auth Link Buttons ─────────────────────────────────────── */
@@ -2466,6 +2536,12 @@ textarea:focus {
   padding: var(--space-6);
   display: flex;
   flex-direction: column;
+  transition: border-color var(--transition-base), box-shadow var(--transition-base);
+}
+
+.overview-panel:hover {
+  border-color: var(--border-secondary);
+  box-shadow: 0 4px 16px rgba(16, 185, 129, 0.08);
 }
 
 .overview-panel-head {
@@ -2645,6 +2721,48 @@ textarea:focus {
     width: auto;
     height: 1px;
   }
+}
+
+/* ── Dashboard Animation Classes ── */
+
+.animate-kpi-entrance {
+  animation: kpiCardEntrance 350ms var(--ease-out-quart);
+}
+
+.animate-panel-entrance {
+  animation: panelEntrance 300ms var(--ease-out-quart);
+  animation-delay: calc((var(--i, 0)) * 100ms);
+}
+
+.animate-chart-entrance {
+  animation: chartEntrance 400ms var(--ease-out-quart);
+  animation-delay: calc((var(--i, 0)) * 100ms);
+}
+
+.animate-alert-entrance {
+  animation: alertSlideIn 250ms var(--ease-out-quart);
+}
+
+.animate-transaction-entrance {
+  animation: transactionItemEntrance 250ms var(--ease-out-quart);
+  animation-delay: calc((var(--i, 0)) * 50ms);
+}
+
+.btn-month-nav {
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn-month-nav:hover:not(:disabled) {
+  transform: scale(1.06);
+  box-shadow: 0 0 12px rgba(16, 185, 129, 0.2);
+}
+
+.btn-month-nav:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.day-cell-selected {
+  transition: background-color var(--transition-base), color var(--transition-base), border-color var(--transition-base);
 }
 
 /* ============================================================

@@ -320,7 +320,7 @@ export default function DashboardPage() {
         </div>
         <div className="month-selector">
           <button
-            className="btn-icon"
+            className="btn-icon btn-month-nav"
             onClick={() => navigateMonth(-1)}
             aria-label="Mes anterior"
           >
@@ -330,7 +330,7 @@ export default function DashboardPage() {
             {MONTHS_ES[currentMonth]} {currentYear}
           </span>
           <button
-            className="btn-icon"
+            className="btn-icon btn-month-nav"
             onClick={() => navigateMonth(1)}
             disabled={isCurrentMonth}
             aria-label="Mes siguiente"
@@ -346,7 +346,7 @@ export default function DashboardPage() {
       ) : (
        <>
       {/* Héroe: Puedes gastar */}
-      <div className="kpi-card" id="tour-dashboard-hero" style={{
+      <div className="kpi-card animate-kpi-entrance" id="tour-dashboard-hero" style={{
         marginBottom: 'var(--space-6)',
         '--kpi-accent':
           summary.estado === 'danger' ? 'var(--color-danger)'
@@ -380,7 +380,7 @@ export default function DashboardPage() {
       </div>
 
       {cardAlerts.map((a) => (
-        <div key={a.card.id} className="alert alert-warning" style={{ marginBottom: 'var(--space-4)' }}>
+        <div key={a.card.id} className="alert alert-warning animate-alert-entrance" style={{ marginBottom: 'var(--space-4)' }}>
           <CreditCard size={16} />
           <span>
             <strong>{a.card.name}</strong>: pago de {formatCurrency(a.amount)} vence {a.days === 0 ? 'hoy' : `en ${a.days} día${a.days === 1 ? '' : 's'}`} ({formatDate(a.dueISO)}).
@@ -392,7 +392,7 @@ export default function DashboardPage() {
       <div className="overview-grid" id="tour-dashboard-summary">
 
         {/* ── Flujo del mes ── */}
-        <section className="overview-panel" aria-labelledby="ov-flujo">
+        <section className="overview-panel animate-panel-entrance" style={{'--i': 0}} aria-labelledby="ov-flujo">
           <h2 className="overview-panel-head" id="ov-flujo">
             <ArrowRightLeft size={14} /> Flujo del mes
           </h2>
@@ -451,7 +451,7 @@ export default function DashboardPage() {
         </section>
 
         {/* ── Patrimonio (más callado) ── */}
-        <section className="overview-panel" aria-labelledby="ov-patrimonio">
+        <section className="overview-panel animate-panel-entrance" style={{'--i': 1}} aria-labelledby="ov-patrimonio">
           <h2 className="overview-panel-head" id="ov-patrimonio">
             <Scale size={14} /> Patrimonio
           </h2>
@@ -494,7 +494,7 @@ export default function DashboardPage() {
 
       <div className="grid-2">
         {/* Trend Chart */}
-        <div className="chart-container">
+        <div className="chart-container animate-chart-entrance" style={{'--i': 0}}>
           <div className="chart-header">
             <h3 className="chart-title">Evolución (6 meses)</h3>
           </div>
@@ -514,7 +514,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Donut Chart */}
-        <div className="chart-container">
+        <div className="chart-container animate-chart-entrance" style={{'--i': 1}}>
           <div className="chart-header">
             <h3 className="chart-title">Distribución de Gastos</h3>
           </div>
@@ -567,16 +567,16 @@ export default function DashboardPage() {
 
       <div className="grid-2" style={{ marginTop: 'var(--space-6)' }}>
         {/* Recent Transactions */}
-        <div className="card">
+        <div className="card animate-chart-entrance">
           <div className="card-header">
             <h3 className="card-title">Transacciones Recientes</h3>
           </div>
           {recentTransactions.length > 0 ? (
             <div className="flex flex-col gap-4">
-              {recentTransactions.map((t) => {
+              {recentTransactions.map((t, idx) => {
                 const cat = categories.find(c => c.id === t.categoryId);
                 return (
-                  <div key={t.id} className="flex items-center justify-between gap-3" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', minWidth: 0, padding: 'var(--space-3) var(--space-6)' }}>
+                  <div key={t.id} className="flex items-center justify-between gap-3 animate-transaction-entrance" style={{ background: 'var(--bg-secondary)', borderRadius: 'var(--radius-lg)', minWidth: 0, padding: 'var(--space-3) var(--space-6)', '--i': idx }}>
                     <div className="flex items-center gap-3" style={{ minWidth: 0, flex: 1 }}>
                       <div style={{ fontSize: '1.5rem', background: 'var(--bg-card)', padding: '8px', borderRadius: 'var(--radius-md)', flexShrink: 0 }}>
                         {cat?.icon || '💸'}
@@ -628,10 +628,11 @@ export default function DashboardPage() {
             {calendarDays.days.map((day) => (
               <div
                 key={day.day}
-                className="tooltip-container flex items-center justify-center"
+                className={`tooltip-container flex items-center justify-center day-cell-selected ${selectedDay === day.date ? 'is-selected' : ''}`}
                 role={day.hasActivity ? 'button' : undefined}
                 tabIndex={day.hasActivity ? 0 : undefined}
                 aria-label={day.hasActivity ? `Ver transacciones del ${formatDate(day.date)}` : undefined}
+                aria-pressed={selectedDay === day.date}
                 onClick={() => day.hasActivity && setSelectedDay(day.date)}
                 onKeyDown={(e) => {
                   if (day.hasActivity && (e.key === 'Enter' || e.key === ' ')) {
@@ -642,11 +643,11 @@ export default function DashboardPage() {
                 style={{
                   aspectRatio: '1',
                   borderRadius: 'var(--radius-sm)',
-                  background: day.color,
-                  border: day.hasActivity ? 'none' : '1px solid var(--border-primary)',
+                  background: selectedDay === day.date ? 'var(--accent-primary)' : day.color,
+                  border: selectedDay === day.date ? 'none' : (day.hasActivity ? 'none' : '1px solid var(--border-primary)'),
                   fontSize: 'var(--font-xs)',
                   fontWeight: day.hasActivity ? 'bold' : 'normal',
-                  color: day.hasActivity ? 'var(--text-primary)' : 'var(--text-tertiary)',
+                  color: selectedDay === day.date ? 'white' : (day.hasActivity ? 'var(--text-primary)' : 'var(--text-tertiary)'),
                   cursor: day.hasActivity ? 'pointer' : 'default'
                 }}
               >
