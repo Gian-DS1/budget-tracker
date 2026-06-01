@@ -16,9 +16,9 @@ import CurrencyInput from '../components/ui/CurrencyInput';
 import toast from 'react-hot-toast';
 
 const HORIZON_CONFIG = {
-  short: { label: 'Corto Plazo', subtitle: '1-3 meses', emoji: '⚡', color: '#f59e0b' },
-  medium: { label: 'Mediano Plazo', subtitle: '3-12 meses', emoji: '📅', color: '#6366f1' },
-  long: { label: 'Largo Plazo', subtitle: '1+ años', emoji: '🏔️', color: '#06b6d4' },
+  short: { label: 'Corto Plazo', subtitle: '1-3 meses', emoji: '⚡', color: 'var(--color-variable)' },
+  medium: { label: 'Mediano Plazo', subtitle: '3-12 meses', emoji: '📅', color: 'var(--color-fixed)' },
+  long: { label: 'Largo Plazo', subtitle: '1+ años', emoji: '🏔️', color: 'var(--color-savings)' },
 };
 
 const STATUS_CONFIG = {
@@ -409,8 +409,9 @@ export default function PlanPage() {
       <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingPlan(null); }} title={editingPlan ? "Editar Meta del Plan" : "Nueva Meta del Plan"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Nombre de la Meta *</label>
+            <label className="form-label" htmlFor="plan-title">Nombre de la Meta *</label>
             <input
+              id="plan-title"
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -422,8 +423,9 @@ export default function PlanPage() {
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Descripción (opcional)</label>
+            <label className="form-label" htmlFor="plan-description">Descripción (opcional)</label>
             <textarea
+              id="plan-description"
               value={form.description}
               onChange={(e) => setForm({ ...form, description: e.target.value })}
               placeholder="Detalles opcionales de por qué esta meta es importante..."
@@ -435,8 +437,9 @@ export default function PlanPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Horizonte <InfoTooltip text="Corto: menos de 3 meses. Mediano: 3-12 meses. Largo: 1+ años." label="Ayuda sobre horizontes" /></label>
+              <label className="form-label" htmlFor="plan-horizon">Horizonte <InfoTooltip text="Corto: menos de 3 meses. Mediano: 3-12 meses. Largo: 1+ años." label="Ayuda sobre horizontes" /></label>
               <select
+                id="plan-horizon"
                 value={form.horizon}
                 onChange={(e) => setForm({ ...form, horizon: e.target.value })}
               >
@@ -449,8 +452,9 @@ export default function PlanPage() {
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Monto Objetivo *</label>
+              <label className="form-label" htmlFor="plan-target">Monto Objetivo *</label>
               <CurrencyInput
+                id="plan-target"
                 value={form.targetAmount}
                 onChange={(val) => setForm({ ...form, targetAmount: val })}
                 placeholder="0.00"
@@ -462,8 +466,9 @@ export default function PlanPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Ahorro Actual</label>
+              <label className="form-label" htmlFor="plan-current">Ahorro Actual</label>
               <CurrencyInput
+                id="plan-current"
                 value={form.currentAmount}
                 onChange={(val) => setForm({ ...form, currentAmount: val })}
                 placeholder="0.00"
@@ -473,8 +478,9 @@ export default function PlanPage() {
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha Objetivo *</label>
+              <label className="form-label" htmlFor="plan-deadline">Fecha Objetivo *</label>
               <input
+                id="plan-deadline"
                 type="date"
                 value={form.deadline}
                 onChange={(e) => setForm({ ...form, deadline: e.target.value })}

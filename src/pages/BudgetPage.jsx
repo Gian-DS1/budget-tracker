@@ -606,8 +606,9 @@ export default function BudgetPage() {
         </div>
         {configForm.isAccumulative && (
           <div className="form-group">
-            <label className="form-label">Mes de inicio del bote</label>
+            <label className="form-label" htmlFor="budget-accum-start">Mes de inicio del bote</label>
             <input
+              id="budget-accum-start"
               type="month"
               value={configForm.accumulationStart}
               onChange={(e) => setConfigForm({ ...configForm, accumulationStart: e.target.value })}

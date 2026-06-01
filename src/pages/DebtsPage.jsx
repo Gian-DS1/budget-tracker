@@ -508,8 +508,9 @@ export default function DebtsPage() {
               {formErrors.originalAmount && <p className="form-error" id="debt-err-originalAmount">{formErrors.originalAmount}</p>}
             </div>
             <div className="form-group">
-              <label className="form-label">Saldo Actual</label>
+              <label className="form-label" htmlFor="debt-field-currentBalance">Saldo Actual</label>
               <CurrencyInput
+                id="debt-field-currentBalance"
                 value={form.currentBalance}
                 onChange={(val) => setForm({ ...form, currentBalance: val })}
                 placeholder="Igual al original si es nueva"
@@ -518,8 +519,9 @@ export default function DebtsPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Tasa de Interés (%)</label>
+              <label className="form-label" htmlFor="debt-field-interestRate">Tasa de Interés (%)</label>
               <input
+                id="debt-field-interestRate"
                 type="number"
                 min="0"
                 step="0.01"
@@ -546,8 +548,9 @@ export default function DebtsPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Moneda</label>
+              <label className="form-label" htmlFor="debt-field-currency">Moneda</label>
               <select
+                id="debt-field-currency"
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
@@ -556,8 +559,9 @@ export default function DebtsPage() {
               </select>
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha de pago</label>
+              <label className="form-label" htmlFor="debt-field-dueDate">Fecha de pago</label>
               <input
+                id="debt-field-dueDate"
                 type="date"
                 value={form.dueDate}
                 onChange={(e) => setForm({ ...form, dueDate: e.target.value })}

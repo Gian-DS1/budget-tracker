@@ -304,6 +304,7 @@ export default function SettingsPage() {
             <input
               type="number"
               className="no-spinners"
+              aria-label="Tasa de cambio manual (RD$ por US$)"
               style={{ flex: '1 1 120px', minWidth: 0 }}
               placeholder={manualRate != null ? String(manualRate) : 'Tasa manual'}
               value={rateInput}

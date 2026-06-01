@@ -109,8 +109,9 @@ export default function FeedbackPage() {
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label">Tipo de Comentario *</label>
+              <label className="form-label" htmlFor="fb-type">Tipo de Comentario *</label>
               <select
+                id="fb-type"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
                 disabled={sending}
@@ -123,8 +124,9 @@ export default function FeedbackPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Asunto / Título Resumido *</label>
+              <label className="form-label" htmlFor="fb-subject">Asunto / Título Resumido *</label>
               <input
+                id="fb-subject"
                 type="text"
                 value={form.subject}
                 onChange={(e) => setForm({ ...form, subject: e.target.value })}
@@ -135,8 +137,9 @@ export default function FeedbackPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label">Descripción Detallada *</label>
+              <label className="form-label" htmlFor="fb-description">Descripción Detallada *</label>
               <textarea
+                id="fb-description"
                 value={form.description}
                 onChange={(e) => setForm({ ...form, description: e.target.value })}
                 placeholder="Por favor, describe detalladamente la mejora que propones o el error encontrado. Si es un error, indica los pasos para reproducirlo..."

@@ -320,8 +320,9 @@ export default function CreditCardsPage() {
           {!editingId && cardType === 'predefinida' && (
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Banco *</label>
+                <label className="form-label" htmlFor="card-bank-select">Banco *</label>
                 <select
+                  id="card-bank-select"
                   value={selectedBank}
                   onChange={(e) => { setSelectedBank(e.target.value); handleSelectTemplate(''); }}
                   style={{ padding: '8px', borderRadius: 'var(--radius-md)', border: '1px solid var(--border-primary)', background: 'var(--bg-input)', width: '100%' }}
@@ -331,8 +332,9 @@ export default function CreditCardsPage() {
                 </select>
               </div>
               <div className="form-group">
-                <label className="form-label">Tarjeta *</label>
+                <label className="form-label" htmlFor="card-template-select">Tarjeta *</label>
                 <select
+                  id="card-template-select"
                   value={form.catalogId || ''}
                   disabled={!selectedBank}
                   onChange={(e) => handleSelectTemplate(e.target.value)}
@@ -349,7 +351,7 @@ export default function CreditCardsPage() {
           {isPredefined ? (
             form.catalogId && (
               <div className="form-group">
-                <label className="form-label">Tarjeta</label>
+                <span className="form-label">Tarjeta</span>
                 <div className="flex items-center gap-2" style={{ padding: '10px', borderRadius: 'var(--radius-md)', background: 'var(--bg-secondary)' }}>
                   <CreditCard size={16} style={{ color: form.color }} />
                   <span className="font-semibold">{form.name}</span>
@@ -360,12 +362,12 @@ export default function CreditCardsPage() {
           ) : (
             <>
               <div className="form-group">
-                <label className="form-label">Nombre *</label>
-                <input type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Visa Clásica" required />
+                <label className="form-label" htmlFor="card-name">Nombre *</label>
+                <input id="card-name" type="text" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Ej: Visa Clásica" required />
               </div>
               <div className="form-group">
-                <label className="form-label">Banco</label>
-                <input type="text" value={form.bank} onChange={(e) => setForm({ ...form, bank: e.target.value })} placeholder="Ej: Banco Popular" />
+                <label className="form-label" htmlFor="card-bank">Banco</label>
+                <input id="card-bank" type="text" value={form.bank} onChange={(e) => setForm({ ...form, bank: e.target.value })} placeholder="Ej: Banco Popular" />
               </div>
             </>
           )}
@@ -374,15 +376,15 @@ export default function CreditCardsPage() {
           {(!isPredefined || form.catalogId) && (
             <div className="form-row">
               <div className="form-group">
-                <label className="form-label">Día de corte *</label>
-                <input type="number" min="1" max="31" value={form.cutoffDay} onChange={(e) => setForm({ ...form, cutoffDay: e.target.value })} placeholder="20" required />
+                <label className="form-label" htmlFor="card-cutoff">Día de corte *</label>
+                <input id="card-cutoff" type="number" min="1" max="31" value={form.cutoffDay} onChange={(e) => setForm({ ...form, cutoffDay: e.target.value })} placeholder="20" required />
                 <div className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
                   Último día que se incluyen gastos en el ciclo actual. Ej: si es el 20, los gastos del 1-20 se cierran; gastos del 21-31 van al siguiente ciclo.
                 </div>
               </div>
               <div className="form-group">
-                <label className="form-label">Día de pago *</label>
-                <input type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} placeholder="5" required />
+                <label className="form-label" htmlFor="card-due">Día de pago *</label>
+                <input id="card-due" type="number" min="1" max="31" value={form.dueDay} onChange={(e) => setForm({ ...form, dueDay: e.target.value })} placeholder="5" required />
                 <div className="text-xs text-muted mt-2" style={{ lineHeight: 1.5 }}>
                   Fecha límite para pagar sin intereses. Ej: si es el 5 del mes siguiente al corte, ese es tu vencimiento.
                 </div>
@@ -393,8 +395,8 @@ export default function CreditCardsPage() {
           {/* Color: editable siempre (cosmético) */}
           {(!isPredefined || form.catalogId) && (
             <div className="form-group">
-              <label className="form-label">Color</label>
-              <div className="flex items-center gap-2">
+              <span className="form-label" id="card-color-label">Color</span>
+              <div className="flex items-center gap-2" role="group" aria-labelledby="card-color-label">
                 {COLORS.map((c) => (
                   <button
                     key={c}
@@ -524,17 +526,17 @@ export default function CreditCardsPage() {
         <form onSubmit={handleAbonoSubmit}>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Monto del abono *</label>
-              <CurrencyInput value={abonoAmount} onChange={(val) => setAbonoAmount(val)} placeholder="0.00" autoFocus />
+              <label className="form-label" htmlFor="abono-amount">Monto del abono *</label>
+              <CurrencyInput id="abono-amount" value={abonoAmount} onChange={(val) => setAbonoAmount(val)} placeholder="0.00" autoFocus />
             </div>
             <div className="form-group">
-              <label className="form-label">Fecha</label>
-              <input type="date" value={abonoDate} onChange={(e) => setAbonoDate(e.target.value)} />
+              <label className="form-label" htmlFor="abono-date">Fecha</label>
+              <input id="abono-date" type="date" value={abonoDate} onChange={(e) => setAbonoDate(e.target.value)} />
             </div>
           </div>
           <div className="form-group">
-            <label className="form-label">Nota (opcional)</label>
-            <input type="text" value={abonoNote} onChange={(e) => setAbonoNote(e.target.value)} placeholder="Ej: pago al corte, ingreso extra..." />
+            <label className="form-label" htmlFor="abono-note">Nota (opcional)</label>
+            <input id="abono-note" type="text" value={abonoNote} onChange={(e) => setAbonoNote(e.target.value)} placeholder="Ej: pago al corte, ingreso extra..." />
           </div>
           <p className="text-xs text-muted" style={{ marginTop: 'var(--space-1)' }}>
             Un abono solo baja el saldo de la tarjeta; no se registra como gasto del presupuesto.

@@ -106,8 +106,9 @@ export default function AuthPage() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {currentMode !== 'update_password' && (
             <div className="form-group">
-              <label className="form-label">Correo Electrónico</label>
+              <label className="form-label" htmlFor="auth-email">Correo Electrónico</label>
               <input
+                id="auth-email"
                 type="email"
                 placeholder="tu@correo.com"
                 value={email}
@@ -119,10 +120,11 @@ export default function AuthPage() {
 
           {currentMode !== 'forgot_password' && (
             <div className="form-group">
-              <label className="form-label">
+              <label className="form-label" htmlFor="auth-password">
                 {currentMode === 'update_password' ? 'Nueva Contraseña' : 'Contraseña'}
               </label>
               <input
+                id="auth-password"
                 type="password"
                 placeholder="••••••••"
                 value={password}

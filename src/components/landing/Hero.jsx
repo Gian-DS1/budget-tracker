@@ -25,11 +25,15 @@ export default function Hero({ onAuth }) {
         transition: { duration: 6, repeat: Infinity, ease: 'easeInOut' },
       };
 
+  // whileInView en vez de animate: los orbes (grandes y borrosos) solo animan
+  // mientras el héroe está en pantalla; al hacer scroll se detienen y dejan de
+  // ocupar el compositor.
   const orb = (delay) =>
     reduce
       ? {}
       : {
-          animate: { scale: [1, 1.15, 1], opacity: [0.45, 0.65, 0.45] },
+          whileInView: { scale: [1, 1.15, 1], opacity: [0.45, 0.65, 0.45] },
+          viewport: { once: false },
           transition: { duration: 9, repeat: Infinity, ease: 'easeInOut', delay },
         };
 

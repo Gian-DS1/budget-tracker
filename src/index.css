@@ -514,8 +514,19 @@ table {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* Tap target accesible: nunca por debajo de 40px (44px en punteros táctiles). */
+  min-width: 40px;
+  min-height: 40px;
   color: var(--text-secondary);
   transition: all var(--transition-fast);
+}
+
+/* En pantallas táctiles, sube el objetivo al mínimo recomendado (WCAG 2.5.5). */
+@media (pointer: coarse) {
+  .btn-icon {
+    min-width: 44px;
+    min-height: 44px;
+  }
 }
 
 .btn-icon:hover {
@@ -2782,5 +2793,32 @@ textarea:focus {
   /* La franja de brillo es puramente decorativa: se oculta del todo. */
   .progress-bar-fill::after {
     display: none;
+  }
+}
+
+/* ── Alto contraste ────────────────────────────────────────────
+   Para usuarios que piden más contraste (Windows High Contrast,
+   "Aumentar contraste" en macOS): bordes y texto secundario más
+   marcados para reforzar los límites de cada superficie. */
+@media (prefers-contrast: more) {
+  [data-theme="dark"] {
+    --border-primary: rgba(255, 255, 255, 0.24);
+    --border-secondary: rgba(255, 255, 255, 0.38);
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #aab6c6;
+  }
+  [data-theme="light"] {
+    --border-primary: rgba(0, 0, 0, 0.28);
+    --border-secondary: rgba(0, 0, 0, 0.42);
+    --text-secondary: #334155;
+    --text-tertiary: #475569;
+  }
+  .card,
+  .btn,
+  input,
+  select,
+  textarea {
+    border-width: 1px;
+    border-style: solid;
   }
 }

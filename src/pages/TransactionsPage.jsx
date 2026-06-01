@@ -409,8 +409,8 @@ export default function TransactionsPage() {
               style={{ border: 'none', padding: 'var(--space-1) 0' }}
             />
             {searchQuery && (
-              <button className="btn-icon" onClick={() => setSearchQuery('')}>
-                <X size={14} />
+              <button className="btn-icon" onClick={() => setSearchQuery('')} aria-label="Limpiar búsqueda">
+                <X size={14} aria-hidden="true" />
               </button>
             )}
           </div>
@@ -449,8 +449,8 @@ export default function TransactionsPage() {
             }}
           >
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Tipo</label>
-              <select value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+              <label className="form-label" htmlFor="tx-filter-type">Tipo</label>
+              <select id="tx-filter-type" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
                 <option value="">Todos</option>
                 <option value="income">Ingresos</option>
                 <option value="expense">Gastos</option>
@@ -459,8 +459,8 @@ export default function TransactionsPage() {
               </select>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Categoría</label>
-              <select value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
+              <label className="form-label" htmlFor="tx-filter-category">Categoría</label>
+              <select id="tx-filter-category" value={filterCategory} onChange={(e) => setFilterCategory(e.target.value)}>
                 <option value="">Todas</option>
                 <option value={UNCATEGORIZED}>
                   🏷️ Sin categoría{uncategorizedCount > 0 ? ` (${uncategorizedCount})` : ''}
@@ -473,16 +473,18 @@ export default function TransactionsPage() {
               </select>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Desde</label>
+              <label className="form-label" htmlFor="tx-filter-from">Desde</label>
               <input
+                id="tx-filter-from"
                 type="date"
                 value={filterDateFrom}
                 onChange={(e) => setFilterDateFrom(e.target.value)}
               />
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
-              <label className="form-label">Hasta</label>
+              <label className="form-label" htmlFor="tx-filter-to">Hasta</label>
               <input
+                id="tx-filter-to"
                 type="date"
                 value={filterDateTo}
                 onChange={(e) => setFilterDateTo(e.target.value)}
@@ -748,8 +750,9 @@ export default function TransactionsPage() {
               {formErrors.date && <p className="form-error" id="tx-err-date">{formErrors.date}</p>}
             </div>
             <div className="form-group" style={{ minWidth: 0 }}>
-              <label className="form-label">Tipo</label>
+              <label className="form-label" htmlFor="tx-field-type">Tipo</label>
               <select
+                id="tx-field-type"
                 value={form.type}
                 onChange={(e) => setForm({ ...form, type: e.target.value })}
                 style={{ width: '100%' }}
@@ -763,8 +766,9 @@ export default function TransactionsPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Descripción</label>
+            <label className="form-label" htmlFor="tx-field-description">Descripción</label>
             <input
+              id="tx-field-description"
               type="text"
               value={form.description}
               onChange={(e) => handleDescriptionChange(e.target.value)}
@@ -795,8 +799,9 @@ export default function TransactionsPage() {
               {formErrors.amount && <p className="form-error" id="tx-err-amount">{formErrors.amount}</p>}
             </div>
             <div className="form-group">
-              <label className="form-label">Moneda</label>
+              <label className="form-label" htmlFor="tx-field-currency">Moneda</label>
               <select
+                id="tx-field-currency"
                 value={form.currency}
                 onChange={(e) => setForm({ ...form, currency: e.target.value })}
               >
@@ -858,8 +863,9 @@ export default function TransactionsPage() {
 
           {form.type === 'expense' && cards.length > 0 && (
             <div className="form-group">
-              <label className="form-label">Tarjeta (opcional)</label>
+              <label className="form-label" htmlFor="tx-field-card">Tarjeta (opcional)</label>
               <select
+                id="tx-field-card"
                 value={form.cardId}
                 onChange={(e) => setForm({ ...form, cardId: e.target.value })}
               >
@@ -877,8 +883,9 @@ export default function TransactionsPage() {
           )}
 
           <div className="form-group">
-            <label className="form-label">Notas (opcional)</label>
+            <label className="form-label" htmlFor="tx-field-notes">Notas (opcional)</label>
             <textarea
+              id="tx-field-notes"
               value={form.notes}
               onChange={(e) => setForm({ ...form, notes: e.target.value })}
               placeholder="Detalles adicionales..."
@@ -901,6 +908,7 @@ export default function TransactionsPage() {
             </label>
             {form.isRecurring && (
               <select
+                aria-label="Frecuencia de recurrencia"
                 value={form.recurrencePattern}
                 onChange={(e) => setForm({ ...form, recurrencePattern: e.target.value })}
                 style={{ marginTop: 'var(--space-2)' }}

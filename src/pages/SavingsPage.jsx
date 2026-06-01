@@ -317,8 +317,9 @@ export default function SavingsPage() {
       <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingGoal(null); }} title={editingGoal ? "Editar Meta de Ahorro" : "Nueva Meta de Ahorro"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Nombre *</label>
+            <label className="form-label" htmlFor="goal-title">Nombre *</label>
             <input
+              id="goal-title"
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
@@ -328,8 +329,8 @@ export default function SavingsPage() {
           </div>
 
           <div className="form-group">
-            <label className="form-label">Ícono</label>
-            <div className="flex gap-2" style={{ flexWrap: 'wrap' }}>
+            <span className="form-label" id="goal-icon-label">Ícono</span>
+            <div className="flex gap-2" style={{ flexWrap: 'wrap' }} role="group" aria-labelledby="goal-icon-label">
               {emojiOptions.map((emoji) => (
                 <button
                   key={emoji}
@@ -356,8 +357,9 @@ export default function SavingsPage() {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Monto Objetivo *</label>
+              <label className="form-label" htmlFor="goal-target">Monto Objetivo *</label>
               <CurrencyInput
+                id="goal-target"
                 value={form.targetAmount}
                 onChange={(val) => setForm({ ...form, targetAmount: val })}
                 placeholder="0.00"
@@ -365,8 +367,9 @@ export default function SavingsPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Monto Inicial</label>
+              <label className="form-label" htmlFor="goal-current">Monto Inicial</label>
               <CurrencyInput
+                id="goal-current"
                 value={form.currentAmount}
                 onChange={(val) => setForm({ ...form, currentAmount: val })}
                 placeholder="0.00"
@@ -376,16 +379,18 @@ export default function SavingsPage() {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Fecha Objetivo</label>
+              <label className="form-label" htmlFor="goal-deadline">Fecha Objetivo</label>
               <input
+                id="goal-deadline"
                 type="date"
                 value={form.deadline}
                 onChange={(e) => setForm({ ...form, deadline: e.target.value })}
               />
             </div>
             <div className="form-group">
-              <label className="form-label">Prioridad</label>
+              <label className="form-label" htmlFor="goal-priority">Prioridad</label>
               <select
+                id="goal-priority"
                 value={form.priority}
                 onChange={(e) => setForm({ ...form, priority: e.target.value })}
               >
@@ -417,8 +422,9 @@ export default function SavingsPage() {
         title="Abonar a Meta"
       >
         <div className="form-group">
-          <label className="form-label">Monto a abonar</label>
+          <label className="form-label" htmlFor="goal-contribute">Monto a abonar</label>
           <CurrencyInput
+            id="goal-contribute"
             value={contributeAmount}
             onChange={(val) => setContributeAmount(val)}
             placeholder="0.00"
