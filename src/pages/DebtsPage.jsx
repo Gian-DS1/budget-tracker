@@ -185,7 +185,7 @@ export default function DebtsPage() {
     <div className="page-container">
       <div className="page-header flex items-center justify-between" id="tour-debts-header">
         <div>
-          <h1 className="page-title">Control de Deudas</h1>
+          <h1 className="page-title">Control de deudas</h1>
           <p className="page-subtitle">
             Da seguimiento a tus préstamos y planifica cuándo quedarás libre de deudas.
           </p>
@@ -204,7 +204,7 @@ export default function DebtsPage() {
             });
             setShowForm(true);
           }}>
-            <Plus size={18} /> Nueva Deuda
+            <Plus size={18} /> Nueva deuda
           </button>
         )}
       </div>
@@ -236,7 +236,7 @@ export default function DebtsPage() {
       {debts.length > 0 && (
         <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
           <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-debt)' }}>
-            <div className="kpi-label">Deuda Total</div>
+            <div className="kpi-label">Deuda total</div>
             <div className="kpi-value" style={{ fontSize: 'var(--font-2xl)', color: 'var(--color-expense)' }}>
               {formatCurrency(totalDebt)}
             </div>
@@ -245,7 +245,7 @@ export default function DebtsPage() {
             </div>
           </div>
           <div className="kpi-card" style={{ '--kpi-accent': 'var(--color-variable)' }}>
-            <div className="kpi-label">Pago Mensual Total</div>
+            <div className="kpi-label">Pago mensual Total</div>
             <div className="kpi-value" style={{ fontSize: 'var(--font-2xl)' }}>
               {formatCurrency(totalMonthly)}
             </div>
@@ -254,7 +254,7 @@ export default function DebtsPage() {
             </div>
           </div>
           <div className="kpi-card" style={{ '--kpi-accent': 'var(--accent-secondary)' }}>
-            <div className="kpi-label">Deudas Activas</div>
+            <div className="kpi-label">Deudas activas</div>
             <div className="kpi-value" style={{ fontSize: 'var(--font-2xl)' }}>
               {debts.filter((d) => d.status === 'active').length}
             </div>
@@ -461,7 +461,7 @@ export default function DebtsPage() {
                       setPaymentDate(todayISO());
                     }}
                   >
-                    <Plus size={14} /> Registrar Pago
+                    <Plus size={14} /> Registrar pago
                   </button>
                 )}
               </div>
@@ -473,7 +473,7 @@ export default function DebtsPage() {
       )}
 
       {/* New/Edit Debt Form */}
-      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingDebt(null); setFormErrors({}); }} title={editingDebt ? "Editar Deuda" : "Nueva Deuda"}>
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingDebt(null); setFormErrors({}); }} title={editingDebt ? "Editar Deuda" : "Nueva deuda"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label" htmlFor="debt-field-creditorName">Acreedor / Nombre *</label>
@@ -494,7 +494,7 @@ export default function DebtsPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="debt-field-originalAmount">Monto Original *</label>
+              <label className="form-label" htmlFor="debt-field-originalAmount">Monto original *</label>
               <CurrencyInput
                 id="debt-field-originalAmount"
                 value={form.originalAmount}
@@ -508,7 +508,7 @@ export default function DebtsPage() {
               {formErrors.originalAmount && <p className="form-error" id="debt-err-originalAmount">{formErrors.originalAmount}</p>}
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="debt-field-currentBalance">Saldo Actual</label>
+              <label className="form-label" htmlFor="debt-field-currentBalance">Saldo actual</label>
               <CurrencyInput
                 id="debt-field-currentBalance"
                 value={form.currentBalance}
@@ -519,7 +519,7 @@ export default function DebtsPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="debt-field-interestRate">Tasa de Interés (%)</label>
+              <label className="form-label" htmlFor="debt-field-interestRate">Tasa de interés (%)</label>
               <input
                 id="debt-field-interestRate"
                 type="number"
@@ -532,7 +532,7 @@ export default function DebtsPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="debt-field-monthlyPayment">Pago Mensual *</label>
+              <label className="form-label" htmlFor="debt-field-monthlyPayment">Pago mensual *</label>
               <CurrencyInput
                 id="debt-field-monthlyPayment"
                 value={form.monthlyPayment}
@@ -576,7 +576,7 @@ export default function DebtsPage() {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              {editingDebt ? "Guardar Cambios" : "Registrar Deuda"}
+              {editingDebt ? "Guardar cambios" : "Registrar Deuda"}
             </button>
           </div>
         </form>
@@ -590,7 +590,7 @@ export default function DebtsPage() {
           setPaymentAmount('');
           setPaymentError('');
         }}
-        title="Registrar Pago"
+        title="Registrar pago"
       >
         {(() => {
           const payingDebt = debts.find((d) => d.id === showPayment);
@@ -602,7 +602,7 @@ export default function DebtsPage() {
         })()}
         <div className="form-row">
           <div className="form-group">
-            <label className="form-label" htmlFor="debt-field-payment">Monto del Pago</label>
+            <label className="form-label" htmlFor="debt-field-payment">Monto del pago</label>
             <CurrencyInput
               id="debt-field-payment"
               value={paymentAmount}
@@ -637,7 +637,7 @@ export default function DebtsPage() {
             Cancelar
           </button>
           <button className="btn btn-primary" onClick={() => handlePayment(showPayment)}>
-            Registrar Pago
+            Registrar pago
           </button>
         </div>
       </Modal>
@@ -649,7 +649,7 @@ export default function DebtsPage() {
           deleteDebt(showDeleteConfirm);
           toast.success('Deuda eliminada');
         }}
-        title="Eliminar Deuda"
+        title="Eliminar deuda"
         message="¿Seguro que quieres eliminar esta deuda? Se borrarán todos los pagos asociados."
       />
 

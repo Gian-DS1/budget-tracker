@@ -16,14 +16,14 @@ import CurrencyInput from '../components/ui/CurrencyInput';
 import toast from 'react-hot-toast';
 
 const HORIZON_CONFIG = {
-  short: { label: 'Corto Plazo', subtitle: '1-3 meses', emoji: '⚡', color: 'var(--color-variable)' },
-  medium: { label: 'Mediano Plazo', subtitle: '3-12 meses', emoji: '📅', color: 'var(--color-fixed)' },
-  long: { label: 'Largo Plazo', subtitle: '1+ años', emoji: '🏔️', color: 'var(--color-savings)' },
+  short: { label: 'Corto plazo', subtitle: '1-3 meses', emoji: '⚡', color: 'var(--color-variable)' },
+  medium: { label: 'Mediano plazo', subtitle: '3-12 meses', emoji: '📅', color: 'var(--color-fixed)' },
+  long: { label: 'Largo plazo', subtitle: '1+ años', emoji: '🏔️', color: 'var(--color-savings)' },
 };
 
 const STATUS_CONFIG = {
   pending: { label: 'Pendiente', icon: Circle, color: 'var(--color-expense)', badge: 'badge-expense' },
-  in_progress: { label: 'En Proceso', icon: Clock, color: 'var(--color-variable)', badge: 'badge-variable' },
+  in_progress: { label: 'En proceso', icon: Clock, color: 'var(--color-variable)', badge: 'badge-variable' },
   completed: { label: 'Cumplida', icon: CheckCircle2, color: 'var(--color-income)', badge: 'badge-income' },
 };
 
@@ -156,7 +156,7 @@ export default function PlanPage() {
     <div className="page-container">
       <div className="page-header flex items-center justify-between" id="tour-plan-header">
         <div>
-          <h1 className="page-title">Plan Financiero</h1>
+          <h1 className="page-title">Plan financiero</h1>
           <p className="page-subtitle">
             {plans.filter((p) => p.status === 'completed').length} de {plans.length} metas cumplidas
           </p>
@@ -167,7 +167,7 @@ export default function PlanPage() {
             setForm({ title: '', description: '', horizon: 'short', targetAmount: '', currentAmount: '', deadline: '' });
             setShowForm(true);
           }}>
-            <Plus size={18} /> Nueva Meta
+            <Plus size={18} /> Nueva meta
           </button>
         )}
       </div>
@@ -233,7 +233,7 @@ export default function PlanPage() {
               setForm({ title: '', description: '', horizon: 'short', targetAmount: '', currentAmount: '', deadline: '' });
               setShowForm(true);
             }}>
-              <Plus size={16} /> Crear Meta
+              <Plus size={16} /> Crear meta
             </button>
           }
         />
@@ -371,7 +371,7 @@ export default function PlanPage() {
                             }}
                           >
                             <option value="pending" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>🔴 Pendiente</option>
-                            <option value="in_progress" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>🟡 En Proceso</option>
+                            <option value="in_progress" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>🟡 En proceso</option>
                             <option value="completed" style={{ background: 'var(--bg-card)', color: 'var(--text-primary)' }}>✅ Cumplida</option>
                           </select>
                         </div>
@@ -406,7 +406,7 @@ export default function PlanPage() {
       )}
 
       {/* Form Modal */}
-      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingPlan(null); }} title={editingPlan ? "Editar Meta del Plan" : "Nueva Meta del Plan"}>
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingPlan(null); }} title={editingPlan ? "Editar meta del plan" : "Nueva meta del plan"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label" htmlFor="plan-title">Nombre de la Meta *</label>
@@ -443,16 +443,16 @@ export default function PlanPage() {
                 value={form.horizon}
                 onChange={(e) => setForm({ ...form, horizon: e.target.value })}
               >
-                <option value="short">⚡ Corto Plazo (1-3 meses)</option>
-                <option value="medium">📅 Mediano Plazo (3-12 meses)</option>
-                <option value="long">🏔️ Largo Plazo (1+ años)</option>
+                <option value="short">⚡ Corto plazo (1-3 meses)</option>
+                <option value="medium">📅 Mediano plazo (3-12 meses)</option>
+                <option value="long">🏔️ Largo plazo (1+ años)</option>
               </select>
               <div className="text-xs text-muted mt-2">
                 Agrupa tus metas por escala de tiempo. Define la fecha objetivo para que podamos calcular cuánto necesitas ahorrar cada mes.
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="plan-target">Monto Objetivo *</label>
+              <label className="form-label" htmlFor="plan-target">Monto objetivo *</label>
               <CurrencyInput
                 id="plan-target"
                 value={form.targetAmount}
@@ -466,7 +466,7 @@ export default function PlanPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="plan-current">Ahorro Actual</label>
+              <label className="form-label" htmlFor="plan-current">Ahorro actual</label>
               <CurrencyInput
                 id="plan-current"
                 value={form.currentAmount}
@@ -478,7 +478,7 @@ export default function PlanPage() {
               </div>
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="plan-deadline">Fecha Objetivo *</label>
+              <label className="form-label" htmlFor="plan-deadline">Fecha objetivo *</label>
               <input
                 id="plan-deadline"
                 type="date"
@@ -495,7 +495,7 @@ export default function PlanPage() {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              {editingPlan ? "Guardar Cambios" : "Crear Meta"}
+              {editingPlan ? "Guardar Cambios" : "Crear meta"}
             </button>
           </div>
         </form>
@@ -505,7 +505,7 @@ export default function PlanPage() {
         isOpen={!!showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(null)}
         onConfirm={() => deletePlan(showDeleteConfirm)}
-        title="Eliminar Meta"
+        title="Eliminar meta"
         message="¿Seguro que quieres eliminar esta meta del plan?"
       />
     </div>

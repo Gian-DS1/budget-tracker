@@ -121,7 +121,7 @@ export default function CalendarPage() {
   return (
     <div className="page-container page-fit calendar-page-fit">
       <div className="page-header" id="tour-calendar-header">
-        <h1 className="page-title">Calendario de Movimientos</h1>
+        <h1 className="page-title">Calendario de movimientos</h1>
         <p className="page-subtitle">Visualiza tus ingresos y gastos en el tiempo</p>
       </div>
 

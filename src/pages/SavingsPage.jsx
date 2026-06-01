@@ -149,7 +149,7 @@ export default function SavingsPage() {
     <div className="page-container">
       <div className="page-header flex items-center justify-between" id="tour-savings-header">
         <div>
-          <h1 className="page-title">Metas de Ahorro</h1>
+          <h1 className="page-title">Metas de ahorro</h1>
           <p className="page-subtitle">
             Ahorro total acumulado: <span className="amount-positive">{formatCurrency(totalSaved)}</span>
           </p>
@@ -169,7 +169,7 @@ export default function SavingsPage() {
             });
             setShowForm(true);
           }}>
-            <Plus size={18} /> Nueva Meta
+            <Plus size={18} /> Nueva meta
           </button>
         )}
       </div>
@@ -194,7 +194,7 @@ export default function SavingsPage() {
               });
               setShowForm(true);
             }}>
-              <Plus size={16} /> Crear Meta
+              <Plus size={16} /> Crear meta
             </button>
           }
         />
@@ -314,7 +314,7 @@ export default function SavingsPage() {
       )}
 
       {/* Form Modal */}
-      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingGoal(null); }} title={editingGoal ? "Editar Meta de Ahorro" : "Nueva Meta de Ahorro"}>
+      <Modal isOpen={showForm} onClose={() => { setShowForm(false); setEditingGoal(null); }} title={editingGoal ? "Editar Meta de ahorro" : "Nueva meta de ahorro"}>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label className="form-label" htmlFor="goal-title">Nombre *</label>
@@ -323,7 +323,7 @@ export default function SavingsPage() {
               type="text"
               value={form.title}
               onChange={(e) => setForm({ ...form, title: e.target.value })}
-              placeholder="Ej: Fondo de Emergencia, Viaje, Mudanza..."
+              placeholder="Ej: Fondo de emergencia, Viaje, Mudanza..."
               required
             />
           </div>
@@ -357,7 +357,7 @@ export default function SavingsPage() {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="goal-target">Monto Objetivo *</label>
+              <label className="form-label" htmlFor="goal-target">Monto objetivo *</label>
               <CurrencyInput
                 id="goal-target"
                 value={form.targetAmount}
@@ -367,7 +367,7 @@ export default function SavingsPage() {
               />
             </div>
             <div className="form-group">
-              <label className="form-label" htmlFor="goal-current">Monto Inicial</label>
+              <label className="form-label" htmlFor="goal-current">Monto inicial</label>
               <CurrencyInput
                 id="goal-current"
                 value={form.currentAmount}
@@ -379,7 +379,7 @@ export default function SavingsPage() {
 
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label" htmlFor="goal-deadline">Fecha Objetivo</label>
+              <label className="form-label" htmlFor="goal-deadline">Fecha objetivo</label>
               <input
                 id="goal-deadline"
                 type="date"
@@ -406,7 +406,7 @@ export default function SavingsPage() {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              {editingGoal ? "Guardar Cambios" : "Crear Meta"}
+              {editingGoal ? "Guardar cambios" : "Crear meta"}
             </button>
           </div>
         </form>
@@ -419,7 +419,7 @@ export default function SavingsPage() {
           setShowContribute(null);
           setContributeAmount('');
         }}
-        title="Abonar a Meta"
+        title="Abonar a meta"
       >
         <div className="form-group">
           <label className="form-label" htmlFor="goal-contribute">Monto a abonar</label>
@@ -457,7 +457,7 @@ export default function SavingsPage() {
           deleteGoal(showDeleteConfirm);
           toast.success('Meta de ahorro eliminada');
         }}
-        title="Eliminar Meta de Ahorro"
+        title="Eliminar meta de ahorro"
         message="¿Seguro que quieres eliminar esta meta de ahorro?"
       />
     </div>

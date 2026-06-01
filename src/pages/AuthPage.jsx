@@ -106,7 +106,7 @@ export default function AuthPage() {
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
           {currentMode !== 'update_password' && (
             <div className="form-group">
-              <label className="form-label" htmlFor="auth-email">Correo Electrónico</label>
+              <label className="form-label" htmlFor="auth-email">Correo electrónico</label>
               <input
                 id="auth-email"
                 type="email"
@@ -153,8 +153,8 @@ export default function AuthPage() {
               disabled={loading}
             >
               {loading ? 'Cargando...' : 
-               currentMode === 'login' ? 'Iniciar Sesión' : 
-               currentMode === 'signup' ? 'Crear Cuenta' : 
+               currentMode === 'login' ? 'Iniciar sesión' : 
+               currentMode === 'signup' ? 'Crear cuenta' : 
                currentMode === 'forgot_password' ? 'Enviar Enlace' :
                'Guardar Contraseña'}
             </button>
@@ -169,7 +169,7 @@ export default function AuthPage() {
                 className="auth-link"
                 onClick={() => setMode('login')}
               >
-                Volver a Iniciar Sesión
+                Volver a Iniciar sesión
               </button>
             ) : (
               <div>

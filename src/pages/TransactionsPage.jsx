@@ -390,7 +390,7 @@ export default function TransactionsPage() {
               resetForm();
               setShowForm(true);
             }}>
-              <Plus size={16} /> Nueva Transacción
+              <Plus size={16} /> Nueva transacción
             </button>
           )}
         </div>
@@ -455,7 +455,7 @@ export default function TransactionsPage() {
                 <option value="income">Ingresos</option>
                 <option value="expense">Gastos</option>
                 <option value="savings">Ahorros</option>
-                <option value="debt_payment">Pago Deuda</option>
+                <option value="debt_payment">Pago deuda</option>
               </select>
             </div>
             <div className="form-group" style={{ marginBottom: 0 }}>
@@ -590,7 +590,7 @@ export default function TransactionsPage() {
                   setShowForm(true);
                 }}
               >
-                <Plus size={16} /> Agregar Transacción
+                <Plus size={16} /> Agregar transacción
               </button>
             )
           }
@@ -728,7 +728,7 @@ export default function TransactionsPage() {
           setShowForm(false);
           resetForm();
         }}
-        title={editingTransaction ? 'Editar Transacción' : 'Nueva Transacción'}
+        title={editingTransaction ? 'Editar transacción' : 'Nueva transacción'}
       >
         <form onSubmit={handleSubmit}>
           <div className="form-row">
@@ -760,7 +760,7 @@ export default function TransactionsPage() {
                 <option value="income">💰 Ingreso</option>
                 <option value="expense">💸 Gasto</option>
                 <option value="savings">🏦 Ahorro</option>
-                <option value="debt_payment">💳 Pago Deuda</option>
+                <option value="debt_payment">💳 Pago deuda</option>
               </select>
             </div>
           </div>
@@ -810,7 +810,7 @@ export default function TransactionsPage() {
               </select>
               {form.currency === 'USD' && form.amount && (
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)', marginTop: 'var(--space-1)' }}>
-                  ≈ {formatCurrency(Number(form.amount) * fxRate)} (tasa: {fxRate}) — valor final según la tasa del día
+                  ≈ {formatCurrency(Number(form.amount) * fxRate)} (tasa: {fxRate}). Valor final según la tasa del día
                 </p>
               )}
             </div>
@@ -932,7 +932,7 @@ export default function TransactionsPage() {
               Cancelar
             </button>
             <button type="submit" className="btn btn-primary">
-              {editingTransaction ? 'Guardar Cambios' : 'Registrar'}
+              {editingTransaction ? 'Guardar cambios' : 'Registrar'}
             </button>
           </div>
         </form>
@@ -943,7 +943,7 @@ export default function TransactionsPage() {
         isOpen={showBulkDeleteConfirm}
         onClose={() => setShowBulkDeleteConfirm(false)}
         onConfirm={handleBulkDelete}
-        title="Eliminar Transacciones Múltiples"
+        title="Eliminar transacciones múltiples"
         message={`¿Seguro que quieres eliminar ${selectedIds.length} transacciones seleccionadas? Esta acción no se puede deshacer.`}
       />
 

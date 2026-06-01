@@ -18,7 +18,7 @@ export default function FeedbackPage() {
   const WEB3FORMS_ACCESS_KEY = '446c31a3-399d-4d75-81e9-5e6344334122';
 
   const handleCopyText = () => {
-    const textToCopy = `Tipo: ${form.type === 'bug' ? 'Reportar Error (Bug)' : form.type === 'improvement' ? 'Sugerencia de Mejora' : 'Comentario General'}\nAsunto: ${form.subject}\n\nDescripción:\n${form.description}`;
+    const textToCopy = `Tipo: ${form.type === 'bug' ? 'Reportar Error (Bug)' : form.type === 'improvement' ? 'Sugerencia de mejora' : 'Comentario general'}\nAsunto: ${form.subject}\n\nDescripción:\n${form.description}`;
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     toast.success('Feedback copiado al portapapeles');
@@ -49,7 +49,7 @@ export default function FeedbackPage() {
           access_key: WEB3FORMS_ACCESS_KEY,
           subject: emailSubject,
           from_name: 'FinTrack RD — Feedback Beta',
-          'Tipo de Feedback': form.type === 'bug' ? '🔴 Reportar un Error (Bug)' : form.type === 'improvement' ? '💡 Sugerencia de Mejora' : '💬 Comentario General',
+          'Tipo de Feedback': form.type === 'bug' ? '🔴 Reportar un error (Bug)' : form.type === 'improvement' ? '💡 Sugerencia de mejora' : '💬 Comentario general',
           'Asunto': form.subject,
           'Descripción': form.description,
           'Entorno': 'FinTrack RD Portal Beta',
@@ -104,12 +104,12 @@ export default function FeedbackPage() {
         {/* Feedback Form Card */}
         <div className="card">
           <div className="card-header border-b border-secondary pb-4 mb-6">
-            <h3 className="card-title">Enviar Comentarios</h3>
+            <h3 className="card-title">Enviar comentarios</h3>
           </div>
 
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label className="form-label" htmlFor="fb-type">Tipo de Comentario *</label>
+              <label className="form-label" htmlFor="fb-type">Tipo de comentario *</label>
               <select
                 id="fb-type"
                 value={form.type}
@@ -117,14 +117,14 @@ export default function FeedbackPage() {
                 disabled={sending}
                 required
               >
-                <option value="bug">🔴 Reportar un Error (Bug)</option>
-                <option value="improvement">💡 Sugerencia de Mejora</option>
-                <option value="general">💬 Comentario / Idea General</option>
+                <option value="bug">🔴 Reportar un error (Bug)</option>
+                <option value="improvement">💡 Sugerencia de mejora</option>
+                <option value="general">💬 Comentario / idea general</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="fb-subject">Asunto / Título Resumido *</label>
+              <label className="form-label" htmlFor="fb-subject">Asunto / título resumido *</label>
               <input
                 id="fb-subject"
                 type="text"
@@ -137,7 +137,7 @@ export default function FeedbackPage() {
             </div>
 
             <div className="form-group">
-              <label className="form-label" htmlFor="fb-description">Descripción Detallada *</label>
+              <label className="form-label" htmlFor="fb-description">Descripción detallada *</label>
               <textarea
                 id="fb-description"
                 value={form.description}

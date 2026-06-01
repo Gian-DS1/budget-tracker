@@ -30,7 +30,7 @@ const navItems = [
   { path: '/ahorros', label: 'Ahorros', icon: PiggyBank },
   { path: '/deudas', label: 'Deudas', icon: Landmark },
   { path: '/tarjetas', label: 'Tarjetas', icon: CreditCard },
-  { path: '/plan', label: 'Plan Financiero', icon: Target },
+  { path: '/plan', label: 'Plan financiero', icon: Target },
 
   { section: 'Herramientas' },
   { path: '/calendario', label: 'Calendario', icon: Calendar },

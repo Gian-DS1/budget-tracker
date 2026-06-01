@@ -234,7 +234,7 @@ export default function DashboardPage() {
     }, 0);
   }, [cards, transactions]);
 
-  // ─── Plan Financiero (active goals and next deadline) ──────────
+  // ─── Plan financiero (active goals and next deadline) ──────────
   const planStatus = useMemo(() => {
     const activePlans = plans.filter((p) => p.status !== 'completed');
     if (activePlans.length === 0) {
@@ -611,7 +611,7 @@ export default function DashboardPage() {
               </div>
             </a>
 
-            {/* Deuda Total */}
+            {/* Deuda total */}
             <a href="/deudas" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{
                 padding: 'var(--space-3) var(--space-4)',
@@ -655,7 +655,7 @@ export default function DashboardPage() {
               </div>
             </a>
 
-            {/* Plan Financiero */}
+            {/* Plan financiero */}
             <a href="/plan" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div style={{
                 padding: 'var(--space-3) var(--space-4)',
@@ -840,7 +840,7 @@ export default function DashboardPage() {
         {/* Donut Chart */}
         <div className="chart-container animate-chart-entrance" style={{'--i': 1}}>
           <div className="chart-header">
-            <h3 className="chart-title">Distribución de Gastos</h3>
+            <h3 className="chart-title">Distribución de gastos</h3>
           </div>
           <div className="donut-row">
             {expenseByCategory.length > 0 ? (
@@ -893,7 +893,7 @@ export default function DashboardPage() {
         {/* Recent Transactions */}
         <div className="card animate-chart-entrance">
           <div className="card-header">
-            <h3 className="card-title">Transacciones Recientes</h3>
+            <h3 className="card-title">Transacciones recientes</h3>
           </div>
           {recentTransactions.length > 0 ? (
             <div className="flex flex-col gap-4">

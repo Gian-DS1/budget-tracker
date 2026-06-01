@@ -182,7 +182,7 @@ export default function CreditCardsPage() {
           description="Agrega una tarjeta para llevar el control de su consumo y fechas de corte y pago."
           action={
             <button className="btn btn-primary" onClick={openCreate}>
-              <Plus size={16} /> Agregar Tarjeta
+              <Plus size={16} /> Agregar tarjeta
             </button>
           }
         />
@@ -444,7 +444,7 @@ export default function CreditCardsPage() {
                 </>
               ) : (
                 <>
-                  <label className="form-label font-semibold">Reglas de Cashback</label>
+                  <label className="form-label font-semibold">Reglas de cashback</label>
                   <CashbackRulesEditor
                     rules={form.cashbackRules}
                     categories={categories}
@@ -458,7 +458,7 @@ export default function CreditCardsPage() {
           <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={closeForm}>Cancelar</button>
             <button type="submit" className="btn btn-primary" disabled={isPredefined && !form.catalogId}>
-              {editingId ? 'Guardar Cambios' : 'Agregar'}
+              {editingId ? 'Guardar cambios' : 'Agregar'}
             </button>
           </div>
         </form>
@@ -468,7 +468,7 @@ export default function CreditCardsPage() {
       <Modal
         isOpen={!!historyCard}
         onClose={() => setHistoryCardId(null)}
-        title={historyCard ? `Abonos — ${historyCard.name}` : 'Abonos'}
+        title={historyCard ? `Abonos: ${historyCard.name}` : 'Abonos'}
       >
         {historyCard && (() => {
           const lifetime = getLifetimeCashback(historyCard, transactions);
@@ -521,7 +521,7 @@ export default function CreditCardsPage() {
       <Modal
         isOpen={!!payingCard}
         onClose={closeAbono}
-        title={payingCard ? `Abonar — ${payingCard.name}` : 'Abonar'}
+        title={payingCard ? `Abonar: ${payingCard.name}` : 'Abonar'}
       >
         <form onSubmit={handleAbonoSubmit}>
           <div className="form-row">
@@ -552,7 +552,7 @@ export default function CreditCardsPage() {
         isOpen={!!showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(null)}
         onConfirm={() => { deleteCard(showDeleteConfirm); setShowDeleteConfirm(null); }}
-        title="Eliminar Tarjeta"
+        title="Eliminar tarjeta"
         message="¿Seguro que quieres eliminar esta tarjeta? Tus transacciones no se borran; solo se les quita la etiqueta de tarjeta."
       />
     </div>

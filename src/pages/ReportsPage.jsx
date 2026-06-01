@@ -219,7 +219,7 @@ export default function ReportsPage() {
   return (
     <div className="page-container page-fit reports-page-fit">
       <div className="page-header" id="tour-reports-header">
-        <h1 className="page-title">Análisis e Inteligencia</h1>
+        <h1 className="page-title">Análisis e inteligencia</h1>
         <p className="page-subtitle">Proyecciones predictivas y recomendaciones</p>
       </div>
 
@@ -301,9 +301,9 @@ export default function ReportsPage() {
           <div className="card reports-chart-card">
             <div className="card-header">
               <div>
-                <h3 className="card-title">Proyección de Ingresos y Gastos</h3>
+                <h3 className="card-title">Proyección de ingresos y gastos</h3>
                 <p className="text-sm text-muted">
-                  Histórico de 12 meses. Estimado próx. mes — ingresos ~{formatCurrency(forecastInc)}, gastos ~{formatCurrency(forecastExp)}
+                  Histórico de 12 meses. Estimado próx. mes: ingresos ~{formatCurrency(forecastInc)}, gastos ~{formatCurrency(forecastExp)}
                 </p>
               </div>
             </div>
@@ -440,7 +440,7 @@ export default function ReportsPage() {
                         <div className="font-semibold">{debt.creditorName}</div>
                         <div className="text-xs text-muted">Saldo: {formatCurrency(debt.currentBalance)}</div>
                       </div>
-                      {index === 0 && <span className="badge badge-variable">Pagar Extra Aquí</span>}
+                      {index === 0 && <span className="badge badge-variable">Pagar extra Aquí</span>}
                     </div>
                   ))}
                 </div>
@@ -466,7 +466,7 @@ export default function ReportsPage() {
                         <div className="font-semibold">{debt.creditorName}</div>
                         <div className="text-xs text-muted">Interés: {debt.interestRate}%</div>
                       </div>
-                      {index === 0 && <span className="badge badge-expense">Pagar Extra Aquí</span>}
+                      {index === 0 && <span className="badge badge-expense">Pagar extra Aquí</span>}
                     </div>
                   ))}
                 </div>

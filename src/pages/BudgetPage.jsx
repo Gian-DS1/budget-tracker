@@ -589,7 +589,7 @@ export default function BudgetPage() {
       <Modal
         isOpen={!!configCat}
         onClose={() => setConfigCat(null)}
-        title={`Sobre acumulativo — ${configCat?.name || ''}`}
+        title={`Sobre acumulativo: ${configCat?.name || ''}`}
       >
         <div className="form-group">
           <label className="flex items-center gap-2" style={{ cursor: 'pointer' }}>
