@@ -27,11 +27,15 @@ export default function CreditCardsPage() {
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(null);
-  const [historyCard, setHistoryCard] = useState(null);
+  const [historyCardId, setHistoryCardId] = useState(null);
   const [payingCard, setPayingCard] = useState(null);
   const [abonoAmount, setAbonoAmount] = useState('');
   const [abonoDate, setAbonoDate] = useState(todayISO());
   const [abonoNote, setAbonoNote] = useState('');
+
+  // Derivado del store (no una foto): así, al borrar un abono, el modal de
+  // historial se refresca solo en vez de mostrar el abono ya eliminado.
+  const historyCard = historyCardId ? cards.find((c) => c.id === historyCardId) : null;
 
   // Flujo de creación: 'predefinida' | 'personalizada' (solo aplica al crear).
   const [cardType, setCardType] = useState('predefinida');
@@ -210,7 +214,12 @@ export default function CreditCardsPage() {
 
                 {/* Por pagar antes del vencimiento: la deuda urgente */}
                 <div style={{ borderTop: '1px solid var(--border-primary)', paddingTop: 'var(--space-4)' }}>
-                  {bal.isPaid ? (
+                  {bal.billed <= 0 ? (
+                    <>
+                      <div className="kpi-label">Estado de cuenta</div>
+                      <div className="text-sm text-muted">Sin saldo al corte</div>
+                    </>
+                  ) : bal.isPaid ? (
                     <>
                       <div className="kpi-label">Estado de cuenta</div>
                       <div className="flex items-center gap-1 font-semibold" style={{ color: 'var(--color-success)' }}>
@@ -263,7 +272,7 @@ export default function CreditCardsPage() {
                         </div>
                       </div>
                       {abonos.length > 0 && (
-                        <button className="btn btn-secondary btn-sm" onClick={() => setHistoryCard(card)}>
+                        <button className="btn btn-secondary btn-sm" onClick={() => setHistoryCardId(card.id)}>
                           <History size={14} /> Abonos ({abonos.length})
                         </button>
                       )}
@@ -449,7 +458,7 @@ export default function CreditCardsPage() {
       {/* Historial de abonos */}
       <Modal
         isOpen={!!historyCard}
-        onClose={() => setHistoryCard(null)}
+        onClose={() => setHistoryCardId(null)}
         title={historyCard ? `Abonos — ${historyCard.name}` : 'Abonos'}
       >
         {historyCard && (() => {

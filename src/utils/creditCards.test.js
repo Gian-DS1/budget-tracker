@@ -113,13 +113,13 @@ describe('computeCashback', () => {
 });
 
 describe('paidCyclesToPayments', () => {
-  it('convierte entradas objeto usando su monto guardado', () => {
+  it('convierte entradas objeto netas de cashback (el snapshot guardó el bruto)', () => {
     const card = { id: 'c1', cutoffDay: 20, paidCycles: [
       { cycleEnd: '2026-04-20', amount: 8000, cashback: 200, paidAt: '2026-05-01' },
     ] };
     const out = paidCyclesToPayments(card, []);
     expect(out).toEqual([
-      { id: 'mig-2026-04-20', amount: 8000, date: '2026-05-01', note: 'Migrado: estado de cuenta pagado' },
+      { id: 'mig-2026-04-20', amount: 7800, date: '2026-05-01', note: 'Migrado: estado de cuenta pagado' },
     ]);
   });
 

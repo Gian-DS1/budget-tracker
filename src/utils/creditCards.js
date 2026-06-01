@@ -134,7 +134,12 @@ export function paidCyclesToPayments(card, transactions = []) {
       const n = normalizePaidEntry(p);
       if (!n || !n.cycleEnd) return null;
       let amount = Number(n.amount) || 0;
-      if (amount <= 0) {
+      if (amount > 0) {
+        // El snapshot legado guardó el monto BRUTO con el cashback aparte; el
+        // saldo se deriva en NETO, así que restamos ese cashback para no generar
+        // un sobre-abono fantasma en tarjetas migradas.
+        amount -= Number(n.cashback) || 0;
+      } else {
         const periodEnd = n.periodEnd || n.cycleEnd;
         const periodStart = n.periodStart || statementStartForEnd(card, periodEnd);
         if (!periodStart) return null; // sin ventana válida: no reconstruir (evita inflar el saldo)
