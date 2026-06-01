@@ -20,6 +20,7 @@ import CurrencyInput from '../components/ui/CurrencyInput';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import InfoTooltip from '../components/ui/InfoTooltip';
+import { Skeleton, SkeletonTable } from '../components/ui/Skeleton';
 import { formatCurrency, formatPercent } from '../utils/formatters';
 import { calculateBudgetProgress, getProgressStatus, sumAmounts, getBudgetSummary, getAccumulatedBalance, getBudgetSuggestions } from '../utils/calculations';
 import { MONTHS_ES } from '../utils/constants';
@@ -79,13 +80,19 @@ export default function BudgetPage() {
   const [month, setMonth] = useState(now.getMonth());
 
   const budgets = useBudgetStore((state) => state.budgets);
+  const budgetLoading = useBudgetStore((state) => state.loading);
   const { setBudget, copyBudgetFromPreviousMonth, bulkSetBudgets } = useBudgetStore();
   const { transactions } = useTransactionStore();
   const { categories, updateCategory } = useCategoryStore();
 
+  // Esqueleto solo en carga en frío (cargando y sin presupuestos en caché). Evita
+  // mostrar el falso "Por Asignar: 0 / ¡Presupuesto perfecto!" antes de hidratar.
+  const showSkeleton = budgetLoading && budgets.length === 0;
+
   const [configCat, setConfigCat] = useState(null);
   const [configForm, setConfigForm] = useState({ isAccumulative: false, accumulationStart: '' });
   const [showSuggestConfirm, setShowSuggestConfirm] = useState(false);
+  const [showCopyConfirm, setShowCopyConfirm] = useState(false);
   // Cambia al aplicar operaciones masivas (copiar/sugerir) para remontar los
   // inputs y que reflejen los nuevos montos al instante.
   const [refreshKey, setRefreshKey] = useState(0);
@@ -397,25 +404,41 @@ export default function BudgetPage() {
           <button className="btn btn-secondary" onClick={() => setShowSuggestConfirm(true)} title="Sugerir presupuesto con el promedio de tus últimos 3 meses">
             <Sparkles size={16} /> Auto-sugerir
           </button>
-          <button className="btn btn-secondary" onClick={handleCopyPrevious}>
+          <button className="btn btn-secondary" onClick={() => setShowCopyConfirm(true)}>
             <Copy size={16} /> Copiar Mes Anterior
           </button>
         </div>
       </div>
 
-      {/* Month Selector */}
+      {/* Month Selector. A diferencia del dashboard, aquí SÍ se permite navegar
+          al futuro: planificar el presupuesto del próximo mes es un uso real. */}
       <div className="month-selector" style={{ marginBottom: 'var(--space-6)' }}>
-        <button className="btn-icon" onClick={() => navigateMonth(-1)}>
+        <button className="btn-icon" onClick={() => navigateMonth(-1)} aria-label="Mes anterior">
           <ChevronLeft size={20} />
         </button>
         <span className="month-selector-label">
           {MONTHS_ES[month]} {year}
         </span>
-        <button className="btn-icon" onClick={() => navigateMonth(1)}>
+        <button className="btn-icon" onClick={() => navigateMonth(1)} aria-label="Mes siguiente">
           <ChevronRight size={20} />
         </button>
       </div>
 
+      {showSkeleton ? (
+        <div role="status" aria-label="Cargando el presupuesto">
+          <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 'var(--space-6)' }}>
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={`sk-kpi-${i}`} className="kpi-card">
+                <Skeleton width={120} height={12} style={{ marginBottom: 'var(--space-3)' }} />
+                <Skeleton width="70%" height={24} style={{ marginBottom: 'var(--space-3)' }} />
+                <Skeleton width="90%" height={11} />
+              </div>
+            ))}
+          </div>
+          <SkeletonTable rows={5} />
+        </div>
+      ) : (
+       <>
       {/* Zero-Based Budget Summary Cards */}
       <div className="kpi-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', marginBottom: 'var(--space-6)' }}>
 
@@ -490,7 +513,7 @@ export default function BudgetPage() {
           }}>
             {formatCurrency(balanceEstimated)}
           </div>
-          <div className="text-xs mt-2 font-semibold" style={{ color: balanceEstimated === 0 ? 'var(--color-success)' : 'var(--text-muted)'}}>
+          <div className="text-xs mt-2 font-semibold" style={{ color: balanceEstimated === 0 ? 'var(--color-success)' : 'var(--text-secondary)'}}>
             {balanceEstimated === 0 ? '¡Presupuesto perfecto! 🎉' : balanceEstimated > 0 ? 'Falta asignar este dinero' : 'Estás sobregirado'}
           </div>
         </div>
@@ -553,6 +576,8 @@ export default function BudgetPage() {
           </div>
         </div>
       )}
+       </>
+      )}
 
       <Modal
         isOpen={!!configCat}
@@ -595,6 +620,16 @@ export default function BudgetPage() {
         title="Auto-sugerir presupuesto"
         message={`Se asignará a cada categoría el promedio de lo registrado en los últimos 3 meses. Esto reemplazará los montos estimados que ya tengas en ${MONTHS_ES[month]} ${year}. ¿Continuar?`}
         confirmText="Sí, sugerir"
+        danger={false}
+      />
+
+      <ConfirmDialog
+        isOpen={showCopyConfirm}
+        onClose={() => setShowCopyConfirm(false)}
+        onConfirm={handleCopyPrevious}
+        title="Copiar mes anterior"
+        message={`Se copiarán los montos estimados del mes anterior a ${MONTHS_ES[month]} ${year}, reemplazando los que ya tengas asignados. ¿Continuar?`}
+        confirmText="Sí, copiar"
         danger={false}
       />
 
