@@ -9,6 +9,7 @@ import useSavingsStore from '../stores/useSavingsStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import { formatCurrency, formatDate } from '../utils/formatters';
 import { getMonthlySavingCapacity } from '../utils/calculations';
 import CurrencyInput from '../components/ui/CurrencyInput';
@@ -211,7 +212,7 @@ export default function PlanPage() {
               const ts = toneStyles[ins.tone] || toneStyles.info;
               const Icon = ins.tone === 'success' ? CheckCircle2 : ins.tone === 'danger' || ins.tone === 'warning' ? AlertTriangle : Sparkles;
               return (
-                <div key={idx} className="flex items-start gap-3" style={{ padding: 'var(--space-3)', background: ts.bg, borderRadius: 'var(--radius-md)', borderLeft: `3px solid ${ts.color}` }}>
+                <div key={idx} className="flex items-start gap-3" style={{ padding: 'var(--space-3)', background: ts.bg, borderRadius: 'var(--radius-md)', border: `1px solid ${ts.color}` }}>
                   <Icon size={16} style={{ color: ts.color, flexShrink: 0, marginTop: 2 }} />
                   <span className="text-sm">{ins.text}</span>
                 </div>
@@ -278,7 +279,7 @@ export default function PlanPage() {
                         className="card flex items-center gap-4"
                         style={{
                           padding: 'var(--space-4) var(--space-5)',
-                          borderLeft: `4px solid ${statusConfig.color}`,
+                          borderTop: `3px solid ${statusConfig.color}`,
                           opacity: plan.status === 'completed' ? 0.75 : 1,
                         }}
                       >
@@ -434,7 +435,7 @@ export default function PlanPage() {
           </div>
           <div className="form-row">
             <div className="form-group">
-              <label className="form-label">Horizonte</label>
+              <label className="form-label">Horizonte <InfoTooltip text="Corto: menos de 3 meses. Mediano: 3-12 meses. Largo: 1+ años." label="Ayuda sobre horizontes" /></label>
               <select
                 value={form.horizon}
                 onChange={(e) => setForm({ ...form, horizon: e.target.value })}

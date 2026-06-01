@@ -285,7 +285,7 @@ export default function BudgetPage() {
           <table className="data-table">
             <thead>
               <tr>
-                <th>Categoría</th>
+                <th>Categoría <InfoTooltip text="Puedes configurar cada categoría como Mensual (reinicia cada mes) o Bote (fondo que se acumula). Haz clic en el ícono 🏦 para cambiar." label="Ayuda sobre tipos de presupuesto" /></th>
                 <th style={{ textAlign: 'right', width: 150, whiteSpace: 'nowrap' }}>Estimado</th>
                 <th style={{ textAlign: 'right', width: 150, whiteSpace: 'nowrap' }}>Actual</th>
                 <th style={{ textAlign: 'right', width: 160, whiteSpace: 'nowrap' }}>Diferencia</th>

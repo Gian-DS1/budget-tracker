@@ -89,14 +89,16 @@ export default function Sidebar() {
           onClick={signOut}
           style={{ width: '100%', marginBottom: 'var(--space-2)', color: 'var(--color-danger)' }}
           title="Cerrar sesión"
+          aria-label="Cerrar sesión"
         >
-          <LogOut className="sidebar-link-icon" size={20} />
+          <LogOut className="sidebar-link-icon" size={20} aria-hidden="true" />
           <span className="sidebar-link-text">Cerrar sesión</span>
         </button>
         <button
           className="sidebar-link"
           onClick={toggleSidebar}
           style={{ width: '100%' }}
+          aria-label={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
         >
           {sidebarCollapsed ? (
             <ChevronRight className="sidebar-link-icon" size={20} />

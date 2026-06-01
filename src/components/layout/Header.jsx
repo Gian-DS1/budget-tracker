@@ -105,8 +105,8 @@ export default function Header() {
   return (
     <header className={`header ${sidebarCollapsed ? 'collapsed' : ''}`}>
       <div className="flex items-center gap-4">
-        <button className="btn-icon mobile-menu-btn" onClick={toggleMobileMenu}>
-          <Menu size={20} />
+        <button className="btn-icon mobile-menu-btn" onClick={toggleMobileMenu} aria-label="Abrir menú" aria-expanded="false">
+          <Menu size={20} aria-hidden="true" />
         </button>
       </div>
 
@@ -116,9 +116,11 @@ export default function Header() {
             className="btn-icon"
             onClick={() => setOpen((v) => !v)}
             title="Recordatorios"
+            aria-label={`Recordatorios${reminders.length > 0 ? ` (${reminders.length})` : ''}`}
+            aria-expanded={open}
             style={{ position: 'relative' }}
           >
-            <Bell size={20} />
+            <Bell size={20} aria-hidden="true" />
             {reminders.length > 0 && (
               <span
                 style={{
@@ -191,8 +193,9 @@ export default function Header() {
           className="btn-icon"
           onClick={toggleTheme}
           title={theme === 'dark' ? 'Modo claro' : 'Modo oscuro'}
+          aria-label={theme === 'dark' ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'}
         >
-          {theme === 'dark' ? <Sun size={20} /> : <Moon size={20} />}
+          {theme === 'dark' ? <Sun size={20} aria-hidden="true" /> : <Moon size={20} aria-hidden="true" />}
         </button>
       </div>
     </header>

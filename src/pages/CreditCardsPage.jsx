@@ -8,6 +8,7 @@ import useCategoryStore from '../stores/useCategoryStore';
 import Modal from '../components/ui/Modal';
 import ConfirmDialog from '../components/ui/ConfirmDialog';
 import EmptyState from '../components/ui/EmptyState';
+import InfoTooltip from '../components/ui/InfoTooltip';
 import CurrencyInput from '../components/ui/CurrencyInput';
 import CashbackRulesEditor from '../components/creditcards/CashbackRulesEditor';
 import { formatCurrency, formatDate, todayISO } from '../utils/formatters';
@@ -165,7 +166,7 @@ export default function CreditCardsPage() {
       <div className="page-header flex items-center justify-between">
         <div>
           <h1 className="page-title">Tarjetas</h1>
-          <p className="page-subtitle">Control de consumo y fechas de tus tarjetas de crédito</p>
+          <p className="page-subtitle">Control de consumo y fechas de tus tarjetas de crédito <InfoTooltip text="Ciclo abierto: consumos no facturados aún. Por pagar: saldo facturado antes de la fecha de vencimiento. Abono: pago extra sobre la deuda." label="Ayuda sobre términos de tarjetas" /></p>
         </div>
         {cards.length > 0 && (
           <button className="btn btn-primary" onClick={openCreate}>

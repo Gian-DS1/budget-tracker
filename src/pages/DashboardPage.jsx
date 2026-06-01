@@ -761,7 +761,7 @@ export default function DashboardPage() {
                 marginTop: 'var(--space-4)',
                 padding: 'var(--space-3)',
                 background: 'var(--color-variable-bg)',
-                borderLeft: '3px solid var(--color-warning)',
+                border: '1px solid var(--color-warning)',
                 borderRadius: 'var(--radius-md)',
                 display: 'flex',
                 gap: 'var(--space-2)',
