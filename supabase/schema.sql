@@ -41,7 +41,8 @@ create table if not exists public.credit_cards (
   cutoff_day     integer not null,                  -- día de corte (1-31)
   due_day        integer not null,                  -- día de pago (1-31)
   color          text default '#6366f1',
-  paid_cycles    jsonb not null default '[]'::jsonb,  -- historial de estados de cuenta pagados
+  paid_cycles    jsonb not null default '[]'::jsonb,  -- historial de estados de cuenta pagados (legado)
+  payments       jsonb not null default '[]'::jsonb,  -- abonos / pagos parciales [{ id, amount, date, note }]
   cashback_rules jsonb not null default '[]'::jsonb,  -- [{ categoryId, percentage }]
   catalog_id     text,                                 -- id del template del catálogo (NULL = personalizada)
   created_at     timestamptz not null default now()
