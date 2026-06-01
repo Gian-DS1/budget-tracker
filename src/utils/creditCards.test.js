@@ -136,4 +136,12 @@ describe('paidCyclesToPayments', () => {
     expect(paidCyclesToPayments({ id: 'c1', cutoffDay: 20 }, [])).toEqual([]);
     expect(paidCyclesToPayments(null, [])).toEqual([]);
   });
+
+  it('resta el cashback al reconstruir el monto de una entrada legada', () => {
+    const card = { id: 'c1', cutoffDay: 20, paidCycles: ['2026-04-20'] };
+    const txs = [{ cardId: 'c1', date: '2026-04-10', amount: 3000, cashbackEarned: 100 }];
+    expect(paidCyclesToPayments(card, txs)).toEqual([
+      { id: 'mig-2026-04-20', amount: 2900, date: '2026-04-20', note: 'Migrado: estado de cuenta pagado' },
+    ]);
+  });
 });

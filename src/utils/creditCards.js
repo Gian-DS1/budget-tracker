@@ -90,8 +90,9 @@ const PAID_EPSILON = 0.01;
 // Inicio del período de un estado de cuenta que cierra en `endISO` (un día de
 // corte): el día siguiente al corte anterior. Reutiliza dayInMonth/addDaysISO.
 function statementStartForEnd(card, endISO) {
+  const cutoff = Number(card?.cutoffDay);
+  if (!cutoff || isNaN(cutoff)) return null; // sin día de corte válido no hay ventana
   const end = new Date(endISO + 'T00:00:00');
-  const cutoff = Number(card.cutoffDay);
   const prevCutoff = dayInMonth(end.getFullYear(), end.getMonth() - 1, cutoff);
   return addDaysISO(toISODate(prevCutoff), 1);
 }
@@ -136,6 +137,7 @@ export function paidCyclesToPayments(card, transactions = []) {
       if (amount <= 0) {
         const periodEnd = n.periodEnd || n.cycleEnd;
         const periodStart = n.periodStart || statementStartForEnd(card, periodEnd);
+        if (!periodStart) return null; // sin ventana válida: no reconstruir (evita inflar el saldo)
         const gross = getStatementAmount(transactions, card.id, periodStart, periodEnd);
         const cashback = getStatementCashback(transactions, card.id, periodStart, periodEnd);
         amount = gross - cashback;
