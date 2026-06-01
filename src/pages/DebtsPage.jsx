@@ -19,6 +19,8 @@ export default function DebtsPage() {
     updateDebt,
     deleteDebt,
     addPayment,
+    deletePayment,
+    restorePayment,
     getPaymentsByDebt,
     getTotalDebt,
     getTotalMonthlyPayment,
@@ -37,6 +39,10 @@ export default function DebtsPage() {
   const [paymentDate, setPaymentDate] = useState(todayISO());
   const [formErrors, setFormErrors] = useState({});
   const [paymentError, setPaymentError] = useState('');
+  // Pago pendiente de confirmar borrado (objeto pago) y set de deudas con su
+  // historial de pagos expandido (para ver más allá de los últimos 3).
+  const [deletePaymentConfirm, setDeletePaymentConfirm] = useState(null);
+  const [expandedHistory, setExpandedHistory] = useState({});
 
   const [form, setForm] = useState({
     creditorName: '',
@@ -141,6 +147,37 @@ export default function DebtsPage() {
 
     setPaymentAmount('');
     setShowPayment(null);
+  };
+
+  // Borra un pago (tras confirmación) revirtiendo el saldo, y ofrece deshacer.
+  const handleDeletePayment = async (payment) => {
+    setDeletePaymentConfirm(null);
+    const res = await deletePayment(payment.id);
+    if (!res.ok) return;
+
+    // Pagos legados (sin transaction_id) no pueden borrar su transacción: se
+    // avisa para no dejarlo en silencio.
+    const note = res.hadTransactionLink
+      ? ''
+      : ' La transacción asociada se conservó.';
+
+    toast.success(
+      (t) => (
+        <span className="flex items-center gap-3">
+          <span>Pago eliminado.{note}</span>
+          <button
+            className="btn btn-sm btn-secondary"
+            onClick={() => {
+              restorePayment(payment);
+              toast.dismiss(t.id);
+            }}
+          >
+            Deshacer
+          </button>
+        </span>
+      ),
+      { duration: 6000 }
+    );
   };
 
   return (
@@ -366,26 +403,51 @@ export default function DebtsPage() {
                   </span>
                 </div>
 
-                {/* Payment history */}
-                {debtPayments.length > 0 && (
-                  <div style={{ marginBottom: 'var(--space-4)' }}>
-                    <h4 className="text-xs text-muted font-semibold mb-2" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                      Últimos pagos
-                    </h4>
-                    {debtPayments.slice(-3).map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex justify-between text-sm"
-                        style={{ padding: 'var(--space-1) 0' }}
-                      >
-                        <span className="text-muted">{formatDate(p.date)}</span>
-                        <span className="amount-positive">
-                          {formatCurrency(p.amount, debt.currency)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {/* Payment history (más recientes primero; expandible) */}
+                {debtPayments.length > 0 && (() => {
+                  const ordered = [...debtPayments].reverse();
+                  const isExpanded = !!expandedHistory[debt.id];
+                  const visible = isExpanded ? ordered : ordered.slice(0, 3);
+                  return (
+                    <div style={{ marginBottom: 'var(--space-4)' }}>
+                      <h4 className="text-xs text-muted font-semibold mb-2" style={{ textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        {isExpanded ? `Historial de pagos (${ordered.length})` : 'Últimos pagos'}
+                      </h4>
+                      {visible.map((p) => (
+                        <div
+                          key={p.id}
+                          className="flex justify-between items-center text-sm"
+                          style={{ padding: 'var(--space-1) 0', gap: 'var(--space-2)' }}
+                        >
+                          <span className="text-muted">{formatDate(p.date)}</span>
+                          <span className="flex items-center gap-2" style={{ flexShrink: 0 }}>
+                            <span className="amount-positive">
+                              {formatCurrency(p.amount, debt.currency)}
+                            </span>
+                            <button
+                              className="btn-icon"
+                              onClick={() => setDeletePaymentConfirm(p)}
+                              title="Eliminar pago"
+                              aria-label={`Eliminar pago del ${formatDate(p.date)} por ${formatCurrency(p.amount, debt.currency)}`}
+                              style={{ padding: '2px', color: 'var(--color-danger)' }}
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </span>
+                        </div>
+                      ))}
+                      {ordered.length > 3 && (
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          onClick={() => setExpandedHistory((prev) => ({ ...prev, [debt.id]: !isExpanded }))}
+                          style={{ marginTop: 'var(--space-2)', padding: '2px 0' }}
+                        >
+                          {isExpanded ? 'Ver menos' : `Ver todos (${ordered.length})`}
+                        </button>
+                      )}
+                    </div>
+                  );
+                })()}
 
                 {/* Actions */}
                 {debt.status === 'active' && (
@@ -583,6 +645,18 @@ export default function DebtsPage() {
         }}
         title="Eliminar Deuda"
         message="¿Seguro que quieres eliminar esta deuda? Se borrarán todos los pagos asociados."
+      />
+
+      <ConfirmDialog
+        isOpen={!!deletePaymentConfirm}
+        onClose={() => setDeletePaymentConfirm(null)}
+        onConfirm={() => handleDeletePayment(deletePaymentConfirm)}
+        title="Eliminar pago"
+        message={
+          deletePaymentConfirm
+            ? `Se eliminará el pago de ${formatCurrency(deletePaymentConfirm.amount)} del ${formatDate(deletePaymentConfirm.date)} y se devolverá ese monto al saldo de la deuda. Podrás deshacerlo enseguida.`
+            : ''
+        }
       />
     </div>
   );
