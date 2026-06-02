@@ -20,7 +20,7 @@ const TYPES = [
   { v: 'fixed_expense', l: 'Gasto fijo' }, { v: 'variable_expense', l: 'Gasto variable' },
   { v: 'savings', l: 'Ahorro' },
 ];
-const blank = { date: todayISO(), amount: '', type: 'expense', categoryId: '', cardId: '', description: '', notes: '', currency: 'DOP', isRecurring: false, recurrencePattern: 'monthly' };
+const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', currency: 'DOP', isRecurring: false, recurrencePattern: 'monthly' };
 
 export default function StitchLedger() {
   const { transactions, addTransaction, updateTransaction, deleteTransaction, restoreTransaction } = useTransactionStore();
@@ -42,12 +42,20 @@ export default function StitchLedger() {
 
   const catName = (id) => { const c = categories.find((x) => x.id === id); return c ? `${c.icon} ${c.name}` : '—'; };
 
+  // ¿Es un gasto? (fijo o variable). El cashback y la tarjeta solo aplican a gastos.
+  const isExpenseType = (t) => t === 'expense' || t === 'fixed_expense' || t === 'variable_expense';
+
   const cashbackPreview = useMemo(() => {
-    if (!form.cardId || form.type !== 'expense') return 0;
+    if (!form.cardId || !isExpenseType(form.type)) return 0;
     const card = cards.find((c) => c.id === form.cardId);
     const base = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
     return computeCashback(card, form.categoryId, base);
   }, [form, cards, fxRate]);
+
+  // El tipo de una transacción se DERIVA de su categoría: la categoría ya sabe
+  // si es ingreso, gasto fijo, gasto variable o ahorro (eso es lo que el motor
+  // de presupuesto base-cero usa). Por eso no se elige "Tipo" a mano.
+  const typeOfCategory = (id) => categories.find((c) => c.id === id)?.type || 'variable_expense';
 
   const onDescription = (description) => {
     setForm((prev) => {
@@ -58,7 +66,7 @@ export default function StitchLedger() {
         const sug = autoCategorize(description, categories);
         if (sug) {
           u.categoryId = sug.id;
-          u.type = sug.type === 'income' ? 'income' : sug.type === 'savings' ? 'savings' : 'expense';
+          u.type = sug.type; // el tipo lo manda la categoría
           setAutoCat(true);
         }
       }
@@ -66,8 +74,11 @@ export default function StitchLedger() {
     });
   };
 
-  // Cambio manual de categoría: apaga el flag de "auto".
-  const onCategoryManual = (id) => { setAutoCat(false); setForm((f) => ({ ...f, categoryId: id })); };
+  // Cambio manual de categoría: apaga "auto" y deriva el tipo de la categoría.
+  const onCategoryManual = (id) => {
+    setAutoCat(false);
+    setForm((f) => ({ ...f, categoryId: id, type: id ? typeOfCategory(id) : f.type }));
+  };
 
   const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); setAutoCat(false); setShowForm(true); };
   const openEdit = (t) => { setForm({ ...blank, ...t, amount: String(t.amount) }); setEditing(t.id); setErrors({}); setAutoCat(false); setShowForm(true); };
@@ -242,10 +253,14 @@ export default function StitchLedger() {
                 <StitchCurrencyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className={inputCls} />
               </Field>
             </div>
+            <Field label="Descripción">
+              <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder="Ej. Supermercado Nacional" className={inputCls} />
+            </Field>
             <div className="grid grid-cols-2 gap-md">
-              <Field label="Tipo">
-                <select value={form.type} onChange={(e) => setForm({ ...form, type: e.target.value })} className={inputCls}>
-                  {TYPES.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
+              <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
+                <select value={form.categoryId} onChange={(e) => onCategoryManual(e.target.value)} className={inputCls}>
+                  <option value="">Elige una categoría…</option>
+                  {categories.filter((c) => c.isActive).map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
               </Field>
               <Field label="Moneda">
@@ -254,16 +269,13 @@ export default function StitchLedger() {
                 </select>
               </Field>
             </div>
-            <Field label="Descripción">
-              <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder="Ej. Supermercado Nacional" className={inputCls} />
+            {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
+                es ingreso, gasto fijo, gasto variable o ahorro; clasificar a mano
+                era redundante. Se muestra como badge para dar claridad. */}
+            <Field label="Tipo (según la categoría)">
+              <TypeBadge type={form.type} hasCategory={!!form.categoryId} />
             </Field>
-            <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
-              <select value={form.categoryId} onChange={(e) => onCategoryManual(e.target.value)} className={inputCls}>
-                <option value="">Elige una categoría…</option>
-                {categories.filter((c) => c.isActive).map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-              </select>
-            </Field>
-            {form.type === 'expense' && cards.length > 0 && (
+            {isExpenseType(form.type) && cards.length > 0 && (
               <Field label="Tarjeta (opcional)">
                 <select value={form.cardId} onChange={(e) => setForm({ ...form, cardId: e.target.value })} className={inputCls}>
                   <option value="">Sin tarjeta</option>
@@ -290,6 +302,29 @@ export default function StitchLedger() {
 }
 
 const inputCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
+
+// Badge de solo lectura del tipo derivado de la categoría. Color por tipo,
+// alineado con los tokens del tema (lima=ingreso, durazno=fijo, periwinkle=
+// variable, cian=ahorro).
+const TYPE_META = {
+  income: { label: 'Ingreso', icon: 'trending_up', cls: 'text-tertiary border-tertiary/40' },
+  fixed_expense: { label: 'Gasto fijo', icon: 'event_repeat', cls: 'text-accent-warning border-accent-warning/40' },
+  variable_expense: { label: 'Gasto variable', icon: 'shopping_cart', cls: 'text-primary border-primary/40' },
+  expense: { label: 'Gasto', icon: 'payments', cls: 'text-on-surface-variant border-border-subtle' },
+  savings: { label: 'Ahorro', icon: 'savings', cls: 'text-secondary border-secondary/40' },
+};
+function TypeBadge({ type, hasCategory }) {
+  if (!hasCategory) {
+    return <span className="font-label-sm text-label-sm text-text-muted italic">Elige una categoría primero</span>;
+  }
+  const m = TYPE_META[type] || TYPE_META.variable_expense;
+  return (
+    <span className={`inline-flex items-center gap-xs self-start font-label-sm text-label-sm font-medium border rounded-full px-sm py-xs ${m.cls}`}>
+      <MS name={m.icon} className="text-[14px]" />
+      {m.label}
+    </span>
+  );
+}
 
 function Field({ label, error, extra, children }) {
   return (

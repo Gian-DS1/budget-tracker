@@ -146,6 +146,34 @@
 @keyframes stitch-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
 .hide-scrollbar::-webkit-scrollbar { display: none; }
 .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ── Inputs de fecha/hora: calendario nativo en oscuro ────────────────
+   color-scheme:dark hace que el navegador pinte el popup del datepicker
+   (y los spinners de time/month) en su variante oscura, no en blanco.
+   Se aplica a TODOS los date/time inputs del tema para mantener coherencia
+   con el resto de la app. El icono del picker se tiñe a periwinkle. */
+.stitch-root input[type='date'],
+.stitch-root input[type='datetime-local'],
+.stitch-root input[type='month'],
+.stitch-root input[type='time'] {
+  color-scheme: dark;
+}
+.stitch-root input[type='date']::-webkit-calendar-picker-indicator,
+.stitch-root input[type='datetime-local']::-webkit-calendar-picker-indicator,
+.stitch-root input[type='month']::-webkit-calendar-picker-indicator,
+.stitch-root input[type='time']::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  /* Tiñe el glifo del calendario a periwinkle (#bec2ff) vía filtro. */
+  filter: invert(78%) sepia(18%) saturate(1200%) hue-rotate(196deg) brightness(102%);
+  transition: opacity 120ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.stitch-root input[type='date']:hover::-webkit-calendar-picker-indicator,
+.stitch-root input[type='datetime-local']:hover::-webkit-calendar-picker-indicator,
+.stitch-root input[type='month']:hover::-webkit-calendar-picker-indicator,
+.stitch-root input[type='time']:hover::-webkit-calendar-picker-indicator {
+  opacity: 1;
+}
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
   user-select: none;
