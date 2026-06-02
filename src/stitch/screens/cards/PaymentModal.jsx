@@ -30,8 +30,11 @@ export default function PaymentModal({ card, transactions, onClose }) {
     } else {
       await addCardPayment(card.id, payload);
     }
-    // ¿Quedó saldado el estado de cuenta tras el abono?
-    if (amt + bal.paid >= bal.billed - 0.01 && bal.billed > 0) toast.success('Estado de cuenta saldado 🎉', { duration: 4000 });
+    // ¿Este abono SALDÓ un estado de cuenta que estaba pendiente? (no en prepagos
+    // sobre una tarjeta que ya estaba al día).
+    if (bal.pendingBilled > 0.01 && amt + bal.paid >= bal.billed - 0.01) {
+      toast.success('Estado de cuenta saldado 🎉', { duration: 4000 });
+    }
     onClose();
   };
 

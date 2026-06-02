@@ -57,9 +57,10 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
       {/* Línea 2 — POR PAGAR (protagonista) */}
       <div className="px-lg py-md relative z-10 border-t border-border-subtle bg-surface-container-lowest/40">
         {bal.isPaid ? (
-          <div className="flex items-center justify-between">
-            <span className="font-mono-data text-mono-data text-text-muted">ESTADO DE CUENTA</span>
-            <span className="font-label-sm text-label-sm text-tertiary flex items-center gap-xs"><MS name="check_circle" className="!text-[16px]" /> Pagado</span>
+          <div className="flex items-center justify-between gap-sm">
+            <span className="font-label-sm text-label-sm text-tertiary flex items-center gap-xs"><MS name="check_circle" className="!text-[16px]" /> Al día</span>
+            {/* Aun sin saldo, se puede adelantar un abono (prepago). */}
+            <button onClick={() => onPay(card)} className="border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">Adelantar abono</button>
           </div>
         ) : (
           <>
