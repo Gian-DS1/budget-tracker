@@ -5,11 +5,12 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 import StitchHead from './StitchHead';
 import StitchShell from './StitchShell';
 import StitchAuth from './screens/StitchAuth';
+import StitchLanding from './screens/StitchLanding';
 import StitchDashboard from './screens/StitchDashboard';
 import StitchLedger from './screens/StitchLedger';
 import StitchBudget from './screens/StitchBudget';
@@ -68,8 +69,13 @@ export default function StitchApp() {
   const demo = isDemoActive();
   const authedUser = user || (demo ? { id: 'demo', email: 'demo@local' } : null);
 
+  // Visitante no logueado: landing por defecto; "Acceder" muestra el login.
+  const [showAuth, setShowAuth] = useState(false);
+
   useEffect(() => {
-    if (demo) seedDemoStores();
+    // Tras recargar con demo activo, re-sembrar los stores. Fuera del ciclo de
+    // render (microtask) para no disparar setState síncrono dentro del effect.
+    if (demo) queueMicrotask(seedDemoStores);
   }, [demo]);
 
   const fetchCategories = useCategoryStore((s) => s.fetchCategories);
@@ -134,13 +140,14 @@ export default function StitchApp() {
     );
   }
 
-  // Sin sesión (o recuperando contraseña): pantalla de acceso Stitch.
+  // Sin sesión: landing pública; "Acceder" o recuperación → pantalla de acceso.
   if (!authedUser || isRecoveringPassword) {
+    const showLanding = !isRecoveringPassword && !showAuth;
     return (
       <>
         <StitchHead />
         <Toaster {...toasterOptions} />
-        <StitchAuth />
+        {showLanding ? <StitchLanding onAccess={() => setShowAuth(true)} /> : <StitchAuth />}
       </>
     );
   }

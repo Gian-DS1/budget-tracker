@@ -1,8 +1,8 @@
 // AppShell Stitch — sidebar + header glass, responsive.
 // Desktop: sidebar fijo 256px. Móvil (<lg): sidebar off-canvas + hamburguesa + overlay.
 
-import { useState, useEffect } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { useState } from 'react';
+import { NavLink, Outlet } from 'react-router-dom';
 import MS from './MS';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
@@ -27,11 +27,7 @@ const NAV = [
 export default function StitchShell() {
   const { signOut } = useAuth();
   const demo = isDemoActive();
-  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-
-  // Cerrar el menú móvil al navegar.
-  useEffect(() => { setMenuOpen(false); }, [location.pathname]);
 
   const handleSignOut = () => {
     if (demo) { exitDemo(); window.location.reload(); return; }
@@ -80,6 +76,7 @@ export default function StitchShell() {
                 key={item.to}
                 to={item.to}
                 end={item.end}
+                onClick={() => setMenuOpen(false)}
                 className={({ isActive }) =>
                   [
                     'flex items-center gap-md px-md py-sm rounded transition-all duration-200 border',
@@ -122,7 +119,7 @@ export default function StitchShell() {
               </span>
             )}
           </div>
-          <div className="flex-1 max-w-md mx-lg hidden md:flex">
+          <div className="flex-1 max-w-[28rem] mx-lg hidden md:flex">
             <div className="relative w-full">
               <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" />
               <input

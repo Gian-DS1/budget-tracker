@@ -11,11 +11,16 @@ import MS from '../MS';
 const MODES = { login: 'login', signup: 'signup', reset: 'reset' };
 
 export default function StitchAuth() {
-  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecoveringPassword } = useAuth();
   const [mode, setMode] = useState(MODES.login);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+
+  // Llegada desde el email de recuperación: establecer nueva contraseña.
+  if (isRecoveringPassword) {
+    return <NewPasswordScreen updatePassword={updatePassword} />;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -138,6 +143,54 @@ export default function StitchAuth() {
             <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">Datos de ejemplo · no toca el backend</p>
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+// Pantalla de nueva contraseña (tras llegar del email de recuperación).
+function NewPasswordScreen({ updatePassword }) {
+  const [pwd, setPwd] = useState('');
+  const [pwd2, setPwd2] = useState('');
+  const [busy, setBusy] = useState(false);
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (pwd.length < 6) { toast.error('La contraseña debe tener al menos 6 caracteres'); return; }
+    if (pwd !== pwd2) { toast.error('Las contraseñas no coinciden'); return; }
+    setBusy(true);
+    try {
+      await updatePassword(pwd);
+      toast.success('Contraseña actualizada. Ya puedes entrar.');
+    } catch (err) {
+      toast.error(friendlyAuthError(err));
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <div className="stitch-root grid-pattern min-h-screen flex items-center justify-center p-margin-safe">
+      <div className="w-full max-w-[420px] bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg relative overflow-hidden">
+        <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary" style={{ boxShadow: '0 0 15px rgba(190,194,255,0.4)' }} />
+        <div className="flex flex-col items-center text-center mb-lg pt-sm">
+          <div className="w-12 h-12 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
+            <MS name="lock_reset" className="text-[24px] text-primary" />
+          </div>
+          <h1 className="font-headline-md text-headline-md font-bold text-on-surface">Nueva contraseña</h1>
+          <p className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mt-xs">Restablecer acceso</p>
+        </div>
+        <form onSubmit={submit} className="flex flex-col gap-md">
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np1">Nueva contraseña</label>
+            <input id="np1" type="password" required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+          </div>
+          <div className="flex flex-col gap-xs">
+            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np2">Confirmar contraseña</label>
+            <input id="np2" type="password" required value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="••••••••" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+          </div>
+          <button type="submit" disabled={busy} className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs">
+            {busy ? 'Guardando…' : 'Guardar contraseña'}
+          </button>
+        </form>
       </div>
     </div>
   );
