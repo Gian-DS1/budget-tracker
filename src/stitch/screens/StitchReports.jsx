@@ -26,7 +26,7 @@ export default function StitchReports() {
   const { categories } = useCategoryStore();
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const y = now.getFullYear();
   const m = now.getMonth();
 
@@ -64,7 +64,7 @@ export default function StitchReports() {
   const health = useMemo(() => {
     const cap = getMonthlySavingCapacity(transactions, now, 3);
     return getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt: getTotalMonthlyPayment() });
-  }, [transactions, getTotalMonthlyPayment]);
+  }, [transactions, getTotalMonthlyPayment, now]);
 
   const healthColor = health.score >= 80 ? '#bdd200' : health.score >= 60 ? '#50d8e9' : health.score >= 40 ? '#ffb689' : '#ffb4ab';
 

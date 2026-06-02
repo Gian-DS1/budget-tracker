@@ -11,7 +11,7 @@ const COLORS = ['#bec2ff', '#50d8e9', '#bdd200', '#ffb689', '#ffb4ab', '#9aa0ff'
 const blank = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#bec2ff', cashbackRules: [], catalogId: null };
 
 export default function StitchCards() {
-  const { cards, addCard, updateCard, deleteCard, addCardPayment } = useCreditCardStore();
+  const { cards, addCard, updateCard, addCardPayment } = useCreditCardStore();
   const { transactions } = useTransactionStore();
 
   const [showForm, setShowForm] = useState(false);

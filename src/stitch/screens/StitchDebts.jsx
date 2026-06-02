@@ -3,16 +3,14 @@ import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import useDebtStore from '../../stores/useDebtStore';
-import useRateStore from '../../stores/useRateStore';
 import { formatCurrency, todayISO } from '../../utils/formatters';
 
 const fmt = (n, c) => formatCurrency(n, c);
 const blank = { creditorName: '', originalAmount: '', currentBalance: '', interestRate: '', monthlyPayment: '', dueDate: '', currency: 'DOP' };
 
 export default function StitchDebts() {
-  const { debts, payments, addDebt, updateDebt, deleteDebt, addPayment, deletePayment, restorePayment } = useDebtStore();
+  const { debts, addDebt, updateDebt, deleteDebt, addPayment } = useDebtStore();
   const getTotalDebt = useDebtStore((s) => s.getTotalDebt);
-  const fxRate = useRateStore((s) => s.getRate());
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);

@@ -13,7 +13,7 @@ import useBudgetStore from '../../stores/useBudgetStore';
 import usePlanStore from '../../stores/usePlanStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useRateStore from '../../stores/useRateStore';
-import { getBudgetSummary, getMonthlySavingCapacity } from '../../utils/calculations';
+import { getBudgetSummary } from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { MONTHS_SHORT_ES } from '../../utils/constants';
@@ -33,7 +33,7 @@ export default function StitchDashboard() {
   const plans = usePlanStore((s) => s.plans);
   const fxRate = useRateStore((s) => s.getRate());
 
-  const now = new Date();
+  const now = useMemo(() => new Date(), []);
   const y = now.getFullYear();
   const m = now.getMonth();
 
@@ -79,7 +79,7 @@ export default function StitchDashboard() {
 
   const totalPendingCards = useMemo(() => cards.reduce(
     (sum, c) => sum + (getCardBalances(c, transactions, now).pendingBilled || 0), 0
-  ), [cards, transactions]);
+  ), [cards, transactions, now]);
 
   // Evolución 6 meses (para el área chart)
   const series = useMemo(() => {
@@ -144,8 +144,8 @@ export default function StitchDashboard() {
       if (days < 0 || days > 30) return;
       out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${p.title}" vence ${formatDate(p.deadline)}.`, cta: 'VER', to: '/plan' });
     });
-    return out.sort((a, b) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
-  }, [cards, debts, plans, transactions, fxRate, y, m]);
+    return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
+  }, [cards, debts, plans, transactions, fxRate, y, m, now]);
 
   const empty = transactions.length === 0;
 

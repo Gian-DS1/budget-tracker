@@ -13,7 +13,7 @@ const HORIZONS = [
 const blank = { title: '', description: '', targetAmount: '', currentAmount: '0', deadline: '', horizon: 'medium' };
 
 export default function StitchStrategy() {
-  const { plans, addPlan, updatePlan, deletePlan, updateStatus } = usePlanStore();
+  const { plans, addPlan, updatePlan, deletePlan } = usePlanStore();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);

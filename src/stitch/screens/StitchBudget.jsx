@@ -37,7 +37,7 @@ export default function StitchBudget() {
   const [month, setMonth] = useState(now.getMonth());
 
   const budgets = useBudgetStore((s) => s.budgets);
-  const { setBudget, copyBudgetFromPreviousMonth, bulkSetBudgets } = useBudgetStore();
+  const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const { transactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const debts = useDebtStore((s) => s.debts);
@@ -85,7 +85,6 @@ export default function StitchBudget() {
 
   // Gasto diario promedio (variable + fijo del mes)
   const daysElapsed = isCurrentMonth ? now.getDate() : new Date(year, month + 1, 0).getDate();
-  const totalSpent = summary.gastosFijosPlan ? (summary.variableGastado + summary.gastosFijosPlan) : summary.variableGastado;
   const dailyBurn = daysElapsed > 0 ? summary.variableGastado / daysElapsed : 0;
 
   const consumedPct = summary.ingresoRecibido > 0
