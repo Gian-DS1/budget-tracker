@@ -1,33 +1,15 @@
-<svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <linearGradient id="fk" x1="120" y1="100" x2="280" y2="300" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#d6d9ff"/>
-      <stop offset="100%" stop-color="#bec2ff"/>
-    </linearGradient>
-    <filter id="fglow" x="-30%" y="-30%" width="160%" height="160%">
-      <feGaussianBlur stdDeviation="10" result="b"/>
-      <feFlood flood-color="#bec2ff" flood-opacity="0.45"/>
-      <feComposite in2="b" operator="in" result="g"/>
-      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-  </defs>
-
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
   <!-- Fondo instrument-grade Stitch -->
-  <rect width="400" height="400" rx="92" fill="#070708"/>
-  <rect x="4" y="4" width="392" height="392" rx="88" fill="none" stroke="#232426" stroke-width="6"/>
-  <!-- highlight superior (inner-glow) -->
-  <rect x="10" y="8" width="380" height="3" rx="1.5" fill="#ffffff" opacity="0.06"/>
+  <rect width="64" height="64" rx="15" fill="#070708"/>
+  <rect x="1" y="1" width="62" height="62" rx="14" fill="none" stroke="#2c2d44" stroke-width="2"/>
 
-  <!-- Monograma 'F' geométrico, barras periwinkle -->
-  <g filter="url(#fglow)">
-    <!-- asta vertical -->
-    <rect x="120" y="100" width="46" height="200" rx="8" fill="url(#fk)"/>
-    <!-- brazo superior -->
-    <rect x="120" y="100" width="160" height="46" rx="8" fill="url(#fk)"/>
-    <!-- brazo medio (más corto, firma 'F') -->
-    <rect x="120" y="178" width="118" height="44" rx="8" fill="#bec2ff"/>
+  <!-- Monograma 'F' geométrico, periwinkle (grueso para legibilidad a 16px) -->
+  <g fill="#bec2ff">
+    <rect x="19" y="14" width="9" height="36" rx="2"/>            <!-- asta vertical -->
+    <rect x="19" y="14" width="27" height="9" rx="2"/>            <!-- brazo superior -->
+    <rect x="19" y="29" width="20" height="8" rx="2"/>            <!-- brazo medio (firma F) -->
   </g>
 
   <!-- Punto de acento (telemetría) -->
-  <circle cx="300" cy="282" r="14" fill="#50d8e9"/>
+  <circle cx="47" cy="46" r="3.2" fill="#50d8e9"/>
 </svg>
