@@ -155,6 +155,42 @@ export function demoRestoreTransaction(tx) {
   useTransactionStore.setState((s) => ({ transactions: [{ ...tx, id: demoId() }, ...s.transactions] }));
 }
 
+// Presupuesto (sobres). En demo, setBudget real haría rollback + toast rojo (no
+// hay sesión), así que se muta el estado local directamente. Mismo formato que
+// useBudgetStore: fila por (categoryId, year, month).
+export function demoSetBudget(categoryId, year, month, amount) {
+  const value = Number(amount) || 0;
+  useBudgetStore.setState((s) => {
+    const i = s.budgets.findIndex((b) => b.categoryId === categoryId && b.year === year && b.month === month);
+    if (i >= 0) {
+      const next = [...s.budgets];
+      next[i] = { ...next[i], estimatedAmount: value };
+      return { budgets: next };
+    }
+    const row = { id: demoId(), categoryId, year, month, estimatedAmount: value, currency: 'DOP', createdAt: new Date().toISOString() };
+    return { budgets: [...s.budgets, row] };
+  });
+}
+
+// Copia los sobres del mes anterior a (year, month), sin pisar los existentes.
+// Devuelve true/false como el store (para que el toast del componente funcione).
+export function demoCopyBudgetFromPreviousMonth(year, month) {
+  let pm = month - 1, py = year;
+  if (pm < 0) { pm = 11; py -= 1; }
+  const { budgets } = useBudgetStore.getState();
+  const prev = budgets.filter((b) => b.year === py && b.month === pm);
+  if (prev.length === 0) return false;
+  const current = budgets.filter((b) => b.year === year && b.month === month);
+  const toCopy = prev.filter((pb) => !current.some((cb) => cb.categoryId === pb.categoryId));
+  if (toCopy.length === 0) return true;
+  const rows = toCopy.map((pb) => ({
+    id: demoId(), categoryId: pb.categoryId, year, month,
+    estimatedAmount: pb.estimatedAmount, currency: 'DOP', createdAt: new Date().toISOString(),
+  }));
+  useBudgetStore.setState((s) => ({ budgets: [...s.budgets, ...rows] }));
+  return true;
+}
+
 // Genérico para colecciones simples (savings/debts/plans/cards) por si se usan.
 export function demoAdd(store, key, row) {
   const r = { id: demoId(), createdAt: new Date().toISOString(), ...row };

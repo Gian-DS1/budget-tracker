@@ -222,7 +222,9 @@ export function getBudgetSummary({
   const gastosFijosPlan = estimatedByType.fixed_expense;
   const gastosVariablesPlan = estimatedByType.variable_expense;
   const ahorroPlan = estimatedByType.savings;
+  const gastosFijosReal = actualByType.fixed_expense;
   const variableGastado = actualByType.variable_expense;
+  const ahorroReal = actualByType.savings;
   const planDebt = Number(debtPlanned) || 0;
 
   const comprometido = gastosFijosPlan + planDebt + ahorroPlan + accumulativePlan;
@@ -244,7 +246,9 @@ export function getBudgetSummary({
     gastosFijosPlan,
     gastosVariablesPlan,
     ahorroPlan,
+    gastosFijosReal,
     variableGastado,
+    ahorroReal,
     accumulativePlan,
     accumulativeSpent,
     debtPlanned: planDebt,
@@ -254,6 +258,35 @@ export function getBudgetSummary({
     puedesGastar,
     porAsignar,
     estado,
+  };
+}
+
+/**
+ * Regla 50/30/20 derivada de los tipos de categoría, sobre el ingreso recibido:
+ *   - Necesidades (50%) = gastos fijos reales.
+ *   - Gustos (30%)      = gastos variables reales.
+ *   - Ahorro/Deuda (20%) = ahorro real + pago de deuda real del mes.
+ * Recibe el objeto `summary` de getBudgetSummary (no recalcula transacciones).
+ * Cada balde: { limit, spent, pct }. Con ingreso 0 → límites y pct en 0 (sin
+ * NaN/Infinity). `pct` se acota a 0 mínimo pero puede pasar de 100 (sobregasto).
+ */
+export function getBuckets503020(summary = {}) {
+  const income = Number(summary.ingresoRecibido) || 0;
+  const pct = (spent, limit) => (limit > 0 ? Math.max(0, (spent / limit) * 100) : 0);
+
+  const necesidadesSpent = Number(summary.gastosFijosReal) || 0;
+  const gustosSpent = Number(summary.variableGastado) || 0;
+  const ahorroDeudaSpent = (Number(summary.ahorroReal) || 0) + (Number(summary.debtPaid) || 0);
+
+  const necLimit = income * 0.5;
+  const gusLimit = income * 0.3;
+  const ahoLimit = income * 0.2;
+
+  return {
+    income,
+    necesidades: { limit: necLimit, spent: necesidadesSpent, pct: pct(necesidadesSpent, necLimit) },
+    gustos: { limit: gusLimit, spent: gustosSpent, pct: pct(gustosSpent, gusLimit) },
+    ahorroDeuda: { limit: ahoLimit, spent: ahorroDeudaSpent, pct: pct(ahorroDeudaSpent, ahoLimit) },
   };
 }
 

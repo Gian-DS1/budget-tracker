@@ -36,6 +36,7 @@ import usePlanStore from '../stores/usePlanStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import useRateStore from '../stores/useRateStore';
 import useRecurringStore from '../stores/useRecurringStore';
+import usePrefsStore from '../stores/usePrefsStore';
 
 const toasterOptions = {
   position: 'top-right',
@@ -84,6 +85,7 @@ export default function StitchApp() {
   const fetchDebtsAndPayments = useDebtStore((s) => s.fetchDebtsAndPayments);
   const fetchPlans = usePlanStore((s) => s.fetchPlans);
   const fetchCards = useCreditCardStore((s) => s.fetchCards);
+  const fetchPrefs = usePrefsStore((s) => s.fetchPrefs);
   const fetchRecurring = useRecurringStore((s) => s.fetchRecurring);
   const materializeDue = useRecurringStore((s) => s.materializeDue);
   const fetchRate = useRateStore((s) => s.fetchRate);
@@ -112,7 +114,8 @@ export default function StitchApp() {
     fetchDebtsAndPayments();
     fetchPlans();
     fetchCards();
-  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchPlans, fetchCards]);
+    fetchPrefs();
+  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchPlans, fetchCards, fetchPrefs]);
 
   // Recurrentes: cargar plantillas y materializar las vencidas.
   useEffect(() => {

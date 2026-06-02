@@ -6,7 +6,15 @@ import Emoji from '../Emoji';
 import useRateStore from '../../stores/useRateStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
+import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
+
+// Niveles de presupuesto (de más simple a más avanzado).
+const BUDGET_LEVEL_CARDS = [
+  { value: 'tracking', icon: 'visibility', title: 'Seguimiento', desc: 'Solo registra tus gastos y mira a dónde se va tu dinero. Sin metas.' },
+  { value: '503020', icon: 'pie_chart', title: 'Regla 50/30/20', desc: 'Tres baldes: necesidades, gustos y ahorro. Simple y automático.' },
+  { value: 'zero', icon: 'account_balance_wallet', title: 'Base cero', desc: 'Asigna cada peso por categoría. Control total para avanzados.' },
+];
 
 export default function StitchSettings() {
   const { manualRate, source, getRate, fetchRate, setManualRate } = useRateStore();
@@ -87,6 +95,9 @@ export default function StitchSettings() {
 
   const dedupe = async () => { const n = await dedupeCategories(); toast.success(n > 0 ? `${n} categorías duplicadas eliminadas` : 'No había duplicados'); };
 
+  const budgetLevel = usePrefsStore((s) => s.budgetLevel);
+  const setBudgetLevel = usePrefsStore((s) => s.setBudgetLevel);
+
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="mb-xl">
@@ -99,6 +110,36 @@ export default function StitchSettings() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+        {/* Nivel de presupuesto */}
+        <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
+          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">NIVEL DE PRESUPUESTO</h2>
+            <MS name="tune" className="text-text-muted text-[16px]" />
+          </div>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-md">Elige cuánto control quieres. Puedes cambiarlo cuando quieras; no se pierde ningún dato.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
+            {BUDGET_LEVEL_CARDS.map((lv) => {
+              const active = budgetLevel === lv.value;
+              return (
+                <button
+                  key={lv.value}
+                  onClick={() => setBudgetLevel(lv.value)}
+                  className={`text-left flex flex-col gap-sm p-md rounded border transition-colors ${active ? 'border-primary bg-primary/10' : 'border-border-subtle hover:bg-surface-container-high'}`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className={`w-8 h-8 rounded flex items-center justify-center ${active ? 'text-primary' : 'text-text-muted'} bg-surface-container-high`}>
+                      <MS name={lv.icon} className="text-[18px]" />
+                    </span>
+                    {active && <MS name="check_circle" className="text-[18px] text-primary" />}
+                  </div>
+                  <span className="font-label-sm text-label-sm text-on-surface">{lv.title}</span>
+                  <span className="font-mono-data text-mono-data text-text-muted leading-relaxed normal-case tracking-normal">{lv.desc}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Tasa */}
         <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
