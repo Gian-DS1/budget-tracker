@@ -104,7 +104,7 @@ export default function StitchLedger() {
   const selectCls = 'appearance-none bg-surface-container border border-border-subtle text-on-surface font-label-sm text-label-sm py-xs pl-sm pr-[28px] rounded hover:border-outline-variant focus:outline-none focus:border-primary cursor-pointer inner-glow';
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-xl gap-md">
         <div>
           <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Transacciones</h2>

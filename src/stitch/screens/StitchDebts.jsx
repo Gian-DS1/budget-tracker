@@ -50,7 +50,7 @@ export default function StitchDebts() {
   };
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
         <div>
           <div className="flex items-center gap-sm mb-xs">

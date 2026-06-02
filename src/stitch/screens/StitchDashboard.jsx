@@ -157,10 +157,10 @@ export default function StitchDashboard() {
   ];
 
   return (
-    <div className="p-margin-safe flex gap-gutter max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe flex flex-col xl:flex-row gap-gutter max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col gap-gutter flex-grow min-w-0">
         {/* Hero: flujo del mes */}
-        <section className="glass-card rounded-lg p-lg relative overflow-hidden flex flex-col h-[400px]">
+        <section className="glass-card rounded-lg p-md sm:p-lg relative overflow-hidden flex flex-col min-h-[400px]">
           <div className="flex justify-between items-start mb-md z-10">
             <div>
               <h2 className="font-headline-md text-headline-md text-on-surface mb-xs">Flujo de {MONTHS_SHORT_ES[m]} {y}</h2>
@@ -172,7 +172,7 @@ export default function StitchDashboard() {
             </div>
           </div>
 
-          <div className="grid grid-cols-3 gap-md z-10 mb-md">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm sm:gap-md z-10 mb-md">
             <Stat label="Ingresos" value={`+${fmt(totals.income)}`} cls="text-tertiary" />
             <Stat label="Gastos" value={`−${fmt(totals.expense)}`} cls="text-accent-error" />
             <Stat label="Balance" value={`${totals.balance >= 0 ? '+' : '−'}${fmt(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} sub={`Ahorro ${savingsRate.toFixed(1)}%`} />
@@ -205,7 +205,7 @@ export default function StitchDashboard() {
       </div>
 
       {/* Right rail: señales */}
-      <aside className="w-[320px] shrink-0 glass-panel rounded-lg p-md flex flex-col border border-border-subtle">
+      <aside className="w-full xl:w-[320px] shrink-0 glass-panel rounded-lg p-md flex flex-col border border-border-subtle">
         <div className="font-mono-data text-mono-data text-on-surface border-b border-border-subtle pb-sm mb-md flex justify-between items-center">
           <span>RECORDATORIOS</span>
           <MS name="radar" className="text-[14px] text-text-muted" />

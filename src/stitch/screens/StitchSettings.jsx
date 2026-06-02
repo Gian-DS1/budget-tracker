@@ -87,7 +87,7 @@ export default function StitchSettings() {
   const dedupe = async () => { const n = await dedupeCategories(); toast.success(n > 0 ? `${n} categorías duplicadas eliminadas` : 'No había duplicados'); };
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="mb-xl">
         <div className="flex items-center gap-sm mb-xs">
           <span className="font-mono-data text-mono-data text-secondary">SYS.CFG</span>

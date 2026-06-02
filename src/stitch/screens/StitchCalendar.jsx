@@ -47,7 +47,7 @@ export default function StitchCalendar() {
   const catName = (id) => { const c = categories.find((x) => x.id === id); return c ? `${c.icon} ${c.name}` : '—'; };
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex items-center justify-between mb-xl">
         <div>
           <div className="flex items-center gap-sm mb-xs">

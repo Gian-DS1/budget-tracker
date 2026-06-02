@@ -47,7 +47,7 @@ export default function StitchCards() {
   };
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-xl gap-md">
         <div>
           <div className="flex items-center gap-sm mb-xs">

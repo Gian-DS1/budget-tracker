@@ -107,7 +107,7 @@ export default function StitchBudget() {
   const typeColor = (t) => ({ income: 'bg-tertiary', fixed_expense: 'bg-primary', variable_expense: 'bg-accent-warning', savings: 'bg-secondary' }[t] || 'bg-primary');
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-xl gap-lg">
         <div>

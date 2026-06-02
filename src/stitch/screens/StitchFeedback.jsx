@@ -43,7 +43,7 @@ export default function StitchFeedback() {
   };
 
   return (
-    <div className="p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="mb-xl">
         <div className="flex items-center gap-sm mb-xs">
           <span className="w-2 h-2 rounded-full bg-primary live-dot" />
