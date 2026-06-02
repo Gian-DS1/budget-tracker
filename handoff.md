@@ -6,7 +6,7 @@ Rama de trabajo: `rebuild/stitch-pure`. NO subir a producción. `origin/main` (c
 
 App: FinTrack, presupuesto personal para República Dominicana. Stack: Vite 8 + React 19, React Router 7, Zustand 5 (persist), Supabase (RLS), Recharts, Framer Motion 12.40, Material Symbols (íconos UI), JoyPixels v10 vía emoji-toolkit (emojis de categoría), react-hot-toast.
 
-UI activa: `src/main.jsx` monta SOLO `src/stitch/StitchApp.jsx`. Las páginas viejas en `src/pages/*` NO están ruteadas (código muerto en esta rama). No tocarlas salvo orden explícita.
+UI activa: `src/main.jsx` monta SOLO `src/stitch/StitchApp.jsx`. La UI vieja (`src/App.jsx`, `src/pages/`, `src/components/`, `src/styles/`, `src/index.css`, `useThemeStore`, atajos de teclado) YA FUE ELIMINADA (commit `dbc4677`). `src/` ahora contiene solo: `stitch/` (UI), `stores/`, `utils/`, `data/`, `lib/` (supabase), `contexts/AuthContext.jsx`. Deps podadas a 13 (se quitaron driver.js, lucide-react, date-fns). Lint pasa con 0 errores.
 
 Tailwind v4 vía `@tailwindcss/vite`; config en CSS con `@theme` dentro de `src/stitch/stitch.css` (NO hay tailwind.config.js). Los tokens de spacing (sm/md/lg/xl) hacen que utilidades de ancho homónimas (`max-w-md`, `max-w-xl`) resuelvan a 8–40px; usar valores arbitrarios `max-w-[Nrem]` en su lugar.
 
@@ -14,7 +14,7 @@ Modo demo/QA: flag sessionStorage `fintrack-demo-mode`, solo en localhost. Botó
 
 Servidor dev corriendo en http://localhost:5173/. HEAD de la rama: `92fe95e`.
 
-Tests: 68 pasan (`npm run test`). Build limpio (`npm run build`). Lint: 8 errores PREEXISTENTES en `src/stitch/StitchMotion.jsx` (react-refresh/only-export-components por exportar constantes/hooks junto a componentes); no son regresiones, ignorar salvo que se decida separar ese archivo.
+Tests: 68 pasan (`npm run test`). Build limpio (`npm run build`). Lint: 0 errores (`npm run lint`). El easing `EASE_OUT` vive en `src/stitch/motionTokens.js` (separado de StitchMotion.jsx para no romper fast-refresh).
 
 Página de referencia: `src/stitch/screens/StitchLedger.jsx` (Transacciones) es la ÚNICA página totalmente pulida bajo las 14 pautas; usarla como plantilla/ejemplo de cómo aplicar todos los componentes y patrones en las páginas restantes. Las demás páginas (`StitchBudget`, `StitchCards`, `StitchDebts`, `StitchVaults`, `StitchStrategy`, `StitchDashboard`, `StitchReports`, `StitchCalendar`, `StitchSettings`, `StitchFeedback`) ya tienen datos reales cableados y emojis migrados, pero AÚN usan `<select>`/`<input type=date>`/inputs de número nativos y NO tienen el branching de modo demo en sus formularios.
 
@@ -57,7 +57,8 @@ Página de referencia: `src/stitch/screens/StitchLedger.jsx` (Transacciones) es 
 
 ## Historial de commits relevantes (rama rebuild/stitch-pure, último arriba)
 
-- `92fe95e` fix(dropdowns): scrollbar del tema en portal (clase `.stitch-scroll`) + sin scroll horizontal (minWidth/maxWidth + overflow-x-hidden). HEAD actual.
+- `dbc4677` chore: elimina UI vieja (App/pages/components/styles/index.css), docs/, DESIGN.md, PRODUCT.md, useThemeStore, atajos de teclado, StitchPending; desinstala driver.js/lucide-react/date-fns; refactor StitchMotion (motionTokens.js) → lint 0; fix Emoji fallback. HEAD actual.
+- `92fe95e` fix(dropdowns): scrollbar del tema en portal (clase `.stitch-scroll`) + sin scroll horizontal (minWidth/maxWidth + overflow-x-hidden).
 - `4a81fbc` docs(handoff): este archivo (v1).
 - `597a19e` fix(dropdowns): panel flotante en portal (DropdownPanel) — deja de recortar dentro del modal.
 - `ba8196f` feat(transacciones): StitchSelect y StitchDatePicker unificados (misma animación que CategorySelect).
@@ -81,4 +82,4 @@ Aplicar el barrido de consistencia (pautas 1–14) página por página, EMPEZAND
 
 Orden sugerido de páginas tras Presupuesto: Tarjetas (StitchCards), Deudas (StitchDebts), Ahorros (StitchVaults), Plan (StitchStrategy), luego Dashboard, Reportes, Calendario, Ajustes, Feedback. Revisión por página antes de pasar a la siguiente (el usuario revisa cada una).
 
-Comandos de verificación por página: `npm run build`, `npm run lint` (esperar 8 errores baseline de StitchMotion), `npm run test` (68 deben pasar). Confirmar que http://localhost:5173/ responde 200.
+Comandos de verificación por página: `npm run build`, `npm run lint` (debe pasar con 0 errores), `npm run test` (68 deben pasar). Confirmar que http://localhost:5173/ responde 200.
