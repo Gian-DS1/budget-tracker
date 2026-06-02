@@ -60,20 +60,22 @@ const categories = defaultCategories.map((c, i) => ({
 // Resuelve el id real de una categoría por nombre (las default generan ids).
 const catId = (name) => categories.find((c) => c.name === name)?.id || '';
 
-const tx = (id, catName, amount, type, description, day, cashback = 0) => ({
-  id, categoryId: catId(catName), cardId: null, amount, type, description, date: dayOf(day),
+const tx = (id, catName, amount, type, description, day, cashback = 0, cardId = null) => ({
+  id, categoryId: catId(catName), cardId, amount, type, description, date: dayOf(day),
   notes: null, currency: 'DOP', cashbackEarned: cashback, createdAt: new Date().toISOString(),
 });
 
+// Algunos consumos van con la tarjeta demo (cc1) para que Tarjetas muestre saldos
+// y cashback reales. El cashback es 1% (regla 'all' de la tarjeta).
 const transactions = [
   tx('t1', 'Salario', 85000, 'income', 'Salario quincenal', 1),
   tx('t2', 'Salario', 85000, 'income', 'Salario quincenal', 16),
   tx('t3', 'Alquiler', 32000, 'fixed_expense', 'Alquiler', 2),
-  tx('t4', 'Supermercado', 4250, 'variable_expense', 'Supermercado Nacional', 4),
-  tx('t5', 'Supermercado', 3120, 'variable_expense', 'Jumbo', 12),
-  tx('t6', 'Combustible', 1800, 'variable_expense', 'Gasolina', 6),
+  tx('t4', 'Supermercado', 4250, 'variable_expense', 'Supermercado Nacional', 4, 42.5, 'cc1'),
+  tx('t5', 'Supermercado', 3120, 'variable_expense', 'Jumbo', 12, 31.2, 'cc1'),
+  tx('t6', 'Combustible', 1800, 'variable_expense', 'Gasolina', 6, 18, 'cc1'),
   tx('t7', 'Taxi y Transporte', 950, 'variable_expense', 'Uber', 9),
-  tx('t8', 'Restaurantes y Delivery', 2400, 'variable_expense', 'Cena fuera', 14),
+  tx('t8', 'Restaurantes y Delivery', 2400, 'variable_expense', 'Cena fuera', 14, 24, 'cc1'),
   tx('t9', 'Suscripciones Digitales', 590, 'variable_expense', 'Netflix', 10),
 ];
 
@@ -202,4 +204,41 @@ export function demoUpdate(store, key, id, updates) {
 }
 export function demoDelete(store, key, id) {
   store.setState((s) => ({ [key]: s[key].filter((x) => x.id !== id) }));
+}
+
+// ── Tarjetas de crédito (en demo no hay sesión: las acciones del store fallan) ──
+export function demoAddCard(card) {
+  const row = {
+    id: demoId(), name: card.name, bank: card.bank || '',
+    cutoffDay: Number(card.cutoffDay), dueDay: Number(card.dueDay),
+    color: card.color || '#bec2ff', paidCycles: [], payments: [],
+    cashbackRules: Array.isArray(card.cashbackRules) ? card.cashbackRules : [],
+    catalogId: card.catalogId || null, createdAt: new Date().toISOString(),
+  };
+  useCreditCardStore.setState((s) => ({ cards: [...s.cards, row] }));
+  return row;
+}
+export function demoUpdateCard(id, updates) {
+  useCreditCardStore.setState((s) => ({ cards: s.cards.map((c) => (c.id === id ? { ...c, ...updates } : c)) }));
+}
+export function demoDeleteCard(id) {
+  useCreditCardStore.setState((s) => ({ cards: s.cards.filter((c) => c.id !== id) }));
+}
+// Re-inserta una tarjeta borrada con su id original (deshacer).
+export function demoRestoreCard(card) {
+  useCreditCardStore.setState((s) => ({ cards: [...s.cards, card] }));
+}
+export function demoAddCardPayment(cardId, { amount, date, note } = {}) {
+  const value = Number(amount) || 0;
+  if (value <= 0) return null;
+  const entry = { id: demoId(), amount: value, date: date || iso(new Date()), note: note || '' };
+  useCreditCardStore.setState((s) => ({
+    cards: s.cards.map((c) => (c.id === cardId ? { ...c, payments: [...(c.payments || []), entry] } : c)),
+  }));
+  return entry;
+}
+export function demoDeleteCardPayment(cardId, paymentId) {
+  useCreditCardStore.setState((s) => ({
+    cards: s.cards.map((c) => (c.id === cardId ? { ...c, payments: (c.payments || []).filter((p) => p.id !== paymentId) } : c)),
+  }));
 }

@@ -1,0 +1,69 @@
+// Editor de reglas de cashback de una tarjeta: lista de { categoryId, percentage }.
+// categoryId puede ser un id de categoría del usuario o el literal 'all' (todas).
+// Solo % plano por categoría (sin topes, por decisión de producto).
+import MS from '../../MS';
+import StitchCategorySelect from '../../StitchCategorySelect';
+import useCategoryStore from '../../../stores/useCategoryStore';
+
+export default function CashbackEditor({ rules, onChange, onRestore, demoNote }) {
+  const categories = useCategoryStore((s) => s.categories);
+
+  const setRule = (i, patch) => onChange(rules.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
+  const removeRule = (i) => onChange(rules.filter((_, idx) => idx !== i));
+  const addRule = () => onChange([...rules, { categoryId: 'all', percentage: 1 }]);
+
+  // El selector de categoría no maneja 'all'; lo ofrecemos como opción aparte.
+  const isAll = (r) => r.categoryId === 'all';
+
+  return (
+    <div className="flex flex-col gap-sm">
+      {rules.length === 0 && (
+        <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">Sin reglas de cashback. Agrega una para estimar el reembolso por categoría.</p>
+      )}
+
+      {rules.map((r, i) => (
+        <div key={i} className="flex items-center gap-sm">
+          <div className="flex-1 min-w-0">
+            {isAll(r) ? (
+              <button type="button" onClick={() => setRule(i, { categoryId: '' })} className="w-full h-[42px] bg-surface-container-lowest border border-border-subtle rounded px-md font-body-md text-body-md text-on-surface text-left flex items-center gap-sm inner-glow">
+                <MS name="apps" className="!text-[18px] text-text-muted" /> Todas las categorías
+              </button>
+            ) : (
+              <StitchCategorySelect
+                value={r.categoryId}
+                onChange={(id) => setRule(i, { categoryId: id })}
+                options={categories}
+                placeholder="Elige categoría…"
+              />
+            )}
+          </div>
+          <div className="relative w-[88px] shrink-0">
+            <input
+              inputMode="decimal"
+              value={r.percentage}
+              onChange={(e) => setRule(i, { percentage: e.target.value.replace(/[^0-9.]/g, '') })}
+              className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm pl-md pr-[26px] font-mono-data text-[13px] text-right text-on-surface focus:outline-none focus:border-primary inner-glow"
+            />
+            <span className="absolute right-sm top-1/2 -translate-y-1/2 font-mono-data text-mono-data text-text-muted">%</span>
+          </div>
+          <button type="button" onClick={() => removeRule(i)} className="text-text-muted hover:text-accent-error p-xs shrink-0" aria-label="Quitar regla"><MS name="close" className="!text-[16px]" /></button>
+        </div>
+      ))}
+
+      <div className="flex flex-wrap gap-sm mt-xs">
+        <button type="button" onClick={addRule} className="flex items-center gap-xs border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">
+          <MS name="add" className="!text-[14px]" /> Regla
+        </button>
+        {onRestore && (
+          <button type="button" onClick={onRestore} className="flex items-center gap-xs border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">
+            <MS name="restart_alt" className="!text-[14px]" /> Restaurar valores del banco
+          </button>
+        )}
+      </div>
+
+      {demoNote && (
+        <p className="font-mono-data text-mono-data text-accent-warning normal-case tracking-normal mt-xs">{demoNote}</p>
+      )}
+    </div>
+  );
+}
