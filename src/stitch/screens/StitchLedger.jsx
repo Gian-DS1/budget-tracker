@@ -4,6 +4,8 @@ import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
 import StitchCategorySelect from '../StitchCategorySelect';
+import StitchSelect from '../StitchSelect';
+import StitchDatePicker from '../StitchDatePicker';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import AutoCatChip from '../AutoCatChip';
 import { isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction } from '../demoMode';
@@ -170,8 +172,6 @@ export default function StitchLedger() {
   const hasFilters = search || filterType || filterCat || dateFrom || dateTo;
   const clearFilters = () => { setSearch(''); setFilterType(''); setFilterCat(''); setDateFrom(''); setDateTo(''); };
 
-  const selectCls = 'appearance-none h-[34px] bg-surface-container border border-border-subtle text-on-surface font-label-sm text-label-sm py-0 pl-sm pr-[28px] rounded hover:border-outline-variant focus:outline-none focus:border-primary cursor-pointer inner-glow';
-  const dateCls = 'h-[34px] bg-surface-container border border-border-subtle text-on-surface font-mono-data text-mono-data py-0 px-sm rounded focus:outline-none focus:border-primary inner-glow [color-scheme:dark]';
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -194,10 +194,14 @@ export default function StitchLedger() {
           <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar descripción o notas…" className="w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
         </div>
-        <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={selectCls}>
-          <option value="">Todos los tipos</option>
-          {TYPES.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
-        </select>
+        <StitchSelect
+          value={filterType}
+          onChange={setFilterType}
+          options={[{ value: '', label: 'Todos los tipos' }, ...TYPES.map((t) => ({ value: t.v, label: t.l }))]}
+          placeholder="Todos los tipos"
+          compact
+          className="min-w-[150px]"
+        />
         <StitchCategorySelect
           value={filterCat}
           onChange={setFilterCat}
@@ -210,9 +214,9 @@ export default function StitchLedger() {
         {/* Rango de fechas */}
         <div className="flex items-center gap-xs">
           <span className="font-mono-data text-mono-data text-text-muted uppercase">Desde</span>
-          <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(e) => setDateFrom(e.target.value)} className={dateCls} />
+          <StitchDatePicker value={dateFrom} max={dateTo || undefined} onChange={setDateFrom} compact className="w-[150px]" />
           <span className="font-mono-data text-mono-data text-text-muted uppercase">Hasta</span>
-          <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(e) => setDateTo(e.target.value)} className={dateCls} />
+          <StitchDatePicker value={dateTo} min={dateFrom || undefined} onChange={setDateTo} compact className="w-[150px]" />
         </div>
         {hasFilters && (
           <button onClick={clearFilters} className="flex items-center gap-xs font-mono-data text-mono-data uppercase text-text-muted hover:text-on-surface border border-border-subtle rounded px-sm py-xs hover:bg-surface-container-high transition-colors">
@@ -283,7 +287,7 @@ export default function StitchLedger() {
           <form onSubmit={submit} className="flex flex-col gap-md">
             <div className="grid grid-cols-2 gap-md">
               <Field label="Fecha" error={errors.date}>
-                <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} />
+                <StitchDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
               </Field>
               <Field label="Monto" error={errors.amount}>
                 <StitchCurrencyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className={inputCls} />
@@ -302,9 +306,11 @@ export default function StitchLedger() {
                 />
               </Field>
               <Field label="Moneda">
-                <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={inputCls}>
-                  <option value="DOP">RD$ (DOP)</option><option value="USD">US$ (USD)</option>
-                </select>
+                <StitchSelect
+                  value={form.currency}
+                  onChange={(v) => setForm({ ...form, currency: v })}
+                  options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]}
+                />
               </Field>
             </div>
             {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
@@ -315,10 +321,12 @@ export default function StitchLedger() {
             </Field>
             {isExpenseType(form.type) && cards.length > 0 && (
               <Field label="Tarjeta (opcional)">
-                <select value={form.cardId} onChange={(e) => setForm({ ...form, cardId: e.target.value })} className={inputCls}>
-                  <option value="">Sin tarjeta</option>
-                  {cards.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                <StitchSelect
+                  value={form.cardId}
+                  onChange={(v) => setForm({ ...form, cardId: v })}
+                  options={[{ value: '', label: 'Sin tarjeta' }, ...cards.map((c) => ({ value: c.id, label: c.name }))]}
+                  placeholder="Sin tarjeta"
+                />
               </Field>
             )}
             {cashbackPreview > 0 && <p className="font-mono-data text-mono-data text-tertiary">Cashback estimado: +{fmt(cashbackPreview)}</p>}

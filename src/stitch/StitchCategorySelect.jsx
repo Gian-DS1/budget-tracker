@@ -19,20 +19,7 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import MS from './MS';
 import Emoji from './Emoji';
-import { EASE_OUT } from './StitchMotion';
-
-// Look por defecto = igual que los inputs del formulario (alto cómodo).
-const triggerBase =
-  'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md ' +
-  'font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary ' +
-  'inner-glow flex items-center justify-between gap-sm text-left';
-
-// Variante compacta = combina con la barra de filtros (selects/dates pequeños).
-// Altura fija h-[34px] para igualar a los demás controles de la barra.
-const triggerCompact =
-  'w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 px-sm ' +
-  'font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary ' +
-  'hover:border-outline-variant inner-glow flex items-center justify-between gap-xs text-left cursor-pointer';
+import { TRIGGER_BASE, TRIGGER_COMPACT, panelMotion, PANEL_CLS } from './dropdownShared';
 
 export default function StitchCategorySelect({
   value = '',
@@ -128,7 +115,7 @@ export default function StitchCategorySelect({
         aria-haspopup="listbox"
         aria-controls={listboxId}
         onClick={toggle}
-        className={compact ? triggerCompact : triggerBase}
+        className={compact ? TRIGGER_COMPACT : TRIGGER_BASE}
       >
         <span className="flex items-center gap-sm min-w-0">
           {selected ? (
@@ -148,12 +135,8 @@ export default function StitchCategorySelect({
           <motion.div
             role="listbox"
             id={listboxId}
-            initial={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.96, y: -4 }}
-            animate={reduce ? { opacity: 1 } : { opacity: 1, scale: 1, y: 0 }}
-            exit={reduce ? { opacity: 0 } : { opacity: 0, scale: 0.98, y: -2 }}
-            transition={{ duration: 0.16, ease: EASE_OUT }}
-            style={{ transformOrigin: 'top' }}
-            className="absolute z-50 mt-xs w-full bg-surface-card border border-border-subtle rounded-lg inner-glow shadow-xl overflow-hidden"
+            {...panelMotion(reduce)}
+            className={`${PANEL_CLS} w-full`}
           >
             {/* Buscador */}
             <div className="relative border-b border-border-subtle">
