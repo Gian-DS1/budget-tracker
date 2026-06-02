@@ -155,7 +155,7 @@ export default function StitchCategorySelect({
             </div>
 
             {/* Opciones (solo esta zona scrollea) */}
-            <div ref={listRef} className="overflow-y-auto py-xs min-h-0">
+            <div ref={listRef} className="stitch-scroll overflow-y-auto overflow-x-hidden py-xs min-h-0">
               {items.length === 0 ? (
                 <div className="px-md py-sm font-label-sm text-label-sm text-text-muted">Sin coincidencias</div>
               ) : (

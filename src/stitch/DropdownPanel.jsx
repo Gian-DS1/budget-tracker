@@ -50,21 +50,21 @@ export default function DropdownPanel({
       const availH = Math.max(120, Math.floor(placeUp ? spaceAbove : spaceBelow));
       const cappedH = Math.min(maxHeight, availH);
 
-      // Ancho: al menos el del trigger; se recorta para no salir por la derecha.
-      const minW = matchTriggerWidth ? r.width : 0;
+      // Ancho: usamos minWidth = ancho del trigger (el panel puede crecer para
+      // que el contenido quepa, sin scroll horizontal), con un tope = viewport.
       const maxW = vw - 2 * MARGIN;
-
       const next = {
-        width: matchTriggerWidth ? Math.min(Math.max(minW, 0), maxW) : undefined,
+        minWidth: matchTriggerWidth ? Math.min(r.width, maxW) : undefined,
+        maxWidth: maxW,
         maxHeight: cappedH,
         placeUp,
       };
 
-      // Horizontal: alinea a la izquierda; si se sale por la derecha, alinea a
-      // la derecha del trigger.
-      const panelW = next.width || 260; // ancho estimado si no copia el trigger
+      // Horizontal: alinea a la izquierda; si el ancho del trigger empujaría el
+      // panel fuera por la derecha, alinea a la derecha del trigger.
+      const estW = next.minWidth || 260;
       let left = r.left;
-      if (left + panelW + MARGIN > vw) left = Math.max(MARGIN, r.right - panelW);
+      if (left + estW + MARGIN > vw) left = Math.max(MARGIN, r.right - estW);
 
       next.left = Math.round(left);
       next.top = placeUp ? undefined : Math.round(r.bottom + GAP);
@@ -89,7 +89,8 @@ export default function DropdownPanel({
     left: pos.left,
     top: pos.top,
     bottom: pos.bottom,
-    width: pos.width,
+    minWidth: pos.minWidth,
+    maxWidth: pos.maxWidth,
     zIndex: 60,
     transformOrigin: pos.placeUp ? 'bottom' : 'top',
   };
@@ -108,16 +109,16 @@ export default function DropdownPanel({
       {...motionProps}
       transition={{ duration: 0.16, ease: EASE_OUT }}
       style={style}
-      className={`bg-surface-card border border-border-subtle rounded-lg inner-glow shadow-xl overflow-hidden ${className}`}
+      className={`stitch-scroll bg-surface-card border border-border-subtle rounded-lg inner-glow shadow-xl overflow-hidden ${className}`}
       {...rest}
     >
       {scroll ? (
-        <div style={{ maxHeight: pos.maxHeight }} className="overflow-y-auto">
+        <div style={{ maxHeight: pos.maxHeight }} className="overflow-y-auto overflow-x-hidden">
           {children}
         </div>
       ) : (
         // El hijo decide su layout; le pasamos el alto máximo disponible.
-        <div style={{ maxHeight: pos.maxHeight }} className="flex flex-col">
+        <div style={{ maxHeight: pos.maxHeight }} className="flex flex-col overflow-x-hidden">
           {typeof children === 'function' ? children(pos.maxHeight) : children}
         </div>
       )}
