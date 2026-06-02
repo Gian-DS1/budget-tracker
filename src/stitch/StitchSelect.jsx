@@ -9,9 +9,10 @@
 //   - icon (opcional): nombre de Material Symbol mostrado a la izquierda.
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from './MS';
-import { TRIGGER_BASE, TRIGGER_COMPACT, panelMotion, PANEL_CLS } from './dropdownShared';
+import { TRIGGER_BASE, TRIGGER_COMPACT } from './dropdownShared';
+import DropdownPanel from './DropdownPanel';
 
 export default function StitchSelect({
   value = '',
@@ -26,6 +27,8 @@ export default function StitchSelect({
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(-1);
   const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
   const listRef = useRef(null);
   const listboxId = useId();
 
@@ -40,10 +43,14 @@ export default function StitchSelect({
   const toggle = () => (open ? close() : openMenu());
   const choose = (opt) => { onChange(opt.value); close(); };
 
-  // Cerrar al clic fuera.
+  // Cerrar al clic fuera (considera el panel en portal además del trigger).
   useEffect(() => {
     if (!open) return;
-    const onDocClick = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    const onDocClick = (e) => {
+      if (rootRef.current?.contains(e.target)) return;
+      if (panelRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [open]);
@@ -71,6 +78,7 @@ export default function StitchSelect({
   return (
     <div ref={rootRef} className={`relative ${className}`} onKeyDown={onKeyDown}>
       <button
+        ref={triggerRef}
         type="button"
         id={id}
         role="combobox"
@@ -81,16 +89,18 @@ export default function StitchSelect({
         className={compact ? TRIGGER_COMPACT : TRIGGER_BASE}
       >
         <span className="flex items-center gap-sm min-w-0">
-          {selected?.icon && <MS name={selected.icon} className={compact ? 'text-[15px] text-text-muted' : 'text-[18px] text-text-muted'} />}
-          <span className={`truncate ${selected ? '' : 'text-text-muted'}`}>{selected ? selected.label : placeholder}</span>
+          {selected?.icon && <MS name={selected.icon} className={`${compact ? '!text-[14px]' : '!text-[18px]'} text-text-muted`} />}
+          {/* Un value vacío (ej. "Todos los tipos") se muestra atenuado, igual que
+              el placeholder de los otros campos, para que toda la fila combine. */}
+          <span className={`truncate ${selected && selected.value !== '' ? '' : 'text-text-muted'}`}>{selected ? selected.label : placeholder}</span>
         </span>
-        <MS name="expand_more" className={`${compact ? 'text-[16px]' : 'text-[20px]'} text-text-muted transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
+        <MS name="expand_more" className={`${compact ? '!text-[16px]' : '!text-[20px]'} text-text-muted transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       <AnimatePresence>
         {open && (
-          <motion.div role="listbox" id={listboxId} {...panelMotion(reduce)} className={`${PANEL_CLS} w-full min-w-max`}>
-            <div ref={listRef} className="max-h-[260px] overflow-y-auto py-xs">
+          <DropdownPanel triggerRef={triggerRef} panelRef={panelRef} open={open} reduce={reduce} role="listbox" id={listboxId}>
+            <div ref={listRef} className="py-xs">
               {options.map((o, i) => {
                 const isSel = o.value === value;
                 const isActive = i === active;
@@ -114,7 +124,7 @@ export default function StitchSelect({
                 );
               })}
             </div>
-          </motion.div>
+          </DropdownPanel>
         )}
       </AnimatePresence>
     </div>

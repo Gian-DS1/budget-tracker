@@ -16,10 +16,11 @@
 //   options: [{ id, name, icon, isActive }]. Se filtran las inactivas.
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from './MS';
 import Emoji from './Emoji';
-import { TRIGGER_BASE, TRIGGER_COMPACT, panelMotion, PANEL_CLS } from './dropdownShared';
+import { TRIGGER_BASE, TRIGGER_COMPACT } from './dropdownShared';
+import DropdownPanel from './DropdownPanel';
 
 export default function StitchCategorySelect({
   value = '',
@@ -37,6 +38,8 @@ export default function StitchCategorySelect({
   const [query, setQuery] = useState('');
   const [active, setActive] = useState(-1); // índice resaltado por teclado
   const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
   const searchRef = useRef(null);
   const listRef = useRef(null);
   const listboxId = useId();
@@ -67,10 +70,14 @@ export default function StitchCategorySelect({
   const toggle = () => (open ? close() : openMenu());
   const choose = (item) => { onChange(item.id); close(); };
 
-  // Cerrar al hacer clic fuera.
+  // Cerrar al hacer clic fuera (considera el panel en portal además del trigger).
   useEffect(() => {
     if (!open) return;
-    const onDocClick = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    const onDocClick = (e) => {
+      if (rootRef.current?.contains(e.target)) return;
+      if (panelRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', onDocClick);
     return () => document.removeEventListener('mousedown', onDocClick);
   }, [open]);
@@ -108,6 +115,7 @@ export default function StitchCategorySelect({
   return (
     <div ref={rootRef} className={`relative ${className}`} onKeyDown={onKeyDown}>
       <button
+        ref={triggerRef}
         type="button"
         id={id}
         role="combobox"
@@ -132,26 +140,22 @@ export default function StitchCategorySelect({
 
       <AnimatePresence>
         {open && (
-          <motion.div
-            role="listbox"
-            id={listboxId}
-            {...panelMotion(reduce)}
-            className={`${PANEL_CLS} w-full`}
-          >
-            {/* Buscador */}
-            <div className="relative border-b border-border-subtle">
+          <DropdownPanel triggerRef={triggerRef} panelRef={panelRef} open={open} reduce={reduce} scroll={false} role="listbox" id={listboxId}>
+            {/* Buscador (fijo arriba) */}
+            <div className="relative border-b border-border-subtle shrink-0">
               <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
               <input
                 ref={searchRef}
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setActive(0); }}
+                onKeyDown={onKeyDown}
                 placeholder="Buscar…"
                 className="w-full bg-transparent py-sm pl-[32px] pr-sm font-body-md text-body-md text-on-surface focus:outline-none placeholder:text-text-muted"
               />
             </div>
 
-            {/* Opciones */}
-            <div ref={listRef} className="max-h-[260px] overflow-y-auto py-xs">
+            {/* Opciones (solo esta zona scrollea) */}
+            <div ref={listRef} className="overflow-y-auto py-xs min-h-0">
               {items.length === 0 ? (
                 <div className="px-md py-sm font-label-sm text-label-sm text-text-muted">Sin coincidencias</div>
               ) : (
@@ -179,7 +183,7 @@ export default function StitchCategorySelect({
                 })
               )}
             </div>
-          </motion.div>
+          </DropdownPanel>
         )}
       </AnimatePresence>
     </div>

@@ -9,10 +9,11 @@
 //         placeholder compact className id />
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from './MS';
 import { MONTHS_ES, MONTHS_SHORT_ES } from '../utils/constants';
-import { TRIGGER_BASE, TRIGGER_COMPACT, panelMotion, PANEL_CLS } from './dropdownShared';
+import { TRIGGER_BASE, TRIGGER_COMPACT } from './dropdownShared';
+import DropdownPanel from './DropdownPanel';
 
 // Lunes primero (convención local).
 const WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
@@ -51,6 +52,8 @@ export default function StitchDatePicker({
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
+  const triggerRef = useRef(null);
+  const panelRef = useRef(null);
 
   // Mes/año que se está viendo en el calendario (no es el valor seleccionado).
   const today = new Date();
@@ -74,7 +77,11 @@ export default function StitchDatePicker({
 
   useEffect(() => {
     if (!open) return;
-    const onDocClick = (e) => { if (rootRef.current && !rootRef.current.contains(e.target)) setOpen(false); };
+    const onDocClick = (e) => {
+      if (rootRef.current?.contains(e.target)) return;
+      if (panelRef.current?.contains(e.target)) return;
+      setOpen(false);
+    };
     document.addEventListener('mousedown', onDocClick);
     const onKey = (e) => { if (e.key === 'Escape') setOpen(false); };
     document.addEventListener('keydown', onKey);
@@ -109,6 +116,7 @@ export default function StitchDatePicker({
   return (
     <div ref={rootRef} className={`relative ${className}`}>
       <button
+        ref={triggerRef}
         type="button"
         id={id}
         aria-haspopup="dialog"
@@ -116,27 +124,39 @@ export default function StitchDatePicker({
         onClick={toggle}
         className={compact ? TRIGGER_COMPACT : TRIGGER_BASE}
       >
-        <span className="flex items-center gap-sm min-w-0">
-          <MS name="calendar_today" className={`${compact ? 'text-[14px]' : 'text-[16px]'} text-text-muted`} />
+        <span className="flex items-center gap-xs min-w-0">
+          <MS name="calendar_today" className={`${compact ? '!text-[13px]' : '!text-[15px]'} text-text-muted`} />
           <span className={`truncate font-mono-data ${value ? 'text-on-surface' : 'text-text-muted'}`}>
             {value ? labelOf(value) : placeholder}
           </span>
         </span>
-        {value && !disabled(value) && (
+        {value ? (
           <MS
             name="close"
             role="button"
             tabIndex={0}
             aria-label="Limpiar fecha"
             onClick={(e) => { e.stopPropagation(); onChange(''); }}
-            className="text-[15px] text-text-muted hover:text-on-surface"
+            className="!text-[13px] text-text-muted hover:text-on-surface"
           />
+        ) : (
+          <MS name="expand_more" className={`${compact ? '!text-[16px]' : '!text-[20px]'} text-text-muted transition-transform duration-150 ${open ? 'rotate-180' : ''}`} />
         )}
       </button>
 
       <AnimatePresence>
         {open && (
-          <motion.div role="dialog" id={gridId} {...panelMotion(reduce)} className={`${PANEL_CLS} w-[260px] p-sm`}>
+          <DropdownPanel
+            triggerRef={triggerRef}
+            panelRef={panelRef}
+            open={open}
+            reduce={reduce}
+            matchTriggerWidth={false}
+            scroll={false}
+            role="dialog"
+            id={gridId}
+            className="w-[260px] p-sm"
+          >
             {/* Cabecera: mes/año + navegación */}
             <div className="flex items-center justify-between mb-sm px-xs">
               <button type="button" onClick={prevMonth} aria-label="Mes anterior" className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-on-surface hover:bg-surface-container-high transition-colors">
@@ -205,7 +225,7 @@ export default function StitchDatePicker({
                 </button>
               )}
             </div>
-          </motion.div>
+          </DropdownPanel>
         )}
       </AnimatePresence>
     </div>
