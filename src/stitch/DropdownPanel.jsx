@@ -14,7 +14,7 @@
 import { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { EASE_OUT } from './StitchMotion';
+import { EASE_OUT } from './motionTokens';
 
 const GAP = 6; // px entre trigger y panel
 const MARGIN = 8; // margen mínimo respecto al borde del viewport

@@ -25,7 +25,6 @@ import StitchFeedback from './screens/StitchFeedback';
 import './stitch.css';
 
 import { useAuth } from '../contexts/AuthContext';
-import { ShortcutsProvider } from '../contexts/ShortcutsContext';
 import { supabase } from '../lib/supabase';
 import { isDemoActive, seedDemoStores } from './demoMode';
 import useCategoryStore from '../stores/useCategoryStore';
@@ -158,24 +157,22 @@ export default function StitchApp() {
       <StitchHead />
       <Toaster {...toasterOptions} />
       <BrowserRouter>
-        <ShortcutsProvider>
-          <Routes>
-            <Route element={<StitchShell />}>
-              <Route index element={<StitchDashboard />} />
-              <Route path="transacciones" element={<StitchLedger />} />
-              <Route path="presupuesto" element={<StitchBudget />} />
-              <Route path="tarjetas" element={<StitchCards />} />
-              <Route path="deudas" element={<StitchDebts />} />
-              <Route path="ahorros" element={<StitchVaults />} />
-              <Route path="plan" element={<StitchStrategy />} />
-              <Route path="reportes" element={<StitchReports />} />
-              <Route path="calendario" element={<StitchCalendar />} />
-              <Route path="ajustes" element={<StitchSettings />} />
-              <Route path="feedback" element={<StitchFeedback />} />
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Route>
-          </Routes>
-        </ShortcutsProvider>
+        <Routes>
+          <Route element={<StitchShell />}>
+            <Route index element={<StitchDashboard />} />
+            <Route path="transacciones" element={<StitchLedger />} />
+            <Route path="presupuesto" element={<StitchBudget />} />
+            <Route path="tarjetas" element={<StitchCards />} />
+            <Route path="deudas" element={<StitchDebts />} />
+            <Route path="ahorros" element={<StitchVaults />} />
+            <Route path="plan" element={<StitchStrategy />} />
+            <Route path="reportes" element={<StitchReports />} />
+            <Route path="calendario" element={<StitchCalendar />} />
+            <Route path="ajustes" element={<StitchSettings />} />
+            <Route path="feedback" element={<StitchFeedback />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
     </>
   );

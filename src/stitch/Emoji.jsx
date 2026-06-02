@@ -40,8 +40,11 @@ function codepointOf(emoji) {
 }
 
 export default function Emoji({ e, size = 18, className = '', alt }) {
-  const [failed, setFailed] = useState(false);
+  // Guardamos QUÉ emoji falló (no un booleano), así al cambiar el prop `e` el
+  // fallback no se queda pegado del emoji anterior.
+  const [failedFor, setFailedFor] = useState(null);
   const cp = codepointOf(e);
+  const failed = failedFor === e;
 
   // Sin codepoint o tras un error de carga: emoji nativo (degradación elegante).
   if (!cp || failed) {
@@ -66,7 +69,7 @@ export default function Emoji({ e, size = 18, className = '', alt }) {
       loading="lazy"
       decoding="async"
       draggable={false}
-      onError={() => setFailed(true)}
+      onError={() => setFailedFor(e)}
       // inline-block + vertical-align para que se alinee como texto junto a labels.
       className={`inline-block align-[-0.15em] ${className}`}
       style={{ width: size, height: size }}
