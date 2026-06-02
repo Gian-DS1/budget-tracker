@@ -28,10 +28,11 @@ const triggerBase =
   'inner-glow flex items-center justify-between gap-sm text-left';
 
 // Variante compacta = combina con la barra de filtros (selects/dates pequeños).
+// Altura fija h-[34px] para igualar a los demás controles de la barra.
 const triggerCompact =
-  'w-full bg-surface-container border border-border-subtle rounded py-xs px-sm ' +
+  'w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 px-sm ' +
   'font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary ' +
-  'hover:border-outline-variant inner-glow flex items-center justify-between gap-sm text-left cursor-pointer';
+  'hover:border-outline-variant inner-glow flex items-center justify-between gap-xs text-left cursor-pointer';
 
 export default function StitchCategorySelect({
   value = '',
@@ -156,7 +157,7 @@ export default function StitchCategorySelect({
           >
             {/* Buscador */}
             <div className="relative border-b border-border-subtle">
-              <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted text-[16px]" />
+              <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
               <input
                 ref={searchRef}
                 value={query}

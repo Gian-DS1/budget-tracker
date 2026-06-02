@@ -6,10 +6,10 @@ export default function AutoCatChip({ show }) {
   if (!show) return null;
   return (
     <span
-      className="inline-flex items-center gap-[2px] font-mono-data text-[8px] uppercase tracking-wider text-tertiary border border-tertiary/40 rounded px-1 py-[1px] leading-none"
+      className="inline-flex items-center gap-[2px] font-mono-data text-[8px] uppercase tracking-wider text-tertiary/90 leading-none"
       title="Categoría asignada automáticamente según la descripción. Puedes cambiarla."
     >
-      <MS name="auto_awesome" className="text-[9px]" />
+      <MS name="auto_awesome" className="!text-[10px] leading-none" />
       Auto
     </span>
   );

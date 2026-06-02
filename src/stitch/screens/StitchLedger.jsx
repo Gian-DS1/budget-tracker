@@ -41,6 +41,8 @@ export default function StitchLedger() {
   const [filterCat, setFilterCat] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [sortKey, setSortKey] = useState('date'); // 'date' | 'amount'
+  const [sortDir, setSortDir] = useState('desc'); // 'asc' | 'desc'
 
   // Render de la categoría con su emoji JoyPixels + nombre.
   const catCell = (id) => {
@@ -147,14 +149,29 @@ export default function StitchLedger() {
     if (filterCat) r = r.filter((t) => t.categoryId === filterCat);
     if (dateFrom) r = r.filter((t) => t.date >= dateFrom);
     if (dateTo) r = r.filter((t) => t.date <= dateTo);
-    return r.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  }, [transactions, search, filterType, filterCat, dateFrom, dateTo]);
+    const dir = sortDir === 'asc' ? 1 : -1;
+    return r.sort((a, b) => {
+      let cmp;
+      if (sortKey === 'amount') cmp = Math.abs(Number(a.amount)) - Math.abs(Number(b.amount));
+      else cmp = a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+      // Desempate estable por fecha cuando se ordena por monto.
+      if (cmp === 0 && sortKey === 'amount') cmp = a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
+      return cmp * dir;
+    });
+  }, [transactions, search, filterType, filterCat, dateFrom, dateTo, sortKey, sortDir]);
+
+  // Click en encabezado: si ya ordena por esa columna, alterna asc/desc; si no,
+  // cambia de columna (fechas arrancan desc = más reciente, monto desc = mayor).
+  const toggleSort = (key) => {
+    if (sortKey === key) setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    else { setSortKey(key); setSortDir('desc'); }
+  };
 
   const hasFilters = search || filterType || filterCat || dateFrom || dateTo;
   const clearFilters = () => { setSearch(''); setFilterType(''); setFilterCat(''); setDateFrom(''); setDateTo(''); };
 
-  const selectCls = 'appearance-none bg-surface-container border border-border-subtle text-on-surface font-label-sm text-label-sm py-xs pl-sm pr-[28px] rounded hover:border-outline-variant focus:outline-none focus:border-primary cursor-pointer inner-glow';
-  const dateCls = 'bg-surface-container border border-border-subtle text-on-surface font-mono-data text-mono-data py-xs px-sm rounded focus:outline-none focus:border-primary inner-glow [color-scheme:dark]';
+  const selectCls = 'appearance-none h-[34px] bg-surface-container border border-border-subtle text-on-surface font-label-sm text-label-sm py-0 pl-sm pr-[28px] rounded hover:border-outline-variant focus:outline-none focus:border-primary cursor-pointer inner-glow';
+  const dateCls = 'h-[34px] bg-surface-container border border-border-subtle text-on-surface font-mono-data text-mono-data py-0 px-sm rounded focus:outline-none focus:border-primary inner-glow [color-scheme:dark]';
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -174,8 +191,8 @@ export default function StitchLedger() {
       {/* Filtros */}
       <div className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg flex flex-wrap gap-sm items-center inner-glow">
         <div className="relative flex-1 min-w-[200px]">
-          <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted text-[16px]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar descripción o notas…" className="w-full bg-surface-container border border-border-subtle rounded py-xs pl-[30px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+          <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar descripción o notas…" className="w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
         </div>
         <select value={filterType} onChange={(e) => setFilterType(e.target.value)} className={selectCls}>
           <option value="">Todos los tipos</option>
@@ -217,9 +234,16 @@ export default function StitchLedger() {
           <table className="w-full text-left border-collapse relative z-10">
             <thead>
               <tr className="border-b border-border-subtle">
-                {['Fecha', 'Descripción', 'Categoría', 'Tipo', 'Monto', ''].map((h, i) => (
-                  <th key={i} className={`py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal ${i === 4 ? 'text-right' : ''}`}>{h}</th>
-                ))}
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">
+                  <SortHeader label="Fecha" active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
+                </th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">Descripción</th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">Categoría</th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">Tipo</th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal text-right">
+                  <SortHeader label="Monto" active={sortKey === 'amount'} dir={sortDir} onClick={() => toggleSort('amount')} alignRight />
+                </th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal" />
               </tr>
             </thead>
             <tbody className="font-body-md text-body-md">
@@ -333,10 +357,32 @@ function TypeBadge({ type, hasCategory }) {
   }
   const m = TYPE_META[type] || TYPE_META.variable_expense;
   return (
-    <span className={`inline-flex items-center gap-[3px] self-start font-label-sm text-[10px] font-medium border rounded-full px-[7px] py-[3px] leading-none ${m.cls}`}>
-      <MS name={m.icon} className="text-[12px]" />
+    <span className={`inline-flex items-center gap-[3px] self-start font-mono-data text-[9px] uppercase tracking-wider font-medium border rounded-full px-[6px] py-[2px] leading-none ${m.cls}`}>
+      <MS name={m.icon} className="!text-[11px] leading-none" />
       {m.label}
     </span>
+  );
+}
+
+// Encabezado de columna ordenable. Muestra la flecha (asc/desc) solo cuando esa
+// columna está activa; inactiva muestra un ícono tenue de "ordenable". Colores
+// del tema (primary cuando activo). Estilo Stitch.
+function SortHeader({ label, active, dir, onClick, alignRight = false }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={`Ordenar por ${label.toLowerCase()}`}
+      className={`inline-flex items-center gap-[3px] font-mono-data text-mono-data uppercase tracking-wider transition-colors ${
+        alignRight ? 'flex-row-reverse' : ''
+      } ${active ? 'text-primary' : 'text-text-muted hover:text-on-surface-variant'}`}
+    >
+      {label}
+      <MS
+        name={active ? (dir === 'asc' ? 'arrow_upward' : 'arrow_downward') : 'unfold_more'}
+        className={`!text-[13px] leading-none ${active ? 'text-primary' : 'text-text-muted/60'}`}
+      />
+    </button>
   );
 }
 
