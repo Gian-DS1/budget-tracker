@@ -17,6 +17,7 @@ const NAV = [
   { to: '/reports', icon: 'analytics', label: 'Reports' },
   { to: '/calendar', icon: 'calendar_month', label: 'Calendar' },
   { to: '/settings', icon: 'settings', label: 'Settings' },
+  { to: '/feedback', icon: 'forum', label: 'Feedback' },
 ];
 
 export default function StitchShell() {

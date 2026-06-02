@@ -8,6 +8,13 @@ import StitchShell from './StitchShell';
 import StitchDashboard from './screens/StitchDashboard';
 import StitchLedger from './screens/StitchLedger';
 import StitchVaults from './screens/StitchVaults';
+import StitchBudget from './screens/StitchBudget';
+import StitchCards from './screens/StitchCards';
+import StitchStrategy from './screens/StitchStrategy';
+import StitchReports from './screens/StitchReports';
+import StitchCalendar from './screens/StitchCalendar';
+import StitchSettings from './screens/StitchSettings';
+import StitchFeedback from './screens/StitchFeedback';
 import StitchPending from './screens/StitchPending';
 import './stitch.css';
 
@@ -20,13 +27,14 @@ export default function StitchApp() {
           <Route element={<StitchShell />}>
             <Route index element={<StitchDashboard />} />
             <Route path="ledger" element={<StitchLedger />} />
+            <Route path="budget" element={<StitchBudget />} />
+            <Route path="cards" element={<StitchCards />} />
             <Route path="vaults" element={<StitchVaults />} />
-            <Route path="budget" element={<StitchPending title="Budget Control" source="Romer Budget Control" />} />
-            <Route path="cards" element={<StitchPending title="Cards & Debt" source="Romer Card & Debt Manager" />} />
-            <Route path="plan" element={<StitchPending title="Strategy & Planning" source="Romer Strategy & Planning" />} />
-            <Route path="reports" element={<StitchPending title="Intelligence Reports" source="Romer Intelligence Reports" />} />
-            <Route path="calendar" element={<StitchPending title="Calendar" source="FinTrack RD - Calendario" />} />
-            <Route path="settings" element={<StitchPending title="Settings" source="FinTrack RD - Ajustes" />} />
+            <Route path="plan" element={<StitchStrategy />} />
+            <Route path="reports" element={<StitchReports />} />
+            <Route path="calendar" element={<StitchCalendar />} />
+            <Route path="settings" element={<StitchSettings />} />
+            <Route path="feedback" element={<StitchFeedback />} />
             <Route path="*" element={<StitchPending title="404" source="—" />} />
           </Route>
         </Routes>
