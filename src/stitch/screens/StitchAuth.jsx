@@ -5,6 +5,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { friendlyAuthError } from '../../utils/authErrors';
+import { isLocalhost, enterDemo } from '../demoMode';
 import MS from '../MS';
 
 const MODES = { login: 'login', signup: 'signup', reset: 'reset' };
@@ -124,6 +125,19 @@ export default function StitchAuth() {
             </>
           )}
         </div>
+
+        {/* Modo QA — solo localhost. Entra con datos demo sin tocar el backend. */}
+        {isLocalhost() && (
+          <div className="mt-lg pt-md border-t border-border-subtle">
+            <button
+              onClick={() => { enterDemo(); window.location.reload(); }}
+              className="w-full flex items-center justify-center gap-sm border border-dashed border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase tracking-widest py-sm rounded hover:bg-surface-container-high hover:text-on-surface transition-colors"
+            >
+              <MS name="science" className="text-[16px]" /> Entrar como demo (QA local)
+            </button>
+            <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">Datos de ejemplo · no toca el backend</p>
+          </div>
+        )}
       </div>
     </div>
   );

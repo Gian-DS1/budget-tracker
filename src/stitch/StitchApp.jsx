@@ -26,6 +26,7 @@ import './stitch.css';
 import { useAuth } from '../contexts/AuthContext';
 import { ShortcutsProvider } from '../contexts/ShortcutsContext';
 import { supabase } from '../lib/supabase';
+import { isDemoActive, seedDemoStores } from './demoMode';
 import useCategoryStore from '../stores/useCategoryStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useBudgetStore from '../stores/useBudgetStore';
@@ -61,6 +62,15 @@ function LoadingScreen({ label }) {
 
 export default function StitchApp() {
   const { user, loading, isRecoveringPassword } = useAuth();
+
+  // Modo QA/Demo (solo localhost): trata al "usuario demo" como autenticado y
+  // siembra los stores con datos de ejemplo, sin tocar Supabase ni producción.
+  const demo = isDemoActive();
+  const authedUser = user || (demo ? { id: 'demo', email: 'demo@local' } : null);
+
+  useEffect(() => {
+    if (demo) seedDemoStores();
+  }, [demo]);
 
   const fetchCategories = useCategoryStore((s) => s.fetchCategories);
   const fetchTransactions = useTransactionStore((s) => s.fetchTransactions);
@@ -114,7 +124,8 @@ export default function StitchApp() {
     return () => { cancelled = true; };
   }, [user, fetchRecurring, materializeDue]);
 
-  if (loading) {
+  // En modo demo no esperamos a Supabase: entramos directo.
+  if (loading && !demo) {
     return (
       <>
         <StitchHead />
@@ -124,7 +135,7 @@ export default function StitchApp() {
   }
 
   // Sin sesión (o recuperando contraseña): pantalla de acceso Stitch.
-  if (!user || isRecoveringPassword) {
+  if (!authedUser || isRecoveringPassword) {
     return (
       <>
         <StitchHead />

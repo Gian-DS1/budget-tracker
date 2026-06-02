@@ -4,6 +4,7 @@
 import { NavLink, Outlet } from 'react-router-dom';
 import MS from './MS';
 import { useAuth } from '../contexts/AuthContext';
+import { isDemoActive, exitDemo } from './demoMode';
 
 const NAV = [
   { section: 'Principal' },
@@ -24,6 +25,12 @@ const NAV = [
 
 export default function StitchShell() {
   const { signOut } = useAuth();
+  const demo = isDemoActive();
+
+  const handleSignOut = () => {
+    if (demo) { exitDemo(); window.location.reload(); return; }
+    signOut();
+  };
 
   return (
     <div className="stitch-root flex h-screen overflow-hidden grid-pattern bg-surface-background font-body-md text-body-md text-on-surface">
@@ -71,17 +78,24 @@ export default function StitchShell() {
         </div>
 
         <button
-          onClick={signOut}
+          onClick={handleSignOut}
           className="mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center justify-center gap-sm"
         >
-          <MS name="logout" className="text-[16px]" /> Cerrar sesión
+          <MS name="logout" className="text-[16px]" /> {demo ? 'Salir del modo demo' : 'Cerrar sesión'}
         </button>
       </nav>
 
       {/* ── Main ── */}
       <div className="flex flex-col flex-grow h-full overflow-hidden relative">
         <header className="bg-surface-background sticky top-0 z-10 border-b border-border-subtle w-full h-16 flex justify-between items-center px-margin-safe inner-glow shrink-0">
-          <div className="font-headline-md text-headline-md font-bold text-on-surface">FinTrack RD</div>
+          <div className="flex items-center gap-sm">
+            <div className="font-headline-md text-headline-md font-bold text-on-surface">FinTrack RD</div>
+            {demo && (
+              <span className="font-mono-data text-mono-data text-accent-warning uppercase tracking-widest border border-accent-warning/40 rounded px-sm py-xs">
+                Modo demo · QA
+              </span>
+            )}
+          </div>
           <div className="flex-1 max-w-md mx-lg hidden sm:flex">
             <div className="relative w-full">
               <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" />
