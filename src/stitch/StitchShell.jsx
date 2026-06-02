@@ -1,89 +1,99 @@
-// AppShell Stitch (Romer) — sidebar 256px + header glass + canvas.
-// Reconstrucción 1:1 del "Romer Command Center / Ledger" de Stitch.
-// La navegación usa react-router; el contenido lo pone <Outlet/>.
-//
-// NOTA: UI pura, sin lógica de negocio (se cablea después con docs/logic/).
+// AppShell Stitch — sidebar + header glass. Marca FinTrack RD, nav en español,
+// navegación real (react-router) y cierre de sesión real.
 
 import { NavLink, Outlet } from 'react-router-dom';
 import MS from './MS';
+import { useAuth } from '../contexts/AuthContext';
 
 const NAV = [
-  { to: '/', icon: 'dashboard', label: 'Command', end: true },
-  { to: '/ledger', icon: 'list_alt', label: 'Ledger' },
-  { to: '/budget', icon: 'account_balance', label: 'Budget' },
-  { to: '/cards', icon: 'credit_card', label: 'Cards' },
-  { to: '/vaults', icon: 'account_balance_wallet', label: 'Vaults' },
-  { to: '/plan', icon: 'flag', label: 'Strategy' },
-  { to: '/reports', icon: 'analytics', label: 'Reports' },
-  { to: '/calendar', icon: 'calendar_month', label: 'Calendar' },
-  { to: '/settings', icon: 'settings', label: 'Settings' },
+  { section: 'Principal' },
+  { to: '/', icon: 'dashboard', label: 'Resumen', end: true },
+  { to: '/transacciones', icon: 'list_alt', label: 'Transacciones' },
+  { to: '/presupuesto', icon: 'account_balance', label: 'Presupuesto' },
+  { section: 'Patrimonio' },
+  { to: '/ahorros', icon: 'account_balance_wallet', label: 'Ahorros' },
+  { to: '/deudas', icon: 'trending_down', label: 'Deudas' },
+  { to: '/tarjetas', icon: 'credit_card', label: 'Tarjetas' },
+  { to: '/plan', icon: 'flag', label: 'Plan' },
+  { section: 'Herramientas' },
+  { to: '/calendario', icon: 'calendar_month', label: 'Calendario' },
+  { to: '/reportes', icon: 'analytics', label: 'Reportes' },
+  { to: '/ajustes', icon: 'settings', label: 'Ajustes' },
   { to: '/feedback', icon: 'forum', label: 'Feedback' },
 ];
 
 export default function StitchShell() {
+  const { signOut } = useAuth();
+
   return (
     <div className="stitch-root flex h-screen overflow-hidden grid-pattern bg-surface-background font-body-md text-body-md text-on-surface">
       {/* ── SideNav ── */}
-      <nav className="bg-surface-panel docked h-full w-64 border-r border-border-subtle flex flex-col py-lg px-md gap-sm shrink-0 z-20">
-        <div className="mb-xl px-sm">
-          <div className="font-mono-data text-mono-data font-bold tracking-widest text-on-surface mb-xs">
-            ROMER
+      <nav className="bg-surface-panel h-full w-64 border-r border-border-subtle flex flex-col py-lg px-md gap-xs shrink-0 z-20 overflow-y-auto">
+        <div className="mb-lg px-sm">
+          <div className="flex items-center gap-sm mb-xs">
+            <div className="w-6 h-6 rounded-sm bg-primary flex items-center justify-center inner-glow">
+              <MS name="bolt" fill className="text-[14px] text-on-primary" />
+            </div>
+            <div className="font-headline-md text-[18px] font-bold tracking-tight text-on-surface">FinTrack RD</div>
           </div>
-          <div className="text-text-muted font-label-sm text-label-sm">Mission Control</div>
+          <div className="text-text-muted font-label-sm text-label-sm pl-[2px]">Control financiero</div>
         </div>
 
         <div className="flex flex-col gap-xs flex-grow">
-          {NAV.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                [
-                  'flex items-center gap-md px-md py-sm rounded transition-all duration-200',
-                  isActive
-                    ? 'bg-surface-container-highest text-primary border border-border-subtle font-bold translate-x-1 shadow-[0_0_15px_rgba(190,194,255,0.2)]'
-                    : 'text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest',
-                ].join(' ')
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <MS name={item.icon} fill={isActive} className="text-[20px]" />
-                  <span className="font-label-sm text-label-sm">{item.label}</span>
-                </>
-              )}
-            </NavLink>
-          ))}
+          {NAV.map((item, i) =>
+            item.section ? (
+              <div key={`s-${i}`} className="font-mono-data text-mono-data text-text-muted uppercase tracking-[0.18em] px-md pt-md pb-xs">
+                {item.section}
+              </div>
+            ) : (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                className={({ isActive }) =>
+                  [
+                    'flex items-center gap-md px-md py-sm rounded transition-all duration-200 border',
+                    isActive
+                      ? 'bg-surface-container-highest text-primary border-border-subtle font-bold translate-x-1 shadow-[0_0_15px_rgba(190,194,255,0.2)]'
+                      : 'text-on-surface-variant border-transparent hover:text-on-surface hover:bg-surface-container-highest',
+                  ].join(' ')
+                }
+              >
+                {({ isActive }) => (
+                  <>
+                    <MS name={item.icon} fill={isActive} className="text-[20px]" />
+                    <span className="font-label-sm text-label-sm">{item.label}</span>
+                  </>
+                )}
+              </NavLink>
+            )
+          )}
         </div>
 
-        <button className="mt-md w-full py-sm bg-surface-container-high border border-border-subtle text-on-surface font-label-sm text-label-sm font-bold rounded hover:bg-surface-container-highest transition-colors inner-glow flex items-center justify-center gap-sm">
-          <MS name="add" className="text-[16px]" />
-          Quick Entry
+        <button
+          onClick={signOut}
+          className="mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center justify-center gap-sm"
+        >
+          <MS name="logout" className="text-[16px]" /> Cerrar sesión
         </button>
       </nav>
 
       {/* ── Main ── */}
       <div className="flex flex-col flex-grow h-full overflow-hidden relative">
         <header className="bg-surface-background sticky top-0 z-10 border-b border-border-subtle w-full h-16 flex justify-between items-center px-margin-safe inner-glow shrink-0">
-          <div className="font-headline-md text-headline-md font-bold text-on-surface">
-            Romer Finance
-          </div>
+          <div className="font-headline-md text-headline-md font-bold text-on-surface">FinTrack RD</div>
           <div className="flex-1 max-w-md mx-lg hidden sm:flex">
             <div className="relative w-full">
-              <MS
-                name="search"
-                className="absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]"
-              />
+              <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" />
               <input
                 className="w-full bg-surface-container-lowest border border-border-subtle rounded text-body-md font-body-md text-on-surface pl-[32px] pr-sm py-xs focus:outline-none focus:border-primary transition-colors inner-glow placeholder:text-text-muted"
-                placeholder="Search operations..."
+                placeholder="Buscar…"
                 type="text"
               />
             </div>
           </div>
           <div className="flex items-center gap-md">
-            <button className="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high p-xs rounded transition-all">
+            <button className="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high p-xs rounded transition-all" aria-label="Notificaciones">
               <MS name="notifications" className="text-[24px]" />
             </button>
             <div className="w-8 h-8 rounded-full overflow-hidden border border-border-subtle bg-surface-container-lowest flex items-center justify-center inner-glow">
