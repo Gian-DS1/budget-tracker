@@ -3,6 +3,7 @@ import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
+import StitchCategorySelect from '../StitchCategorySelect';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import AutoCatChip from '../AutoCatChip';
 import { isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction } from '../demoMode';
@@ -180,10 +181,15 @@ export default function StitchLedger() {
           <option value="">Todos los tipos</option>
           {TYPES.map((t) => <option key={t.v} value={t.v}>{t.l}</option>)}
         </select>
-        <select value={filterCat} onChange={(e) => setFilterCat(e.target.value)} className={selectCls}>
-          <option value="">Todas las categorías</option>
-          {categories.filter((c) => c.isActive).map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-        </select>
+        <StitchCategorySelect
+          value={filterCat}
+          onChange={setFilterCat}
+          options={categories}
+          includeAllOption
+          allLabel="Todas las categorías"
+          compact
+          className="min-w-[200px]"
+        />
         {/* Rango de fechas */}
         <div className="flex items-center gap-xs">
           <span className="font-mono-data text-mono-data text-text-muted uppercase">Desde</span>
@@ -264,10 +270,12 @@ export default function StitchLedger() {
             </Field>
             <div className="grid grid-cols-2 gap-md">
               <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
-                <select value={form.categoryId} onChange={(e) => onCategoryManual(e.target.value)} className={inputCls}>
-                  <option value="">Elige una categoría…</option>
-                  {categories.filter((c) => c.isActive).map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
-                </select>
+                <StitchCategorySelect
+                  value={form.categoryId}
+                  onChange={onCategoryManual}
+                  options={categories}
+                  placeholder="Elige una categoría…"
+                />
               </Field>
               <Field label="Moneda">
                 <select value={form.currency} onChange={(e) => setForm({ ...form, currency: e.target.value })} className={inputCls}>
