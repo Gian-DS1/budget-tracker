@@ -2,6 +2,8 @@
 import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import StitchCurrencyInput from '../StitchCurrencyInput';
+import AutoCatChip from '../AutoCatChip';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
@@ -30,6 +32,7 @@ export default function StitchLedger() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
+  const [autoCat, setAutoCat] = useState(false); // ¿la categoría se asignó automáticamente?
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterCat, setFilterCat] = useState('');
@@ -46,19 +49,25 @@ export default function StitchLedger() {
   const onDescription = (description) => {
     setForm((prev) => {
       const u = { ...prev, description };
-      if (!editing) {
+      // Matcheo inteligente: solo auto-asigna si el usuario no eligió categoría
+      // manualmente (o si la actual ya era automática). No pisa una elección manual.
+      if (!editing && (autoCat || !prev.categoryId)) {
         const sug = autoCategorize(description, categories);
         if (sug) {
           u.categoryId = sug.id;
           u.type = sug.type === 'income' ? 'income' : sug.type === 'savings' ? 'savings' : 'expense';
+          setAutoCat(true);
         }
       }
       return u;
     });
   };
 
-  const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); setShowForm(true); };
-  const openEdit = (t) => { setForm({ ...blank, ...t, amount: String(t.amount) }); setEditing(t.id); setErrors({}); setShowForm(true); };
+  // Cambio manual de categoría: apaga el flag de "auto".
+  const onCategoryManual = (id) => { setAutoCat(false); setForm((f) => ({ ...f, categoryId: id })); };
+
+  const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); setAutoCat(false); setShowForm(true); };
+  const openEdit = (t) => { setForm({ ...blank, ...t, amount: String(t.amount) }); setEditing(t.id); setErrors({}); setAutoCat(false); setShowForm(true); };
 
   const submit = (e) => {
     e.preventDefault();
@@ -164,9 +173,14 @@ export default function StitchLedger() {
                     </td>
                     <td className="py-sm px-md text-on-surface-variant">{catName(t.categoryId)}</td>
                     <td className="py-sm px-md">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-surface-container-high border border-border-subtle font-mono-data text-[8px] text-on-surface-variant uppercase tracking-wider">{getTypeLabel(t.type)}</span>
+                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-surface-container-high border border-border-subtle font-mono-data text-[9px] text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{getTypeLabel(t.type)}</span>
                     </td>
-                    <td className={`py-sm px-md text-right font-mono-data tabular-nums ${inc ? 'text-tertiary' : 'text-on-surface'}`}>{inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)), t.currency)}</td>
+                    <td className={`py-sm px-md text-right font-mono-data tabular-nums whitespace-nowrap ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
+                      {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)), t.currency)}
+                      {Number(t.cashbackEarned) > 0 && (
+                        <span className="block font-mono-data text-[9px] text-tertiary">cashback +{fmt(Number(t.cashbackEarned))}</span>
+                      )}
+                    </td>
                     <td className="py-sm px-md text-right whitespace-nowrap">
                       <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Editar"><MS name="edit" className="text-[16px]" /></button>
                       <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Eliminar"><MS name="delete" className="text-[16px]" /></button>
@@ -187,7 +201,7 @@ export default function StitchLedger() {
                 <input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} className={inputCls} />
               </Field>
               <Field label="Monto" error={errors.amount}>
-                <input inputMode="decimal" value={form.amount} onChange={(e) => setForm({ ...form, amount: e.target.value.replace(/[^0-9.]/g, '') })} placeholder="0.00" className={inputCls} />
+                <StitchCurrencyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className={inputCls} />
               </Field>
             </div>
             <div className="grid grid-cols-2 gap-md">
@@ -205,8 +219,8 @@ export default function StitchLedger() {
             <Field label="Descripción">
               <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder="Ej. Supermercado Nacional" className={inputCls} />
             </Field>
-            <Field label="Categoría" error={errors.categoryId}>
-              <select value={form.categoryId} onChange={(e) => setForm({ ...form, categoryId: e.target.value })} className={inputCls}>
+            <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
+              <select value={form.categoryId} onChange={(e) => onCategoryManual(e.target.value)} className={inputCls}>
                 <option value="">Elige una categoría…</option>
                 {categories.filter((c) => c.isActive).map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
               </select>
@@ -239,10 +253,12 @@ export default function StitchLedger() {
 
 const inputCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
 
-function Field({ label, error, children }) {
+function Field({ label, error, extra, children }) {
   return (
     <div className="flex flex-col gap-xs">
-      <label className="font-mono-data text-mono-data text-text-muted uppercase">{label}</label>
+      <label className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-sm">
+        {label}{extra}
+      </label>
       {children}
       {error && <span className="font-label-sm text-label-sm text-accent-error">Requerido</span>}
     </div>
