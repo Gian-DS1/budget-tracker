@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import Emoji from '../Emoji';
 import useRateStore from '../../stores/useRateStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
@@ -141,7 +142,7 @@ export default function StitchSettings() {
           <div className="flex flex-wrap gap-xs mb-md">
             {categories.filter((c) => c.isActive).map((c) => (
               <span key={c.id} className="inline-flex items-center gap-xs bg-surface-card border border-border-subtle rounded px-sm py-xs font-label-sm text-label-sm text-on-surface-variant inner-glow">
-                <span>{c.icon}</span> {c.name}
+                <Emoji e={c.icon} size={15} /> {c.name}
               </span>
             ))}
           </div>

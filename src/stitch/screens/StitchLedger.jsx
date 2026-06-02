@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import Emoji from '../Emoji';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import AutoCatChip from '../AutoCatChip';
 import { isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction } from '../demoMode';
@@ -40,7 +41,12 @@ export default function StitchLedger() {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
 
-  const catName = (id) => { const c = categories.find((x) => x.id === id); return c ? `${c.icon} ${c.name}` : '—'; };
+  // Render de la categoría con su emoji JoyPixels + nombre.
+  const catCell = (id) => {
+    const c = categories.find((x) => x.id === id);
+    if (!c) return '—';
+    return <span className="inline-flex items-center gap-xs"><Emoji e={c.icon} size={16} />{c.name}</span>;
+  };
 
   // ¿Es un gasto? (fijo o variable). El cashback y la tarjeta solo aplican a gastos.
   const isExpenseType = (t) => t === 'expense' || t === 'fixed_expense' || t === 'variable_expense';
@@ -220,7 +226,7 @@ export default function StitchLedger() {
                       <div className="text-on-surface font-medium">{t.description || '—'}</div>
                       {t.notes && <div className="font-mono-data text-mono-data text-text-muted mt-0.5">{t.notes}</div>}
                     </td>
-                    <td className="py-sm px-md text-on-surface-variant">{catName(t.categoryId)}</td>
+                    <td className="py-sm px-md text-on-surface-variant">{catCell(t.categoryId)}</td>
                     <td className="py-sm px-md">
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-surface-container-high border border-border-subtle font-mono-data text-[9px] text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{getTypeLabel(t.type)}</span>
                     </td>
@@ -286,7 +292,7 @@ export default function StitchLedger() {
             {cashbackPreview > 0 && <p className="font-mono-data text-mono-data text-tertiary">Cashback estimado: +{fmt(cashbackPreview)}</p>}
             {!editing && (
               <label className="flex items-center gap-sm cursor-pointer">
-                <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} className="accent-[#bec2ff]" />
+                <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} className="stitch-check" />
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Repetir automáticamente ({form.recurrencePattern === 'monthly' ? 'mensual' : form.recurrencePattern})</span>
               </label>
             )}
@@ -319,8 +325,8 @@ function TypeBadge({ type, hasCategory }) {
   }
   const m = TYPE_META[type] || TYPE_META.variable_expense;
   return (
-    <span className={`inline-flex items-center gap-xs self-start font-label-sm text-label-sm font-medium border rounded-full px-sm py-xs ${m.cls}`}>
-      <MS name={m.icon} className="text-[14px]" />
+    <span className={`inline-flex items-center gap-[3px] self-start font-label-sm text-[10px] font-medium border rounded-full px-[7px] py-[3px] leading-none ${m.cls}`}>
+      <MS name={m.icon} className="text-[12px]" />
       {m.label}
     </span>
   );

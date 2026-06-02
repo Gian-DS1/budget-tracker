@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import Emoji from '../Emoji';
 import { Stagger } from '../StitchMotion';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useTransactionStore from '../../stores/useTransactionStore';
@@ -80,7 +81,7 @@ export default function StitchVaults() {
                   <button onClick={() => deleteGoal(g.id)} className="text-text-muted hover:text-accent-error"><MS name="delete" className="text-[18px]" /></button>
                 </div>
                 <div className="flex items-center gap-sm mb-lg">
-                  <div className="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center border border-border-subtle text-[18px]">{g.icon}</div>
+                  <div className="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center border border-border-subtle"><Emoji e={g.icon} size={18} /></div>
                   <span className="font-mono-data text-mono-data text-on-surface uppercase">{g.title}</span>
                 </div>
                 <div className="mb-xl">
@@ -111,7 +112,7 @@ export default function StitchVaults() {
             </div>
             <Field label="Fecha límite"><input type="date" value={form.deadline} onChange={(e) => setForm({ ...form, deadline: e.target.value })} className={inputCls} /></Field>
             <Field label="Ícono">
-              <div className="flex flex-wrap gap-xs">{EMOJIS.map((em) => <button type="button" key={em} onClick={() => setForm({ ...form, icon: em })} className={`w-8 h-8 rounded border text-[16px] ${form.icon === em ? 'border-primary bg-primary/10' : 'border-border-subtle'}`}>{em}</button>)}</div>
+              <div className="flex flex-wrap gap-xs">{EMOJIS.map((em) => <button type="button" key={em} onClick={() => setForm({ ...form, icon: em })} className={`w-8 h-8 rounded border flex items-center justify-center ${form.icon === em ? 'border-primary bg-primary/10' : 'border-border-subtle'}`}><Emoji e={em} size={16} /></button>)}</div>
             </Field>
             <FormActions onCancel={() => setShowForm(false)} label={editing ? 'Guardar' : 'Crear'} />
           </form>

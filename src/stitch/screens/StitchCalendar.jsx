@@ -1,6 +1,7 @@
 // Calendario — vista mensual con DATOS REALES (días con actividad).
 import { useState, useMemo } from 'react';
 import MS from '../MS';
+import Emoji from '../Emoji';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import { formatCurrency, formatDate } from '../../utils/formatters';
@@ -44,7 +45,11 @@ export default function StitchCalendar() {
 
   const selectedISO = selected ? `${year}-${String(month + 1).padStart(2, '0')}-${String(selected).padStart(2, '0')}` : null;
   const selectedTx = useMemo(() => selectedISO ? transactions.filter((t) => t.date === selectedISO) : [], [selectedISO, transactions]);
-  const catName = (id) => { const c = categories.find((x) => x.id === id); return c ? `${c.icon} ${c.name}` : '—'; };
+  const catCell = (id) => {
+    const c = categories.find((x) => x.id === id);
+    if (!c) return '—';
+    return <span className="inline-flex items-center gap-xs"><Emoji e={c.icon} size={13} />{c.name}</span>;
+  };
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -106,7 +111,7 @@ export default function StitchCalendar() {
                   <div key={t.id} className="flex justify-between items-center bg-surface-card border border-border-subtle rounded p-sm inner-glow">
                     <div className="flex flex-col min-w-0">
                       <span className="font-label-sm text-label-sm text-on-surface truncate">{t.description || '—'}</span>
-                      <span className="font-mono-data text-mono-data text-text-muted">{catName(t.categoryId)}</span>
+                      <span className="font-mono-data text-mono-data text-text-muted">{catCell(t.categoryId)}</span>
                     </div>
                     <span className={`font-mono-data text-[13px] tabular-nums ml-sm ${inc ? 'text-tertiary' : 'text-on-surface'}`}>{inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}</span>
                   </div>

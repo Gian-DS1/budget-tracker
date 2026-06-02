@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import Emoji from '../Emoji';
 
 const WEB3FORMS_ACCESS_KEY = '446c31a3-399d-4d75-81e9-5e6344334122';
 const TYPES = [
@@ -61,7 +62,7 @@ export default function StitchFeedback() {
               {TYPES.map((t) => (
                 <button type="button" key={t.v} onClick={() => setForm({ ...form, type: t.v })}
                   className={`flex flex-col items-center gap-xs p-sm rounded border transition-colors ${form.type === t.v ? 'border-primary bg-primary/10 text-on-surface' : 'border-border-subtle text-on-surface-variant hover:bg-surface-container-high'}`}>
-                  <span className="text-[18px]">{t.icon}</span>
+                  <Emoji e={t.icon} size={20} />
                   <span className="font-label-sm text-[10px] text-center leading-tight">{t.l}</span>
                 </button>
               ))}

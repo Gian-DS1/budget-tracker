@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from 'react';
 import MS from '../MS';
+import Emoji from '../Emoji';
 import { Stagger } from '../StitchMotion';
 import useBudgetStore from '../../stores/useBudgetStore';
 import useTransactionStore from '../../stores/useTransactionStore';
@@ -198,7 +199,7 @@ export default function StitchBudget() {
                 <Stagger.Item key={cat.id} className="bg-surface-card border border-border-subtle rounded p-md inner-glow flex flex-col gap-sm">
                   <div className="flex justify-between items-center">
                     <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs">
-                      <span>{cat.icon}</span> {cat.name}
+                      <Emoji e={cat.icon} size={16} /> {cat.name}
                     </span>
                     <EnvelopeInput initial={estimated} onSave={(v) => handleSave(cat, v)} />
                   </div>
