@@ -390,6 +390,12 @@ export function autoCategorize(description, categories) {
   const desc = normalize(description);
   if (!desc) return null;
 
+  // Última "palabra" que el usuario está escribiendo (para matcheo por prefijo
+  // mientras teclea, sin esperar a completar la keyword). Solo se usa si tiene
+  // ≥3 caracteres, para evitar falsos positivos con prefijos muy cortos.
+  const lastWord = desc.split(/[^a-z0-9]+/).filter(Boolean).pop() || '';
+  const canPrefix = lastWord.length >= 3;
+
   let bestMatch = null;
   let bestScore = 0;
 
@@ -398,11 +404,19 @@ export function autoCategorize(description, categories) {
 
     for (const rawKeyword of category.keywords) {
       const keyword = normalize(rawKeyword);
-      if (!keyword || !desc.includes(keyword)) continue;
+      if (!keyword) continue;
 
-      // Palabra completa (rodeada de límites no alfanuméricos) vale 10x.
-      const wholeWord = new RegExp(`(^|[^a-z0-9])${escapeRegExp(keyword)}([^a-z0-9]|$)`).test(desc);
-      const score = keyword.length * (wholeWord ? 10 : 1);
+      let score = 0;
+      if (desc.includes(keyword)) {
+        // Match completo: keyword contenida en la descripción.
+        const wholeWord = new RegExp(`(^|[^a-z0-9])${escapeRegExp(keyword)}([^a-z0-9]|$)`).test(desc);
+        score = keyword.length * (wholeWord ? 10 : 1);
+      } else if (canPrefix && keyword.startsWith(lastWord)) {
+        // Match por PREFIJO mientras escribe: "superm" → "supermercado".
+        // Peso proporcional a lo escrito (favorece prefijos más largos), pero
+        // por debajo de cualquier match completo para no pisarlo.
+        score = lastWord.length * 2;
+      }
 
       if (score > bestScore) {
         bestScore = score;

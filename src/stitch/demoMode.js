@@ -12,6 +12,7 @@ import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import usePlanStore from '../stores/usePlanStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
+import { defaultCategories } from '../data/defaultCategories';
 
 const FLAG = 'fintrack-demo-mode';
 
@@ -40,39 +41,49 @@ const dayOf = (n) => iso(new Date(today.getFullYear(), today.getMonth(), n));
 const monthIdx = today.getMonth();
 const yearIdx = today.getFullYear();
 
-const categories = [
-  { id: 'c-sal', name: 'Salario', type: 'income', icon: '💼', color: '#bdd200', slug: 'salario', keywords: [], isActive: true, sortOrder: 0, isAccumulative: false, accumulationStart: null },
-  { id: 'c-alq', name: 'Alquiler', type: 'fixed_expense', icon: '🏠', color: '#9aa0ff', slug: 'alquiler', keywords: [], isActive: true, sortOrder: 1, isAccumulative: false, accumulationStart: null },
-  { id: 'c-sup', name: 'Supermercado', type: 'variable_expense', icon: '🛒', color: '#ffb689', slug: 'supermercado', keywords: ['supermercado', 'nacional', 'jumbo'], isActive: true, sortOrder: 2, isAccumulative: false, accumulationStart: null },
-  { id: 'c-tra', name: 'Transporte', type: 'variable_expense', icon: '🚗', color: '#50d8e9', slug: 'transporte', keywords: ['uber', 'gasolina'], isActive: true, sortOrder: 3, isAccumulative: false, accumulationStart: null },
-  { id: 'c-aho', name: 'Ahorro', type: 'savings', icon: '🏦', color: '#bec2ff', slug: 'ahorro', keywords: [], isActive: true, sortOrder: 4, isAccumulative: false, accumulationStart: null },
-  { id: 'c-ocio', name: 'Ocio', type: 'variable_expense', icon: '🎬', color: '#e9a0d8', slug: 'ocio', keywords: ['cine', 'netflix'], isActive: true, sortOrder: 5, isAccumulative: false, accumulationStart: null },
-];
+// Demo usa las 37 categorías REALES (con sus ~405 keywords) para que el
+// autocompletado tenga material de verdad. Mapean al formato del store.
+const categories = defaultCategories.map((c, i) => ({
+  id: c.id,
+  name: c.name,
+  type: c.type,
+  icon: c.icon,
+  color: c.color,
+  slug: c.slug || null,
+  keywords: c.keywords || [],
+  isActive: c.isActive !== false,
+  sortOrder: i,
+  isAccumulative: c.isAccumulative || false,
+  accumulationStart: c.accumulationStart || null,
+}));
 
-const tx = (id, catId, amount, type, description, day, cashback = 0) => ({
-  id, categoryId: catId, cardId: null, amount, type, description, date: dayOf(day),
+// Resuelve el id real de una categoría por nombre (las default generan ids).
+const catId = (name) => categories.find((c) => c.name === name)?.id || '';
+
+const tx = (id, catName, amount, type, description, day, cashback = 0) => ({
+  id, categoryId: catId(catName), cardId: null, amount, type, description, date: dayOf(day),
   notes: null, currency: 'DOP', cashbackEarned: cashback, createdAt: new Date().toISOString(),
 });
 
 const transactions = [
-  tx('t1', 'c-sal', 85000, 'income', 'Salario quincenal', 1),
-  tx('t2', 'c-sal', 85000, 'income', 'Salario quincenal', 16),
-  tx('t3', 'c-alq', 32000, 'fixed_expense', 'Alquiler', 2),
-  tx('t4', 'c-sup', 4250, 'variable_expense', 'Supermercado Nacional', 4),
-  tx('t5', 'c-sup', 3120, 'variable_expense', 'Jumbo', 12),
-  tx('t6', 'c-tra', 1800, 'variable_expense', 'Gasolina', 6),
-  tx('t7', 'c-tra', 950, 'variable_expense', 'Uber', 9),
-  tx('t8', 'c-ocio', 2400, 'variable_expense', 'Cine + cena', 14),
-  tx('t9', 'c-aho', 15000, 'savings', 'Abono a meta: Fondo de emergencia', 16),
+  tx('t1', 'Salario', 85000, 'income', 'Salario quincenal', 1),
+  tx('t2', 'Salario', 85000, 'income', 'Salario quincenal', 16),
+  tx('t3', 'Alquiler', 32000, 'fixed_expense', 'Alquiler', 2),
+  tx('t4', 'Supermercado', 4250, 'variable_expense', 'Supermercado Nacional', 4),
+  tx('t5', 'Supermercado', 3120, 'variable_expense', 'Jumbo', 12),
+  tx('t6', 'Combustible', 1800, 'variable_expense', 'Gasolina', 6),
+  tx('t7', 'Taxi y Transporte', 950, 'variable_expense', 'Uber', 9),
+  tx('t8', 'Restaurantes y Delivery', 2400, 'variable_expense', 'Cena fuera', 14),
+  tx('t9', 'Suscripciones Digitales', 590, 'variable_expense', 'Netflix', 10),
 ];
 
 const budgets = [
-  { id: 'b1', categoryId: 'c-alq', year: yearIdx, month: monthIdx, estimatedAmount: 32000, currency: 'DOP', createdAt: '' },
-  { id: 'b2', categoryId: 'c-sup', year: yearIdx, month: monthIdx, estimatedAmount: 12000, currency: 'DOP', createdAt: '' },
-  { id: 'b3', categoryId: 'c-tra', year: yearIdx, month: monthIdx, estimatedAmount: 5000, currency: 'DOP', createdAt: '' },
-  { id: 'b4', categoryId: 'c-aho', year: yearIdx, month: monthIdx, estimatedAmount: 20000, currency: 'DOP', createdAt: '' },
-  { id: 'b5', categoryId: 'c-ocio', year: yearIdx, month: monthIdx, estimatedAmount: 6000, currency: 'DOP', createdAt: '' },
-  { id: 'b6', categoryId: 'c-sal', year: yearIdx, month: monthIdx, estimatedAmount: 170000, currency: 'DOP', createdAt: '' },
+  { id: 'b1', categoryId: catId('Alquiler'), year: yearIdx, month: monthIdx, estimatedAmount: 32000, currency: 'DOP', createdAt: '' },
+  { id: 'b2', categoryId: catId('Supermercado'), year: yearIdx, month: monthIdx, estimatedAmount: 12000, currency: 'DOP', createdAt: '' },
+  { id: 'b3', categoryId: catId('Taxi y Transporte'), year: yearIdx, month: monthIdx, estimatedAmount: 5000, currency: 'DOP', createdAt: '' },
+  { id: 'b4', categoryId: catId('Restaurantes y Delivery'), year: yearIdx, month: monthIdx, estimatedAmount: 6000, currency: 'DOP', createdAt: '' },
+  { id: 'b5', categoryId: catId('Suscripciones Digitales'), year: yearIdx, month: monthIdx, estimatedAmount: 2000, currency: 'DOP', createdAt: '' },
+  { id: 'b6', categoryId: catId('Salario'), year: yearIdx, month: monthIdx, estimatedAmount: 170000, currency: 'DOP', createdAt: '' },
 ];
 
 const goals = [
@@ -112,4 +123,47 @@ export function enterDemo() {
   sessionStorage.setItem(FLAG, '1');
   seedDemoStores();
   return true;
+}
+
+// ── Mutadores en memoria para el modo demo ──────────────────────────────────
+// En demo NO hay sesión Supabase, así que las acciones de los stores (que
+// escriben al backend) salen sin hacer nada. Estas funciones aplican la mutación
+// SOLO al estado local, para que crear/editar/borrar funcione en QA. No persiste.
+const demoId = () =>
+  (globalThis.crypto?.randomUUID?.() || `demo-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+
+// Transacciones
+export function demoAddTransaction(tx) {
+  const row = {
+    id: demoId(), categoryId: tx.categoryId || '', cardId: tx.cardId || null,
+    amount: Number(tx.amount), type: tx.type, description: tx.description || '',
+    date: tx.date, notes: tx.notes || null, currency: tx.currency || 'DOP',
+    cashbackEarned: Number(tx.cashbackEarned) || 0, createdAt: new Date().toISOString(),
+  };
+  useTransactionStore.setState((s) => ({ transactions: [row, ...s.transactions] }));
+  return row.id;
+}
+export function demoUpdateTransaction(id, updates) {
+  useTransactionStore.setState((s) => ({
+    transactions: s.transactions.map((t) => (t.id === id ? { ...t, ...updates, amount: Number(updates.amount ?? t.amount) } : t)),
+  }));
+}
+export function demoDeleteTransaction(id) {
+  useTransactionStore.setState((s) => ({ transactions: s.transactions.filter((t) => t.id !== id) }));
+}
+export function demoRestoreTransaction(tx) {
+  useTransactionStore.setState((s) => ({ transactions: [{ ...tx, id: demoId() }, ...s.transactions] }));
+}
+
+// Genérico para colecciones simples (savings/debts/plans/cards) por si se usan.
+export function demoAdd(store, key, row) {
+  const r = { id: demoId(), createdAt: new Date().toISOString(), ...row };
+  store.setState((s) => ({ [key]: [...s[key], r] }));
+  return r;
+}
+export function demoUpdate(store, key, id, updates) {
+  store.setState((s) => ({ [key]: s[key].map((x) => (x.id === id ? { ...x, ...updates } : x)) }));
+}
+export function demoDelete(store, key, id) {
+  store.setState((s) => ({ [key]: s[key].filter((x) => x.id !== id) }));
 }

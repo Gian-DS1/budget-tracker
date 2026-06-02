@@ -33,19 +33,27 @@ function sanitize(input) {
   return s;
 }
 
-// Cuenta dígitos hasta una posición del string (para reposicionar el caret).
-function digitsBefore(str, pos) {
+// Cuenta caracteres SIGNIFICATIVOS (dígitos y punto, NO comas) hasta una
+// posición. Las comas son ruido de formato; lo que ancla el caret es cuántos
+// dígitos/puntos hay a su izquierda. Así el caret respeta el punto decimal.
+function significantBefore(str, pos) {
   let n = 0;
-  for (let i = 0; i < pos && i < str.length; i++) if (/\d/.test(str[i])) n++;
+  for (let i = 0; i < pos && i < str.length; i++) {
+    const ch = str[i];
+    if (ch >= '0' && ch <= '9') n++;
+    else if (ch === '.') n++;
+  }
   return n;
 }
-function caretFromDigits(formatted, digitCount) {
-  if (digitCount <= 0) return 0;
+// Devuelve el índice en `formatted` tras el N-ésimo carácter significativo.
+function caretFromSignificant(formatted, count) {
+  if (count <= 0) return 0;
   let n = 0;
   for (let i = 0; i < formatted.length; i++) {
-    if (/\d/.test(formatted[i])) {
+    const ch = formatted[i];
+    if ((ch >= '0' && ch <= '9') || ch === '.') {
       n++;
-      if (n === digitCount) return i + 1;
+      if (n === count) return i + 1;
     }
   }
   return formatted.length;
@@ -69,8 +77,9 @@ export default function StitchCurrencyInput({
     const rawSanitized = sanitize(el.value);
     const formatted = formatLive(rawSanitized);
 
-    // dígitos a la izquierda del caret en el valor que el usuario tecleó
-    const typedDigits = digitsBefore(el.value, prevCaret);
+    // caracteres significativos (dígitos + punto) a la izquierda del caret en lo
+    // que el usuario tecleó — esto ancla la posición respetando el punto decimal.
+    const typedSignificant = significantBefore(el.value, prevCaret);
 
     onChange(rawSanitized);
 
@@ -78,7 +87,7 @@ export default function StitchCurrencyInput({
     // value controlado ya esté aplicado).
     requestAnimationFrame(() => {
       if (!ref.current) return;
-      const newCaret = caretFromDigits(formatted, typedDigits);
+      const newCaret = caretFromSignificant(formatted, typedSignificant);
       try { ref.current.setSelectionRange(newCaret, newCaret); } catch { /* noop */ }
     });
   };

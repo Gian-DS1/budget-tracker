@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import MS from '../MS';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import AutoCatChip from '../AutoCatChip';
+import { isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction } from '../demoMode';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
@@ -36,6 +37,8 @@ export default function StitchLedger() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterCat, setFilterCat] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
 
   const catName = (id) => { const c = categories.find((x) => x.id === id); return c ? `${c.icon} ${c.name}` : '—'; };
 
@@ -69,7 +72,9 @@ export default function StitchLedger() {
   const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); setAutoCat(false); setShowForm(true); };
   const openEdit = (t) => { setForm({ ...blank, ...t, amount: String(t.amount) }); setEditing(t.id); setErrors({}); setAutoCat(false); setShowForm(true); };
 
-  const submit = (e) => {
+  const demo = isDemoActive();
+
+  const submit = async (e) => {
     e.preventDefault();
     const err = {};
     if (!form.date) err.date = '1';
@@ -79,21 +84,36 @@ export default function StitchLedger() {
 
     const description = titleCase(form.description);
     const data = { ...form, description, amount: Number(form.amount), cashbackEarned: cashbackPreview };
-    if (editing) { updateTransaction(editing, data); }
-    else {
-      addTransaction(data);
-      if (form.isRecurring) {
+
+    if (editing) {
+      if (demo) demoUpdateTransaction(editing, data); else await updateTransaction(editing, data);
+      toast.success('Transacción actualizada');
+    } else {
+      if (demo) demoAddTransaction(data); else await addTransaction(data);
+      if (form.isRecurring && !demo) {
         addRecurring({
           categoryId: form.categoryId, cardId: form.cardId, amount: Number(form.amount), type: form.type,
           description, notes: form.notes, currency: form.currency, frequency: form.recurrencePattern,
           nextDate: advanceDate(form.date, form.recurrencePattern),
         });
       }
+      // El store ya muestra "Transacción guardada exitosamente" con login real;
+      // en demo lo mostramos aquí (no hay backend que avise).
+      if (demo) toast.success('Transacción guardada');
     }
-    setShowForm(false); setForm(blank); setEditing(null);
+    setShowForm(false); setForm(blank); setEditing(null); setAutoCat(false);
   };
 
   const onDelete = async (t) => {
+    if (demo) {
+      demoDeleteTransaction(t.id);
+      toast((tt) => (
+        <span className="flex items-center gap-sm">Transacción eliminada
+          <button onClick={() => { demoRestoreTransaction(t); toast.dismiss(tt.id); }} className="text-primary font-bold underline">Deshacer</button>
+        </span>
+      ), { duration: 6000 });
+      return;
+    }
     const ok = await deleteTransaction(t.id);
     if (ok) toast((tt) => (
       <span className="flex items-center gap-sm">Transacción eliminada
@@ -107,10 +127,16 @@ export default function StitchLedger() {
     if (search) { const q = search.toLowerCase(); r = r.filter((t) => t.description?.toLowerCase().includes(q) || t.notes?.toLowerCase().includes(q)); }
     if (filterType) r = r.filter((t) => t.type === filterType);
     if (filterCat) r = r.filter((t) => t.categoryId === filterCat);
+    if (dateFrom) r = r.filter((t) => t.date >= dateFrom);
+    if (dateTo) r = r.filter((t) => t.date <= dateTo);
     return r.sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0));
-  }, [transactions, search, filterType, filterCat]);
+  }, [transactions, search, filterType, filterCat, dateFrom, dateTo]);
+
+  const hasFilters = search || filterType || filterCat || dateFrom || dateTo;
+  const clearFilters = () => { setSearch(''); setFilterType(''); setFilterCat(''); setDateFrom(''); setDateTo(''); };
 
   const selectCls = 'appearance-none bg-surface-container border border-border-subtle text-on-surface font-label-sm text-label-sm py-xs pl-sm pr-[28px] rounded hover:border-outline-variant focus:outline-none focus:border-primary cursor-pointer inner-glow';
+  const dateCls = 'bg-surface-container border border-border-subtle text-on-surface font-mono-data text-mono-data py-xs px-sm rounded focus:outline-none focus:border-primary inner-glow [color-scheme:dark]';
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -141,6 +167,18 @@ export default function StitchLedger() {
           <option value="">Todas las categorías</option>
           {categories.filter((c) => c.isActive).map((c) => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
         </select>
+        {/* Rango de fechas */}
+        <div className="flex items-center gap-xs">
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">Desde</span>
+          <input type="date" value={dateFrom} max={dateTo || undefined} onChange={(e) => setDateFrom(e.target.value)} className={dateCls} />
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">Hasta</span>
+          <input type="date" value={dateTo} min={dateFrom || undefined} onChange={(e) => setDateTo(e.target.value)} className={dateCls} />
+        </div>
+        {hasFilters && (
+          <button onClick={clearFilters} className="flex items-center gap-xs font-mono-data text-mono-data uppercase text-text-muted hover:text-on-surface border border-border-subtle rounded px-sm py-xs hover:bg-surface-container-high transition-colors">
+            <MS name="close" className="text-[14px]" /> Limpiar
+          </button>
+        )}
       </div>
 
       {/* Tabla */}
