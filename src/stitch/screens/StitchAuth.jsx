@@ -7,6 +7,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { friendlyAuthError } from '../../utils/authErrors';
 import { isLocalhost, enterDemo } from '../demoMode';
 import MS from '../MS';
+import Logo from '../Logo';
 
 const MODES = { login: 'login', signup: 'signup', reset: 'reset' };
 
@@ -55,10 +56,8 @@ export default function StitchAuth() {
 
         {/* Marca */}
         <div className="flex flex-col items-center text-center mb-lg pt-sm">
-          <div className="w-12 h-12 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
-            <MS name="bolt" fill className="text-[24px] text-primary" />
-          </div>
-          <h1 className="font-headline-md text-headline-md font-bold text-on-surface">FinTrack RD</h1>
+          <Logo size={48} className="mb-md" />
+          <h1 className="font-headline-md text-headline-md font-bold text-on-surface">FinTrack</h1>
           <p className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mt-xs">
             {mode === MODES.login ? 'Acceso al sistema' : mode === MODES.signup ? 'Crear cuenta' : 'Recuperar acceso'}
           </p>

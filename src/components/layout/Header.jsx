@@ -1,4 +1,4 @@
-// FinTrack RD — Header Component
+// FinTrack — Header Component
 
 import { useMemo, useState, useRef, useEffect } from 'react';
 import { Moon, Sun, Menu, Bell } from 'lucide-react';

@@ -12,7 +12,7 @@ El trabajo a realizar: tener una imagen clara y confiable de a dónde va el dine
 
 ## Product Purpose
 
-FinTrack RD es un hub de finanzas personales pensado para República Dominicana. Combina presupuesto base cero, control de tarjetas de crédito (ciclos, cashback, abonos), seguimiento de deudas, metas de ahorro, transacciones recurrentes, un plan financiero inteligente y reportes con detección de anomalías. Reemplaza la hoja de cálculo con algo que se mantiene solo (auto-categorización, recurrentes, sugerencias) y vive sincronizado en la nube (Supabase) con caché local para arrancar al instante.
+FinTrack es un hub de finanzas personales pensado para República Dominicana. Combina presupuesto base cero, control de tarjetas de crédito (ciclos, cashback, abonos), seguimiento de deudas, metas de ahorro, transacciones recurrentes, un plan financiero inteligente y reportes con detección de anomalías. Reemplaza la hoja de cálculo con algo que se mantiene solo (auto-categorización, recurrentes, sugerencias) y vive sincronizado en la nube (Supabase) con caché local para arrancar al instante.
 
 El éxito se ve cuando el usuario abre la app y entiende su situación financiera en segundos, registra movimientos sin fricción, y confía en los números lo suficiente como para tomar decisiones (pagar, abonar, ahorrar) sin recurrir a Excel.
 

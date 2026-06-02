@@ -1,4 +1,4 @@
-// FinTrack RD — Sidebar Component
+// FinTrack — Sidebar Component
 
 import { NavLink } from 'react-router-dom';
 import {
@@ -47,9 +47,9 @@ export default function Sidebar() {
     <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileMenuOpen ? 'mobile-open' : ''}`}>
       <div className="sidebar-logo">
         <div className="sidebar-logo-icon" style={{ background: 'transparent', padding: 0 }}>
-          <img src="/favicon.svg" alt="FinTrack RD" style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-lg)' }} />
+          <img src="/favicon.svg" alt="FinTrack" style={{ width: '100%', height: '100%', borderRadius: 'var(--radius-lg)' }} />
         </div>
-        <span className="sidebar-logo-text">FinTrack RD</span>
+        <span className="sidebar-logo-text">FinTrack</span>
       </div>
 
       {/* Navigation */}

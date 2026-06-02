@@ -1,4 +1,4 @@
-// FinTrack RD — Reports & Analytics Page
+// FinTrack — Reports & Analytics Page
 
 import { useState, useMemo } from 'react';
 import {

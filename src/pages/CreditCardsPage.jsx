@@ -1,4 +1,4 @@
-// FinTrack RD — Credit Cards Page
+// FinTrack — Credit Cards Page
 
 import { useState, useMemo } from 'react';
 import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, History, RotateCcw } from 'lucide-react';

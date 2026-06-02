@@ -1,4 +1,4 @@
-// FinTrack RD — Función serverless (Vercel) que devuelve la tasa USD→DOP de
+// FinTrack — Función serverless (Vercel) que devuelve la tasa USD→DOP de
 // VENTA del Banco Popular usando la API de TasaReal.
 //
 // Por qué del lado del servidor:

@@ -1,4 +1,4 @@
-// FinTrack RD — Shortcuts registry
+// FinTrack — Shortcuts registry
 //
 // Permite que cada página registre las acciones que sus atajos de teclado
 // pueden disparar (nueva transacción, mes anterior/siguiente, etc.) sin que el

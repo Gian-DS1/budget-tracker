@@ -1,4 +1,4 @@
-// FinTrack RD — Traducción de errores de autenticación a español plano.
+// FinTrack — Traducción de errores de autenticación a español plano.
 //
 // Supabase devuelve mensajes en inglés y a veces técnicos. Esta función los
 // mapea a un mensaje claro y accionable para el usuario; si no reconoce el

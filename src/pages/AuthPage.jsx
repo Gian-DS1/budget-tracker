@@ -69,7 +69,7 @@ export default function AuthPage() {
           >
             <TrendingUp size={28} />
           </div>
-          <h1 className="text-2xl font-bold">FinTrack RD</h1>
+          <h1 className="text-2xl font-bold">FinTrack</h1>
         </div>
 
         {(currentMode === 'login' || currentMode === 'signup') && (

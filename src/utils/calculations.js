@@ -1,4 +1,4 @@
-// FinTrack RD — Financial Calculations
+// FinTrack — Financial Calculations
 
 /**
  * Gasto/monto EFECTIVO de una transacción: el monto menos el cashback que

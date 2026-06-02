@@ -1,5 +1,5 @@
 ---
-name: FinTrack RD
+name: FinTrack
 description: Tablero de finanzas personales para República Dominicana, oscuro por defecto, con acento esmeralda y números monoespaciados.
 colors:
   accent-emerald: "#10b981"
@@ -121,13 +121,13 @@ components:
     typography: "{typography.label}"
 ---
 
-# Design System: FinTrack RD
+# Design System: FinTrack
 
 ## 1. Overview
 
 **Creative North Star: "El Tablero de Control"**
 
-FinTrack RD se lee como el tablero de un instrumento financiero: oscuro, sereno y legible bajo cualquier luz. La superficie base es un azul-pizarra casi negro (`#0a0e1a`); sobre ella, lecturas que brillan en esmeralda (`#10b981`) y cifras en mono tabular que se alinean columna a columna como un display de precisión. El usuario maneja dinero en momentos de fricción (registrar un gasto, decidir un abono, ver cuánto queda por asignar) y el tablero existe para devolverle el timón: cada pantalla pone su lectura principal primero y la rodea de contexto, nunca al revés.
+FinTrack se lee como el tablero de un instrumento financiero: oscuro, sereno y legible bajo cualquier luz. La superficie base es un azul-pizarra casi negro (`#0a0e1a`); sobre ella, lecturas que brillan en esmeralda (`#10b981`) y cifras en mono tabular que se alinean columna a columna como un display de precisión. El usuario maneja dinero en momentos de fricción (registrar un gasto, decidir un abono, ver cuánto queda por asignar) y el tablero existe para devolverle el timón: cada pantalla pone su lectura principal primero y la rodea de contexto, nunca al revés.
 
 El sistema es **moderno y capaz**: defaults pulidos de fintech, estados nítidos, y las funciones inteligentes (auto-sugerencia, detección de anomalías, ciclos de tarjeta) hechas visibles en vez de escondidas en una caja negra. La densidad es alta donde el dato lo exige (tablas, calendario, KPIs) y suelta donde se respira (héroe "Puedes gastar", estados vacíos). El color semántico hace el trabajo pesado: ingreso/esmeralda, gasto/rosa, fijo/índigo, variable/ámbar, ahorro/cian, deuda/rojo, y siempre acompañado de signo o ícono, nunca solo del color.
 

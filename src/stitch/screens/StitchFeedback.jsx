@@ -26,11 +26,11 @@ export default function StitchFeedback() {
         body: JSON.stringify({
           access_key: WEB3FORMS_ACCESS_KEY,
           subject: `${tl} Feedback Beta - ${form.subject}`,
-          from_name: 'FinTrack RD — Feedback Beta',
+          from_name: 'FinTrack — Feedback Beta',
           'Tipo de Feedback': TYPES.find((t) => t.v === form.type)?.l,
           Asunto: form.subject,
           Descripción: form.description,
-          Entorno: 'FinTrack RD Portal Beta',
+          Entorno: 'FinTrack Portal Beta',
         }),
       });
       const result = await res.json();

@@ -1,4 +1,4 @@
-// FinTrack RD — Modal Component
+// FinTrack — Modal Component
 
 import { useEffect, useId, useRef } from 'react';
 import { X } from 'lucide-react';

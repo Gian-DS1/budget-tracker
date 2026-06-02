@@ -1,4 +1,4 @@
-// FinTrack RD — Lógica pura de recurrencia
+// FinTrack — Lógica pura de recurrencia
 
 import { toISODate } from './formatters';
 

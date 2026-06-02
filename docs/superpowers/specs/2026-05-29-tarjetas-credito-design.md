@@ -1,4 +1,4 @@
-# Diseño: Tarjetas de crédito (capa de seguimiento) — FinTrack RD
+# Diseño: Tarjetas de crédito (capa de seguimiento) — FinTrack
 
 - **Fecha:** 2026-05-29
 - **Estado:** Aprobado (diseño) — pendiente de plan de implementación

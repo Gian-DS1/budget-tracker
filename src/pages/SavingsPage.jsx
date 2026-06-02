@@ -1,4 +1,4 @@
-// FinTrack RD — Savings Page
+// FinTrack — Savings Page
 
 import { useState, useMemo } from 'react';
 import { Plus, PiggyBank, Edit2, Trash2 } from 'lucide-react';

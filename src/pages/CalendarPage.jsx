@@ -1,4 +1,4 @@
-// FinTrack RD — Calendar Page
+// FinTrack — Calendar Page
 
 import { useState, useMemo } from 'react';
 import { ChevronLeft, ChevronRight, Calendar as CalendarIcon, TrendingUp, TrendingDown, ArrowRightLeft } from 'lucide-react';

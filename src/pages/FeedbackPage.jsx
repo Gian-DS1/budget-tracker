@@ -1,4 +1,4 @@
-// FinTrack RD — Feedback Page
+// FinTrack — Feedback Page
 import { useState } from 'react';
 import { MessageSquare, Send, Copy, Check, AlertCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
@@ -48,11 +48,11 @@ export default function FeedbackPage() {
         body: JSON.stringify({
           access_key: WEB3FORMS_ACCESS_KEY,
           subject: emailSubject,
-          from_name: 'FinTrack RD — Feedback Beta',
+          from_name: 'FinTrack — Feedback Beta',
           'Tipo de Feedback': form.type === 'bug' ? '🔴 Reportar un error (Bug)' : form.type === 'improvement' ? '💡 Sugerencia de mejora' : '💬 Comentario general',
           'Asunto': form.subject,
           'Descripción': form.description,
-          'Entorno': 'FinTrack RD Portal Beta',
+          'Entorno': 'FinTrack Portal Beta',
         }),
       });
 
@@ -96,7 +96,7 @@ export default function FeedbackPage() {
           <h1 className="page-title flex items-center gap-3">
             <MessageSquare size={28} className="text-accent" /> Feedback / Beta
           </h1>
-          <p className="page-subtitle">Ayúdanos a perfeccionar FinTrack RD durante la fase de pruebas</p>
+          <p className="page-subtitle">Ayúdanos a perfeccionar FinTrack durante la fase de pruebas</p>
         </div>
       </div>
 

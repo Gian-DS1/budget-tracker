@@ -1,4 +1,4 @@
-# Diseño: Tarjetas predefinidas con cashback automático — FinTrack RD
+# Diseño: Tarjetas predefinidas con cashback automático — FinTrack
 
 - **Fecha:** 2026-05-31
 - **Estado:** Aprobado (diseño) — pendiente de plan de implementación

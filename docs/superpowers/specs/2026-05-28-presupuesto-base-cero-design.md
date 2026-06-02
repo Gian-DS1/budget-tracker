@@ -1,4 +1,4 @@
-# Diseño: Presupuesto base cero mejorado (FinTrack RD)
+# Diseño: Presupuesto base cero mejorado (FinTrack)
 
 - **Fecha:** 2026-05-28
 - **Estado:** Aprobado (diseño) — pendiente de plan de implementación
@@ -6,7 +6,7 @@
 
 ## 1. Contexto y objetivo
 
-FinTrack RD es una SPA multi-usuario (React 19 + Vite 8 + Supabase) para seguimiento de
+FinTrack es una SPA multi-usuario (React 19 + Vite 8 + Supabase) para seguimiento de
 finanzas personales en República Dominicana. El objetivo es evolucionar el sistema hacia un
 presupuesto **base cero** efectivo —donde cada peso que entra tiene un destino (gasto, ahorro,
 inversión, pago de deuda)— que funcione en la práctica, no solo en la pantalla.

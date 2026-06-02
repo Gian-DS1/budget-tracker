@@ -1,4 +1,4 @@
-// FinTrack RD — EmptyState Component
+// FinTrack — EmptyState Component
 
 export default function EmptyState({ icon: Icon, title, description, action }) {
   return (

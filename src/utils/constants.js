@@ -1,4 +1,4 @@
-// FinTrack RD — Constants
+// FinTrack — Constants
 
 export const CURRENCIES = {
   DOP: { code: 'DOP', symbol: 'RD$', name: 'Peso Dominicano' },

@@ -1,4 +1,4 @@
-// FinTrack RD — Dashboard Page
+// FinTrack — Dashboard Page
 
 import { useMemo, useState } from 'react';
 import {

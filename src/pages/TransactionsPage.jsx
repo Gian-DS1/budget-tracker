@@ -1,4 +1,4 @@
-// FinTrack RD — Transactions Page
+// FinTrack — Transactions Page
 
 import { useState, useMemo } from 'react';
 import { Plus, X, Search, Filter, Trash2, ArrowLeftRight, ArrowUp, ArrowDown, ArrowUpDown, Edit3, Repeat, Play, Pause } from 'lucide-react';

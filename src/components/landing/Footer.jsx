@@ -10,9 +10,9 @@ export default function Footer({ onAuth }) {
       <div className="lp__container lp-footer__inner">
         <button className="lp-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <span className="lp-brand__mark">
-            <img src="/favicon.svg" alt="FinTrack RD" />
+            <img src="/favicon.svg" alt="FinTrack" />
           </span>
-          FinTrack RD
+          FinTrack
         </button>
 
         <nav className="lp-footer__links" aria-label="Pie de página">
@@ -24,7 +24,7 @@ export default function Footer({ onAuth }) {
 
         <div className="lp-footer__meta">
           <span>Hecho en RD 🇩🇴</span>
-          <span>© {year} FinTrack RD</span>
+          <span>© {year} FinTrack</span>
         </div>
       </div>
     </footer>

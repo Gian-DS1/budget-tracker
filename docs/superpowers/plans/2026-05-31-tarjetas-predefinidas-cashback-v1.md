@@ -92,7 +92,7 @@ Expected: FAIL — "Failed to resolve import './creditCardCatalog'".
 Crear `src/data/creditCardCatalog.js`:
 
 ```js
-// FinTrack RD — Catálogo de tarjetas de crédito predefinidas (RD)
+// FinTrack — Catálogo de tarjetas de crédito predefinidas (RD)
 // Reglas de cashback como % plano por categoría (sin topes, por decisión de producto).
 
 // Categorías de ecosistema: se crean BAJO DEMANDA al agregar una tarjeta que las

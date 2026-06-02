@@ -1,4 +1,4 @@
-// FinTrack RD — Lógica de ciclos de tarjetas de crédito (pura)
+// FinTrack — Lógica de ciclos de tarjetas de crédito (pura)
 
 import { toISODate } from './formatters';
 

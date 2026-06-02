@@ -43,3 +43,11 @@ skills-lock.json
 
 # Impeccable: config de live-mode y snapshots de critique (estado local)
 .impeccable/
+.superpowers/
+
+# Extracción de diseños Stitch vía MCP (HTML crudo de referencia + dev.log)
+.stitch-extract/
+
+# Material de diseño local (specs + repo de referencia con su propio .git)
+design-system/
+awesome-design-md/

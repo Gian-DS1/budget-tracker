@@ -2,6 +2,7 @@
 // CTA → onAccess() lleva a la pantalla de acceso (StitchAuth).
 
 import MS from '../MS';
+import Logo from '../Logo';
 import { isLocalhost, enterDemo } from '../demoMode';
 
 const FEATURES = [
@@ -19,12 +20,7 @@ export default function StitchLanding({ onAccess }) {
       {/* Top bar */}
       <header className="border-b border-border-subtle">
         <div className="max-w-[1100px] mx-auto px-md sm:px-margin-safe h-16 flex items-center justify-between">
-          <div className="flex items-center gap-sm">
-            <div className="w-7 h-7 rounded-sm bg-primary flex items-center justify-center inner-glow">
-              <MS name="bolt" fill className="text-[16px] text-on-primary" />
-            </div>
-            <span className="font-headline-md text-[20px] font-bold tracking-tight text-on-surface">FinTrack RD</span>
-          </div>
+          <Logo size={28} withText />
           <button onClick={onAccess} className="bg-surface-container-high border border-border-subtle text-on-surface font-label-sm text-label-sm uppercase tracking-widest px-md py-xs rounded hover:bg-surface-container-highest transition-colors inner-glow">
             Acceder
           </button>
@@ -109,7 +105,7 @@ export default function StitchLanding({ onAccess }) {
 
       <footer className="border-t border-border-subtle">
         <div className="max-w-[1100px] mx-auto px-md sm:px-margin-safe py-md font-mono-data text-mono-data text-text-muted">
-          © {new Date().getFullYear()} FinTrack RD · Control financiero
+          © {new Date().getFullYear()} FinTrack · Control financiero
         </div>
       </footer>
     </div>

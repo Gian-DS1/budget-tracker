@@ -1,24 +1,33 @@
 <svg viewBox="0 0 400 400" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="g1" x1="0" y1="0" x2="400" y2="400">
-      <stop offset="0%" stop-color="#0bd3b0" />
-      <stop offset="100%" stop-color="#3b82f6" />
+    <linearGradient id="fk" x1="120" y1="100" x2="280" y2="300" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#d6d9ff"/>
+      <stop offset="100%" stop-color="#bec2ff"/>
     </linearGradient>
-    <linearGradient id="g2" x1="400" y1="0" x2="0" y2="400">
-      <stop offset="0%" stop-color="#3b82f6" />
-      <stop offset="100%" stop-color="#8b5cf6" />
-    </linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="4" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.4"/>
+    <filter id="fglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="10" result="b"/>
+      <feFlood flood-color="#bec2ff" flood-opacity="0.45"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge><feMergeNode in="g"/><feMergeNode in="SourceGraphic"/></feMerge>
     </filter>
   </defs>
 
-  <!-- Background rounded rect -->
-  <rect width="400" height="400" rx="100" fill="#1e293b" />
-  
-  <!-- Left fold of the arrow -->
-  <path d="M120 280 L200 200 L280 280 L320 240 L200 120 L80 240 Z" fill="url(#g1)" filter="url(#shadow)" />
-  
-  <!-- Right fold of the arrow to create 3D effect -->
-  <path d="M200 200 L280 280 L320 240 L200 120 Z" fill="url(#g2)" />
+  <!-- Fondo instrument-grade Stitch -->
+  <rect width="400" height="400" rx="92" fill="#070708"/>
+  <rect x="4" y="4" width="392" height="392" rx="88" fill="none" stroke="#232426" stroke-width="6"/>
+  <!-- highlight superior (inner-glow) -->
+  <rect x="10" y="8" width="380" height="3" rx="1.5" fill="#ffffff" opacity="0.06"/>
+
+  <!-- Monograma 'F' geométrico, barras periwinkle -->
+  <g filter="url(#fglow)">
+    <!-- asta vertical -->
+    <rect x="120" y="100" width="46" height="200" rx="8" fill="url(#fk)"/>
+    <!-- brazo superior -->
+    <rect x="120" y="100" width="160" height="46" rx="8" fill="url(#fk)"/>
+    <!-- brazo medio (más corto, firma 'F') -->
+    <rect x="120" y="178" width="118" height="44" rx="8" fill="#bec2ff"/>
+  </g>
+
+  <!-- Punto de acento (telemetría) -->
+  <circle cx="300" cy="282" r="14" fill="#50d8e9"/>
 </svg>

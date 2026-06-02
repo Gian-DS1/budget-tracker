@@ -1,4 +1,4 @@
-// FinTrack RD — Skeleton loaders
+// FinTrack — Skeleton loaders
 //
 // Placeholders para la carga inicial en frío (sin caché local todavía). Reusan
 // las clases .skeleton* del design system. El bloque de prefers-reduced-motion

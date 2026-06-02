@@ -1,4 +1,4 @@
-// FinTrack RD — Debts Page
+// FinTrack — Debts Page
 
 import { useState } from 'react';
 import { Plus, CreditCard, TrendingDown, DollarSign, Edit2, Trash2 } from 'lucide-react';

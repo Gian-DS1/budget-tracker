@@ -1,4 +1,4 @@
-// FinTrack RD — Budget Page
+// FinTrack — Budget Page
 
 import { useState, useMemo, useCallback } from 'react';
 import {

@@ -1,4 +1,4 @@
-// FinTrack RD — ConfirmDialog Component
+// FinTrack — ConfirmDialog Component
 
 import Modal from './Modal';
 

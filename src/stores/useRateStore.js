@@ -1,4 +1,4 @@
-// FinTrack RD — Tasa de cambio USD → DOP (fuente única de verdad)
+// FinTrack — Tasa de cambio USD → DOP (fuente única de verdad)
 //
 // Antes la tasa vivía hardcodeada en constants.js (USD_TO_DOP_RATE = 60) y se
 // usaba para valorar deudas y totales, mientras que las transacciones usaban una

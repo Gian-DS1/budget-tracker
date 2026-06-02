@@ -1,10 +1,10 @@
-# Landing Page — FinTrack RD — Design Spec
+# Landing Page — FinTrack — Design Spec
 
 > Estado: **diseño APROBADO por el usuario** (2026-05-30). Pendiente de implementar.
 > Sesión pausada por costo. Retomar en sesión nueva: leer este spec y construir.
 
 ## Objetivo
-Landing page moderna y animada para FinTrack RD (app de finanzas personales, RD),
+Landing page moderna y animada para FinTrack (app de finanzas personales, RD),
 que comunique "controla tu dinero y crece financieramente" y lleve al registro.
 
 ## Decisiones aprobadas (del brainstorming)
@@ -36,7 +36,7 @@ que comunique "controla tu dinero y crece financieramente" y lleve al registro.
   no emojis como íconos estructurales), jerarquía de headings correcta.
 
 ## Secciones (orden vertical)
-1. **Navbar** sticky (translúcida → sólida al hacer scroll): logo "FinTrack RD",
+1. **Navbar** sticky (translúcida → sólida al hacer scroll): logo "FinTrack",
    enlaces ancla (Funciones, Cómo funciona), "Iniciar sesión" + botón "Crear cuenta".
 2. **Hero:** titular potente ("Toma el control de tu dinero y crece financieramente"),
    subtítulo, badge "Gratis · En beta", CTA principal "Crear cuenta gratis" +

@@ -1,4 +1,4 @@
-# Inventario de Lógica — FinTrack RD
+# Inventario de Lógica — FinTrack
 
 > **Propósito.** Esta carpeta documenta TODA la lógica de negocio, cálculos, contratos
 > de datos y buenas prácticas de la app **tal como está en `main`** (producción), para

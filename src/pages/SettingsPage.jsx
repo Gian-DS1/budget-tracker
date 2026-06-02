@@ -1,4 +1,4 @@
-// FinTrack RD — Settings & Utilities Page
+// FinTrack — Settings & Utilities Page
 
 import { useState, useRef, useEffect } from 'react';
 import { Upload, Download, FileText, Settings, Moon, Sun, Trash2, PlayCircle, ChevronDown, FileSpreadsheet, DollarSign } from 'lucide-react';

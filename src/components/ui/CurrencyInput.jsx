@@ -1,4 +1,4 @@
-// FinTrack RD — CurrencyInput Component
+// FinTrack — CurrencyInput Component
 // Formatted currency input that displays 1,000.00 while typing
 
 import { useState, useEffect, useRef } from 'react';

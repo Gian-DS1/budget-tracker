@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import MS from './MS';
+import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
 
@@ -51,13 +52,8 @@ export default function StitchShell() {
       >
         <div className="mb-lg px-sm flex items-center justify-between">
           <div>
-            <div className="flex items-center gap-sm mb-xs">
-              <div className="w-6 h-6 rounded-sm bg-primary flex items-center justify-center inner-glow">
-                <MS name="bolt" fill className="text-[14px] text-on-primary" />
-              </div>
-              <div className="font-headline-md text-[18px] font-bold tracking-tight text-on-surface">FinTrack RD</div>
-            </div>
-            <div className="text-text-muted font-label-sm text-label-sm pl-[2px]">Control financiero</div>
+            <Logo size={26} withText />
+            <div className="text-text-muted font-label-sm text-label-sm pl-[34px] -mt-xs">Control financiero</div>
           </div>
           {/* Cerrar en móvil */}
           <button onClick={() => setMenuOpen(false)} className="lg:hidden text-text-muted hover:text-on-surface p-xs" aria-label="Cerrar menú">
@@ -112,7 +108,7 @@ export default function StitchShell() {
             <button onClick={() => setMenuOpen(true)} className="lg:hidden text-on-surface-variant hover:text-on-surface p-xs -ml-xs" aria-label="Abrir menú">
               <MS name="menu" className="text-[24px]" />
             </button>
-            <div className="font-headline-md text-headline-md font-bold text-on-surface truncate">FinTrack RD</div>
+            <div className="font-headline-md text-headline-md font-bold text-on-surface truncate">FinTrack</div>
             {demo && (
               <span className="font-mono-data text-mono-data text-accent-warning uppercase tracking-widest border border-accent-warning/40 rounded px-sm py-xs hidden sm:inline">
                 Demo · QA

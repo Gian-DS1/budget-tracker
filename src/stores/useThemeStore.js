@@ -1,4 +1,4 @@
-// FinTrack RD — Theme Store
+// FinTrack — Theme Store
 
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';

@@ -1,4 +1,4 @@
-// FinTrack RD — Configuración del tour guiado (driver.js)
+// FinTrack — Configuración del tour guiado (driver.js)
 //
 // Cada paso lleva:
 //   - route:   la página donde vive la zona a resaltar. TourGuide navega solo.
@@ -14,7 +14,7 @@ export const tourSteps = [
   {
     route: '/',
     popover: {
-      title: '¡Bienvenido a FinTrack RD! 🎉',
+      title: '¡Bienvenido a FinTrack! 🎉',
       description:
         'Este es tu centro de control financiero. En unos pasos te mostramos para qué sirve cada sección y cómo usarla. La idea es simple: registras lo que entra y sale, y la app te dice cuánto puedes gastar de verdad sin atrasarte. Haz clic en "Siguiente →".',
       side: 'over',

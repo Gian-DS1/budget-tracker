@@ -1,4 +1,4 @@
-// FinTrack RD — Plan Page
+// FinTrack — Plan Page
 
 import { useState, useMemo } from 'react';
 import { Plus, Target, Trash2, Clock, CheckCircle2, Circle, Edit2, Sparkles, AlertTriangle, TrendingUp, ShieldCheck } from 'lucide-react';

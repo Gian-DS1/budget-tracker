@@ -62,9 +62,9 @@ export default function Navbar({ onAuth }) {
       <div className="lp__container lp-nav__inner">
         <button className="lp-brand" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
           <span className="lp-brand__mark">
-            <img src="/favicon.svg" alt="FinTrack RD" />
+            <img src="/favicon.svg" alt="FinTrack" />
           </span>
-          FinTrack RD
+          FinTrack
         </button>
 
         <div className="lp-nav__links">

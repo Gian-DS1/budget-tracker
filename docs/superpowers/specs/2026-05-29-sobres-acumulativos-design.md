@@ -1,4 +1,4 @@
-# Diseño: Sobres acumulativos (sinking funds) — FinTrack RD
+# Diseño: Sobres acumulativos (sinking funds) — FinTrack
 
 - **Fecha:** 2026-05-29
 - **Estado:** Aprobado (diseño) — pendiente de plan de implementación

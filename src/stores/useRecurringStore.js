@@ -1,4 +1,4 @@
-// FinTrack RD — Transacciones recurrentes (plantillas)
+// FinTrack — Transacciones recurrentes (plantillas)
 //
 // Una plantilla describe una transacción que se repite (semanal/quincenal/
 // mensual). Al abrir la app, `materializeDue` crea las transacciones reales de

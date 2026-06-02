@@ -1,4 +1,4 @@
-# FinTrack RD — Presupuesto Inteligente 🇩🇴
+# FinTrack — Presupuesto Inteligente 🇩🇴
 
 Aplicación web de finanzas personales pensada para República Dominicana. Reemplaza las hojas de cálculo con **presupuesto base cero**, control de deudas y tarjetas de crédito, metas de ahorro, transacciones recurrentes, análisis inteligente y recordatorios — todo sincronizado en la nube.
 

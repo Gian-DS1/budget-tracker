@@ -130,7 +130,7 @@ Expected: FAIL — `getCardCycles is not a function` (módulo no existe aún).
 Crea `src/utils/creditCards.js`:
 
 ```js
-// FinTrack RD — Lógica de ciclos de tarjetas de crédito (pura)
+// FinTrack — Lógica de ciclos de tarjetas de crédito (pura)
 
 import { toISODate } from './formatters';
 
@@ -545,7 +545,7 @@ git commit -m "feat: add Tarjetas entry to sidebar"
 Crea `src/pages/CreditCardsPage.jsx`:
 
 ```jsx
-// FinTrack RD — Credit Cards Page
+// FinTrack — Credit Cards Page
 
 import { useState, useMemo } from 'react';
 import { Plus, CreditCard, Edit3, Trash2, CheckCircle2, Calendar } from 'lucide-react';

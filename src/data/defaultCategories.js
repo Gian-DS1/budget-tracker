@@ -1,4 +1,4 @@
-// FinTrack RD — Default Categories for Dominican Republic
+// FinTrack — Default Categories for Dominican Republic
 
 import { generateId } from '../utils/formatters';
 
