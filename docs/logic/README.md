@@ -44,10 +44,14 @@
 5. **Acciones reversibles.** Borrados ofrecen "Deshacer" re-insertando la fila tal cual
    (sin re-convertir ni recalcular). El `id` cambia; nada referencia transacciones por id.
 
-## Estado de la documentación
+## Estado de la documentación — COMPLETA ✅
 
 - [x] `utils/calculations.md` — fórmulas financieras núcleo
-- [ ] `utils/credit-cards.md`, `utils/recurrence.md`, `utils/formatters.md`
-- [ ] `stores/*` (11 stores)
-- [ ] `pages/*` (13 páginas)
-- [ ] `architecture.md`, `data-model.md`
+- [x] `utils/credit-cards.md` — ciclos y saldos de tarjeta
+- [x] `utils/formatters-recurrence-constants.md`
+- [x] `stores/transactions.md` (el más complejo)
+- [x] `stores/budget-debt-savings-recurring-category.md`
+- [x] `stores/creditcard-plan-rate-theme.md` (los 11 stores cubiertos)
+- [x] `pages/all-pages.md` (las 13 páginas)
+- [x] `architecture.md` — flujo de datos + buenas prácticas a reusar
+- [x] `data-model.md` — esquema Supabase + relaciones
