@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import { Stagger } from '../StitchMotion';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import { formatCurrency, todayISO } from '../../utils/formatters';
@@ -68,12 +69,12 @@ export default function StitchVaults() {
           <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">Crear primera meta</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
+        <Stagger className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
           {goals.map((g) => {
             const pct = Number(g.targetAmount) > 0 ? (Number(g.currentAmount) / Number(g.targetAmount)) * 100 : 0;
             const done = pct >= 100;
             return (
-              <div key={g.id} className="bg-surface-card border border-border-subtle rounded-lg p-lg inner-glow relative overflow-hidden group hover:border-primary transition-colors" style={{ opacity: g.status === 'paused' ? 0.6 : 1 }}>
+              <Stagger.Item key={g.id} className="bg-surface-card border border-border-subtle rounded-lg p-lg inner-glow relative overflow-hidden group hover:border-primary transition-colors" style={{ opacity: g.status === 'paused' ? 0.6 : 1 }}>
                 <div className="absolute top-0 right-0 p-md flex gap-xs opacity-20 group-hover:opacity-100 transition-opacity">
                   <button onClick={() => openEdit(g)} className="text-text-muted hover:text-on-surface"><MS name="edit" className="text-[18px]" /></button>
                   <button onClick={() => deleteGoal(g.id)} className="text-text-muted hover:text-accent-error"><MS name="delete" className="text-[18px]" /></button>
@@ -94,10 +95,10 @@ export default function StitchVaults() {
                 <button onClick={() => { setContribGoal(g); setContribAmount(''); }} className="w-full border border-border-subtle text-primary font-mono-data text-mono-data uppercase py-xs rounded hover:bg-primary/10 transition-colors">
                   Abonar
                 </button>
-              </div>
+              </Stagger.Item>
             );
           })}
-        </div>
+        </Stagger>
       )}
 
       {showForm && (

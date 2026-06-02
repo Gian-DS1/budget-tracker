@@ -4,6 +4,7 @@
 
 import { useMemo, useState } from 'react';
 import MS from '../MS';
+import { Stagger } from '../StitchMotion';
 import useBudgetStore from '../../stores/useBudgetStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
@@ -190,11 +191,11 @@ export default function StitchBudget() {
         {rows.length === 0 ? (
           <p className="font-body-md text-body-md text-text-muted py-lg text-center">No hay categorías activas.</p>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
+          <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
             {rows.map(({ cat, estimated, actual, pct }) => {
               const over = pct > 100;
               return (
-                <div key={cat.id} className="bg-surface-card border border-border-subtle rounded p-md inner-glow flex flex-col gap-sm">
+                <Stagger.Item key={cat.id} className="bg-surface-card border border-border-subtle rounded p-md inner-glow flex flex-col gap-sm">
                   <div className="flex justify-between items-center">
                     <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs">
                       <span>{cat.icon}</span> {cat.name}
@@ -208,10 +209,10 @@ export default function StitchBudget() {
                   <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
                     <div className={`h-full ${over ? 'bg-accent-error' : typeColor(cat.type)}`} style={{ width: `${Math.min(pct, 100)}%` }} />
                   </div>
-                </div>
+                </Stagger.Item>
               );
             })}
-          </div>
+          </Stagger>
         )}
       </div>
     </div>

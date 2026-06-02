@@ -1,6 +1,7 @@
 // Tarjetas — layout Stitch con SALDOS REALES (getCardBalances) + abonos.
 import { useState, useMemo } from 'react';
 import MS from '../MS';
+import { Stagger } from '../StitchMotion';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import { getCardBalances, getLifetimeCashback } from '../../utils/creditCards';
@@ -65,9 +66,9 @@ export default function StitchCards() {
       {rows.length === 0 ? (
         <Empty onAdd={openCreate} />
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
+        <Stagger className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
           {rows.map(({ card, bal, cashback }) => (
-            <div key={card.id} className="bg-surface-card rounded-xl p-lg border border-border-subtle inner-glow relative overflow-hidden group">
+            <Stagger.Item key={card.id} className="bg-surface-card rounded-xl p-lg border border-border-subtle inner-glow relative overflow-hidden group">
               <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity" style={{ background: `linear-gradient(135deg, ${card.color}11, transparent)` }} />
               <div className="flex justify-between items-start mb-lg relative z-10">
                 <div className="flex items-center gap-sm">
@@ -97,9 +98,9 @@ export default function StitchCards() {
               <button onClick={() => { setPayCard(card); setPayAmount(bal.pendingBilled > 0 ? String(Math.round(bal.pendingBilled * 100) / 100) : ''); }} className="relative z-10 w-full mt-sm border border-border-subtle text-primary font-mono-data text-mono-data uppercase py-xs rounded hover:bg-primary/10 transition-colors">
                 Registrar abono
               </button>
-            </div>
+            </Stagger.Item>
           ))}
-        </div>
+        </Stagger>
       )}
 
       {showForm && (

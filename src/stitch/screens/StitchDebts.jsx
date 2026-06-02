@@ -2,6 +2,7 @@
 import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
+import { Stagger } from '../StitchMotion';
 import useDebtStore from '../../stores/useDebtStore';
 import { formatCurrency, todayISO } from '../../utils/formatters';
 
@@ -72,12 +73,12 @@ export default function StitchDebts() {
           <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">Registrar una deuda</button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-md">
+        <Stagger className="grid grid-cols-1 lg:grid-cols-3 gap-md">
           {ordered.map((d, i) => {
             const paidPct = Number(d.originalAmount) > 0 ? (1 - Number(d.currentBalance) / Number(d.originalAmount)) * 100 : 0;
             const high = Number(d.interestRate) >= 8;
             return (
-              <div key={d.id} className={`bg-surface-card border rounded-lg p-md inner-glow flex flex-col gap-md ${high ? 'border-accent-warning/30' : 'border-border-subtle'}`}>
+              <Stagger.Item key={d.id} className={`bg-surface-card border rounded-lg p-md inner-glow flex flex-col gap-md ${high ? 'border-accent-warning/30' : 'border-border-subtle'}`}>
                 <div className="flex justify-between items-center">
                   <span className="font-label-sm text-label-sm uppercase text-on-surface flex items-center gap-xs">
                     {i === 0 && <span className="font-mono-data text-[8px] text-accent-error border border-accent-error/40 rounded px-1">PAGAR 1RO</span>}
@@ -98,10 +99,10 @@ export default function StitchDebts() {
                   <button onClick={() => openEdit(d)} className="px-sm border border-border-subtle text-text-muted rounded hover:text-on-surface"><MS name="edit" className="text-[14px]" /></button>
                   <button onClick={() => deleteDebt(d.id)} className="px-sm border border-border-subtle text-text-muted rounded hover:text-accent-error"><MS name="delete" className="text-[14px]" /></button>
                 </div>
-              </div>
+              </Stagger.Item>
             );
           })}
-        </div>
+        </Stagger>
       )}
 
       {showForm && (

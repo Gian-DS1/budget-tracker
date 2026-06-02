@@ -2,9 +2,11 @@
 // Desktop: sidebar fijo 256px. Móvil (<lg): sidebar off-canvas + hamburguesa + overlay.
 
 import { useState } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { NavLink, useOutlet, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import MS from './MS';
 import Logo from './Logo';
+import { Screen } from './StitchMotion';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
 
@@ -29,6 +31,8 @@ export default function StitchShell() {
   const { signOut } = useAuth();
   const demo = isDemoActive();
   const [menuOpen, setMenuOpen] = useState(false);
+  const outlet = useOutlet();
+  const location = useLocation();
 
   const handleSignOut = () => {
     if (demo) { exitDemo(); window.location.reload(); return; }
@@ -136,7 +140,9 @@ export default function StitchShell() {
         </header>
 
         <main className="flex-grow overflow-y-auto">
-          <Outlet />
+          <AnimatePresence mode="wait" initial={false}>
+            <Screen key={location.pathname}>{outlet}</Screen>
+          </AnimatePresence>
         </main>
       </div>
     </div>
