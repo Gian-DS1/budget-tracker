@@ -55,6 +55,12 @@ Página de referencia: `src/stitch/screens/StitchLedger.jsx` (Transacciones) es 
 13. Modo demo: toda página con alta/edición/borrado DEBE funcionar en demo vía mutadores en memoria de demoMode.js + toast manual, porque sin sesión Supabase las acciones del store no hacen nada.
 14. Checkboxes: clase `.stitch-check` (caja oscura, check periwinkle), nunca el checkbox blanco nativo.
 
+## Specs de lógica de negocio (docs/specs/)
+
+`docs/specs/` contiene los specs de la LÓGICA financiera (presupuesto, sobres acumulativos, tarjetas, abonos parciales, cashback) + el concepto NUEVO de niveles progresivos. HALLAZGO CLAVE: casi toda esa lógica YA ESTÁ implementada en `src/utils/` y los stores (con columnas reales en Supabase); lo que falta es exponerla en la UI Stitch (la UI vieja que la mostraba fue borrada). Leer `docs/specs/README.md` PRIMERO: tiene la tabla feature→estado (qué lógica/BD ya existe vs. qué falta cablear en cada screen). Los specs referencian componentes viejos en sus secciones de UI; reinterpretarlas con los componentes Stitch nuevos.
+
+CONCEPTO DE PRESUPUESTO (decisión vigente): evoluciona de "solo base cero" a NIVELES PROGRESIVOS (Seguimiento → 50/30/20 → Base cero), elegidos por el usuario, default = Seguimiento. Resuelve la resistencia al base cero sin perder potencia. Ver `docs/specs/2026-06-niveles-progresivos-design.md`. Esto afecta el diseño de la página Presupuesto (siguiente paso): NO implementar solo base cero; implementar los 3 niveles. Verificado que el motor (getBudgetSummary, getAccumulatedBalance, getCardBalances, computeCashback) ya soporta la lógica subyacente.
+
 ## Historial de commits relevantes (rama rebuild/stitch-pure, último arriba)
 
 - `dbc4677` chore: elimina UI vieja (App/pages/components/styles/index.css), docs/, DESIGN.md, PRODUCT.md, useThemeStore, atajos de teclado, StitchPending; desinstala driver.js/lucide-react/date-fns; refactor StitchMotion (motionTokens.js) → lint 0; fix Emoji fallback. HEAD actual.
@@ -68,14 +74,13 @@ Página de referencia: `src/stitch/screens/StitchLedger.jsx` (Transacciones) es 
 - `671e106` fix(transacciones): tipo derivado de la categoría + calendarios nativos en oscuro.
 - `0539872` y previos: caret decimal, guardado+aviso en demo, filtro fechas, autocompletado por prefijo, formateo de miles, favicon, rename a FinTrack + logo, landing + reset password, animaciones Emil.
 
-Verificación tras `92fe95e`: build OK, 68 tests OK, lint 8 baseline, `.stitch-scroll` confirmado en el CSS servido por Vite. Servidor 200.
+Verificación tras la limpieza: build OK, 68 tests OK, lint 0 errores. Servidor 200.
 
 ## Siguiente paso lógico
 
-Aplicar el barrido de consistencia (pautas 1–14) página por página, EMPEZANDO POR PRESUPUESTO (`src/stitch/screens/StitchBudget.jsx`):
+EMPEZAR POR PRESUPUESTO (`src/stitch/screens/StitchBudget.jsx`). OJO: no es solo un barrido de consistencia — Presupuesto cambia de concepto a NIVELES PROGRESIVOS (ver docs/specs/2026-06-niveles-progresivos-design.md). Antes de codear, leer ese spec + docs/specs/README.md y probablemente hacer brainstorming del plan de implementación (preferencia budgetLevel, render de los 3 niveles, función "Puedes gastar"). Además del cambio de concepto, aplicar las pautas 1–14:
 - Reemplazar cualquier `<input type=number>` / entrada de monto por `StitchCurrencyInput` (los sobres/envelope inputs).
-- Reemplazar cualquier `<select>` por `StitchSelect`/`StitchCategorySelect`.
-- Reemplazar cualquier `<input type=date>` por `StitchDatePicker`.
+- Reemplazar cualquier `<select>` por `StitchSelect`/`StitchCategorySelect`; `<input type=date>` por `StitchDatePicker`.
 - Verificar emojis con `<Emoji>`.
 - Implementar el branching de modo demo en setBudget/copyBudgetFromPreviousMonth (mismo bug "no guarda en demo" que tenía Transacciones).
 - Revisar íconos (tamaño/simetría), animaciones de entrada (Stagger), y que ningún dropdown recorte.
