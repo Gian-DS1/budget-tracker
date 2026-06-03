@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBudgetSummary, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions, getFinancialHealthScore } from './calculations';
+import { getBudgetSummary, getBuckets503020, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions, getFinancialHealthScore } from './calculations';
 
 const categories = [
   { id: 'inc', type: 'income' },
@@ -99,6 +99,75 @@ describe('getBudgetSummary', () => {
       debtPaid: 0,
     });
     expect(r.variableGastado).toBe(2500);
+  });
+
+  it('expone el gastado real por tipo (gastosFijosReal, ahorroReal)', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 60000 },
+        { categoryId: 'fix', amount: 18000 },
+        { categoryId: 'var', amount: 7000 },
+        { categoryId: 'sav', amount: 4000 },
+      ],
+      monthBudgets: [],
+      categories,
+      debtPlanned: 0,
+      debtPaid: 0,
+    });
+    expect(r.gastosFijosReal).toBe(18000);
+    expect(r.variableGastado).toBe(7000);
+    expect(r.ahorroReal).toBe(4000);
+  });
+});
+
+describe('getBuckets503020', () => {
+  const summaryFor = (over) => getBudgetSummary({
+    monthTransactions: [
+      { categoryId: 'inc', amount: 100000 },
+      { categoryId: 'fix', amount: over ? 60000 : 40000 }, // necesidades
+      { categoryId: 'var', amount: 20000 },                // gustos
+      { categoryId: 'sav', amount: 10000 },                // ahorro
+    ],
+    monthBudgets: [],
+    categories,
+    debtPlanned: 0,
+    debtPaid: 5000, // se suma al balde ahorro/deuda
+  });
+
+  it('calcula límites 50/30/20 sobre el ingreso recibido', () => {
+    const b = getBuckets503020(summaryFor(false));
+    expect(b.income).toBe(100000);
+    expect(b.necesidades.limit).toBe(50000);
+    expect(b.gustos.limit).toBe(30000);
+    expect(b.ahorroDeuda.limit).toBe(20000);
+  });
+
+  it('mapea el gastado real por balde (ahorro incluye el pago de deuda)', () => {
+    const b = getBuckets503020(summaryFor(false));
+    expect(b.necesidades.spent).toBe(40000);
+    expect(b.gustos.spent).toBe(20000);
+    expect(b.ahorroDeuda.spent).toBe(15000); // 10000 ahorro + 5000 deuda
+    expect(b.necesidades.pct).toBe(80); // 40000/50000
+  });
+
+  it('pct supera 100 cuando un balde se sobregasta', () => {
+    const b = getBuckets503020(summaryFor(true));
+    expect(b.necesidades.spent).toBe(60000);
+    expect(b.necesidades.pct).toBe(120); // 60000/50000
+  });
+
+  it('con ingreso 0 devuelve límites y pct en 0 (sin NaN ni Infinity)', () => {
+    const b = getBuckets503020(getBudgetSummary({
+      monthTransactions: [{ categoryId: 'var', amount: 3000 }],
+      monthBudgets: [],
+      categories,
+      debtPlanned: 0,
+      debtPaid: 0,
+    }));
+    expect(b.income).toBe(0);
+    expect(b.necesidades.limit).toBe(0);
+    expect(b.gustos.pct).toBe(0);
+    expect(Number.isFinite(b.gustos.pct)).toBe(true);
   });
 });
 

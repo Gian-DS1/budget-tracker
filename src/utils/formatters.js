@@ -1,4 +1,4 @@
-// FinTrack RD — Formatters
+// FinTrack — Formatters
 
 import { CURRENCIES } from './constants';
 

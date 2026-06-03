@@ -1,4 +1,4 @@
-// FinTrack RD — Financial Calculations
+// FinTrack — Financial Calculations
 
 /**
  * Gasto/monto EFECTIVO de una transacción: el monto menos el cashback que
@@ -19,72 +19,11 @@ export function sumAmounts(transactions) {
 }
 
 /**
- * Calculate income for a period
- */
-export function calculateIncome(transactions) {
-  return sumAmounts(transactions.filter(t => t.type === 'income'));
-}
-
-/**
- * Calculate expenses for a period (includes fixed and variable expense types)
- */
-export function calculateExpenses(transactions) {
-  return sumAmounts(
-    transactions.filter(
-      t => t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense'
-    )
-  );
-}
-
-/**
- * Calculate savings for a period
- */
-export function calculateSavings(transactions) {
-  return sumAmounts(transactions.filter(t => t.type === 'savings'));
-}
-
-/**
- * Calculate balance (income - expenses - savings - debt payments)
- */
-export function calculateBalance(transactions) {
-  const income = calculateIncome(transactions);
-  const expenses = calculateExpenses(transactions);
-  return income - expenses;
-}
-
-/**
- * Calculate savings rate (% of income going to savings)
- */
-export function calculateSavingsRate(transactions) {
-  const income = calculateIncome(transactions);
-  if (income === 0) return 0;
-  const savings = calculateSavings(transactions);
-  return (savings / income) * 100;
-}
-
-/**
- * Calculate percentage change between two values
- */
-export function calculatePercentChange(current, previous) {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / Math.abs(previous)) * 100;
-}
-
-/**
  * Calculate budget progress percentage
  */
 export function calculateBudgetProgress(actual, estimated) {
   if (!estimated || estimated === 0) return 0;
   return (actual / estimated) * 100;
-}
-
-/**
- * Get progress status based on percentage
- */
-export function getProgressStatus(percentage) {
-  if (percentage <= 80) return 'good';
-  if (percentage <= 100) return 'warning';
-  return 'danger';
 }
 
 /**
@@ -222,7 +161,9 @@ export function getBudgetSummary({
   const gastosFijosPlan = estimatedByType.fixed_expense;
   const gastosVariablesPlan = estimatedByType.variable_expense;
   const ahorroPlan = estimatedByType.savings;
+  const gastosFijosReal = actualByType.fixed_expense;
   const variableGastado = actualByType.variable_expense;
+  const ahorroReal = actualByType.savings;
   const planDebt = Number(debtPlanned) || 0;
 
   const comprometido = gastosFijosPlan + planDebt + ahorroPlan + accumulativePlan;
@@ -244,7 +185,9 @@ export function getBudgetSummary({
     gastosFijosPlan,
     gastosVariablesPlan,
     ahorroPlan,
+    gastosFijosReal,
     variableGastado,
+    ahorroReal,
     accumulativePlan,
     accumulativeSpent,
     debtPlanned: planDebt,
@@ -254,6 +197,35 @@ export function getBudgetSummary({
     puedesGastar,
     porAsignar,
     estado,
+  };
+}
+
+/**
+ * Regla 50/30/20 derivada de los tipos de categoría, sobre el ingreso recibido:
+ *   - Necesidades (50%) = gastos fijos reales.
+ *   - Gustos (30%)      = gastos variables reales.
+ *   - Ahorro/Deuda (20%) = ahorro real + pago de deuda real del mes.
+ * Recibe el objeto `summary` de getBudgetSummary (no recalcula transacciones).
+ * Cada balde: { limit, spent, pct }. Con ingreso 0 → límites y pct en 0 (sin
+ * NaN/Infinity). `pct` se acota a 0 mínimo pero puede pasar de 100 (sobregasto).
+ */
+export function getBuckets503020(summary = {}) {
+  const income = Number(summary.ingresoRecibido) || 0;
+  const pct = (spent, limit) => (limit > 0 ? Math.max(0, (spent / limit) * 100) : 0);
+
+  const necesidadesSpent = Number(summary.gastosFijosReal) || 0;
+  const gustosSpent = Number(summary.variableGastado) || 0;
+  const ahorroDeudaSpent = (Number(summary.ahorroReal) || 0) + (Number(summary.debtPaid) || 0);
+
+  const necLimit = income * 0.5;
+  const gusLimit = income * 0.3;
+  const ahoLimit = income * 0.2;
+
+  return {
+    income,
+    necesidades: { limit: necLimit, spent: necesidadesSpent, pct: pct(necesidadesSpent, necLimit) },
+    gustos: { limit: gusLimit, spent: gustosSpent, pct: pct(gustosSpent, gusLimit) },
+    ahorroDeuda: { limit: ahoLimit, spent: ahorroDeudaSpent, pct: pct(ahorroDeudaSpent, ahoLimit) },
   };
 }
 
@@ -313,13 +285,16 @@ export function getAccumulatedBalance({
  *
  * @returns {{ capacity:number, monthsCounted:number, avgIncome:number, avgExpense:number }}
  */
-export function getMonthlySavingCapacity(transactions = [], refDate = new Date(), monthsBack = 3) {
+export function getMonthlySavingCapacity(transactions = [], refDate = new Date(), monthsBack = 3, includeCurrent = false) {
   const refYear = refDate.getFullYear();
   const refMonth = refDate.getMonth();
 
-  // Índices (year*12+month) de los últimos `monthsBack` meses completos.
+  // Índices (year*12+month) de los meses a considerar. Por defecto solo los
+  // `monthsBack` meses ANTERIORES completos (tendencia estable, p. ej. Reportes).
+  // Con includeCurrent=true se añade también el mes en curso, para una lectura
+  // "en vivo" que reaccione a lo registrado hoy (p. ej. el Dashboard).
   const buckets = new Map(); // idx -> { income, expense }
-  for (let i = 1; i <= monthsBack; i++) {
+  for (let i = includeCurrent ? 0 : 1; i <= monthsBack; i++) {
     let m = refMonth - i;
     let y = refYear;
     while (m < 0) { m += 12; y -= 1; }

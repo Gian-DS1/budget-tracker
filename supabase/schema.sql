@@ -87,6 +87,9 @@ create table if not exists public.savings (
   icon           text,
   color          text,
   status         text not null default 'active',     -- active | paused | completed
+  currency       text not null default 'DOP',
+  monthly_contribution numeric not null default 0,
+  horizon        text,                                -- short | medium | long (etiqueta, opcional)
   created_at     timestamptz not null default now()
 );
 
@@ -124,6 +127,18 @@ create table if not exists public.debt_payments (
 -- Migración para proyectos creados antes de esta columna (idempotente).
 alter table public.debt_payments
   add column if not exists transaction_id uuid references public.transactions(id) on delete set null;
+
+-- ── Aportes de ahorro (espejo de debt_payments) ─────────────────────────────
+create table if not exists public.savings_contributions (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid not null references auth.users(id) on delete cascade,
+  goal_id         uuid not null references public.savings(id) on delete cascade,
+  amount          numeric not null,
+  date            date not null,
+  notes           text,
+  transaction_id  uuid references public.transactions(id) on delete set null,
+  created_at      timestamptz not null default now()
+);
 
 -- ── Plan financiero (metas a corto/mediano/largo plazo) ─────────────────────
 create table if not exists public.plans (
@@ -171,6 +186,9 @@ create index if not exists debts_user_id_idx                      on public.debt
 create index if not exists debt_payments_user_id_idx              on public.debt_payments (user_id);
 create index if not exists debt_payments_debt_id_idx              on public.debt_payments (debt_id);
 create index if not exists debt_payments_transaction_id_idx       on public.debt_payments (transaction_id);
+create index if not exists savings_contributions_user_id_idx      on public.savings_contributions (user_id);
+create index if not exists savings_contributions_goal_id_idx      on public.savings_contributions (goal_id);
+create index if not exists savings_contributions_transaction_id_idx on public.savings_contributions (transaction_id);
 create index if not exists plans_user_id_idx                      on public.plans (user_id);
 create index if not exists recurring_transactions_user_id_idx     on public.recurring_transactions (user_id);
 create index if not exists recurring_transactions_category_id_idx on public.recurring_transactions (category_id);
@@ -187,6 +205,7 @@ declare
   t text;
   tables text[] := array[
     'categories', 'credit_cards', 'transactions', 'budgets', 'savings',
+    'savings_contributions',
     'debts', 'debt_payments', 'plans', 'recurring_transactions'
   ];
 begin

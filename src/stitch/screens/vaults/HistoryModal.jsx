@@ -1,0 +1,95 @@
+// Historial de aportes de una meta: resumen (total aportado + proyección) y lista
+// con borrar + Deshacer. El borrado revierte saldo y la transacción enlazada.
+import toast from 'react-hot-toast';
+import MS from '../../MS';
+import useSavingsStore from '../../../stores/useSavingsStore';
+import { isDemoActive, demoDeleteContribution, demoAddContribution } from '../../demoMode';
+import { formatCurrency, formatDate, toISODate } from '../../../utils/formatters';
+import { getProjection } from './projection';
+import { Modal } from './vaultsUi';
+
+const fmt = (n, c) => formatCurrency(n, c);
+
+export default function HistoryModal({ goal: goalProp, onClose }) {
+  const { goals, contributions, addContribution, deleteContribution, restoreContribution } = useSavingsStore();
+  const demo = isDemoActive();
+
+  // Lee la meta VIVA del store (su saldo cambia al borrar aportes dentro del modal).
+  const goal = goals.find((g) => g.id === goalProp.id) || goalProp;
+
+  const list = contributions
+    .filter((c) => c.goalId === goal.id)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
+  const totalContributed = list.reduce((s, c) => s + Number(c.amount), 0);
+  const proj = getProjection(goal);
+
+  const onDelete = async (c) => {
+    // A diferencia de Deudas, no avisamos por hadTransactionLink: todo aporte
+    // nace con su transacción enlazada (no hay filas legadas sin enlace).
+    if (demo) {
+      const res = demoDeleteContribution(c.id);
+      if (!res?.ok) return;
+    } else {
+      const res = await deleteContribution(c.id);
+      if (!res?.ok) return;
+    }
+    toast((t) => (
+      <span className="flex items-center gap-sm">Aporte eliminado
+        <button
+          onClick={() => {
+            if (demo) demoAddContribution(c.goalId, c.amount, c.date, c.notes || '');
+            else if (restoreContribution) restoreContribution(c); else addContribution(c.goalId, c.amount, c.date, c.notes || '');
+            toast.dismiss(t.id);
+          }}
+          className="text-primary font-bold underline"
+        >Deshacer</button>
+      </span>
+    ), { duration: 6000 });
+  };
+
+  return (
+    <Modal title={`Aportes · ${goal.title}`} onClose={onClose}>
+      <div className="grid grid-cols-2 gap-sm mb-md">
+        <div className="bg-surface-container-lowest border border-border-subtle rounded p-md inner-glow flex flex-col">
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">Total aportado</span>
+          <span className="font-mono-data text-[15px] text-on-surface mt-1">{fmt(totalContributed, goal.currency)}</span>
+        </div>
+        <div className="bg-surface-container-lowest border border-border-subtle rounded p-md inner-glow flex flex-col">
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">Saldo actual</span>
+          <span className="font-mono-data text-[15px] text-on-surface mt-1">{fmt(goal.currentAmount, goal.currency)}</span>
+        </div>
+      </div>
+
+      {proj.done ? (
+        <p className="font-mono-data text-mono-data text-tertiary normal-case tracking-normal mb-md">Meta completada. 🎉</p>
+      ) : proj.reachable ? (
+        <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mb-md">
+          A este ritmo, lista en <span className="text-tertiary">{proj.months} {proj.months === 1 ? 'mes' : 'meses'}</span>{proj.projectedDate ? ` (${formatDate(toISODate(proj.projectedDate))})` : ''}.
+        </p>
+      ) : (
+        <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mb-md">Define un aporte mensual en la meta para ver la proyección.</p>
+      )}
+
+      {list.length === 0 ? (
+        <div className="py-[40px] flex flex-col items-center text-center gap-sm">
+          <MS name="savings" className="text-[32px] text-text-muted" />
+          <p className="font-body-md text-body-md text-on-surface-variant">Aún no has registrado aportes.</p>
+        </div>
+      ) : (
+        <div className="flex flex-col divide-y divide-border-subtle">
+          {list.map((c) => (
+            <div key={c.id} className="flex items-center justify-between py-sm group">
+              <div className="flex flex-col min-w-0">
+                <span className="font-mono-data text-[14px] text-on-surface">{fmt(c.amount, goal.currency)}</span>
+                <span className="font-mono-data text-mono-data text-text-muted">{formatDate(c.date)}{c.notes ? ` · ${c.notes}` : ''}</span>
+              </div>
+              <button onClick={() => onDelete(c)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Eliminar aporte">
+                <MS name="delete" className="!text-[16px]" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+    </Modal>
+  );
+}

@@ -1,4 +1,4 @@
-// FinTrack RD — Constants
+// FinTrack — Constants
 
 export const CURRENCIES = {
   DOP: { code: 'DOP', symbol: 'RD$', name: 'Peso Dominicano' },
@@ -39,18 +39,6 @@ export const SAVINGS_STATUS = {
 export const DEBT_STATUS = {
   ACTIVE: 'active',
   PAID_OFF: 'paid_off',
-};
-
-export const PLAN_HORIZONS = {
-  SHORT: 'short',
-  MEDIUM: 'medium',
-  LONG: 'long',
-};
-
-export const PLAN_STATUSES = {
-  PENDING: 'pending',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
 };
 
 export const MONTHS_ES = [

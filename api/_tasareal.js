@@ -1,4 +1,4 @@
-// FinTrack RD — Lógica compartida para obtener la tasa de VENTA (sell) del
+// FinTrack — Lógica compartida para obtener la tasa de VENTA (sell) del
 // Banco Popular vía TasaReal. La usan tanto la función serverless de Vercel
 // (api/rate.js) como el middleware del dev server de Vite (vite.config.js),
 // para que la tasa real se muestre igual en producción y en local.
