@@ -1,10 +1,8 @@
-// Resumen (Dashboard) — layout Stitch "Command Center" con DATOS REALES.
-// Cash Flow Engine = flujo del mes real; métricas = puedes-gastar/patrimonio/
-// ahorro/deuda; Recent Signals = recordatorios reales (tarjetas, plan, readiness).
-
+// Resumen (Dashboard) — bento grid ordenado por importancia. Datos reales; la
+// lógica pura vive en dashboard/selectors.js y utils/calculations. Solo lectura.
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MS from '../MS';
+import { Stagger } from '../StitchMotion';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useDebtStore from '../../stores/useDebtStore';
@@ -12,12 +10,22 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import useBudgetStore from '../../stores/useBudgetStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useRateStore from '../../stores/useRateStore';
-import { getBudgetSummary } from '../../utils/calculations';
+import {
+  getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
+} from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { MONTHS_SHORT_ES } from '../../utils/constants';
+import { getCategoryBreakdown, getBudgetUsage, getNetWorthSplit } from './dashboard/selectors';
+import { BentoCell, Stat } from './dashboard/dashboardUi';
+import FlowChart from './dashboard/FlowChart';
+import CategoryDonut from './dashboard/CategoryDonut';
+import BudgetBar from './dashboard/BudgetBar';
+import NetWorthBar from './dashboard/NetWorthBar';
+import HealthRing from './dashboard/HealthRing';
+import SignalsRail from './dashboard/SignalsRail';
 
-const fmt = (n) => formatCurrency(n).replace('RD$ ', 'RD$ ');
+const fmt = (n) => formatCurrency(n);
 
 export default function StitchDashboard() {
   const navigate = useNavigate();
@@ -41,7 +49,7 @@ export default function StitchDashboard() {
       const d = new Date(t.date + 'T00:00:00');
       return d.getFullYear() === y && d.getMonth() === m;
     }),
-    [transactions, y, m]
+    [transactions, y, m],
   );
 
   const monthBudgets = useMemo(() => budgets.filter((b) => b.year === y && b.month === m), [budgets, y, m]);
@@ -75,12 +83,13 @@ export default function StitchDashboard() {
   const totalSaved = getTotalSaved();
   const totalDebt = getTotalDebt();
   const netWorth = totalSaved - totalDebt;
+  const split = useMemo(() => getNetWorthSplit(totalSaved, totalDebt), [totalSaved, totalDebt]);
 
   const totalPendingCards = useMemo(() => cards.reduce(
-    (sum, c) => sum + (getCardBalances(c, transactions, now).pendingBilled || 0), 0
+    (sum, c) => sum + (getCardBalances(c, transactions, now).pendingBilled || 0), 0,
   ), [cards, transactions, now]);
 
-  // Evolución 6 meses (para el área chart)
+  // Serie 6 meses (inc/exp/net) para FlowChart
   const series = useMemo(() => {
     const arr = [];
     for (let i = 5; i >= 0; i--) {
@@ -93,24 +102,23 @@ export default function StitchDashboard() {
         if (t.type === 'income') inc += Number(t.amount);
         else if (['expense', 'fixed_expense', 'variable_expense'].includes(t.type)) exp += Number(t.amount) - Number(t.cashbackEarned || 0);
       });
-      arr.push({ label: MONTHS_SHORT_ES[mm], net: inc - exp, inc, exp });
+      arr.push({ label: MONTHS_SHORT_ES[mm], inc, exp, net: inc - exp });
     }
     return arr;
   }, [transactions, y, m]);
 
-  // Polígono del área chart a partir de la serie de balance neto.
-  const areaClip = useMemo(() => {
-    const vals = series.map((s) => s.net);
-    const max = Math.max(1, ...vals.map(Math.abs));
-    const pts = series.map((s, i) => {
-      const x = series.length > 1 ? (i / (series.length - 1)) * 100 : 0;
-      const yPct = 50 - (s.net / max) * 40; // centro 50%, ±40%
-      return `${x}% ${Math.max(2, Math.min(98, yPct))}%`;
-    });
-    return `polygon(${pts.join(',')},100% 100%,0 100%)`;
-  }, [series]);
+  // Donut de gastos
+  const breakdown = useMemo(() => getCategoryBreakdown(monthTx, categories), [monthTx, categories]);
 
-  // Recent Signals (recordatorios reales)
+  // Presupuesto usado
+  const budgetUsage = useMemo(() => getBudgetUsage(summary), [summary]);
+
+  // Salud (reusa utils probadas)
+  const cap = useMemo(() => getMonthlySavingCapacity(transactions, now, 3), [transactions, now]);
+  const health = useMemo(() => getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt: getTotalMonthlyPayment() }), [cap, getTotalMonthlyPayment]);
+  const healthHasData = cap.avgIncome > 0;
+
+  // Recordatorios
   const signals = useMemo(() => {
     const out = [];
     const todayMid = new Date(y, m, now.getDate());
@@ -120,123 +128,84 @@ export default function StitchDashboard() {
       const due = new Date(bal.cycles.dueDateISO + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({
-        tag: 'Tarjeta por pagar', tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning',
-        t: days === 0 ? 'HOY' : `EN ${days}D`,
-        body: `${card.name}: ${fmt(bal.pendingBilled)} vence ${formatDate(bal.cycles.dueDateISO)}.`,
-        cta: 'VER', to: '/tarjetas',
-      });
+      out.push({ tag: 'Tarjeta por pagar', tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? 'HOY' : `EN ${days}D`, body: `${card.name}: ${fmt(bal.pendingBilled)} vence ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
     });
     debts.filter((d) => d.status === 'active' && d.due_date).forEach((d) => {
       const due = new Date(String(d.due_date).slice(0, 10) + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({
-        tag: 'Cuota de deuda', tc: 'text-accent-error', t: days === 0 ? 'HOY' : `EN ${days}D`,
-        body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment) * (d.currency === 'USD' ? fxRate : 1))}.`,
-        cta: 'VER', to: '/deudas',
-      });
+      out.push({ tag: 'Cuota de deuda', tc: 'text-accent-error', t: days === 0 ? 'HOY' : `EN ${days}D`, body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment) * (d.currency === 'USD' ? fxRate : 1))}.`, to: '/deudas' });
     });
     goals.filter((g) => g.status !== 'completed' && g.deadline).forEach((g) => {
       const due = new Date(g.deadline + 'T00:00:00');
       const days = Math.ceil((due - todayMid) / 86400000);
       if (days < 0 || days > 30) return;
-      out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${g.title}" vence ${formatDate(g.deadline)}.`, cta: 'VER', to: '/ahorros' });
+      out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${g.title}" vence ${formatDate(g.deadline)}.`, to: '/ahorros' });
     });
     return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
   }, [cards, debts, goals, transactions, fxRate, y, m, now]);
 
-  const empty = transactions.length === 0;
-
   const metrics = [
     { l: 'PUEDES GASTAR', v: fmt(summary.puedesGastar), d: summary.estado === 'danger' ? 'Sin margen' : summary.estado === 'warning' ? 'Ajustado' : 'Con margen', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary' },
-    { l: 'PATRIMONIO NETO', v: fmt(netWorth), d: `Ahorro ${fmt(totalSaved)}`, c: netWorth >= 0 ? 'text-tertiary' : 'text-accent-error' },
-    { l: 'TASA DE AHORRO', v: `${savingsRate.toFixed(1)}%`, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant' },
     { l: 'TARJETAS POR PAGAR', v: fmt(totalPendingCards), d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary' },
+    { l: 'TASA DE AHORRO', v: `${savingsRate.toFixed(1)}%`, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant' },
+    { l: 'PATRIMONIO NETO', v: fmt(netWorth), d: `Ahorro ${fmt(totalSaved)}`, c: netWorth >= 0 ? 'text-tertiary' : 'text-accent-error' },
   ];
 
   return (
-    <div className="p-md sm:p-margin-safe flex flex-col xl:flex-row gap-gutter max-w-[1728px] mx-auto w-full">
-      <div className="flex flex-col gap-gutter flex-grow min-w-0">
-        {/* Hero: flujo del mes */}
-        <section className="glass-card rounded-lg p-md sm:p-lg relative overflow-hidden flex flex-col min-h-[400px]">
-          <div className="flex justify-between items-start mb-md z-10">
-            <div>
-              <h2 className="font-headline-md text-headline-md text-on-surface mb-xs">Flujo de {MONTHS_SHORT_ES[m]} {y}</h2>
-              <p className="font-mono-data text-mono-data text-text-muted uppercase">Ingresos · gastos · balance neto</p>
-            </div>
-            <div className="flex items-center gap-sm">
-              <span className="w-2 h-2 rounded-full bg-secondary status-glow-live" />
-              <span className="font-mono-data text-mono-data text-secondary uppercase">En vivo</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-sm sm:gap-md z-10 mb-md">
-            <Stat label="Ingresos" value={`+${fmt(totals.income)}`} cls="text-tertiary" />
-            <Stat label="Gastos" value={`−${fmt(totals.expense)}`} cls="text-accent-error" />
-            <Stat label="Balance" value={`${totals.balance >= 0 ? '+' : '−'}${fmt(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} sub={`Ahorro ${savingsRate.toFixed(1)}%`} />
-          </div>
-
-          {/* Área chart real (balance neto 6 meses) */}
-          <div className="flex-grow relative chart-grid border-l border-b border-border-subtle mt-auto">
-            {!empty && (
-              <div className="absolute inset-0" style={{ background: 'linear-gradient(180deg, rgba(190,194,255,0.18) 0%, rgba(190,194,255,0) 100%)', clipPath: areaClip }} />
-            )}
-            <div className="absolute bottom-[-20px] left-0 right-0 flex justify-between font-mono-data text-[9px] text-text-muted px-1">
-              {series.map((s, i) => <span key={i}>{s.label}</span>)}
-            </div>
-          </div>
-        </section>
-
-        {/* Métricas */}
-        <section className="grid grid-cols-2 md:grid-cols-4 gap-sm">
-          {metrics.map((mx) => (
-            <div key={mx.l} className="glass-card rounded p-md flex flex-col gap-sm">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
+      <Stagger className="grid grid-cols-1 md:grid-cols-12 gap-md auto-rows-min">
+        {/* 1 · Estado inmediato: 4 KPI */}
+        {metrics.map((mx) => (
+          <Stagger.Item key={mx.l} className="md:col-span-3">
+            <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
               <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs">{mx.l}</div>
-              <div className="font-headline-md text-[22px] text-on-surface tracking-tight whitespace-nowrap overflow-hidden text-ellipsis">{mx.v}</div>
-              <div className={`font-label-sm text-label-sm flex items-center gap-xs ${mx.c}`}>
-                {mx.warn && <MS name="warning" className="text-[14px]" />}
-                {mx.d}
-              </div>
+              <Stat value={mx.v} cls={mx.c} sub={mx.d} warn={mx.warn} />
             </div>
-          ))}
-        </section>
-      </div>
+          </Stagger.Item>
+        ))}
 
-      {/* Right rail: señales */}
-      <aside className="w-full xl:w-[320px] shrink-0 glass-panel rounded-lg p-md flex flex-col border border-border-subtle">
-        <div className="font-mono-data text-mono-data text-on-surface border-b border-border-subtle pb-sm mb-md flex justify-between items-center">
-          <span>RECORDATORIOS</span>
-          <MS name="radar" className="text-[14px] text-text-muted" />
-        </div>
-        <div className="flex flex-col gap-sm overflow-y-auto">
-          {signals.length === 0 ? (
-            <div className="text-center py-xl flex flex-col items-center gap-sm">
-              <MS name="check_circle" className="text-[28px] text-tertiary" />
-              <p className="font-body-md text-body-md text-text-muted">Sin pagos próximos.</p>
+        {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (hero) */}
+        <Stagger.Item className="md:col-span-8">
+          <BentoCell title={`Flujo de ${MONTHS_SHORT_ES[m]} ${y}`} icon="show_chart" className="h-full">
+            <div className="grid grid-cols-3 gap-sm mb-md">
+              <Stat label="Ingresos" value={`+${fmt(totals.income)}`} cls="text-tertiary" />
+              <Stat label="Gastos" value={`−${fmt(totals.expense)}`} cls="text-accent-error" />
+              <Stat label="Balance" value={`${totals.balance >= 0 ? '+' : '−'}${fmt(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
-          ) : signals.map((s, i) => (
-            <div key={i} onClick={() => s.to && navigate(s.to)} className="group p-sm border border-transparent hover:border-border-subtle hover:bg-surface-container-high transition-all rounded flex flex-col gap-xs cursor-pointer">
-              <div className="flex justify-between items-center">
-                <span className={`font-label-sm text-label-sm ${s.tc}`}>{s.tag}</span>
-                <span className="font-mono-data text-mono-data text-text-muted">{s.t}</span>
-              </div>
-              <div className="font-body-md text-body-md text-on-surface-variant group-hover:text-on-surface">{s.body}</div>
-              {s.cta && <button className="mt-xs py-xs px-sm border border-border-subtle text-primary font-mono-data text-mono-data rounded self-start hover:bg-primary/10">{s.cta}</button>}
-            </div>
-          ))}
-        </div>
-      </aside>
-    </div>
-  );
-}
+            <BudgetBar usage={budgetUsage} />
+            <FlowChart series={series} />
+          </BentoCell>
+        </Stagger.Item>
 
-function Stat({ label, value, cls, sub }) {
-  return (
-    <div className="flex flex-col gap-xs">
-      <span className="font-mono-data text-mono-data text-text-muted uppercase">{label}</span>
-      <span className={`font-headline-md text-[20px] tracking-tight whitespace-nowrap ${cls}`}>{value}</span>
-      {sub && <span className="font-label-sm text-label-sm text-text-muted">{sub}</span>}
+        {/* 3 · Salud */}
+        <Stagger.Item className="md:col-span-4">
+          <BentoCell title="Salud financiera" icon="favorite" className="h-full">
+            <HealthRing health={health} hasData={healthHasData} />
+          </BentoCell>
+        </Stagger.Item>
+
+        {/* 4 · ¿En qué gasto? */}
+        <Stagger.Item className="md:col-span-5">
+          <BentoCell title="Gastos por categoría" icon="donut_small" className="h-full">
+            <CategoryDonut data={breakdown} />
+          </BentoCell>
+        </Stagger.Item>
+
+        {/* 5 · Patrimonio */}
+        <Stagger.Item className="md:col-span-7">
+          <BentoCell title="Patrimonio" icon="account_balance" className="h-full">
+            <NetWorthBar split={split} />
+          </BentoCell>
+        </Stagger.Item>
+
+        {/* 6 · ¿Qué viene? Recordatorios */}
+        <Stagger.Item className="md:col-span-12">
+          <BentoCell title="Recordatorios" icon="radar">
+            <SignalsRail signals={signals} onNavigate={navigate} />
+          </BentoCell>
+        </Stagger.Item>
+      </Stagger>
     </div>
   );
 }
