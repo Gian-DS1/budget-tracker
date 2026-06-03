@@ -346,13 +346,16 @@ export function getAccumulatedBalance({
  *
  * @returns {{ capacity:number, monthsCounted:number, avgIncome:number, avgExpense:number }}
  */
-export function getMonthlySavingCapacity(transactions = [], refDate = new Date(), monthsBack = 3) {
+export function getMonthlySavingCapacity(transactions = [], refDate = new Date(), monthsBack = 3, includeCurrent = false) {
   const refYear = refDate.getFullYear();
   const refMonth = refDate.getMonth();
 
-  // Índices (year*12+month) de los últimos `monthsBack` meses completos.
+  // Índices (year*12+month) de los meses a considerar. Por defecto solo los
+  // `monthsBack` meses ANTERIORES completos (tendencia estable, p. ej. Reportes).
+  // Con includeCurrent=true se añade también el mes en curso, para una lectura
+  // "en vivo" que reaccione a lo registrado hoy (p. ej. el Dashboard).
   const buckets = new Map(); // idx -> { income, expense }
-  for (let i = 1; i <= monthsBack; i++) {
+  for (let i = includeCurrent ? 0 : 1; i <= monthsBack; i++) {
     let m = refMonth - i;
     let y = refYear;
     while (m < 0) { m += 12; y -= 1; }

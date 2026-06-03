@@ -124,7 +124,7 @@ export default function StitchShell() {
           </div>
         </header>
 
-        <main className="flex-grow overflow-y-auto">
+        <main className="flex-grow overflow-y-auto overflow-x-hidden">
           <AnimatePresence mode="wait" initial={false}>
             <Screen key={location.pathname}>{outlet}</Screen>
           </AnimatePresence>

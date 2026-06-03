@@ -64,10 +64,14 @@ export default function CategoryDonut({ data }) {
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 text-center leading-tight">
-          <span className="font-mono-data text-[9px] text-text-muted uppercase truncate max-w-full">{activeName || 'Total'}</span>
-          <span className="font-headline-md text-[15px] text-on-surface tracking-tight whitespace-nowrap">{fmt(active >= 0 ? withPct[active].value : total)}</span>
-          {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+          {/* El bloque se limita al diámetro del agujero (innerRadius 58%) para
+              que un nombre largo se trunque dentro y nunca choque con el anillo. */}
+          <div className="flex flex-col items-center text-center leading-tight max-w-[56%]">
+            <span className="font-mono-data text-[9px] text-text-muted uppercase truncate max-w-full w-full">{activeName || 'Total'}</span>
+            <span className="font-headline-md text-[15px] text-on-surface tracking-tight truncate max-w-full w-full">{fmt(active >= 0 ? withPct[active].value : total)}</span>
+            {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
+          </div>
         </div>
       </div>
 

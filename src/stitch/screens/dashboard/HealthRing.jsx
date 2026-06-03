@@ -10,10 +10,12 @@ function ringColor(score) {
   return '#ffb4ab';
 }
 
-export default function HealthRing({ health, hasData }) {
+export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
   if (!hasData) return <EmptyCell icon="favorite" message="Registra ingresos para evaluar tu salud financiera." />;
   const color = ringColor(health.score);
   const data = [{ name: 'salud', value: health.score, fill: color }];
+  // Confianza del cálculo: 1 mes = estimación temprana; más meses = más sólido.
+  const basis = monthsCounted <= 1 ? 'Estimación con 1 mes' : `Basado en ${monthsCounted} meses`;
   return (
     <div className="flex-grow flex flex-col items-center justify-center min-h-[180px]">
       <div className="relative w-[150px] h-[150px]">
@@ -29,6 +31,7 @@ export default function HealthRing({ health, hasData }) {
         </div>
       </div>
       <span className="font-label-sm text-label-sm mt-sm" style={{ color }}>{health.label}</span>
+      <span className="font-mono-data text-mono-data text-text-muted mt-xs">{basis}</span>
     </div>
   );
 }

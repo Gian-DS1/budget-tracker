@@ -132,8 +132,10 @@ export default function StitchDashboard() {
   // Presupuesto usado
   const budgetUsage = useMemo(() => getBudgetUsage(summary), [summary]);
 
-  // Salud (reusa utils probadas)
-  const cap = useMemo(() => getMonthlySavingCapacity(transactions, now, 3), [transactions, now]);
+  // Salud (reusa utils probadas). includeCurrent=true: cuenta el mes en curso +
+  // los anteriores, para que reaccione en vivo a lo registrado hoy sin mentir
+  // (un mes parcial pesa como un mes más en el promedio, no lo dispara).
+  const cap = useMemo(() => getMonthlySavingCapacity(transactions, now, 3, true), [transactions, now]);
   const health = useMemo(() => getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt: getTotalMonthlyPayment() }), [cap, getTotalMonthlyPayment]);
   const healthHasData = cap.avgIncome > 0;
 
@@ -220,7 +222,7 @@ export default function StitchDashboard() {
         {/* 3 · Salud (estado de hoy) */}
         <Stagger.Item className="md:col-span-5">
           <BentoCell title="Salud financiera · hoy" icon="favorite" className="h-full">
-            <HealthRing health={health} hasData={healthHasData} />
+            <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} />
           </BentoCell>
         </Stagger.Item>
 
