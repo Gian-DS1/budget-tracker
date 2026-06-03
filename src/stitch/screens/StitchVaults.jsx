@@ -16,7 +16,7 @@ import HistoryModal from './vaults/HistoryModal';
 const fmt = (n) => formatCurrency(n);
 
 export default function StitchVaults() {
-  const { goals, contributions, addGoal, deleteGoal, restoreContribution } = useSavingsStore();
+  const { goals, contributions, deleteGoal, restoreGoalWithContributions } = useSavingsStore();
   const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
 
   const [showForm, setShowForm] = useState(false);
@@ -40,11 +40,7 @@ export default function StitchVaults() {
             if (isDemoActive()) {
               demoRestoreGoal(goal, goalContribs);
             } else {
-              // addGoal inserta una meta con id NUEVO; reapuntamos los aportes a
-              // ese id antes de restaurarlos (si no, no se enlazarían a la meta).
-              const created = await addGoal(goal);
-              const newId = created?.id || goal.id;
-              for (const c of goalContribs) await restoreContribution({ ...c, goalId: newId });
+              await restoreGoalWithContributions(goal, goalContribs);
             }
             toast.dismiss(t.id);
           }}

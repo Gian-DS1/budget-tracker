@@ -115,7 +115,10 @@ const useSavingsStore = create(
     if (!goal) return;
     const newCurrent = updates.currentAmount !== undefined ? Number(updates.currentAmount) : goal.currentAmount;
     const newTarget = updates.targetAmount !== undefined ? Number(updates.targetAmount) : goal.targetAmount;
-    const newStatus = (newCurrent >= newTarget && newTarget > 0) ? 'completed' : (updates.status || goal.status);
+    const wasCompleted = goal.status === 'completed';
+    const newStatus = (newCurrent >= newTarget && newTarget > 0)
+      ? 'completed'
+      : (wasCompleted ? 'active' : (updates.status || goal.status));
 
     const dbUpdates = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
@@ -141,10 +144,12 @@ const useSavingsStore = create(
 
   deleteGoal: async (id) => {
     // ON DELETE CASCADE borra las savings_contributions en BD. Las transacciones
-    // enlazadas quedan (la app no las borra en cascada al eliminar la meta;
-    // eso es decisión del usuario en Transacciones).
+    // enlazadas de esos aportes se borran explícitamente (igual que en demo y
+    // simétrico con restoreGoalWithContributions, que las recrea).
+    const txIds = get().contributions.filter((c) => c.goalId === id && c.transactionId).map((c) => c.transactionId);
     const { error } = await supabase.from('savings').delete().eq('id', id);
     if (!error) {
+      for (const txId of txIds) await useTransactionStore.getState().deleteTransactionSilent(txId);
       set((state) => ({
         goals: state.goals.filter((g) => g.id !== id),
         contributions: state.contributions.filter((c) => c.goalId !== id),
@@ -253,8 +258,99 @@ const useSavingsStore = create(
     return true;
   },
 
-  getContributionsByGoal: (goalId) =>
-    get().contributions.filter((c) => c.goalId === goalId).sort((a, b) => a.date.localeCompare(b.date)),
+  // Restaura una meta eliminada CON sus aportes (Deshacer del shell), espejo de
+  // demoRestoreGoal en PROD. Recrea la meta a su saldo ORIGINAL exacto (sin
+  // re-sumar) e inserta las filas de aporte tal cual, recreando su transacción
+  // enlazada. NO usa addGoal/addContribution para evitar el doble-conteo del saldo.
+  restoreGoalWithContributions: async (goal, contribs = []) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return;
+
+    const dbPayload = {
+      user_id: user.id,
+      title: goal.title,
+      target_amount: Number(goal.targetAmount),
+      current_amount: Number(goal.currentAmount),
+      monthly_contribution: Number(goal.monthlyContribution) || 0,
+      deadline: goal.deadline || null,
+      icon: goal.icon || null,
+      color: goal.color || null,
+      currency: goal.currency || 'DOP',
+      status: goal.status || ((Number(goal.currentAmount) || 0) >= Number(goal.targetAmount) ? 'completed' : 'active'),
+    };
+
+    const { data: goalData, error: goalErr } = await supabase.from('savings').insert(dbPayload).select().single();
+    if (goalErr || !goalData) {
+      console.error('Error restoring saving goal', goalErr);
+      return;
+    }
+    const formatted = {
+      id: goalData.id,
+      title: goalData.title,
+      targetAmount: Number(goalData.target_amount),
+      currentAmount: Number(goalData.current_amount),
+      monthlyContribution: Number(goalData.monthly_contribution) || 0,
+      deadline: goalData.deadline,
+      icon: goalData.icon,
+      color: goalData.color,
+      status: goalData.status,
+      currency: goalData.currency || 'DOP',
+      createdAt: goalData.created_at,
+    };
+    set((state) => ({ goals: [...state.goals, formatted] }));
+    const newGoalId = goalData.id;
+
+    for (const c of contribs) {
+      try {
+        const contribPayload = {
+          user_id: user.id,
+          goal_id: newGoalId,
+          amount: Number(c.amount),
+          date: c.date,
+          notes: c.notes || null,
+        };
+        const { data: contribData, error: contribErr } = await supabase
+          .from('savings_contributions').insert(contribPayload).select().single();
+        if (contribErr || !contribData) {
+          console.error('Error restoring contribution', contribErr);
+          continue;
+        }
+
+        let txId = null;
+        try {
+          txId = await useTransactionStore.getState().addTransaction({
+            amount: Number(c.amount),
+            type: 'savings',
+            description: `Aporte a meta - ${goal.title}`,
+            date: c.date,
+            categoryId: savingsCategoryId(),
+            currency: goal.currency || 'DOP',
+            notes: c.notes || 'Generado automáticamente desde Ahorros',
+          });
+        } catch (err) {
+          console.error('Error recreating linked transaction on restore:', err);
+        }
+
+        if (txId) {
+          await supabase.from('savings_contributions').update({ transaction_id: txId }).eq('id', contribData.id);
+        }
+        set((state) => ({
+          contributions: [...state.contributions, {
+            id: contribData.id,
+            goalId: newGoalId,
+            amount: Number(contribData.amount),
+            date: contribData.date,
+            notes: contribData.notes,
+            transactionId: txId || null,
+            createdAt: contribData.created_at,
+          }],
+        }));
+      } catch (err) {
+        console.error('Error restoring contribution row:', err);
+      }
+    }
+  },
 
   togglePause: async (id) => {
     const goal = get().goals.find(g => g.id === id);
