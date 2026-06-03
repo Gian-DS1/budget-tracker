@@ -10,7 +10,6 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useBudgetStore from '../stores/useBudgetStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
-import usePlanStore from '../stores/usePlanStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import { defaultCategories } from '../data/defaultCategories';
 
@@ -89,19 +88,15 @@ const budgets = [
 ];
 
 const goals = [
-  { id: 'g1', title: 'Fondo de emergencia', targetAmount: 180000, currentAmount: 105000, monthlyContribution: 15000, deadline: iso(new Date(yearIdx + 1, 2, 1)), icon: '🆘', color: '#bec2ff', status: 'active', currency: 'DOP', createdAt: '' },
-  { id: 'g2', title: 'Viaje a Europa', targetAmount: 250000, currentAmount: 60000, monthlyContribution: 20000, deadline: iso(new Date(yearIdx + 1, 7, 1)), icon: '✈️', color: '#50d8e9', status: 'active', currency: 'DOP', createdAt: '' },
-  { id: 'g3', title: 'Laptop nueva', targetAmount: 90000, currentAmount: 90000, monthlyContribution: 0, deadline: null, icon: '💻', color: '#bdd200', status: 'completed', currency: 'DOP', createdAt: '' },
+  { id: 'g1', title: 'Fondo de emergencia', targetAmount: 180000, currentAmount: 105000, monthlyContribution: 15000, deadline: iso(new Date(yearIdx + 1, 2, 1)), icon: '🆘', color: '#bec2ff', status: 'active', currency: 'DOP', horizon: null, createdAt: '' },
+  { id: 'g2', title: 'Viaje a Europa', targetAmount: 250000, currentAmount: 60000, monthlyContribution: 20000, deadline: iso(new Date(yearIdx + 1, 7, 1)), icon: '✈️', color: '#50d8e9', status: 'active', currency: 'DOP', horizon: 'medium', createdAt: '' },
+  { id: 'g3', title: 'Laptop nueva', targetAmount: 90000, currentAmount: 90000, monthlyContribution: 0, deadline: null, icon: '💻', color: '#bdd200', status: 'completed', currency: 'DOP', horizon: 'short', createdAt: '' },
+  { id: 'g4', title: 'Comprar apartamento', targetAmount: 2000000, currentAmount: 350000, monthlyContribution: 25000, deadline: iso(new Date(yearIdx + 4, 0, 1)), icon: '🏠', color: '#bec2ff', status: 'active', currency: 'DOP', horizon: 'long', createdAt: '' },
 ];
 
 const debts = [
   { id: 'd1', creditorName: 'Préstamo vehículo', originalAmount: 600000, currentBalance: 360000, interestRate: 12.5, monthlyPayment: 14500, due_date: dayOf(28), status: 'active', currency: 'DOP', createdAt: '' },
   { id: 'd2', creditorName: 'Tarjeta departamental', originalAmount: 45000, currentBalance: 18000, interestRate: 6.0, monthlyPayment: 3000, due_date: dayOf(25), status: 'active', currency: 'DOP', createdAt: '' },
-];
-
-const plans = [
-  { id: 'p1', title: 'Comprar apartamento', description: 'Inicial 20%', targetAmount: 2000000, currentAmount: 350000, deadline: iso(new Date(yearIdx + 4, 0, 1)), type: 'long', horizon: 'long', status: 'in_progress', createdAt: '' },
-  { id: 'p2', title: 'Maestría', description: '', targetAmount: 400000, currentAmount: 120000, deadline: iso(new Date(yearIdx + 2, 0, 1)), type: 'medium', horizon: 'medium', status: 'in_progress', createdAt: '' },
 ];
 
 const cards = [
@@ -115,7 +110,6 @@ export function seedDemoStores() {
   useBudgetStore.setState({ budgets, loading: false });
   useSavingsStore.setState({ goals, contributions: [], loading: false });
   useDebtStore.setState({ debts, payments: [], loading: false });
-  usePlanStore.setState({ plans, loading: false });
   useCreditCardStore.setState({ cards, loading: false });
 }
 
@@ -193,7 +187,7 @@ export function demoCopyBudgetFromPreviousMonth(year, month) {
   return true;
 }
 
-// Genérico para colecciones simples (savings/debts/plans/cards) por si se usan.
+// Genérico para colecciones simples (savings/debts/cards) por si se usan.
 export function demoAdd(store, key, row) {
   const r = { id: demoId(), createdAt: new Date().toISOString(), ...row };
   store.setState((s) => ({ [key]: [...s[key], r] }));
@@ -366,7 +360,7 @@ export function demoAddGoal(goal) {
     monthlyContribution: Number(goal.monthlyContribution) || 0,
     deadline: goal.deadline || null, icon: goal.icon || '🎯', color: goal.color || '#bec2ff',
     status: (current >= Number(goal.targetAmount) && Number(goal.targetAmount) > 0) ? 'completed' : 'active',
-    currency: goal.currency || 'DOP', createdAt: new Date().toISOString(),
+    currency: goal.currency || 'DOP', horizon: goal.horizon || null, createdAt: new Date().toISOString(),
   };
   useSavingsStore.setState((s) => ({ goals: [...s.goals, row] }));
   return row;
