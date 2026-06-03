@@ -2,38 +2,69 @@
 import { persist } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import useCategoryStore from './useCategoryStore';
+import useTransactionStore from './useTransactionStore';
+
+// Resuelve una categoría de tipo ahorro para enlazar la transacción del aporte.
+// Cae a '' si la cuenta no tiene una categoría savings (la tx sigue type:savings).
+function savingsCategoryId() {
+  const cats = useCategoryStore.getState().categories;
+  const c = cats.find((x) => x.slug === 'ahorro') || cats.find((x) => x.type === 'savings');
+  return c?.id || '';
+}
 
 const useSavingsStore = create(
   persist(
     (set, get) => ({
   goals: [],
+  contributions: [],
   loading: false,
 
   fetchGoals: async () => {
     set({ loading: true });
     const { data: { session } } = await supabase.auth.getSession();
     const user = session?.user;
-    if (!user) return set({ goals: [], loading: false });
+    if (!user) return set({ goals: [], contributions: [], loading: false });
 
-    const { data, error } = await supabase.from('savings').select('*').eq('user_id', user.id);
-    if (!error && data) {
-      const formatted = data.map(g => ({
-        id: g.id,
-        title: g.title,
-        targetAmount: Number(g.target_amount),
-        currentAmount: Number(g.current_amount),
-        deadline: g.deadline,
-        icon: g.icon,
-        color: g.color,
-        status: g.status,
-        createdAt: g.created_at
-      }));
-      set({ goals: formatted, loading: false });
-    } else {
-      console.error('Error fetching savings goals:', error);
+    const [goalsRes, contribRes] = await Promise.all([
+      supabase.from('savings').select('*').eq('user_id', user.id),
+      supabase.from('savings_contributions').select('*').eq('user_id', user.id),
+    ]);
+
+    if (goalsRes.error) {
+      console.error('Error fetching savings goals:', goalsRes.error);
       toast.error('No se pudieron cargar las metas de ahorro');
-      set({ loading: false });
+      return set({ loading: false });
     }
+
+    const goals = goalsRes.data.map((g) => ({
+      id: g.id,
+      title: g.title,
+      targetAmount: Number(g.target_amount),
+      currentAmount: Number(g.current_amount),
+      monthlyContribution: Number(g.monthly_contribution) || 0,
+      deadline: g.deadline,
+      icon: g.icon,
+      color: g.color,
+      status: g.status,
+      currency: g.currency || 'DOP',
+      createdAt: g.created_at,
+    }));
+
+    // savings_contributions puede no existir aún (migración a mano). Degrada a [].
+    const contributions = (!contribRes.error && contribRes.data)
+      ? contribRes.data.map((c) => ({
+          id: c.id,
+          goalId: c.goal_id,
+          amount: Number(c.amount),
+          date: c.date,
+          notes: c.notes,
+          transactionId: c.transaction_id || null,
+          createdAt: c.created_at,
+        }))
+      : [];
+
+    set({ goals, contributions, loading: false });
   },
 
   addGoal: async (goal) => {
@@ -46,10 +77,12 @@ const useSavingsStore = create(
       title: goal.title,
       target_amount: Number(goal.targetAmount),
       current_amount: Number(goal.currentAmount) || 0,
+      monthly_contribution: Number(goal.monthlyContribution) || 0,
       deadline: goal.deadline || null,
       icon: goal.icon || null,
       color: goal.color || null,
-      status: 'active'
+      currency: goal.currency || 'DOP',
+      status: (Number(goal.currentAmount) || 0) >= Number(goal.targetAmount) ? 'completed' : 'active',
     };
 
     const { data, error } = await supabase.from('savings').insert(dbPayload).select().single();
@@ -59,32 +92,39 @@ const useSavingsStore = create(
         title: data.title,
         targetAmount: Number(data.target_amount),
         currentAmount: Number(data.current_amount),
+        monthlyContribution: Number(data.monthly_contribution) || 0,
         deadline: data.deadline,
         icon: data.icon,
         color: data.color,
         status: data.status,
-        createdAt: data.created_at
+        currency: data.currency || 'DOP',
+        createdAt: data.created_at,
       };
       set((state) => ({ goals: [...state.goals, formatted] }));
     } else {
-      console.error("Error adding saving goal", error);
+      console.error('Error adding saving goal', error);
     }
   },
 
+  // updateGoal acepta currentAmount a nivel de función (lo usan
+  // addContribution/deleteContribution para mover el saldo). El formulario de
+  // edición NO lo envía; el saldo solo cambia vía aportes.
   updateGoal: async (id, updates) => {
-    const goal = get().goals.find(g => g.id === id);
+    const goal = get().goals.find((g) => g.id === id);
     if (!goal) return;
     const newCurrent = updates.currentAmount !== undefined ? Number(updates.currentAmount) : goal.currentAmount;
     const newTarget = updates.targetAmount !== undefined ? Number(updates.targetAmount) : goal.targetAmount;
-    const newStatus = (newCurrent >= newTarget) ? 'completed' : (updates.status || goal.status);
+    const newStatus = (newCurrent >= newTarget && newTarget > 0) ? 'completed' : (updates.status || goal.status);
 
     const dbUpdates = {};
     if (updates.title !== undefined) dbUpdates.title = updates.title;
     if (updates.targetAmount !== undefined) dbUpdates.target_amount = newTarget;
     if (updates.currentAmount !== undefined) dbUpdates.current_amount = newCurrent;
+    if (updates.monthlyContribution !== undefined) dbUpdates.monthly_contribution = Number(updates.monthlyContribution) || 0;
     if (updates.deadline !== undefined) dbUpdates.deadline = updates.deadline || null;
     if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
     if (updates.color !== undefined) dbUpdates.color = updates.color;
+    if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
     dbUpdates.status = newStatus;
 
     const { error } = await supabase.from('savings').update(dbUpdates).eq('id', id);
@@ -96,19 +136,113 @@ const useSavingsStore = create(
   },
 
   deleteGoal: async (id) => {
+    // ON DELETE CASCADE borra las savings_contributions en BD. Las transacciones
+    // enlazadas quedan (la app no las borra en cascada al eliminar la meta;
+    // eso es decisión del usuario en Transacciones).
     const { error } = await supabase.from('savings').delete().eq('id', id);
     if (!error) {
-      set((state) => ({ goals: state.goals.filter((g) => g.id !== id) }));
+      set((state) => ({
+        goals: state.goals.filter((g) => g.id !== id),
+        contributions: state.contributions.filter((c) => c.goalId !== id),
+      }));
     }
   },
 
-  addContribution: async (id, amount) => {
-    const goal = get().goals.find(g => g.id === id);
+  // Registra un aporte: inserta fila en savings_contributions, suma al saldo de
+  // la meta y crea la transacción de ahorro enlazada (transaction_id), espejo de
+  // addPayment en useDebtStore.
+  addContribution: async (goalId, amount, date, notes = '') => {
+    const { data: { session } } = await supabase.auth.getSession();
+    const user = session?.user;
+    if (!user) return;
+    const goal = get().goals.find((g) => g.id === goalId);
     if (!goal) return;
-    
-    const newAmount = Number(goal.currentAmount) + Number(amount);
-    await get().updateGoal(id, { currentAmount: newAmount });
+
+    const value = Number(amount);
+    const contribPayload = {
+      user_id: user.id,
+      goal_id: goalId,
+      amount: value,
+      date,
+      notes: notes || null,
+    };
+    const { data: contribData, error: contribErr } = await supabase
+      .from('savings_contributions').insert(contribPayload).select().single();
+    if (contribErr) {
+      console.error('Error adding contribution', contribErr);
+      toast.error('No se pudo registrar el aporte');
+      return;
+    }
+
+    // Sube el saldo de la meta (vía updateGoal, que recalcula status).
+    const newAmount = Number(goal.currentAmount) + value;
+    await get().updateGoal(goalId, { currentAmount: newAmount });
+
+    const formatted = {
+      id: contribData.id, goalId, amount: value, date,
+      notes: contribData.notes, transactionId: null, createdAt: contribData.created_at,
+    };
+    set((state) => ({ contributions: [...state.contributions, formatted] }));
+
+    // Transacción de ahorro enlazada (base caja), igual que Deudas.
+    try {
+      const addTransaction = useTransactionStore.getState().addTransaction;
+      const txId = await addTransaction({
+        amount: value,
+        type: 'savings',
+        description: `Aporte a meta - ${goal.title}`,
+        date,
+        categoryId: savingsCategoryId(),
+        currency: goal.currency || 'DOP',
+        notes: notes || 'Generado automáticamente desde Ahorros',
+      });
+      if (txId) {
+        await supabase.from('savings_contributions').update({ transaction_id: txId }).eq('id', contribData.id);
+        set((state) => ({
+          contributions: state.contributions.map((c) => (c.id === contribData.id ? { ...c, transactionId: txId } : c)),
+        }));
+      }
+    } catch (err) {
+      console.error('Error syncing contribution with transactions:', err);
+    }
   },
+
+  // Elimina un aporte: revierte el saldo de la meta y borra la transacción
+  // enlazada. Devuelve { ok, hadTransactionLink } como deletePayment.
+  deleteContribution: async (id) => {
+    const contrib = get().contributions.find((c) => c.id === id);
+    if (!contrib) return { ok: false };
+    const goal = get().goals.find((g) => g.id === contrib.goalId);
+
+    const { error } = await supabase.from('savings_contributions').delete().eq('id', id);
+    if (error) {
+      console.error('Error deleting contribution', error);
+      toast.error('No se pudo eliminar el aporte');
+      return { ok: false };
+    }
+
+    if (goal) {
+      const restored = Math.max(0, Number(goal.currentAmount) - Number(contrib.amount));
+      await get().updateGoal(goal.id, { currentAmount: restored });
+    }
+
+    if (contrib.transactionId) {
+      await useTransactionStore.getState().deleteTransactionSilent(contrib.transactionId);
+    }
+
+    set((state) => ({ contributions: state.contributions.filter((c) => c.id !== id) }));
+    return { ok: true, hadTransactionLink: !!contrib.transactionId };
+  },
+
+  // Restaura un aporte eliminado (Deshacer): re-aplica vía addContribution.
+  restoreContribution: async (contrib) => {
+    if (!contrib) return false;
+    await get().addContribution(contrib.goalId, contrib.amount, contrib.date, contrib.notes || '');
+    return true;
+  },
+
+  getContributionsByGoal: (goalId) =>
+    get().contributions.filter((c) => c.goalId === goalId).sort((a, b) => a.date.localeCompare(b.date)),
 
   togglePause: async (id) => {
     const goal = get().goals.find(g => g.id === id);
@@ -126,7 +260,7 @@ const useSavingsStore = create(
 }),
 {
   name: 'fintrack-savings-cache',
-  partialize: (state) => ({ goals: state.goals }),
+  partialize: (state) => ({ goals: state.goals, contributions: state.contributions }),
 }
 )
 );
