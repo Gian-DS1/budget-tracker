@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
-import Emoji from '../Emoji';
 import { Stagger } from '../StitchMotion';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import { isDemoActive } from '../demoMode';
@@ -22,7 +21,7 @@ const BUDGET_LEVEL_CARDS = [
 export default function StitchSettings() {
   const { manualRate, source, getRate, fetchRate, setManualRate } = useRateStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
-  const { categories, resetCategoriesToDefault } = useCategoryStore();
+  const { categories } = useCategoryStore();
   const fileRef = useRef(null);
   const [rateInput, setRateInput] = useState('');
 
@@ -95,18 +94,6 @@ export default function StitchSettings() {
       });
     } else toast.error('Formato no soportado. Usa .csv o .xlsx');
     e.target.value = '';
-  };
-
-  // Reset destructivo: confirmación vía toast (patrón Stitch, no confirm() nativo).
-  const confirmReset = () => {
-    toast((t) => (
-      <span className="flex items-center gap-sm">Esto borra tus categorías actuales.
-        <button
-          onClick={() => { toast.dismiss(t.id); resetCategoriesToDefault(); toast.success('Categorías restablecidas'); }}
-          className="text-accent-error font-bold underline"
-        >Restablecer</button>
-      </span>
-    ), { duration: 6000 });
   };
 
   const budgetLevel = usePrefsStore((s) => s.budgetLevel);
@@ -188,24 +175,6 @@ export default function StitchSettings() {
           </div>
         </Stagger.Item>
 
-        {/* Categorías */}
-        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
-          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">CATEGORÍAS · {categories.filter((c) => c.isActive).length} ACTIVAS</h2>
-            <MS name="category" className="text-text-muted text-[16px]" />
-          </div>
-          <div className="flex flex-wrap gap-xs mb-md">
-            {categories.filter((c) => c.isActive).map((c) => (
-              <span key={c.id} className="inline-flex items-center gap-xs bg-surface-card border border-border-subtle rounded px-sm h-7 font-label-sm text-label-sm text-on-surface-variant inner-glow">
-                <span className="inline-flex items-center justify-center shrink-0"><Emoji e={c.icon} size={13} /></span>
-                <span className="leading-none">{c.name}</span>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-sm">
-            <button onClick={confirmReset} className="border border-border-subtle text-accent-error font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high flex items-center gap-xs"><MS name="restart_alt" className="text-[14px]" /> Restablecer</button>
-          </div>
-        </Stagger.Item>
       </Stagger>
     </div>
   );
