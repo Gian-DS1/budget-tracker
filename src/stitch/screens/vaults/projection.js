@@ -17,6 +17,11 @@ export function getProjection(goal) {
   const done = target > 0 && current >= target;
   const pct = target > 0 ? Math.min(100, (current / target) * 100) : 0;
 
+  // Meta sin monto (0): no hay nada que proyectar.
+  if (target <= 0) {
+    return { reachable: false, done: false, months: null, remaining: 0, projectedDate: null, pct: 0 };
+  }
+
   if (done) {
     return { reachable: true, done: true, months: 0, remaining: 0, projectedDate: null, pct };
   }

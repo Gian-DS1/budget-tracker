@@ -18,6 +18,7 @@ describe('getProjection', () => {
     expect(r.remaining).toBe(0);
     expect(r.months).toBe(0);
     expect(r.pct).toBe(100);
+    expect(r.projectedDate).toBeNull();
   });
 
   it('saldo por encima de la meta → done, pct tope 100, remaining 0', () => {
@@ -33,11 +34,16 @@ describe('getProjection', () => {
     expect(r.projectedDate).toBeNull();
     expect(r.done).toBe(false);
     expect(r.remaining).toBe(40000);
+    expect(r.months).toBeNull();
   });
 
   it('meta 0 → pct 0 sin dividir por cero', () => {
     const r = getProjection({ currentAmount: 0, targetAmount: 0, monthlyContribution: 1000 });
     expect(r.pct).toBe(0);
     expect(r.done).toBe(false);
+    expect(r.reachable).toBe(false);
+    expect(r.months).toBeNull();
+    expect(r.projectedDate).toBeNull();
+    expect(r.remaining).toBe(0);
   });
 });
