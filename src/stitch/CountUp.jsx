@@ -8,7 +8,7 @@ const prefersReduced = () =>
   && window.matchMedia
   && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-export default function CountUp({ value, format = (v) => String(v), duration = 700 }) {
+export default function CountUp({ value, format = (v) => String(v), duration = 700, children }) {
   const target = Number(value) || 0;
   // Arranca en 0 para que el PRIMER montaje anime de 0 → valor (no solo en cambios).
   const [display, setDisplay] = useState(0);
@@ -38,5 +38,8 @@ export default function CountUp({ value, format = (v) => String(v), duration = 7
     return () => cancelAnimationFrame(rafRef.current);
   }, [target, duration]);
 
+  // Render-prop: si children es una función, recibe el valor animado en vivo (para
+  // que otros elementos —p. ej. un anillo— suban en sincronía con el número).
+  if (typeof children === 'function') return children(display);
   return <>{format(display)}</>;
 }
