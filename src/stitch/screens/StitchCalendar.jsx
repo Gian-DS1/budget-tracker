@@ -65,8 +65,8 @@ export default function StitchCalendar() {
   for (let yy = now.getFullYear() + 1; yy >= now.getFullYear() - 5; yy--) yearOptions.push({ value: String(yy), label: String(yy) });
 
   return (
-    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
+    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full lg:h-[calc(100dvh-4rem)] flex flex-col overflow-hidden">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-md mb-md shrink-0">
         <div>
           <div className="flex items-center gap-sm mb-xs">
             <span className="w-2 h-2 rounded-full bg-secondary live-dot" />
@@ -82,9 +82,9 @@ export default function StitchCalendar() {
         </div>
       </div>
 
-      <Stagger className="flex flex-col gap-gutter">
+      <Stagger className="flex flex-col gap-md flex-1 min-h-0">
         {/* Resumen del mes */}
-        <Stagger.Item className="grid grid-cols-3 gap-md">
+        <Stagger.Item className="grid grid-cols-3 gap-md shrink-0">
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">Ingresos</span>
             <span className="font-headline-md text-[20px] tracking-tight text-tertiary whitespace-nowrap"><CountUp value={summary.income} format={(n) => `+${fmt(n)}`} /></span>
@@ -100,14 +100,14 @@ export default function StitchCalendar() {
         </Stagger.Item>
 
         {/* Grid + detalle */}
-        <Stagger.Item className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-          <div className="lg:col-span-2 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md">
+        <Stagger.Item className="grid grid-cols-1 lg:grid-cols-3 gap-gutter flex-1 min-h-0">
+          <div className="lg:col-span-2 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md overflow-y-auto stitch-scroll">
             <div className="grid grid-cols-7 gap-px mb-sm">
               {DAYS_SHORT_ES.map((d) => <div key={d} className="font-mono-data text-mono-data text-text-muted uppercase text-center py-sm">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-px">
               {cells.map((d, i) => d === null
-                ? <div key={i} className="aspect-square" />
+                ? <div key={i} className="h-[clamp(48px,9vh,72px)]" />
                 : <DayCell key={i} day={d} movement={movements[d]} dues={dueEvents[d]} isToday={isCurrentMonth && d === todayDay} isSelected={selected === d} onClick={(day) => setSelected(selected === day ? null : day)} />)}
             </div>
             {/* Leyenda */}
@@ -120,8 +120,9 @@ export default function StitchCalendar() {
             </div>
           </div>
 
-          {/* Columna derecha: detalle del día (arriba) + próximos vencimientos (abajo) */}
-          <div className="flex flex-col gap-gutter">
+          {/* Columna derecha: detalle del día (arriba) + próximos vencimientos (abajo).
+              Scroll interno propio si el contenido excede, para no scrollear la página. */}
+          <div className="flex flex-col gap-gutter overflow-y-auto stitch-scroll min-h-0">
             <DayDetail iso={selectedISO} movement={selected ? movements[selected] : null} dues={selected ? dueEvents[selected] : null} categories={categories} />
             <UpcomingRail items={upcoming} onNavigate={navigate} />
           </div>

@@ -7,7 +7,7 @@ export default function DayCell({ day, movement, dues, isToday, isSelected, onCl
   return (
     <button
       onClick={() => clickable && onClick(day)}
-      className={`aspect-square border rounded-sm p-xs flex flex-col text-left transition-colors ${clickable ? 'cursor-pointer hover:border-primary' : 'cursor-default'} ${isSelected ? 'border-primary bg-primary/10' : isToday ? 'border-primary/60 bg-surface-card' : 'border-border-subtle bg-surface-card'}`}
+      className={`h-[clamp(48px,9vh,72px)] border rounded-sm p-xs flex flex-col text-left transition-colors ${clickable ? 'cursor-pointer hover:border-primary' : 'cursor-default'} ${isSelected ? 'border-primary bg-primary/10' : isToday ? 'border-primary/60 bg-surface-card' : 'border-border-subtle bg-surface-card'}`}
     >
       <span className={`font-mono-data text-[12px] ${isToday ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{day}</span>
       {/* Puntos de vencimiento */}
