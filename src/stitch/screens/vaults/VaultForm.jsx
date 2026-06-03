@@ -9,10 +9,11 @@ import StitchDatePicker from '../../StitchDatePicker';
 import useSavingsStore from '../../../stores/useSavingsStore';
 import { isDemoActive, demoAddGoal, demoUpdateGoal } from '../../demoMode';
 import { Modal, Field, FormActions, inputCls } from './vaultsUi';
+import { HORIZON_FORM_OPTIONS } from './horizons';
 
 const EMOJIS = ['🎯', '🏠', '✈️', '🚗', '💻', '📱', '👶', '🎓', '💍', '🆘', '🏖️', '🏦'];
 
-const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP' };
+const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP', horizon: '' };
 
 export default function VaultForm({ editing, onClose }) {
   const { addGoal, updateGoal } = useSavingsStore();
@@ -25,6 +26,7 @@ export default function VaultForm({ editing, onClose }) {
         monthlyContribution: editing.monthlyContribution ? String(editing.monthlyContribution) : '',
         deadline: editing.deadline || '', icon: editing.icon || '🎯',
         color: editing.color || '#bec2ff', currency: editing.currency || 'DOP',
+        horizon: editing.horizon || '',
       }
     : blank);
 
@@ -41,6 +43,7 @@ export default function VaultForm({ editing, onClose }) {
       title: form.title.trim(), targetAmount: Number(form.targetAmount),
       monthlyContribution: Number(form.monthlyContribution) || 0,
       deadline: form.deadline || null, icon: form.icon, color: form.color, currency: form.currency,
+      horizon: form.horizon || null,
     };
     if (editing) {
       if (demo) { demoUpdateGoal(editing.id, data); toast.success('Meta actualizada'); }
@@ -72,6 +75,9 @@ export default function VaultForm({ editing, onClose }) {
             <StitchSelect value={form.currency} onChange={(v) => set({ currency: v })} options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]} />
           </Field>
         </div>
+        <Field label="Horizonte" hint="Opcional, para agrupar tus metas">
+          <StitchSelect value={form.horizon} onChange={(v) => set({ horizon: v })} options={HORIZON_FORM_OPTIONS} placeholder="Sin horizonte" />
+        </Field>
         <Field label="Ícono">
           <div className="flex flex-wrap gap-xs">{EMOJIS.map((em) => <button type="button" key={em} aria-label={`Ícono ${em}`} aria-pressed={form.icon === em} onClick={() => set({ icon: em })} className={`w-8 h-8 rounded border flex items-center justify-center ${form.icon === em ? 'border-primary bg-primary/10' : 'border-border-subtle'}`}><Emoji e={em} size={16} /></button>)}</div>
         </Field>
