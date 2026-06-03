@@ -98,10 +98,9 @@ export default function StitchDashboard() {
   }, [monthTx]);
   const savingsRate = totals.income > 0 ? ((totals.income - totals.expense) / totals.income) * 100 : 0;
 
-  // Patrimonio
+  // Patrimonio (su celda lo muestra; getNetWorthSplit calcula el neto internamente)
   const totalSaved = getTotalSaved();
   const totalDebt = getTotalDebt();
-  const netWorth = totalSaved - totalDebt;
   const split = useMemo(() => getNetWorthSplit(totalSaved, totalDebt), [totalSaved, totalDebt]);
 
   const totalPendingCards = useMemo(() => cards.reduce(
@@ -167,11 +166,11 @@ export default function StitchDashboard() {
   }, [cards, debts, goals, transactions, fxRate, now]);
 
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
+  // Patrimonio neto NO va aquí: tiene su propia celda abajo (evita redundancia).
   const metrics = [
     { l: 'PUEDES GASTAR', v: fmt(summary.puedesGastar), d: summary.estado === 'danger' ? 'Sin margen' : summary.estado === 'warning' ? 'Ajustado' : 'Con margen', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: 'Ingresos del mes menos gastos fijos y compromisos (deuda y ahorro planeados).' },
     { l: 'TARJETAS POR PAGAR', v: fmt(totalPendingCards), d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: 'Suma de los saldos facturados pendientes de todas tus tarjetas. Es un estado de hoy.', live: true },
     { l: 'TASA DE AHORRO', v: `${savingsRate.toFixed(1)}%`, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: '(Ingresos menos gastos) dividido entre los ingresos del mes.' },
-    { l: 'PATRIMONIO NETO', v: fmt(netWorth), d: `Ahorro ${fmt(totalSaved)}`, c: netWorth >= 0 ? 'text-tertiary' : 'text-accent-error', info: 'Ahorros totales menos deudas totales. Es un estado de hoy.', live: true },
   ];
 
   return (
@@ -187,9 +186,9 @@ export default function StitchDashboard() {
       )}
 
       <Stagger className="grid grid-cols-1 md:grid-cols-12 gap-md auto-rows-min">
-        {/* 1 · Estado inmediato: 4 KPI */}
+        {/* 1 · Estado inmediato: 3 KPI accionables (patrimonio tiene su celda abajo) */}
         {metrics.map((mx) => (
-          <Stagger.Item key={mx.l} className="md:col-span-3">
+          <Stagger.Item key={mx.l} className="md:col-span-4">
             <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
               <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
                 <span className="flex items-center gap-xs">{mx.l}{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1">HOY</span>}</span>
@@ -200,8 +199,8 @@ export default function StitchDashboard() {
           </Stagger.Item>
         ))}
 
-        {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (hero) */}
-        <Stagger.Item className="md:col-span-7">
+        {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (HERO, dominante) */}
+        <Stagger.Item className="md:col-span-8">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-md gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs"><MS name="show_chart" className="!text-[14px] text-text-muted" /> Flujo del mes</span>
@@ -219,8 +218,8 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Salud (estado de hoy) */}
-        <Stagger.Item className="md:col-span-5">
+        {/* 3 · Salud (estado de hoy, compacta — un solo indicador) */}
+        <Stagger.Item className="md:col-span-4">
           <BentoCell title="Salud financiera · hoy" icon="favorite" className="h-full">
             <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} />
           </BentoCell>
