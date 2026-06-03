@@ -101,6 +101,7 @@ const useSavingsStore = create(
         createdAt: data.created_at,
       };
       set((state) => ({ goals: [...state.goals, formatted] }));
+      return formatted;
     } else {
       console.error('Error adding saving goal', error);
     }
