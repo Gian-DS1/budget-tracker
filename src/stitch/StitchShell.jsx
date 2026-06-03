@@ -19,7 +19,6 @@ const NAV = [
   { to: '/ahorros', icon: 'account_balance_wallet', label: 'Ahorros' },
   { to: '/deudas', icon: 'trending_down', label: 'Deudas' },
   { to: '/tarjetas', icon: 'credit_card', label: 'Tarjetas' },
-  { to: '/plan', icon: 'flag', label: 'Plan' },
   { section: 'Herramientas' },
   { to: '/calendario', icon: 'calendar_month', label: 'Calendario' },
   { to: '/reportes', icon: 'analytics', label: 'Reportes' },

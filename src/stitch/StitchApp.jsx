@@ -17,7 +17,6 @@ import StitchBudget from './screens/StitchBudget';
 import StitchCards from './screens/StitchCards';
 import StitchDebts from './screens/StitchDebts';
 import StitchVaults from './screens/StitchVaults';
-import StitchStrategy from './screens/StitchStrategy';
 import StitchReports from './screens/StitchReports';
 import StitchCalendar from './screens/StitchCalendar';
 import StitchSettings from './screens/StitchSettings';
@@ -32,7 +31,6 @@ import useTransactionStore from '../stores/useTransactionStore';
 import useBudgetStore from '../stores/useBudgetStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
-import usePlanStore from '../stores/usePlanStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import useRateStore from '../stores/useRateStore';
 import useRecurringStore from '../stores/useRecurringStore';
@@ -83,7 +81,6 @@ export default function StitchApp() {
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
   const fetchGoals = useSavingsStore((s) => s.fetchGoals);
   const fetchDebtsAndPayments = useDebtStore((s) => s.fetchDebtsAndPayments);
-  const fetchPlans = usePlanStore((s) => s.fetchPlans);
   const fetchCards = useCreditCardStore((s) => s.fetchCards);
   const fetchPrefs = usePrefsStore((s) => s.fetchPrefs);
   const fetchRecurring = useRecurringStore((s) => s.fetchRecurring);
@@ -112,10 +109,9 @@ export default function StitchApp() {
     fetchBudgets();
     fetchGoals();
     fetchDebtsAndPayments();
-    fetchPlans();
     fetchCards();
     fetchPrefs();
-  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchPlans, fetchCards, fetchPrefs]);
+  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchCards, fetchPrefs]);
 
   // Recurrentes: cargar plantillas y materializar las vencidas.
   useEffect(() => {
@@ -168,7 +164,6 @@ export default function StitchApp() {
             <Route path="tarjetas" element={<StitchCards />} />
             <Route path="deudas" element={<StitchDebts />} />
             <Route path="ahorros" element={<StitchVaults />} />
-            <Route path="plan" element={<StitchStrategy />} />
             <Route path="reportes" element={<StitchReports />} />
             <Route path="calendario" element={<StitchCalendar />} />
             <Route path="ajustes" element={<StitchSettings />} />
