@@ -19,72 +19,11 @@ export function sumAmounts(transactions) {
 }
 
 /**
- * Calculate income for a period
- */
-export function calculateIncome(transactions) {
-  return sumAmounts(transactions.filter(t => t.type === 'income'));
-}
-
-/**
- * Calculate expenses for a period (includes fixed and variable expense types)
- */
-export function calculateExpenses(transactions) {
-  return sumAmounts(
-    transactions.filter(
-      t => t.type === 'expense' || t.type === 'fixed_expense' || t.type === 'variable_expense'
-    )
-  );
-}
-
-/**
- * Calculate savings for a period
- */
-export function calculateSavings(transactions) {
-  return sumAmounts(transactions.filter(t => t.type === 'savings'));
-}
-
-/**
- * Calculate balance (income - expenses - savings - debt payments)
- */
-export function calculateBalance(transactions) {
-  const income = calculateIncome(transactions);
-  const expenses = calculateExpenses(transactions);
-  return income - expenses;
-}
-
-/**
- * Calculate savings rate (% of income going to savings)
- */
-export function calculateSavingsRate(transactions) {
-  const income = calculateIncome(transactions);
-  if (income === 0) return 0;
-  const savings = calculateSavings(transactions);
-  return (savings / income) * 100;
-}
-
-/**
- * Calculate percentage change between two values
- */
-export function calculatePercentChange(current, previous) {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return ((current - previous) / Math.abs(previous)) * 100;
-}
-
-/**
  * Calculate budget progress percentage
  */
 export function calculateBudgetProgress(actual, estimated) {
   if (!estimated || estimated === 0) return 0;
   return (actual / estimated) * 100;
-}
-
-/**
- * Get progress status based on percentage
- */
-export function getProgressStatus(percentage) {
-  if (percentage <= 80) return 'good';
-  if (percentage <= 100) return 'warning';
-  return 'danger';
 }
 
 /**

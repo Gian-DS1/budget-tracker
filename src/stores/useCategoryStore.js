@@ -166,38 +166,6 @@ const useCategoryStore = create(
     }
   },
 
-  dedupeCategories: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
-    if (!user) return 0;
-
-    // Pull a fresh copy ordered oldest-first so the canonical keeper is stable.
-    const { data: cats, error } = await supabase
-      .from('categories')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: true });
-    if (error || !cats) return 0;
-
-    const { remap, deleteIds } = findDuplicateCategories(cats);
-    if (deleteIds.length === 0) return 0;
-
-    // Reassign references from each duplicate to its canonical category BEFORE
-    // deleting, so no transaction or budget is orphaned.
-    for (const { fromId, toId } of remap) {
-      await supabase.from('transactions').update({ category_id: toId }).eq('user_id', user.id).eq('category_id', fromId);
-      await supabase.from('budgets').update({ category_id: toId }).eq('user_id', user.id).eq('category_id', fromId);
-    }
-
-    const { error: delError } = await supabase.from('categories').delete().in('id', deleteIds);
-    if (delError) {
-      console.error('Error deleting duplicate categories:', delError);
-      return 0;
-    }
-
-    return deleteIds.length;
-  },
-
   resetCategoriesToDefault: async () => {
     set({ loading: true, error: null });
     const { data: { session } } = await supabase.auth.getSession();

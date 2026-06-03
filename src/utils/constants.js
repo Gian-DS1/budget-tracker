@@ -41,18 +41,6 @@ export const DEBT_STATUS = {
   PAID_OFF: 'paid_off',
 };
 
-export const PLAN_HORIZONS = {
-  SHORT: 'short',
-  MEDIUM: 'medium',
-  LONG: 'long',
-};
-
-export const PLAN_STATUSES = {
-  PENDING: 'pending',
-  IN_PROGRESS: 'in_progress',
-  COMPLETED: 'completed',
-};
-
 export const MONTHS_ES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre',
