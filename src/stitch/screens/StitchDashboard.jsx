@@ -218,28 +218,25 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Salud (estado de hoy, compacta — un solo indicador) */}
-        <Stagger.Item className="md:col-span-4">
-          <BentoCell title="Salud financiera · hoy" icon="favorite" className="h-full">
+        {/* 3 · Columna derecha del hero: Salud + Patrimonio apiladas (compactas,
+            estado de hoy). Juntas llenan el alto del hero sin espacio vacío. */}
+        <Stagger.Item className="md:col-span-4 flex flex-col gap-md">
+          <BentoCell title="Salud financiera · hoy" icon="favorite" className="flex-grow">
             <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} />
+          </BentoCell>
+          <BentoCell title="Patrimonio · hoy" icon="account_balance" className="flex-grow">
+            <NetWorthBar split={split} />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 4 · ¿En qué gasto? (donut más grande) */}
-        <Stagger.Item className="md:col-span-7">
+        {/* 4 · ¿En qué gasto? Donut a ancho completo */}
+        <Stagger.Item className="md:col-span-12">
           <BentoCell title="Gastos por categoría" icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 5 · Patrimonio (compacto, estado de hoy) */}
-        <Stagger.Item className="md:col-span-5">
-          <BentoCell title="Patrimonio · hoy" icon="account_balance" className="h-full">
-            <NetWorthBar split={split} />
-          </BentoCell>
-        </Stagger.Item>
-
-        {/* 6 · ¿Qué viene? Recordatorios (de hoy) */}
+        {/* 5 · ¿Qué viene? Recordatorios (de hoy) */}
         <Stagger.Item className="md:col-span-12">
           <BentoCell title="Recordatorios · hoy" icon="radar">
             <SignalsRail signals={signals} onNavigate={navigate} />

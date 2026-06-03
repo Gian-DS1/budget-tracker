@@ -35,9 +35,9 @@ export default function CategoryDonut({ data }) {
   const activeName = active >= 0 ? withPct[active]?.name : null;
 
   return (
-    <div className="flex-grow flex flex-col sm:flex-row items-center gap-lg min-h-[260px]">
-      {/* Dona: ocupa el alto disponible de la celda */}
-      <div className="relative w-full sm:w-1/2 h-[220px] shrink-0">
+    <div className="flex-grow flex flex-col sm:flex-row items-center gap-xl min-h-[260px]">
+      {/* Dona: ancho acotado (no gigante en celdas anchas); la leyenda llena el resto */}
+      <div className="relative w-full sm:w-[280px] h-[240px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -75,8 +75,8 @@ export default function CategoryDonut({ data }) {
         </div>
       </div>
 
-      {/* Leyenda: hover sincronizado con la dona */}
-      <div className="flex flex-col gap-sm w-full sm:w-1/2">
+      {/* Leyenda: hover sincronizado con la dona; llena el ancho restante (tope para no estirar de más) */}
+      <div className="flex flex-col gap-sm w-full flex-grow max-w-[640px]">
         {withPct.map((d, i) => (
           <button
             type="button"
