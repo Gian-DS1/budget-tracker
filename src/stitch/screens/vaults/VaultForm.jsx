@@ -12,7 +12,7 @@ import { Modal, Field, FormActions, inputCls } from './vaultsUi';
 
 const EMOJIS = ['🎯', '🏠', '✈️', '🚗', '💻', '📱', '👶', '🎓', '💍', '🆘', '🏖️', '🏦'];
 
-const blank = { title: '', targetAmount: '', currentAmount: '0', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP' };
+const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP' };
 
 export default function VaultForm({ editing, onClose }) {
   const { addGoal, updateGoal } = useSavingsStore();
@@ -73,7 +73,7 @@ export default function VaultForm({ editing, onClose }) {
           </Field>
         </div>
         <Field label="Ícono">
-          <div className="flex flex-wrap gap-xs">{EMOJIS.map((em) => <button type="button" key={em} onClick={() => set({ icon: em })} className={`w-8 h-8 rounded border flex items-center justify-center ${form.icon === em ? 'border-primary bg-primary/10' : 'border-border-subtle'}`}><Emoji e={em} size={16} /></button>)}</div>
+          <div className="flex flex-wrap gap-xs">{EMOJIS.map((em) => <button type="button" key={em} aria-label={`Ícono ${em}`} aria-pressed={form.icon === em} onClick={() => set({ icon: em })} className={`w-8 h-8 rounded border flex items-center justify-center ${form.icon === em ? 'border-primary bg-primary/10' : 'border-border-subtle'}`}><Emoji e={em} size={16} /></button>)}</div>
         </Field>
         <FormActions onCancel={onClose} label={editing ? 'Guardar' : 'Crear'} />
       </form>
