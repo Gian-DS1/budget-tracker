@@ -1,0 +1,77 @@
+// Modal de crear/editar deuda. Inputs Stitch + demo branching.
+import { useState } from 'react';
+import toast from 'react-hot-toast';
+import StitchCurrencyInput from '../../StitchCurrencyInput';
+import StitchSelect from '../../StitchSelect';
+import StitchDatePicker from '../../StitchDatePicker';
+import useDebtStore from '../../../stores/useDebtStore';
+import { isDemoActive, demoAddDebt, demoUpdateDebt } from '../../demoMode';
+import { Modal, Field, FormActions, inputCls } from './debtsUi';
+
+const blank = { creditorName: '', originalAmount: '', currentBalance: '', interestRate: '', monthlyPayment: '', dueDate: '', currency: 'DOP' };
+
+const pctCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm pl-md pr-[26px] font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
+
+export default function DebtForm({ editing, onClose }) {
+  const { addDebt, updateDebt } = useDebtStore();
+  const demo = isDemoActive();
+
+  const [form, setForm] = useState(editing
+    ? {
+        creditorName: editing.creditorName, originalAmount: String(editing.originalAmount),
+        currentBalance: String(editing.currentBalance), interestRate: String(editing.interestRate),
+        monthlyPayment: String(editing.monthlyPayment), dueDate: editing.due_date || '', currency: editing.currency || 'DOP',
+      }
+    : blank);
+
+  const set = (patch) => setForm((f) => ({ ...f, ...patch }));
+
+  const submit = async (e) => {
+    e.preventDefault();
+    if (!form.creditorName.trim() || !Number(form.originalAmount)) {
+      toast.error('Completa el acreedor y el monto original');
+      return;
+    }
+    const data = {
+      creditorName: form.creditorName.trim(), originalAmount: Number(form.originalAmount),
+      currentBalance: Number(form.currentBalance || form.originalAmount), interestRate: Number(form.interestRate) || 0,
+      monthlyPayment: Number(form.monthlyPayment) || 0, dueDate: form.dueDate || null, currency: form.currency,
+    };
+    if (editing) {
+      if (demo) { demoUpdateDebt(editing.id, data); toast.success('Deuda actualizada'); }
+      else { await updateDebt(editing.id, data); toast.success('Deuda actualizada'); }
+    } else {
+      if (demo) { demoAddDebt(data); toast.success('Deuda registrada'); }
+      else { await addDebt(data); toast.success('Deuda registrada'); }
+    }
+    onClose();
+  };
+
+  return (
+    <Modal title={editing ? 'Editar deuda' : 'Nueva deuda'} onClose={onClose}>
+      <form onSubmit={submit} className="flex flex-col gap-md">
+        <Field label="Acreedor"><input value={form.creditorName} onChange={(e) => set({ creditorName: e.target.value })} className={inputCls} placeholder="Ej. Banco Popular" autoFocus /></Field>
+        <div className="grid grid-cols-2 gap-md">
+          <Field label="Monto original"><StitchCurrencyInput value={form.originalAmount} onChange={(v) => set({ originalAmount: v })} className={inputCls} /></Field>
+          <Field label="Saldo actual" hint="Vacío = igual al original"><StitchCurrencyInput value={form.currentBalance} onChange={(v) => set({ currentBalance: v })} className={inputCls} /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-md">
+          <Field label="Interés % (TNA)">
+            <div className="relative">
+              <input inputMode="decimal" value={form.interestRate} onChange={(e) => set({ interestRate: e.target.value.replace(/[^0-9.]/g, '') })} className={pctCls} placeholder="0" />
+              <span className="absolute right-sm top-1/2 -translate-y-1/2 font-mono-data text-mono-data text-text-muted">%</span>
+            </div>
+          </Field>
+          <Field label="Cuota mensual"><StitchCurrencyInput value={form.monthlyPayment} onChange={(v) => set({ monthlyPayment: v })} className={inputCls} /></Field>
+        </div>
+        <div className="grid grid-cols-2 gap-md">
+          <Field label="Próximo pago"><StitchDatePicker value={form.dueDate} onChange={(v) => set({ dueDate: v })} /></Field>
+          <Field label="Moneda">
+            <StitchSelect value={form.currency} onChange={(v) => set({ currency: v })} options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]} />
+          </Field>
+        </div>
+        <FormActions onCancel={onClose} label={editing ? 'Guardar' : 'Registrar'} />
+      </form>
+    </Modal>
+  );
+}

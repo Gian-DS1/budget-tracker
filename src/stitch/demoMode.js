@@ -242,3 +242,110 @@ export function demoDeleteCardPayment(cardId, paymentId) {
     cards: s.cards.map((c) => (c.id === cardId ? { ...c, payments: (c.payments || []).filter((p) => p.id !== paymentId) } : c)),
   }));
 }
+
+// ── Deudas y pagos (en demo el store sale sin efecto sin sesión) ──────────────
+// Resuelve la categoría de pago de deuda para enlazar la transacción del pago.
+function demoLoanCategoryId() {
+  const cats = useCategoryStore.getState().categories;
+  const c =
+    cats.find((x) => x.slug === 'pago-deuda') ||
+    cats.find((x) => x.name === 'Pago de Préstamos y Deudas' || (x.name && x.name.includes('Préstamos')));
+  return c?.id || '';
+}
+
+export function demoAddDebt(debt) {
+  const currentBalance = Number(debt.currentBalance !== undefined ? debt.currentBalance : debt.originalAmount);
+  const row = {
+    id: demoId(), creditorName: debt.creditorName,
+    originalAmount: Number(debt.originalAmount), currentBalance,
+    interestRate: Number(debt.interestRate) || 0, monthlyPayment: Number(debt.monthlyPayment) || 0,
+    due_date: debt.dueDate || null, status: currentBalance <= 0 ? 'paid_off' : 'active',
+    currency: debt.currency || 'DOP', createdAt: new Date().toISOString(),
+  };
+  useDebtStore.setState((s) => ({ debts: [...s.debts, row] }));
+  return row;
+}
+export function demoUpdateDebt(id, updates) {
+  useDebtStore.setState((s) => ({
+    debts: s.debts.map((d) => {
+      if (d.id !== id) return d;
+      const next = { ...d, ...updates };
+      if (updates.dueDate !== undefined) next.due_date = updates.dueDate || null;
+      if (updates.currentBalance !== undefined) {
+        next.currentBalance = Number(updates.currentBalance);
+        next.status = next.currentBalance <= 0 ? 'paid_off' : 'active';
+      }
+      return next;
+    }),
+  }));
+}
+// Borra la deuda + sus pagos + las transacciones enlazadas de esos pagos (cascade).
+export function demoDeleteDebt(id) {
+  const { payments } = useDebtStore.getState();
+  const txIds = payments.filter((p) => p.debtId === id && p.transactionId).map((p) => p.transactionId);
+  if (txIds.length) useTransactionStore.setState((s) => ({ transactions: s.transactions.filter((t) => !txIds.includes(t.id)) }));
+  useDebtStore.setState((s) => ({
+    debts: s.debts.filter((d) => d.id !== id),
+    payments: s.payments.filter((p) => p.debtId !== id),
+  }));
+}
+// Restaura una deuda borrada con sus pagos; recrea las transacciones enlazadas.
+export function demoRestoreDebt(debt, payments = []) {
+  useDebtStore.setState((s) => ({ debts: [...s.debts, debt] }));
+  for (const p of payments) {
+    let transactionId = p.transactionId;
+    if (transactionId) {
+      // Recrea la transacción enlazada con su mismo id.
+      const tx = {
+        id: transactionId, categoryId: demoLoanCategoryId(), cardId: null,
+        amount: Number(p.amount), type: 'fixed_expense', description: `Pago cuota - ${debt.creditorName}`,
+        date: p.date, notes: p.notes || 'Generado automáticamente desde Deudas', currency: debt.currency || 'DOP',
+        cashbackEarned: 0, createdAt: new Date().toISOString(),
+      };
+      useTransactionStore.setState((s) => ({ transactions: [tx, ...s.transactions] }));
+    }
+    useDebtStore.setState((s) => ({ payments: [...s.payments, p] }));
+  }
+}
+export function demoAddDebtPayment(debtId, amount, date, notes = '') {
+  const { debts } = useDebtStore.getState();
+  const debt = debts.find((d) => d.id === debtId);
+  if (!debt) return null;
+  const value = Number(amount) || 0;
+  const newBalance = Math.max(0, Number(debt.currentBalance) - value);
+  const newStatus = newBalance <= 0 ? 'paid_off' : 'active';
+
+  // Transacción de gasto enlazada (base caja), igual que el store real.
+  let transactionId = null;
+  const catId = demoLoanCategoryId();
+  if (catId) {
+    transactionId = demoAddTransaction({
+      amount: value, type: 'fixed_expense', description: `Pago cuota - ${debt.creditorName}`,
+      date, categoryId: catId, currency: debt.currency || 'DOP', notes: notes || 'Generado automáticamente desde Deudas',
+    });
+  }
+  const payment = { id: demoId(), debtId, amount: value, date, remainingBalance: newBalance, notes: notes || null, transactionId, createdAt: new Date().toISOString() };
+  useDebtStore.setState((s) => ({
+    payments: [...s.payments, payment],
+    debts: s.debts.map((d) => (d.id === debtId ? { ...d, currentBalance: newBalance, status: newStatus } : d)),
+  }));
+  return payment;
+}
+export function demoDeleteDebtPayment(paymentId) {
+  const { payments, debts } = useDebtStore.getState();
+  const payment = payments.find((p) => p.id === paymentId);
+  if (!payment) return { ok: false };
+  const debt = debts.find((d) => d.id === payment.debtId);
+  if (payment.transactionId) demoDeleteTransaction(payment.transactionId);
+  useDebtStore.setState((s) => ({
+    payments: s.payments.filter((p) => p.id !== paymentId),
+    debts: debt
+      ? s.debts.map((d) => {
+          if (d.id !== debt.id) return d;
+          const restored = Number(d.currentBalance) + Number(payment.amount);
+          return { ...d, currentBalance: restored, status: restored > 0 ? 'active' : 'paid_off' };
+        })
+      : s.debts,
+  }));
+  return { ok: true, payment };
+}
