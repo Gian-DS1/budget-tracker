@@ -12,13 +12,13 @@ Tailwind v4 vía `@tailwindcss/vite`; config en CSS con `@theme` dentro de `src/
 
 Modo demo/QA: flag sessionStorage `fintrack-demo-mode`, solo en localhost. Botón "Entrar como demo" en `StitchAuth`. Siembra los stores Zustand en memoria sin tocar Supabase. En demo NO hay sesión, así que las acciones de los stores (que escriben al backend) salen sin efecto; por eso existen mutadores en memoria en `src/stitch/demoMode.js` (`demoAddTransaction`, etc.). Cualquier página con formularios de alta/edición DEBE ramificar `if (isDemoActive()) demoXxx(); else await storeAction()` y mostrar el toast manualmente en demo.
 
-Servidor dev corriendo en http://localhost:5173/. HEAD de la rama: `b34ecd1`.
+Servidor dev corriendo en http://localhost:5173/. HEAD de la rama: `b1ca3d7`.
 
-Tests: 77 pasan (`npm run test`). Build limpio (`npm run build`). Lint: 0 errores (`npm run lint`). El easing `EASE_OUT` vive en `src/stitch/motionTokens.js` (separado de StitchMotion.jsx para no romper fast-refresh).
+Tests: 82 pasan (`npm run test`). Build limpio (`npm run build`). Lint: 0 errores (`npm run lint`). El easing `EASE_OUT` vive en `src/stitch/motionTokens.js` (separado de StitchMotion.jsx para no romper fast-refresh).
 
 Estado de las páginas (pulidas = aplican las 14 pautas + demo branching):
-- PULIDAS: Transacciones (`StitchLedger.jsx`), Presupuesto (`StitchBudget.jsx` + carpeta `screens/budget/`), Tarjetas (`StitchCards.jsx` + `screens/cards/`), Deudas (`StitchDebts.jsx` + `screens/debts/`).
-- PENDIENTES (datos reales y emojis ya migrados, pero AÚN con `<select>`/`<input type=date>`/inputs nativos y SIN demo branching en formularios): Ahorros (`StitchVaults.jsx`), Plan (`StitchStrategy.jsx`), Dashboard (`StitchDashboard.jsx`), Reportes (`StitchReports.jsx`), Calendario (`StitchCalendar.jsx`), Ajustes (`StitchSettings.jsx` — ya tiene el selector de nivel de presupuesto), Feedback (`StitchFeedback.jsx`).
+- PULIDAS: Transacciones (`StitchLedger.jsx`), Presupuesto (`StitchBudget.jsx` + carpeta `screens/budget/`), Tarjetas (`StitchCards.jsx` + `screens/cards/`), Deudas (`StitchDebts.jsx` + `screens/debts/`), Ahorros (`StitchVaults.jsx` + `screens/vaults/`).
+- PENDIENTES (datos reales y emojis ya migrados, pero AÚN con `<select>`/`<input type=date>`/inputs nativos y SIN demo branching en formularios): Plan (`StitchStrategy.jsx`), Dashboard (`StitchDashboard.jsx`), Reportes (`StitchReports.jsx`), Calendario (`StitchCalendar.jsx`), Ajustes (`StitchSettings.jsx` — ya tiene el selector de nivel de presupuesto), Feedback (`StitchFeedback.jsx`).
 
 Plantilla de referencia: cualquier página ya pulida sirve de ejemplo. Para una página CON sub-componentes + modales + demo branching + toast Deshacer + historial, usar `screens/debts/` o `screens/cards/` (patrón espejo: shell delgado + carpeta de sub-componentes + `Ui.jsx` local con Modal/Field/FormActions).
 
@@ -40,7 +40,7 @@ Plantilla de referencia: cualquier página ya pulida sirve de ejemplo. Para una 
 - `src/stitch/stitch.css`: tokens `@theme`; `.stitch-check` (checkbox oscuro); reglas globales de date inputs nativos en oscuro; SCROLLBAR DEL TEMA (thumb `#353436`, hover `#454655`, pista transparente, 8px) en DOS selectores: `.stitch-root` (UI normal) Y `.stitch-scroll` (contenido en portal, fuera de `.stitch-root`); feedback de press en botones.
 - `src/stitch/screens/StitchLedger.jsx` (Transacciones): página más trabajada. Usa StitchCurrencyInput, StitchCategorySelect, StitchSelect, StitchDatePicker, AutoCatChip, Emoji. Tipo de transacción DERIVADO de la categoría (no se elige a mano; se muestra `TypeBadge` de solo lectura). Columnas Fecha y Monto ordenables (`SortHeader`, asc/desc, flecha periwinkle activa). Filtros: búsqueda, tipo, categoría, rango de fechas; todos h-[34px]. Demo branching en alta/edición/borrado con toast manual.
 - `src/data/defaultCategories.js` (previo): 37 categorías, ~405 keywords. `autoCategorize(desc, categories)` con matching por prefijo de la última palabra (≥3 chars) además de palabra completa.
-- `src/stitch/demoMode.js`: siembra las 37 categorías reales + datos de ejemplo. Mutadores en memoria por entidad (sin sesión Supabase): transacciones (`demoAddTransaction`/`demoUpdateTransaction`/`demoDeleteTransaction`/`demoRestoreTransaction`), presupuesto (`demoSetBudget`, `demoCopyBudgetFromPreviousMonth`), tarjetas (`demoAddCard`/`demoUpdateCard`/`demoDeleteCard`/`demoRestoreCard`/`demoAddCardPayment`/`demoDeleteCardPayment`), deudas (`demoAddDebt`/`demoUpdateDebt`/`demoDeleteDebt`/`demoRestoreDebt`/`demoAddDebtPayment`/`demoDeleteDebtPayment` + helper `demoLoanCategoryId`), y genéricos `demoAdd`/`demoUpdate`/`demoDelete`. Los pagos de deuda demo CREAN la transacción fixed_expense enlazada (fiel a producción). PENDIENTE: faltan mutadores demo para Ahorros (savings) y Plan (plans) — crearlos al pulir esas páginas.
+- `src/stitch/demoMode.js`: siembra las 37 categorías reales + datos de ejemplo. Mutadores en memoria por entidad (sin sesión Supabase): transacciones (`demoAddTransaction`/`demoUpdateTransaction`/`demoDeleteTransaction`/`demoRestoreTransaction`), presupuesto (`demoSetBudget`, `demoCopyBudgetFromPreviousMonth`), tarjetas (`demoAddCard`/`demoUpdateCard`/`demoDeleteCard`/`demoRestoreCard`/`demoAddCardPayment`/`demoDeleteCardPayment`), deudas (`demoAddDebt`/`demoUpdateDebt`/`demoDeleteDebt`/`demoRestoreDebt`/`demoAddDebtPayment`/`demoDeleteDebtPayment` + helper `demoLoanCategoryId`), ahorros (`demoAddGoal`/`demoUpdateGoal`/`demoDeleteGoal`/`demoRestoreGoal`/`demoAddContribution`/`demoDeleteContribution` + helper `demoSavingsCategoryId`), y genéricos `demoAdd`/`demoUpdate`/`demoDelete`. Los pagos de deuda y los aportes de ahorro demo CREAN su transacción enlazada (fiel a producción: deuda→fixed_expense, ahorro→savings). PENDIENTE: faltan mutadores demo solo para Plan (plans) — crearlos al pulir esa página.
 - Emojis migrados a `<Emoji>` en: StitchLedger (tabla), StitchCalendar, StitchBudget, StitchSettings, StitchVaults (tarjeta + picker), StitchFeedback. Los `<option>` de `<select>` nativos NO admiten `<img>`; por eso se reemplazaron esos selects por StitchSelect/StitchCategorySelect donde había emojis.
 
 ## Patrón establecido para páginas con CRUD + modales
@@ -80,11 +80,19 @@ FEATURES DE LÓGICA YA EXPUESTAS EN UI (estado actualizado vs. docs/specs/README
 - Presupuesto base cero + 50/30/20 + Seguimiento: HECHO (`screens/budget/`).
 - Tarjetas: ciclos + abonos parciales (getCardBalances) + "Pagar todo" + "Adelantar abono" (prepago) + historial + catálogo predefinido con cashback (resolveCardCashback): HECHO (`screens/cards/`).
 - Deudas: avalancha + pagos con tx enlazada + payoff (calculateAmortization) + historial: HECHO (`screens/debts/`).
+- Ahorros: metas + aportes registrados con tx enlazada + proyección (monthsToGoal/projectedCompletionDate) + historial con Deshacer: HECHO (`screens/vaults/`). NUEVA tabla `savings_contributions` (espejo de `debt_payments`) + columnas `currency` y `monthly_contribution` en `savings`: migración en `supabase/add_savings_contributions.sql` (el usuario la corre a mano; el código degrada con gracia si aún no se aplicó). Helper de proyección puro y testeado en `screens/vaults/projection.js`. El saldo inicial solo se declara al crear; tras crear, el saldo solo cambia vía aportes.
 - PENDIENTE de exponer: sobres acumulativos (sinking funds) en Presupuesto base cero — la lógica (`getAccumulatedBalance`, columnas `is_accumulative`/`accumulation_start`) ya existe; falta el mini-modal por categoría en `screens/budget/BudgetZero.jsx`. Ver `docs/specs/2026-05-29-sobres-acumulativos-design.md`.
 
 ## Historial de commits relevantes (rama rebuild/stitch-pure, último arriba)
 
-- `b34ecd1` feat(deudas): página completa — payoff + historial + demo branching + Stitch. HEAD actual.
+- `b1ca3d7` fix(ahorros): Deshacer reapunta aportes al id nuevo de la meta restaurada. HEAD actual.
+- `689d74d` feat(ahorros): shell delgado + integración de sub-componentes (sin tx manual duplicada).
+- `54869d6`…`b5ef049` feat(ahorros): VaultItem/VaultForm/ContributionModal/HistoryModal/vaultsUi (`screens/vaults/`) + polish a11y.
+- `12d65aa`…`a52309a` feat(ahorros): mutadores demo de metas y aportes (cascade + tx enlazada).
+- `0d35743`…`d740947` feat(ahorros): store con aportes registrados + tx enlazada + currency/aporte mensual.
+- `8ca3ddb`…`2f52a74` feat(ahorros): helper de proyección de meta + tests.
+- `098a39f`…`00e9a63` feat(ahorros): migración savings_contributions + currency + monthly_contribution.
+- `b34ecd1` feat(deudas): página completa — payoff + historial + demo branching + Stitch.
 - `576ff3a` fix(tarjetas): permitir adelantar abono (prepago) en tarjeta al día.
 - `548b83c` feat(tarjetas): página completa — abonos parciales + catálogo cashback + Stitch (`screens/cards/`).
 - `71802fa` feat(presupuesto): niveles progresivos (Seguimiento/50-30-20/Base cero) (`screens/budget/`, usePrefsStore, getBuckets503020).
@@ -98,17 +106,18 @@ FEATURES DE LÓGICA YA EXPUESTAS EN UI (estado actualizado vs. docs/specs/README
 - `40209b6` feat(emojis): JoyPixels v10 (componente Emoji).
 - `671e106` y previos: tipo derivado de categoría, caret decimal, guardado en demo, formateo de miles, favicon, rename FinTrack + logo, landing + reset password, animaciones Emil.
 
-Verificación tras `b34ecd1`: build OK, 77 tests OK, lint 0 errores. Servidor 200.
+Verificación tras `b1ca3d7`: build OK, 82 tests OK, lint 0 errores. Módulos de Ahorros se sirven 200 vía dev server (no se condujeron clics: no hay driver de navegador instalado; cada flujo se validó vía doble revisión spec+calidad). Recordar correr `supabase/add_savings_contributions.sql` a mano en Supabase antes de usar Ahorros con sesión real.
+
+Spec + plan de Ahorros en `docs/superpowers/specs/2026-06-02-ahorros-stitch-design.md` y `docs/superpowers/plans/2026-06-02-ahorros-stitch.md`.
 
 ## Siguiente paso lógico
 
-EMPEZAR POR AHORROS (`src/stitch/screens/StitchVaults.jsx`). Es una página CRUD con metas (savings) + aportes; aplicar el patrón espejo de `screens/debts/` (carpeta `screens/vaults/` con Ui local + VaultItem + VaultForm + modal de aporte + historial si aplica). Tareas concretas:
-- Crear los mutadores demo que FALTAN para savings en `demoMode.js` (`demoAddGoal`/`demoUpdateGoal`/`demoDeleteGoal`/`demoRestoreGoal` + `demoAddContribution` si el aporte crea movimiento). Revisar `src/stores/useSavingsStore.js` para ver qué acciones requieren sesión y replicarlas.
-- Reemplazar inputs nativos: monto de meta/aporte → `StitchCurrencyInput`; fecha límite → `StitchDatePicker`; cualquier `<select>` → `StitchSelect`. El picker de emoji de la meta ya usa `<Emoji>`.
-- Demo branching en crear/editar/borrar/aportar + toast manual; borrado con toast Deshacer.
-- Reusar utilidades existentes (`monthsToGoal`, `projectedCompletionDate` de `src/utils/calculations.js`) para mostrar proyección de la meta (análogo al payoff de deudas).
+EMPEZAR POR PLAN (`src/stitch/screens/StitchStrategy.jsx`). Metas a corto/mediano/largo plazo (`usePlanStore`, tabla `plans`). Aplicar el patrón espejo de `screens/vaults/` o `screens/debts/` (carpeta `screens/plans/` con Ui local + sub-componentes + shell delgado). Tareas concretas:
+- Crear los mutadores demo que FALTAN para plans en `demoMode.js` (`demoAddPlan`/`demoUpdatePlan`/`demoDeletePlan`/`demoRestorePlan` + aporte si aplica). Revisar `src/stores/usePlanStore.js` para ver qué acciones requieren sesión y replicarlas.
+- Reemplazar inputs nativos: montos → `StitchCurrencyInput`; fechas → `StitchDatePicker`; cualquier `<select>` (horizonte/tipo) → `StitchSelect`.
+- Demo branching en crear/editar/borrar (+aportar si aplica) + toast manual; borrado con toast Deshacer.
 - Revisar íconos (`!text-[Npx]`), Stagger de entrada, que ningún dropdown recorte.
 
-Orden de páginas restante tras Ahorros: Plan (`StitchStrategy`), luego las de solo lectura/menos CRUD: Dashboard (`StitchDashboard`), Reportes (`StitchReports`), Calendario (`StitchCalendar`), Ajustes (`StitchSettings`), Feedback (`StitchFeedback`). Pendiente transversal: exponer sobres acumulativos en Presupuesto base cero (ver sección de specs). Revisión por página antes de pasar a la siguiente.
+Orden de páginas restante tras Plan: las de solo lectura/menos CRUD — Dashboard (`StitchDashboard`), Reportes (`StitchReports`), Calendario (`StitchCalendar`), Ajustes (`StitchSettings`), Feedback (`StitchFeedback`). Pendiente transversal: exponer sobres acumulativos en Presupuesto base cero (ver sección de specs). Revisión por página antes de pasar a la siguiente.
 
-Comandos de verificación por página: `npm run build`, `npm run lint` (0 errores), `npm run test` (77 deben pasar). Confirmar que http://localhost:5173/ responde 200.
+Comandos de verificación por página: `npm run build`, `npm run lint` (0 errores), `npm run test` (82 deben pasar). Confirmar que http://localhost:5173/ responde 200.
