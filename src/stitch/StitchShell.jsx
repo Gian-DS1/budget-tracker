@@ -23,7 +23,6 @@ const NAV = [
   { section: 'Herramientas' },
   { to: '/calendario', icon: 'calendar_month', label: 'Calendario' },
   { to: '/reportes', icon: 'analytics', label: 'Reportes' },
-  { to: '/feedback', icon: 'forum', label: 'Feedback' },
 ];
 
 export default function StitchShell() {

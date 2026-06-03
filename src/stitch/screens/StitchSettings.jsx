@@ -22,7 +22,7 @@ const BUDGET_LEVEL_CARDS = [
 export default function StitchSettings() {
   const { manualRate, source, getRate, fetchRate, setManualRate } = useRateStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
-  const { categories, dedupeCategories, resetCategoriesToDefault } = useCategoryStore();
+  const { categories, resetCategoriesToDefault } = useCategoryStore();
   const fileRef = useRef(null);
   const [rateInput, setRateInput] = useState('');
 
@@ -96,8 +96,6 @@ export default function StitchSettings() {
     } else toast.error('Formato no soportado. Usa .csv o .xlsx');
     e.target.value = '';
   };
-
-  const dedupe = async () => { const n = await dedupeCategories(); toast.success(n > 0 ? `${n} categorías duplicadas eliminadas` : 'No había duplicados'); };
 
   // Reset destructivo: confirmación vía toast (patrón Stitch, no confirm() nativo).
   const confirmReset = () => {
@@ -198,13 +196,13 @@ export default function StitchSettings() {
           </div>
           <div className="flex flex-wrap gap-xs mb-md">
             {categories.filter((c) => c.isActive).map((c) => (
-              <span key={c.id} className="inline-flex items-center gap-xs bg-surface-card border border-border-subtle rounded px-sm py-xs font-label-sm text-label-sm text-on-surface-variant inner-glow">
-                <Emoji e={c.icon} size={15} /> {c.name}
+              <span key={c.id} className="inline-flex items-center gap-xs bg-surface-card border border-border-subtle rounded px-sm h-7 font-label-sm text-label-sm text-on-surface-variant inner-glow">
+                <span className="inline-flex items-center justify-center shrink-0"><Emoji e={c.icon} size={13} /></span>
+                <span className="leading-none">{c.name}</span>
               </span>
             ))}
           </div>
           <div className="flex gap-sm">
-            <button onClick={dedupe} className="border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high flex items-center gap-xs"><MS name="cleaning_services" className="text-[14px]" /> Eliminar duplicados</button>
             <button onClick={confirmReset} className="border border-border-subtle text-accent-error font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high flex items-center gap-xs"><MS name="restart_alt" className="text-[14px]" /> Restablecer</button>
           </div>
         </Stagger.Item>
