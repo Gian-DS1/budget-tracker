@@ -38,26 +38,6 @@ export function getIncomeVsExpenseSeries(transactions, range, refDate = new Date
   });
 }
 
-// Tendencia de gasto de las topN categorías a lo largo del rango.
-export function getCategoryTrend(transactions, categories, range, refDate = new Date(), topN = 5) {
-  const months = monthsRange(range, refDate);
-  const expenses = transactions.filter(isExpense);
-  if (expenses.length === 0) return { months: months.map((x) => MONTHS_SHORT_ES[x.m]), series: [] };
-
-  // Top categorías por gasto total en el rango.
-  const inRange = expenses.filter((t) => months.some(({ y, m }) => inMonth(t, y, m)));
-  const grouped = groupByCategory(inRange, categories).sort((a, b) => b.total - a.total).slice(0, topN);
-
-  const series = grouped.map((g) => ({
-    name: g.category.name,
-    color: g.category.color || '#bec2ff',
-    data: months.map(({ y, m }) => g.transactions
-      .filter((t) => inMonth(t, y, m))
-      .reduce((s, t) => s + getEffectiveAmount(t), 0)),
-  }));
-  return { months: months.map((x) => MONTHS_SHORT_ES[x.m]), series };
-}
-
 // Comparativa por categoría: mes actual vs mes anterior (relativo a refDate).
 export function getMonthComparison(transactions, categories, refDate = new Date()) {
   const curY = refDate.getFullYear(), curM = refDate.getMonth();

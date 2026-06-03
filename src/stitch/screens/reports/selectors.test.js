@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getIncomeVsExpenseSeries, getCategoryTrend, getMonthComparison, getInsights } from './selectors';
+import { getIncomeVsExpenseSeries, getMonthComparison, getInsights } from './selectors';
 
 // refDate fijo para tests deterministas: 15 jun 2026.
 const REF = new Date(2026, 5, 15);
@@ -34,35 +34,6 @@ describe('getIncomeVsExpenseSeries', () => {
   it('respeta el largo del rango (12, 24)', () => {
     expect(getIncomeVsExpenseSeries([], 12, REF)).toHaveLength(12);
     expect(getIncomeVsExpenseSeries([], 24, REF)).toHaveLength(24);
-  });
-});
-
-describe('getCategoryTrend', () => {
-  it('sin gastos → series vacías', () => {
-    const r = getCategoryTrend([], cats, 6, REF);
-    expect(r.series).toEqual([]);
-  });
-
-  it('una serie por top categoría con un punto por mes', () => {
-    const txs = [
-      tx(2026, 4, 'c1', 1000), // may
-      tx(2026, 5, 'c1', 2000), // jun
-      tx(2026, 5, 'c2', 300),
-    ];
-    const r = getCategoryTrend(txs, cats, 6, REF, 5);
-    expect(r.months).toHaveLength(6);
-    const sm = r.series.find((s) => s.name === 'Supermercado');
-    expect(sm).toBeTruthy();
-    expect(sm.data).toHaveLength(6);
-    expect(sm.data[4]).toBe(1000); // may
-    expect(sm.data[5]).toBe(2000); // jun
-  });
-
-  it('limita a topN categorías por gasto total', () => {
-    const txs = [tx(2026, 5, 'c1', 5000), tx(2026, 5, 'c2', 100)];
-    const r = getCategoryTrend(txs, cats, 6, REF, 1);
-    expect(r.series).toHaveLength(1);
-    expect(r.series[0].name).toBe('Supermercado');
   });
 });
 

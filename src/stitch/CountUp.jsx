@@ -10,8 +10,9 @@ const prefersReduced = () =>
 
 export default function CountUp({ value, format = (v) => String(v), duration = 700 }) {
   const target = Number(value) || 0;
-  const [display, setDisplay] = useState(target);
-  const fromRef = useRef(target);
+  // Arranca en 0 para que el PRIMER montaje anime de 0 → valor (no solo en cambios).
+  const [display, setDisplay] = useState(0);
+  const fromRef = useRef(0);
   const rafRef = useRef(0);
 
   useEffect(() => {

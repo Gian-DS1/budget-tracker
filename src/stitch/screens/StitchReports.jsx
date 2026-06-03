@@ -11,14 +11,13 @@ import useDebtStore from '../../stores/useDebtStore';
 import { getFinancialHealthScore, getMonthlySavingCapacity } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/formatters';
 import { MONTHS_SHORT_ES } from '../../utils/constants';
-import { getIncomeVsExpenseSeries, getCategoryTrend, getMonthComparison, getInsights } from './reports/selectors';
+import { getIncomeVsExpenseSeries, getMonthComparison, getInsights } from './reports/selectors';
 import { getAnalysis } from './reports/analysis';
 import { ReportCard, Kpi } from './reports/reportsUi';
 import { InfoTip } from '../InfoTip';
 import CountUp from '../CountUp';
 import AnalysisPanel from './reports/AnalysisPanel';
 import IncomeExpenseBars from './reports/IncomeExpenseBars';
-import CategoryTrendLines from './reports/CategoryTrendLines';
 import MonthComparison from './reports/MonthComparison';
 import InsightsRow from './reports/InsightsRow';
 
@@ -54,7 +53,6 @@ export default function StitchReports() {
 
   // Análisis temporales (dependen del rango).
   const incomeExpense = useMemo(() => getIncomeVsExpenseSeries(transactions, range, now), [transactions, range, now]);
-  const trend = useMemo(() => getCategoryTrend(transactions, categories, range, now, 5), [transactions, categories, range, now]);
   const comparison = useMemo(() => getMonthComparison(transactions, categories, now), [transactions, categories, now]);
   const insights = useMemo(() => getInsights(transactions, categories, range, now), [transactions, categories, range, now]);
 
@@ -128,28 +126,17 @@ export default function StitchReports() {
           <Kpi l="MOVIMIENTOS" v={<CountUp value={transactions.length} format={(n) => String(Math.round(n))} />} d="en total" icon="receipt_long" />
         </Stagger.Item>
 
-        {/* Análisis inteligente (recomendaciones priorizadas) */}
-        <Stagger.Item>
+        {/* Análisis inteligente + Ingresos vs gastos en dos columnas */}
+        <Stagger.Item className="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-start">
           <AnalysisPanel insights={analysis} />
-        </Stagger.Item>
-
-        {/* Ingresos vs gastos por mes */}
-        <Stagger.Item>
-          <ReportCard title={`Ingresos vs gastos · ${range} meses`} icon="bar_chart">
+          <ReportCard title={`Ingresos vs gastos · ${range} meses`} icon="bar_chart" className="h-full">
             <IncomeExpenseBars data={incomeExpense} />
           </ReportCard>
         </Stagger.Item>
 
-        {/* Tendencia de categorías + insights */}
-        <Stagger.Item className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-          <div className="lg:col-span-2">
-            <ReportCard title="Tendencia de categorías" icon="show_chart" className="h-full">
-              <CategoryTrendLines months={trend.months} series={trend.series} />
-            </ReportCard>
-          </div>
-          <div className="lg:col-span-1">
-            <InsightsRow insights={insights} />
-          </div>
+        {/* Insights (promedios y récords) */}
+        <Stagger.Item>
+          <InsightsRow insights={insights} />
         </Stagger.Item>
 
         {/* Comparativa mes vs anterior */}
