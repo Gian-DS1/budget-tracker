@@ -15,9 +15,15 @@ import { defaultCategories } from '../data/defaultCategories';
 
 const FLAG = 'fintrack-demo-mode';
 
-// Solo se permite demo en localhost / 127.0.0.1 (nunca en producción).
+// TEMPORAL: habilita el modo demo en producción para pruebas externas
+// (TestSprite). Volver a `false` cuando termine el testing para que el demo
+// quede solo en localhost.
+const DEMO_IN_PROD = true;
+
+// Permite demo en localhost / 127.0.0.1 (y en producción si DEMO_IN_PROD).
 export function isLocalhost() {
   if (typeof window === 'undefined') return false;
+  if (DEMO_IN_PROD) return true;
   const h = window.location.hostname;
   return h === 'localhost' || h === '127.0.0.1' || h === '[::1]';
 }
