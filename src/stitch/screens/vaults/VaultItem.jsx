@@ -6,6 +6,7 @@ import Emoji from '../../Emoji';
 import { Stagger } from '../../StitchMotion';
 import { formatCurrency, formatDate, toISODate } from '../../../utils/formatters';
 import { getProjection } from './projection';
+import { HORIZON_CHIP } from './horizons';
 
 const fmt = (n, c) => formatCurrency(n, c);
 
@@ -19,6 +20,7 @@ export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDel
         <div className="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center border border-border-subtle shrink-0"><Emoji e={goal.icon || '🎯'} size={18} /></div>
         <span className="font-label-sm text-label-sm uppercase text-on-surface truncate min-w-0">{goal.title}</span>
         {goal.currency === 'USD' && <span className="font-mono-data text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">USD</span>}
+        {HORIZON_CHIP[goal.horizon] && <span className="font-mono-data text-[8px] text-text-muted border border-border-subtle rounded px-1 shrink-0">{HORIZON_CHIP[goal.horizon]}</span>}
       </div>
 
       <div className={`font-headline-md text-headline-md tracking-tight ${proj.done ? 'text-tertiary' : 'text-on-surface'}`} style={proj.done ? { color: '#bdd200' } : undefined}>{fmt(goal.currentAmount, goal.currency)}</div>
