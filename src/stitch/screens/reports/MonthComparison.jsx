@@ -33,10 +33,10 @@ export default function MonthComparison({ data }) {
                 }}
               />
             </div>
-            <span className={`font-mono-data text-mono-data shrink-0 w-[64px] text-right ${up ? 'text-accent-error' : 'text-tertiary'}`}>
+            <span className={`font-mono-data text-mono-data shrink-0 w-[56px] text-right whitespace-nowrap ${up ? 'text-accent-error' : 'text-tertiary'}`}>
               {isNew ? 'nuevo' : `${up ? '+' : ''}${d.deltaPct.toFixed(0)}%`}
             </span>
-            <span className="font-mono-data text-mono-data text-text-muted shrink-0 w-[90px] text-right hidden sm:inline">{fmt(d.current)}</span>
+            <span className="font-mono-data text-mono-data text-text-muted shrink-0 w-[120px] text-right whitespace-nowrap tabular-nums hidden sm:inline">{fmt(d.current)}</span>
           </div>
         );
       })}
