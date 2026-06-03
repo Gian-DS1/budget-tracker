@@ -365,7 +365,7 @@ export function demoAddGoal(goal) {
     targetAmount: Number(goal.targetAmount), currentAmount: current,
     monthlyContribution: Number(goal.monthlyContribution) || 0,
     deadline: goal.deadline || null, icon: goal.icon || '🎯', color: goal.color || '#bec2ff',
-    status: current >= Number(goal.targetAmount) ? 'completed' : 'active',
+    status: (current >= Number(goal.targetAmount) && Number(goal.targetAmount) > 0) ? 'completed' : 'active',
     currency: goal.currency || 'DOP', createdAt: new Date().toISOString(),
   };
   useSavingsStore.setState((s) => ({ goals: [...s.goals, row] }));
@@ -444,7 +444,7 @@ export function demoDeleteContribution(id) {
       ? s.goals.map((g) => {
           if (g.id !== goal.id) return g;
           const restored = Math.max(0, Number(g.currentAmount) - Number(contrib.amount));
-          return { ...g, currentAmount: restored, status: (restored >= g.targetAmount && g.targetAmount > 0) ? 'completed' : 'active' };
+          return { ...g, currentAmount: restored, status: (restored >= g.targetAmount && g.targetAmount > 0) ? 'completed' : (g.status === 'completed' ? 'active' : g.status) };
         })
       : s.goals,
   }));
