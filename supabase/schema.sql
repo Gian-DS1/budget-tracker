@@ -185,8 +185,8 @@ create index if not exists debts_user_id_idx                      on public.debt
 create index if not exists debt_payments_user_id_idx              on public.debt_payments (user_id);
 create index if not exists debt_payments_debt_id_idx              on public.debt_payments (debt_id);
 create index if not exists debt_payments_transaction_id_idx       on public.debt_payments (transaction_id);
-create index if not exists savings_contributions_user_id_idx        on public.savings_contributions (user_id);
-create index if not exists savings_contributions_goal_id_idx        on public.savings_contributions (goal_id);
+create index if not exists savings_contributions_user_id_idx      on public.savings_contributions (user_id);
+create index if not exists savings_contributions_goal_id_idx      on public.savings_contributions (goal_id);
 create index if not exists savings_contributions_transaction_id_idx on public.savings_contributions (transaction_id);
 create index if not exists plans_user_id_idx                      on public.plans (user_id);
 create index if not exists recurring_transactions_user_id_idx     on public.recurring_transactions (user_id);

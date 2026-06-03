@@ -22,6 +22,7 @@ create index if not exists savings_contributions_user_id_idx        on public.sa
 create index if not exists savings_contributions_goal_id_idx        on public.savings_contributions (goal_id);
 create index if not exists savings_contributions_transaction_id_idx on public.savings_contributions (transaction_id);
 
+-- RLS inline (espejo del loop de schema.sql; ambos deben mantenerse sincronizados).
 alter table public.savings_contributions enable row level security;
 
 drop policy if exists savings_contributions_own on public.savings_contributions;
