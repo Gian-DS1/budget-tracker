@@ -19,7 +19,7 @@ export default function UpcomingRail({ items, onNavigate }) {
           <p className="font-body-md text-body-md text-text-muted">Sin vencimientos en los próximos 30 días.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-sm">
+        <div className="flex flex-col gap-sm">
           {items.map((it, i) => (
             <button key={i} onClick={() => it.to && onNavigate(it.to)} className="text-left group p-sm border border-border-subtle rounded hover:bg-surface-container-high transition-colors flex flex-col gap-xs">
               <div className="flex items-center justify-between gap-xs">

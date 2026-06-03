@@ -120,12 +120,11 @@ export default function StitchCalendar() {
             </div>
           </div>
 
-          <DayDetail iso={selectedISO} movement={selected ? movements[selected] : null} dues={selected ? dueEvents[selected] : null} categories={categories} />
-        </Stagger.Item>
-
-        {/* Próximos vencimientos */}
-        <Stagger.Item>
-          <UpcomingRail items={upcoming} onNavigate={navigate} />
+          {/* Columna derecha: detalle del día (arriba) + próximos vencimientos (abajo) */}
+          <div className="flex flex-col gap-gutter">
+            <DayDetail iso={selectedISO} movement={selected ? movements[selected] : null} dues={selected ? dueEvents[selected] : null} categories={categories} />
+            <UpcomingRail items={upcoming} onNavigate={navigate} />
+          </div>
         </Stagger.Item>
       </Stagger>
     </div>

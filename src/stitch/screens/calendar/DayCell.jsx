@@ -9,7 +9,7 @@ export default function DayCell({ day, movement, dues, isToday, isSelected, onCl
       onClick={() => clickable && onClick(day)}
       className={`aspect-square border rounded-sm p-xs flex flex-col text-left transition-colors ${clickable ? 'cursor-pointer hover:border-primary' : 'cursor-default'} ${isSelected ? 'border-primary bg-primary/10' : isToday ? 'border-primary/60 bg-surface-card' : 'border-border-subtle bg-surface-card'}`}
     >
-      <span className={`font-mono-data text-mono-data ${isToday ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{day}</span>
+      <span className={`font-mono-data text-[12px] ${isToday ? 'text-primary font-bold' : 'text-on-surface-variant'}`}>{day}</span>
       {/* Puntos de vencimiento */}
       {hasDue && (
         <div className="flex flex-wrap gap-px mt-px">
@@ -20,9 +20,9 @@ export default function DayCell({ day, movement, dues, isToday, isSelected, onCl
       )}
       {/* Movimientos pasados (mini montos) */}
       {hasMov && (
-        <div className="mt-auto flex flex-col gap-px">
-          {movement.income > 0 && <span className="font-mono-data text-[7px] text-tertiary">+{Math.round(movement.income / 1000)}K</span>}
-          {movement.expense > 0 && <span className="font-mono-data text-[7px] text-accent-error">−{Math.round(movement.expense / 1000)}K</span>}
+        <div className="mt-auto flex flex-col gap-px leading-tight">
+          {movement.income > 0 && <span className="font-mono-data text-[10px] text-tertiary">+{Math.round(movement.income / 1000)}K</span>}
+          {movement.expense > 0 && <span className="font-mono-data text-[10px] text-accent-error">−{Math.round(movement.expense / 1000)}K</span>}
         </div>
       )}
     </button>

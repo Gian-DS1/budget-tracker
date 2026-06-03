@@ -16,7 +16,7 @@ export default function DayDetail({ iso, movement, dues, categories }) {
   const dayTotal = (movement?.income || 0) - (movement?.expense || 0);
 
   return (
-    <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg h-full">
+    <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
       <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
         <h2 className="font-mono-data text-mono-data text-on-surface-variant">{iso ? formatDate(iso).toUpperCase() : 'SELECCIONA UN DÍA'}</h2>
         <MS name="event" className="!text-[16px] text-text-muted" />
