@@ -7,6 +7,7 @@ import { AnimatePresence } from 'framer-motion';
 import MS from './MS';
 import Logo from './Logo';
 import { Screen } from './StitchMotion';
+import AccountMenu from './AccountMenu';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
 
@@ -22,7 +23,6 @@ const NAV = [
   { section: 'Herramientas' },
   { to: '/calendario', icon: 'calendar_month', label: 'Calendario' },
   { to: '/reportes', icon: 'analytics', label: 'Reportes' },
-  { to: '/ajustes', icon: 'settings', label: 'Ajustes' },
   { to: '/feedback', icon: 'forum', label: 'Feedback' },
 ];
 
@@ -118,23 +118,9 @@ export default function StitchShell() {
               </span>
             )}
           </div>
-          <div className="flex-1 max-w-[28rem] mx-lg hidden md:flex">
-            <div className="relative w-full">
-              <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px]" />
-              <input
-                className="w-full bg-surface-container-lowest border border-border-subtle rounded text-body-md font-body-md text-on-surface pl-[32px] pr-sm py-xs focus:outline-none focus:border-primary transition-colors inner-glow placeholder:text-text-muted"
-                placeholder="Buscar…"
-                type="text"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-sm sm:gap-md shrink-0">
-            <button className="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high p-xs rounded transition-all" aria-label="Notificaciones">
-              <MS name="notifications" className="text-[24px]" />
-            </button>
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-border-subtle bg-surface-container-lowest flex items-center justify-center inner-glow">
-              <MS name="person" className="text-[20px] text-on-surface" />
-            </div>
+          <div className="flex-1" />
+          <div className="flex items-center shrink-0">
+            <AccountMenu />
           </div>
         </header>
 

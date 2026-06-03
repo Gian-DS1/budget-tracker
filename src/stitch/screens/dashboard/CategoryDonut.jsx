@@ -1,49 +1,91 @@
-// Donut de gastos del mes por categoría (top 5 + Otros). Centro = gasto total.
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from 'recharts';
+// Donut de gastos del mes por categoría (top 5 + Otros). El gráfico ocupa el alto
+// de la celda (ResponsiveContainer) y la leyenda se reparte al lado. Al pasar el
+// mouse por un segmento O por su fila de leyenda, ese segmento crece y proyecta
+// una sombra suave de su color (resaltado moderno, glow del tema).
+import { useState } from 'react';
+import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
 import { EmptyCell } from './dashboardUi';
 
 const fmt = (n) => formatCurrency(n);
 
-function DonutTip({ active, payload }) {
-  if (!active || !payload || !payload.length) return null;
-  const d = payload[0].payload;
+// Forma activa: el sector crece hacia afuera + sombra (drop-shadow) de su color.
+function ActiveSector(props) {
+  const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
   return (
-    <div className="bg-surface-card border border-border-subtle rounded p-sm inner-glow">
-      <div className="font-mono-data text-mono-data text-on-surface">{d.name}</div>
-      <div className="font-mono-data text-mono-data text-text-muted">{fmt(d.value)} · {d.pct.toFixed(0)}%</div>
-    </div>
+    <g style={{ filter: `drop-shadow(0 0 6px ${fill}aa)` }}>
+      <Sector
+        cx={cx} cy={cy}
+        innerRadius={innerRadius}
+        outerRadius={outerRadius + 6}
+        startAngle={startAngle} endAngle={endAngle}
+        fill={fill}
+        cornerRadius={3}
+      />
+    </g>
   );
 }
 
 export default function CategoryDonut({ data }) {
+  const [active, setActive] = useState(-1);
   if (!data || data.length === 0) return <EmptyCell icon="donut_small" message="Sin gastos registrados este mes." />;
+
   const total = data.reduce((s, d) => s + d.value, 0);
   const withPct = data.map((d) => ({ ...d, pct: total > 0 ? (d.value / total) * 100 : 0 }));
+  const activeName = active >= 0 ? withPct[active]?.name : null;
 
   return (
-    <div className="flex-grow flex items-center gap-md min-h-[200px]">
-      <div className="relative w-[140px] h-[140px] shrink-0">
+    <div className="flex-grow flex flex-col sm:flex-row items-center gap-lg min-h-[260px]">
+      {/* Dona: ocupa el alto disponible de la celda */}
+      <div className="relative w-full sm:w-1/2 h-[220px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
-            <Pie data={withPct} dataKey="value" nameKey="name" innerRadius={45} outerRadius={68} paddingAngle={2} stroke="none">
-              {withPct.map((d, i) => <Cell key={i} fill={d.color} />)}
+            <Pie
+              data={withPct}
+              dataKey="value"
+              nameKey="name"
+              innerRadius="58%"
+              outerRadius="86%"
+              paddingAngle={2}
+              stroke="none"
+              activeIndex={active >= 0 ? active : undefined}
+              activeShape={ActiveSector}
+              onMouseEnter={(_, i) => setActive(i)}
+              onMouseLeave={() => setActive(-1)}
+            >
+              {withPct.map((d, i) => (
+                <Cell
+                  key={i}
+                  fill={d.color}
+                  opacity={active === -1 || active === i ? 1 : 0.35}
+                  style={{ transition: 'opacity 150ms ease-out' }}
+                />
+              ))}
             </Pie>
-            <Tooltip content={<DonutTip />} isAnimationActive={false} />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="font-mono-data text-[9px] text-text-muted uppercase">Total</span>
-          <span className="font-headline-md text-[13px] text-on-surface">{fmt(total)}</span>
+          <span className="font-mono-data text-[10px] text-text-muted uppercase">{activeName || 'Total'}</span>
+          <span className="font-headline-md text-[18px] text-on-surface">{fmt(active >= 0 ? withPct[active].value : total)}</span>
+          {active >= 0 && <span className="font-mono-data text-mono-data text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
         </div>
       </div>
-      <div className="flex flex-col gap-xs min-w-0 flex-grow">
+
+      {/* Leyenda: hover sincronizado con la dona */}
+      <div className="flex flex-col gap-sm w-full sm:w-1/2">
         {withPct.map((d, i) => (
-          <div key={i} className="flex items-center gap-xs font-mono-data text-mono-data">
-            <span className="w-2 h-2 rounded-full shrink-0" style={{ background: d.color }} />
+          <button
+            type="button"
+            key={i}
+            onMouseEnter={() => setActive(i)}
+            onMouseLeave={() => setActive(-1)}
+            className={`flex items-center gap-sm font-mono-data text-mono-data rounded px-sm py-xs transition-colors text-left ${active === i ? 'bg-surface-container-high' : ''}`}
+          >
+            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: d.color, boxShadow: active === i ? `0 0 6px ${d.color}aa` : 'none' }} />
             <span className="text-on-surface-variant truncate flex-grow">{d.name}</span>
-            <span className="text-text-muted shrink-0">{d.pct.toFixed(0)}%</span>
-          </div>
+            <span className="text-on-surface shrink-0">{fmt(d.value)}</span>
+            <span className="text-text-muted shrink-0 w-[34px] text-right">{d.pct.toFixed(0)}%</span>
+          </button>
         ))}
       </div>
     </div>
