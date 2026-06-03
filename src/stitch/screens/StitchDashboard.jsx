@@ -10,7 +10,6 @@ import useSavingsStore from '../../stores/useSavingsStore';
 import useDebtStore from '../../stores/useDebtStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useBudgetStore from '../../stores/useBudgetStore';
-import usePlanStore from '../../stores/usePlanStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useRateStore from '../../stores/useRateStore';
 import { getBudgetSummary } from '../../utils/calculations';
@@ -30,7 +29,7 @@ export default function StitchDashboard() {
   const payments = useDebtStore((s) => s.payments);
   const debts = useDebtStore((s) => s.debts);
   const cards = useCreditCardStore((s) => s.cards);
-  const plans = usePlanStore((s) => s.plans);
+  const goals = useSavingsStore((s) => s.goals);
   const fxRate = useRateStore((s) => s.getRate());
 
   const now = useMemo(() => new Date(), []);
@@ -138,14 +137,14 @@ export default function StitchDashboard() {
         cta: 'VER', to: '/deudas',
       });
     });
-    plans.filter((p) => p.status !== 'completed' && p.deadline).forEach((p) => {
-      const due = new Date(p.deadline + 'T00:00:00');
+    goals.filter((g) => g.status !== 'completed' && g.deadline).forEach((g) => {
+      const due = new Date(g.deadline + 'T00:00:00');
       const days = Math.ceil((due - todayMid) / 86400000);
       if (days < 0 || days > 30) return;
-      out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${p.title}" vence ${formatDate(p.deadline)}.`, cta: 'VER', to: '/plan' });
+      out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${g.title}" vence ${formatDate(g.deadline)}.`, cta: 'VER', to: '/ahorros' });
     });
     return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
-  }, [cards, debts, plans, transactions, fxRate, y, m, now]);
+  }, [cards, debts, goals, transactions, fxRate, y, m, now]);
 
   const empty = transactions.length === 0;
 
