@@ -48,6 +48,7 @@ const useSavingsStore = create(
       color: g.color,
       status: g.status,
       currency: g.currency || 'DOP',
+      horizon: g.horizon || null,
       createdAt: g.created_at,
     }));
 
@@ -82,6 +83,7 @@ const useSavingsStore = create(
       icon: goal.icon || null,
       color: goal.color || null,
       currency: goal.currency || 'DOP',
+      horizon: goal.horizon || null,
       status: (Number(goal.currentAmount) || 0) >= Number(goal.targetAmount) ? 'completed' : 'active',
     };
 
@@ -98,6 +100,7 @@ const useSavingsStore = create(
         color: data.color,
         status: data.status,
         currency: data.currency || 'DOP',
+        horizon: data.horizon || null,
         createdAt: data.created_at,
       };
       set((state) => ({ goals: [...state.goals, formatted] }));
@@ -129,6 +132,7 @@ const useSavingsStore = create(
     if (updates.icon !== undefined) dbUpdates.icon = updates.icon;
     if (updates.color !== undefined) dbUpdates.color = updates.color;
     if (updates.currency !== undefined) dbUpdates.currency = updates.currency;
+    if (updates.horizon !== undefined) dbUpdates.horizon = updates.horizon || null;
     dbUpdates.status = newStatus;
 
     const { error } = await supabase.from('savings').update(dbUpdates).eq('id', id);
@@ -277,6 +281,7 @@ const useSavingsStore = create(
       icon: goal.icon || null,
       color: goal.color || null,
       currency: goal.currency || 'DOP',
+      horizon: goal.horizon || null,
       status: goal.status || ((Number(goal.currentAmount) || 0) >= Number(goal.targetAmount) ? 'completed' : 'active'),
     };
 
@@ -296,6 +301,7 @@ const useSavingsStore = create(
       color: goalData.color,
       status: goalData.status,
       currency: goalData.currency || 'DOP',
+      horizon: goalData.horizon || null,
       createdAt: goalData.created_at,
     };
     set((state) => ({ goals: [...state.goals, formatted] }));
