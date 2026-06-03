@@ -12,15 +12,17 @@ Tailwind v4 vía `@tailwindcss/vite`; config en CSS con `@theme` dentro de `src/
 
 Modo demo/QA: flag sessionStorage `fintrack-demo-mode`, solo en localhost. Botón "Entrar como demo" en `StitchAuth`. Siembra los stores Zustand en memoria sin tocar Supabase. En demo NO hay sesión, así que las acciones de los stores (que escriben al backend) salen sin efecto; por eso existen mutadores en memoria en `src/stitch/demoMode.js` (`demoAddTransaction`, etc.). Cualquier página con formularios de alta/edición DEBE ramificar `if (isDemoActive()) demoXxx(); else await storeAction()` y mostrar el toast manualmente en demo.
 
-Servidor dev corriendo en http://localhost:5173/. HEAD de la rama: `b1645b6`.
+Servidor dev corriendo en http://localhost:5173/. HEAD de la rama: `f23bc21`.
 
-Tests: 82 pasan (`npm run test`). Build limpio (`npm run build`). Lint: 0 errores (`npm run lint`). El easing `EASE_OUT` vive en `src/stitch/motionTokens.js` (separado de StitchMotion.jsx para no romper fast-refresh).
+Tests: 93 pasan (`npm run test`). Build limpio (`npm run build`). Lint: 0 errores (`npm run lint`). El easing `EASE_OUT` vive en `src/stitch/motionTokens.js` (separado de StitchMotion.jsx para no romper fast-refresh).
 
 PLAN FUSIONADO EN AHORROS: la página Plan dejó de existir. Se eliminaron la ruta `/plan`, la entrada de menú, el store `usePlanStore.js` y `StitchStrategy.jsx`. Las metas de ahorro ganaron un campo `horizon` opcional (short/medium/long/null) que es SOLO etiqueta para agrupar/filtrar (no cambia la lógica). Migración SQL `supabase/add_savings_horizon.sql` (correr a mano): añade la columna `horizon` a `savings` y copia `plans → savings`. La tabla `plans` queda huérfana, NO se borra (el usuario decide). El Dashboard ahora lee las "metas próximas" desde `savings` (enlaza a `/ahorros`).
 
 Estado de las páginas (pulidas = aplican las 14 pautas + demo branching):
-- PULIDAS: Transacciones (`StitchLedger.jsx`), Presupuesto (`StitchBudget.jsx` + carpeta `screens/budget/`), Tarjetas (`StitchCards.jsx` + `screens/cards/`), Deudas (`StitchDebts.jsx` + `screens/debts/`), Ahorros (`StitchVaults.jsx` + `screens/vaults/`, ahora con horizonte y filtro).
-- PENDIENTES (datos reales y emojis ya migrados, pero AÚN con `<select>`/`<input type=date>`/inputs nativos y SIN demo branching en formularios): Dashboard (`StitchDashboard.jsx`), Reportes (`StitchReports.jsx`), Calendario (`StitchCalendar.jsx`), Ajustes (`StitchSettings.jsx` — ya tiene el selector de nivel de presupuesto), Feedback (`StitchFeedback.jsx`).
+- PULIDAS: Transacciones (`StitchLedger.jsx`), Presupuesto (`StitchBudget.jsx` + carpeta `screens/budget/`), Tarjetas (`StitchCards.jsx` + `screens/cards/`), Deudas (`StitchDebts.jsx` + `screens/debts/`), Ahorros (`StitchVaults.jsx` + `screens/vaults/`, ahora con horizonte y filtro), Dashboard (`StitchDashboard.jsx` + `screens/dashboard/`, bento grid con Recharts).
+- PENDIENTES (datos reales y emojis ya migrados, pero AÚN con `<select>`/`<input type=date>`/inputs nativos y SIN demo branching en formularios): Reportes (`StitchReports.jsx`), Calendario (`StitchCalendar.jsx`), Ajustes (`StitchSettings.jsx` — ya tiene el selector de nivel de presupuesto), Feedback (`StitchFeedback.jsx`).
+
+DASHBOARD (bento): `screens/dashboard/` con shell delgado + selectores PUROS testeados (`selectors.js`/`selectors.test.js`: `getCategoryBreakdown`/`getBudgetUsage`/`getNetWorthSplit`) + sub-componentes de visualización (`FlowChart` AreaChart, `CategoryDonut`, `BudgetBar`, `NetWorthBar`, `HealthRing` RadialBar, `SignalsRail`) + `dashboardUi.jsx` (BentoCell/EmptyCell/Stat). REUSA utilidades probadas: `getFinancialHealthScore` + `getMonthlySavingCapacity` (salud) y `groupByCategory` (donut) — no duplica lógica. Charts con Recharts (igual que Reportes). Orden por importancia: KPI → presupuesto+flujo → salud → donut → patrimonio → recordatorios. Placeholder por celda (`EmptyCell`) cuando faltan datos.
 
 Plantilla de referencia: cualquier página ya pulida sirve de ejemplo. Para una página CON sub-componentes + modales + demo branching + toast Deshacer + historial, usar `screens/debts/` o `screens/cards/` (patrón espejo: shell delgado + carpeta de sub-componentes + `Ui.jsx` local con Modal/Field/FormActions).
 
@@ -87,7 +89,12 @@ FEATURES DE LÓGICA YA EXPUESTAS EN UI (estado actualizado vs. docs/specs/README
 
 ## Historial de commits relevantes (rama rebuild/stitch-pure, último arriba)
 
-- `b1ca3d7` fix(ahorros): Deshacer reapunta aportes al id nuevo de la meta restaurada. HEAD actual.
+- `f23bc21` feat(dashboard): shell bento ordenado por importancia + Stagger. HEAD actual.
+- `34d9bf6`…`cb95fd6` feat(dashboard): primitivas bento + FlowChart/CategoryDonut/BudgetBar/NetWorthBar/HealthRing/SignalsRail (`screens/dashboard/`).
+- `5d6736a` feat(dashboard): selectores puros (breakdown/budget/patrimonio) + tests.
+- `b1645b6` feat(plan): elimina Plan (fusionado en Ahorros) — ruta/menú/store/página borrados; metas con campo horizon; Dashboard lee metas de savings.
+- `e7e0a33`…`b875cb4` feat(ahorros): fusión Plan→Ahorros — columna horizon + migración, store/demo/form/chip/filtro.
+- `b1ca3d7` fix(ahorros): Deshacer reapunta aportes al id nuevo de la meta restaurada.
 - `689d74d` feat(ahorros): shell delgado + integración de sub-componentes (sin tx manual duplicada).
 - `54869d6`…`b5ef049` feat(ahorros): VaultItem/VaultForm/ContributionModal/HistoryModal/vaultsUi (`screens/vaults/`) + polish a11y.
 - `12d65aa`…`a52309a` feat(ahorros): mutadores demo de metas y aportes (cascade + tx enlazada).
@@ -108,20 +115,17 @@ FEATURES DE LÓGICA YA EXPUESTAS EN UI (estado actualizado vs. docs/specs/README
 - `40209b6` feat(emojis): JoyPixels v10 (componente Emoji).
 - `671e106` y previos: tipo derivado de categoría, caret decimal, guardado en demo, formateo de miles, favicon, rename FinTrack + logo, landing + reset password, animaciones Emil.
 
-- `b1645b6` feat(plan): elimina Plan (fusionado en Ahorros) — ruta/menú/store/página borrados; metas con campo horizon; Dashboard lee metas de savings. HEAD actual.
-- `e7e0a33`…`b875cb4` feat(ahorros): fusión Plan→Ahorros — columna horizon + migración, store/demo/form/chip/filtro.
+Verificación tras `f23bc21`: build OK, 93 tests OK (82 previos + 11 de dashboard/selectors), lint 0 errores. App + los 9 módulos de `screens/dashboard/` se sirven 200 vía dev server (cadena de imports de Recharts resuelve). No se condujeron clics/hover reales (tooltips de Recharts; no hay driver de navegador instalado) — validar en QA demo. Recordar correr a mano en Supabase, antes de usar con sesión real: `supabase/add_savings_contributions.sql` y `supabase/add_savings_horizon.sql`.
 
-Verificación tras `b1645b6`: build OK, 82 tests OK, lint 0 errores. App + módulos (StitchVaults con filtro, horizons.js, StitchDashboard reapuntado) se sirven 200 vía dev server; no quedan referencias a `usePlanStore`/`StitchStrategy`/`/plan` en `src`. No se condujeron clics (no hay driver de navegador instalado). Recordar correr a mano `supabase/add_savings_contributions.sql` Y `supabase/add_savings_horizon.sql` en Supabase antes de usar Ahorros con sesión real.
-
-Specs + planes en `docs/superpowers/specs/` y `docs/superpowers/plans/` (Ahorros: `2026-06-02-ahorros-stitch-*`; fusión Plan: `2026-06-03-fusion-plan-ahorros*`).
+Specs + planes en `docs/superpowers/specs/` y `docs/superpowers/plans/` (Ahorros: `2026-06-02-ahorros-stitch-*`; fusión Plan: `2026-06-03-fusion-plan-ahorros*`; Dashboard: `2026-06-03-dashboard-bento*`).
 
 ## Siguiente paso lógico
 
-EMPEZAR POR DASHBOARD (`src/stitch/screens/StitchDashboard.jsx`). Es de solo lectura (sin CRUD), así que el foco es pulido visual + consistencia, no demo branching de formularios. Tareas concretas:
-- Revisar que use los componentes Stitch donde haya selects/fechas (si los hay), tokens del tema, íconos (`!text-[Npx]`), Stagger de entrada, y que ningún dropdown recorte.
-- Confirmar que la data real (resumen de presupuesto, flujo del mes, recordatorios — incluida la nueva alerta de metas de ahorro que ya lee de savings) se vea bien en demo y vacío.
-- No reintroducir lógica; solo presentación.
+EMPEZAR POR REPORTES (`src/stitch/screens/StitchReports.jsx`). Ya usa Recharts (AreaChart, donut por categoría con `groupByCategory`, salud con `getFinancialHealthScore`); es de solo lectura. El foco es pulido visual + consistencia con el Dashboard recién hecho (mismo lenguaje de charts, tokens, Stagger), no demo branching de formularios. Tareas concretas:
+- Revisar tokens del tema, íconos (`!text-[Npx]`), Stagger de entrada, placeholders por sección cuando falten datos.
+- Si comparte visualizaciones con el Dashboard (donut, área, salud), evaluar reusar los sub-componentes de `screens/dashboard/` o el patrón, sin duplicar.
+- No reintroducir lógica; reusar utilidades de `src/utils/`.
 
-Orden de páginas restante tras Dashboard: Reportes (`StitchReports`), Calendario (`StitchCalendar`), Ajustes (`StitchSettings`), Feedback (`StitchFeedback`). Pendiente transversal: exponer sobres acumulativos en Presupuesto base cero (ver sección de specs). Revisión por página antes de pasar a la siguiente.
+Orden de páginas restante tras Reportes: Calendario (`StitchCalendar`), Ajustes (`StitchSettings`), Feedback (`StitchFeedback`). Pendiente transversal: exponer sobres acumulativos en Presupuesto base cero (ver sección de specs). Revisión por página antes de pasar a la siguiente.
 
-Comandos de verificación por página: `npm run build`, `npm run lint` (0 errores), `npm run test` (82 deben pasar). Confirmar que http://localhost:5173/ responde 200.
+Comandos de verificación por página: `npm run build`, `npm run lint` (0 errores), `npm run test` (93 deben pasar). Confirmar que http://localhost:5173/ responde 200.
