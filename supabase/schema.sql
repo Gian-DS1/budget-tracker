@@ -89,6 +89,7 @@ create table if not exists public.savings (
   status         text not null default 'active',     -- active | paused | completed
   currency       text not null default 'DOP',
   monthly_contribution numeric not null default 0,
+  horizon        text,                                -- short | medium | long (etiqueta, opcional)
   created_at     timestamptz not null default now()
 );
 
