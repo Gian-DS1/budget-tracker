@@ -5,7 +5,9 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
+import StitchSelect from '../StitchSelect';
 import useSavingsStore from '../../stores/useSavingsStore';
+import { HORIZON_FILTER_OPTIONS } from './vaults/horizons';
 import { isDemoActive, demoDeleteGoal, demoRestoreGoal } from '../demoMode';
 import { formatCurrency } from '../../utils/formatters';
 import VaultItem from './vaults/VaultItem';
@@ -23,8 +25,15 @@ export default function StitchVaults() {
   const [editing, setEditing] = useState(null);
   const [contribGoal, setContribGoal] = useState(null);
   const [historyGoal, setHistoryGoal] = useState(null);
+  const [horizonFilter, setHorizonFilter] = useState('');
 
   const total = getTotalSaved();
+
+  const visibleGoals = goals.filter((g) => {
+    if (!horizonFilter) return true;
+    if (horizonFilter === 'none') return !g.horizon;
+    return g.horizon === horizonFilter;
+  });
 
   const openCreate = () => { setEditing(null); setShowForm(true); };
   const openEdit = (g) => { setEditing(g); setShowForm(true); };
@@ -61,9 +70,16 @@ export default function StitchVaults() {
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Metas de ahorro</h1>
           <p className="font-body-md text-body-md text-text-muted mt-2">Ahorro total acumulado: <span className="text-tertiary font-mono-data">{fmt(total)}</span></p>
         </div>
-        <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start">
-          <MS name="add" className="text-[16px]" /> Nueva meta
-        </button>
+        <div className="flex items-center gap-sm self-start">
+          {goals.length > 0 && (
+            <div className="w-[180px]">
+              <StitchSelect value={horizonFilter} onChange={setHorizonFilter} options={HORIZON_FILTER_OPTIONS} compact />
+            </div>
+          )}
+          <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
+            <MS name="add" className="text-[16px]" /> Nueva meta
+          </button>
+        </div>
       </div>
 
       {goals.length === 0 ? (
@@ -72,9 +88,14 @@ export default function StitchVaults() {
           <p className="font-body-md text-body-md text-on-surface-variant">Sin metas de ahorro todavía.</p>
           <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">Crear primera meta</button>
         </div>
+      ) : visibleGoals.length === 0 ? (
+        <div className="bg-surface-card border border-border-subtle rounded-lg inner-glow py-[40px] flex flex-col items-center gap-sm text-center">
+          <MS name="filter_alt_off" className="text-[28px] text-text-muted" />
+          <p className="font-body-md text-body-md text-on-surface-variant">Ninguna meta en este horizonte.</p>
+        </div>
       ) : (
         <Stagger className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-md">
-          {goals.map((g) => (
+          {visibleGoals.map((g) => (
             <VaultItem key={g.id} goal={g} onContribute={setContribGoal} onHistory={setHistoryGoal} onEdit={openEdit} onDelete={onDelete} />
           ))}
         </Stagger>
