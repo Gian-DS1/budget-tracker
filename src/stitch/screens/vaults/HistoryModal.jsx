@@ -24,8 +24,11 @@ export default function HistoryModal({ goal: goalProp, onClose }) {
   const proj = getProjection(goal);
 
   const onDelete = async (c) => {
+    // A diferencia de Deudas, no avisamos por hadTransactionLink: todo aporte
+    // nace con su transacción enlazada (no hay filas legadas sin enlace).
     if (demo) {
-      demoDeleteContribution(c.id);
+      const res = demoDeleteContribution(c.id);
+      if (!res?.ok) return;
     } else {
       const res = await deleteContribution(c.id);
       if (!res?.ok) return;

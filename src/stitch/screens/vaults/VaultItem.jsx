@@ -24,7 +24,7 @@ export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDel
       <div className={`font-headline-md text-headline-md tracking-tight ${proj.done ? 'text-tertiary' : 'text-on-surface'}`} style={proj.done ? { color: '#bdd200' } : undefined}>{fmt(goal.currentAmount, goal.currency)}</div>
 
       <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, proj.pct))}%`, background: proj.done ? '#bdd200' : goal.color }} />
+        <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, proj.pct))}%`, background: proj.done ? '#bdd200' : (goal.color || '#bec2ff') }} />
       </div>
       <div className="flex justify-between font-mono-data text-mono-data text-text-muted">
         <span>Meta {fmt(goal.targetAmount, goal.currency)}</span>
