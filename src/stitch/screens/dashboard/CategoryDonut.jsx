@@ -64,10 +64,10 @@ export default function CategoryDonut({ data }) {
             </Pie>
           </PieChart>
         </ResponsiveContainer>
-        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-          <span className="font-mono-data text-[10px] text-text-muted uppercase">{activeName || 'Total'}</span>
-          <span className="font-headline-md text-[18px] text-on-surface">{fmt(active >= 0 ? withPct[active].value : total)}</span>
-          {active >= 0 && <span className="font-mono-data text-mono-data text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
+        <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none px-2 text-center leading-tight">
+          <span className="font-mono-data text-[9px] text-text-muted uppercase truncate max-w-full">{activeName || 'Total'}</span>
+          <span className="font-headline-md text-[15px] text-on-surface tracking-tight whitespace-nowrap">{fmt(active >= 0 ? withPct[active].value : total)}</span>
+          {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
         </div>
       </div>
 
