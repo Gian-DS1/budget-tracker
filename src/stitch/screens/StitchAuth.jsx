@@ -17,6 +17,7 @@ export default function StitchAuth() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [busy, setBusy] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   // Llegada desde el email de recuperación: establecer nueva contraseña.
   if (isRecoveringPassword) {
@@ -34,8 +35,7 @@ export default function StitchAuth() {
         toast.success('Cuenta creada. Revisa tu correo para confirmar.');
       } else {
         await resetPassword(email);
-        toast.success('Te enviamos un enlace para restablecer la contraseña.');
-        setMode(MODES.login);
+        setResetSent(true); // muestra confirmación en pantalla (no solo toast)
       }
     } catch (err) {
       toast.error(friendlyAuthError(err));
@@ -63,6 +63,18 @@ export default function StitchAuth() {
           </p>
         </div>
 
+        {/* Confirmación de recuperación enviada */}
+        {resetSent ? (
+          <div className="flex flex-col items-center text-center gap-md py-md">
+            <span className="w-12 h-12 rounded-full bg-tertiary/10 border border-tertiary/30 flex items-center justify-center">
+              <MS name="mark_email_read" className="text-[24px] text-tertiary" />
+            </span>
+            <p className="font-body-md text-body-md text-on-surface">Revisa tu correo</p>
+            <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">Te enviamos un enlace a <span className="text-on-surface-variant">{email}</span> para restablecer tu contraseña. Si no lo ves, revisa el spam.</p>
+            <button onClick={() => { setResetSent(false); setMode(MODES.login); }} className="mt-sm font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors">Volver al acceso</button>
+          </div>
+        ) : (
+        <>
         {/* Google */}
         {mode !== MODES.reset && (
           <>
@@ -129,6 +141,8 @@ export default function StitchAuth() {
             </>
           )}
         </div>
+        </>
+        )}
 
         {/* Modo QA — solo localhost. Entra con datos demo sin tocar el backend. */}
         {isLocalhost() && (

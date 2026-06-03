@@ -24,6 +24,7 @@ export default function StitchSettings() {
   const { categories } = useCategoryStore();
   const fileRef = useRef(null);
   const [rateInput, setRateInput] = useState('');
+  const demo = isDemoActive();
 
   useEffect(() => { fetchRate(); }, [fetchRate]);
 
@@ -168,8 +169,14 @@ export default function StitchSettings() {
             <MS name="database" className="text-text-muted text-[16px]" />
           </div>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="hidden" />
+          {demo && (
+            <div className="flex items-center gap-sm mb-sm px-md py-sm rounded bg-secondary/10 border border-secondary/30">
+              <MS name="info" className="!text-[16px] text-secondary shrink-0" />
+              <span className="font-mono-data text-mono-data text-secondary normal-case tracking-normal">La importación no está disponible en modo demo. El export sí funciona con los datos de ejemplo.</span>
+            </div>
+          )}
           <div className="flex flex-col gap-sm">
-            <Row icon="upload_file" l="Importar CSV / Excel" d="Carga masiva de transacciones" onClick={() => fileRef.current?.click()} />
+            <Row icon="upload_file" l="Importar CSV / Excel" d={demo ? 'No disponible en modo demo' : 'Carga masiva de transacciones'} onClick={() => fileRef.current?.click()} disabled={demo} />
             <Row icon="download" l="Exportar a CSV" d="Descarga tus datos" onClick={() => doExport('csv')} />
             <Row icon="grid_on" l="Exportar a Excel" d="Formato .xlsx" onClick={() => doExport('xlsx')} />
           </div>
@@ -180,9 +187,9 @@ export default function StitchSettings() {
   );
 }
 
-function Row({ icon, l, d, onClick }) {
+function Row({ icon, l, d, onClick, disabled = false }) {
   return (
-    <button onClick={onClick} className="flex items-center gap-md p-md rounded border border-border-subtle bg-surface-card hover:bg-surface-container-high transition-colors text-left">
+    <button onClick={onClick} disabled={disabled} className={`flex items-center gap-md p-md rounded border border-border-subtle bg-surface-card transition-colors text-left ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-container-high'}`}>
       <MS name={icon} className="text-[20px] text-primary" />
       <div className="flex flex-col">
         <span className="font-label-sm text-label-sm text-on-surface">{l}</span>
