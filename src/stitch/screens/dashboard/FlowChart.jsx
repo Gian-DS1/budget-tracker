@@ -33,7 +33,7 @@ export default function FlowChart({ series }) {
             </linearGradient>
           </defs>
           <XAxis dataKey="label" tick={{ fill: '#9a9da3', fontSize: 10 }} axisLine={{ stroke: '#232426' }} tickLine={false} />
-          <Tooltip content={<FlowTip />} />
+          <Tooltip content={<FlowTip />} isAnimationActive={false} cursor={{ stroke: '#454655', strokeWidth: 1 }} />
           <Area type="monotone" dataKey="net" stroke="#bec2ff" strokeWidth={2} fill="url(#dashFlow)" />
         </AreaChart>
       </ResponsiveContainer>

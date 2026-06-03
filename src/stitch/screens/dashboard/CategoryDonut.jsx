@@ -29,7 +29,7 @@ export default function CategoryDonut({ data }) {
             <Pie data={withPct} dataKey="value" nameKey="name" innerRadius={45} outerRadius={68} paddingAngle={2} stroke="none">
               {withPct.map((d, i) => <Cell key={i} fill={d.color} />)}
             </Pie>
-            <Tooltip content={<DonutTip />} />
+            <Tooltip content={<DonutTip />} isAnimationActive={false} />
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

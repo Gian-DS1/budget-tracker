@@ -1,8 +1,10 @@
 // Resumen (Dashboard) — bento grid ordenado por importancia. Datos reales; la
 // lógica pura vive en dashboard/selectors.js y utils/calculations. Solo lectura.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import MS from '../MS';
 import { Stagger } from '../StitchMotion';
+import StitchSelect from '../StitchSelect';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useDebtStore from '../../stores/useDebtStore';
@@ -17,7 +19,7 @@ import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { MONTHS_SHORT_ES } from '../../utils/constants';
 import { getCategoryBreakdown, getBudgetUsage, getNetWorthSplit } from './dashboard/selectors';
-import { BentoCell, Stat } from './dashboard/dashboardUi';
+import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
 import FlowChart from './dashboard/FlowChart';
 import CategoryDonut from './dashboard/CategoryDonut';
 import BudgetBar from './dashboard/BudgetBar';
@@ -41,8 +43,25 @@ export default function StitchDashboard() {
   const fxRate = useRateStore((s) => s.getRate());
 
   const now = useMemo(() => new Date(), []);
-  const y = now.getFullYear();
-  const m = now.getMonth();
+
+  // Mes seleccionado (estado). Inicia en el mes actual; el selector permite
+  // revisar meses pasados. Solo afecta las métricas MENSUALES; patrimonio,
+  // tarjetas, salud y recordatorios siguen siendo de hoy.
+  const [sel, setSel] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }));
+  const y = sel.y;
+  const m = sel.m;
+  const isCurrentMonth = sel.y === now.getFullYear() && sel.m === now.getMonth();
+
+  // Opciones del selector: últimos 12 meses terminando en el mes actual.
+  const monthOptions = useMemo(() => {
+    const opts = [];
+    for (let i = 0; i < 12; i++) {
+      let mm = now.getMonth() - i, yy = now.getFullYear();
+      while (mm < 0) { mm += 12; yy -= 1; }
+      opts.push({ value: `${yy}-${mm}`, label: `${MONTHS_SHORT_ES[mm]} ${yy}` });
+    }
+    return opts;
+  }, [now]);
 
   const monthTx = useMemo(
     () => transactions.filter((t) => {
@@ -118,10 +137,10 @@ export default function StitchDashboard() {
   const health = useMemo(() => getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt: getTotalMonthlyPayment() }), [cap, getTotalMonthlyPayment]);
   const healthHasData = cap.avgIncome > 0;
 
-  // Recordatorios
+  // Recordatorios (siempre de HOY, no del mes seleccionado).
   const signals = useMemo(() => {
     const out = [];
-    const todayMid = new Date(y, m, now.getDate());
+    const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
     cards.forEach((card) => {
       const bal = getCardBalances(card, transactions, now);
       if (bal.isPaid || bal.pendingBilled <= 0) return;
@@ -143,31 +162,51 @@ export default function StitchDashboard() {
       out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${g.title}" vence ${formatDate(g.deadline)}.`, to: '/ahorros' });
     });
     return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
-  }, [cards, debts, goals, transactions, fxRate, y, m, now]);
+  }, [cards, debts, goals, transactions, fxRate, now]);
 
+  // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
   const metrics = [
-    { l: 'PUEDES GASTAR', v: fmt(summary.puedesGastar), d: summary.estado === 'danger' ? 'Sin margen' : summary.estado === 'warning' ? 'Ajustado' : 'Con margen', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary' },
-    { l: 'TARJETAS POR PAGAR', v: fmt(totalPendingCards), d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary' },
-    { l: 'TASA DE AHORRO', v: `${savingsRate.toFixed(1)}%`, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant' },
-    { l: 'PATRIMONIO NETO', v: fmt(netWorth), d: `Ahorro ${fmt(totalSaved)}`, c: netWorth >= 0 ? 'text-tertiary' : 'text-accent-error' },
+    { l: 'PUEDES GASTAR', v: fmt(summary.puedesGastar), d: summary.estado === 'danger' ? 'Sin margen' : summary.estado === 'warning' ? 'Ajustado' : 'Con margen', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: 'Ingresos del mes menos gastos fijos y compromisos (deuda y ahorro planeados).' },
+    { l: 'TARJETAS POR PAGAR', v: fmt(totalPendingCards), d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: 'Suma de los saldos facturados pendientes de todas tus tarjetas. Es un estado de hoy.', live: true },
+    { l: 'TASA DE AHORRO', v: `${savingsRate.toFixed(1)}%`, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: '(Ingresos menos gastos) dividido entre los ingresos del mes.' },
+    { l: 'PATRIMONIO NETO', v: fmt(netWorth), d: `Ahorro ${fmt(totalSaved)}`, c: netWorth >= 0 ? 'text-tertiary' : 'text-accent-error', info: 'Ahorros totales menos deudas totales. Es un estado de hoy.', live: true },
   ];
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
+      {/* Banner: solo cuando se revisa un mes pasado. Aclara qué refleja el pasado. */}
+      {!isCurrentMonth && (
+        <div className="flex items-center gap-sm mb-md px-md py-sm rounded bg-secondary/10 border border-secondary/30">
+          <MS name="history" className="!text-[16px] text-secondary" />
+          <span className="font-mono-data text-mono-data text-secondary uppercase">Viendo: {MONTHS_SHORT_ES[m]} {y}</span>
+          <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">— patrimonio, tarjetas, salud y recordatorios siguen siendo de hoy.</span>
+          <button onClick={() => setSel({ y: now.getFullYear(), m: now.getMonth() })} className="ml-auto font-mono-data text-mono-data text-primary hover:underline">Volver a hoy</button>
+        </div>
+      )}
+
       <Stagger className="grid grid-cols-1 md:grid-cols-12 gap-md auto-rows-min">
         {/* 1 · Estado inmediato: 4 KPI */}
         {metrics.map((mx) => (
           <Stagger.Item key={mx.l} className="md:col-span-3">
             <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
-              <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs">{mx.l}</div>
+              <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
+                <span className="flex items-center gap-xs">{mx.l}{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1">HOY</span>}</span>
+                <InfoTip text={mx.info} />
+              </div>
               <Stat value={mx.v} cls={mx.c} sub={mx.d} warn={mx.warn} />
             </div>
           </Stagger.Item>
         ))}
 
         {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (hero) */}
-        <Stagger.Item className="md:col-span-8">
-          <BentoCell title={`Flujo de ${MONTHS_SHORT_ES[m]} ${y}`} icon="show_chart" className="h-full">
+        <Stagger.Item className="md:col-span-7">
+          <BentoCell className="h-full">
+            <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-md gap-sm">
+              <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs"><MS name="show_chart" className="!text-[14px] text-text-muted" /> Flujo del mes</span>
+              <div className="w-[150px]">
+                <StitchSelect value={`${sel.y}-${sel.m}`} onChange={(v) => { const [yy, mm] = v.split('-').map(Number); setSel({ y: yy, m: mm }); }} options={monthOptions} compact />
+              </div>
+            </div>
             <div className="grid grid-cols-3 gap-sm mb-md">
               <Stat label="Ingresos" value={`+${fmt(totals.income)}`} cls="text-tertiary" />
               <Stat label="Gastos" value={`−${fmt(totals.expense)}`} cls="text-accent-error" />
@@ -178,30 +217,30 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Salud */}
-        <Stagger.Item className="md:col-span-4">
-          <BentoCell title="Salud financiera" icon="favorite" className="h-full">
+        {/* 3 · Salud (estado de hoy) */}
+        <Stagger.Item className="md:col-span-5">
+          <BentoCell title="Salud financiera · hoy" icon="favorite" className="h-full">
             <HealthRing health={health} hasData={healthHasData} />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 4 · ¿En qué gasto? */}
-        <Stagger.Item className="md:col-span-5">
+        {/* 4 · ¿En qué gasto? (donut más grande) */}
+        <Stagger.Item className="md:col-span-7">
           <BentoCell title="Gastos por categoría" icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 5 · Patrimonio */}
-        <Stagger.Item className="md:col-span-7">
-          <BentoCell title="Patrimonio" icon="account_balance" className="h-full">
+        {/* 5 · Patrimonio (compacto, estado de hoy) */}
+        <Stagger.Item className="md:col-span-5">
+          <BentoCell title="Patrimonio · hoy" icon="account_balance" className="h-full">
             <NetWorthBar split={split} />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 6 · ¿Qué viene? Recordatorios */}
+        {/* 6 · ¿Qué viene? Recordatorios (de hoy) */}
         <Stagger.Item className="md:col-span-12">
-          <BentoCell title="Recordatorios" icon="radar">
+          <BentoCell title="Recordatorios · hoy" icon="radar">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
         </Stagger.Item>

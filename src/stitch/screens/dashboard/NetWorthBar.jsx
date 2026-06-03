@@ -7,7 +7,7 @@ const fmt = (n) => formatCurrency(n);
 export default function NetWorthBar({ split }) {
   if (!split.hasData) return <EmptyCell icon="account_balance" message="Aún sin ahorros ni deudas registrados." />;
   return (
-    <div className="flex-grow flex flex-col justify-center gap-md min-h-[120px]">
+    <div className="flex-grow flex flex-col justify-center gap-sm min-h-[80px]">
       <div className="flex justify-between items-baseline">
         <span className="font-mono-data text-mono-data text-text-muted uppercase">Patrimonio neto</span>
         <span className={`font-headline-md text-[20px] tracking-tight ${split.netWorth >= 0 ? 'text-tertiary' : 'text-accent-error'}`}>{fmt(split.netWorth)}</span>
