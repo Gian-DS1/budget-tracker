@@ -107,6 +107,7 @@ const useSavingsStore = create(
       return formatted;
     } else {
       console.error('Error adding saving goal', error);
+      toast.error('No se pudo crear la meta. Si acabas de actualizar, puede faltar una migración de la base de datos.');
     }
   },
 
@@ -138,6 +139,7 @@ const useSavingsStore = create(
     const { error } = await supabase.from('savings').update(dbUpdates).eq('id', id);
     if (error) {
       console.error('Error updating saving goal', error);
+      toast.error('No se pudo actualizar la meta. Si acabas de actualizar la app, puede faltar una migración de la base de datos.');
       return false;
     }
     set((state) => ({
@@ -288,6 +290,7 @@ const useSavingsStore = create(
     const { data: goalData, error: goalErr } = await supabase.from('savings').insert(dbPayload).select().single();
     if (goalErr || !goalData) {
       console.error('Error restoring saving goal', goalErr);
+      toast.error('No se pudo restaurar la meta.');
       return;
     }
     const formatted = {

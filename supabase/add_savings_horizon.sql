@@ -1,5 +1,10 @@
 -- Fusión Plan→Ahorros: columna horizonte en savings + migración de plans.
 -- Correr a mano en el SQL editor de Supabase. Idempotente.
+--
+-- ⚠️ ORDEN OBLIGATORIO: correr PRIMERO `add_savings_contributions.sql`.
+-- El INSERT de abajo escribe las columnas `currency` y `monthly_contribution`
+-- de `savings`, que las crea esa otra migración. Si corres esta primero, falla
+-- con: column "currency" of relation "savings" does not exist.
 
 -- 1. Columna horizonte (nullable: las metas normales no la necesitan).
 alter table public.savings add column if not exists horizon text;  -- short | medium | long | null
