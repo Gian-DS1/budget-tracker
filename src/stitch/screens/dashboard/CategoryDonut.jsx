@@ -52,6 +52,9 @@ export default function CategoryDonut({ data }) {
               activeShape={ActiveSector}
               onMouseEnter={(_, i) => setActive(i)}
               onMouseLeave={() => setActive(-1)}
+              isAnimationActive
+              animationDuration={600}
+              animationEasing="ease-out"
             >
               {withPct.map((d, i) => (
                 <Cell

@@ -15,6 +15,7 @@ import { getIncomeVsExpenseSeries, getCategoryTrend, getMonthComparison, getInsi
 import { getAnalysis } from './reports/analysis';
 import { ReportCard, Kpi } from './reports/reportsUi';
 import { InfoTip } from '../InfoTip';
+import CountUp from '../CountUp';
 import AnalysisPanel from './reports/AnalysisPanel';
 import IncomeExpenseBars from './reports/IncomeExpenseBars';
 import CategoryTrendLines from './reports/CategoryTrendLines';
@@ -119,12 +120,12 @@ export default function StitchReports() {
               </span>
               <MS name="favorite" className="!text-[16px] shrink-0" style={{ color: healthColor }} />
             </div>
-            <span className="font-headline-md text-[20px] tracking-tight whitespace-nowrap" style={{ color: healthColor }}>{health.score}<span className="text-text-muted text-[15px]">/100</span></span>
+            <span className="font-headline-md text-[20px] tracking-tight whitespace-nowrap" style={{ color: healthColor }}><CountUp value={health.score} format={(n) => String(Math.round(n))} /><span className="text-text-muted text-[15px]">/100</span></span>
             <span className="font-label-sm text-label-sm" style={{ color: healthColor }}>{health.label}</span>
           </div>
-          <Kpi l="TASA DE AHORRO" v={`${(health.savingsRate * 100).toFixed(0)}%`} d={health.savingsRate >= 0.2 ? 'Saludable' : 'Mejorable'} c={health.savingsRate >= 0.2 ? 'text-tertiary' : 'text-accent-warning'} icon="savings" info="(Ingresos − gastos) ÷ ingresos, promediado en los meses del periodo." />
-          <Kpi l="GASTO DEL MES" v={fmt(monthExpenseTotal)} d={`${monthExpenses.length} mov.`} icon="payments" info="Suma de tus gastos del mes actual, neta de cashback." />
-          <Kpi l="MOVIMIENTOS" v={String(transactions.length)} d="en total" icon="receipt_long" />
+          <Kpi l="TASA DE AHORRO" v={<CountUp value={health.savingsRate * 100} format={(n) => `${n.toFixed(0)}%`} />} d={health.savingsRate >= 0.2 ? 'Saludable' : 'Mejorable'} c={health.savingsRate >= 0.2 ? 'text-tertiary' : 'text-accent-warning'} icon="savings" info="(Ingresos − gastos) ÷ ingresos, promediado en los meses del periodo." />
+          <Kpi l="GASTO DEL MES" v={<CountUp value={monthExpenseTotal} format={fmt} />} d={`${monthExpenses.length} mov.`} icon="payments" info="Suma de tus gastos del mes actual, neta de cashback." />
+          <Kpi l="MOVIMIENTOS" v={<CountUp value={transactions.length} format={(n) => String(Math.round(n))} />} d="en total" icon="receipt_long" />
         </Stagger.Item>
 
         {/* Análisis inteligente (recomendaciones priorizadas) */}

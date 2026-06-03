@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
 import StitchSelect from '../StitchSelect';
+import CountUp from '../CountUp';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useDebtStore from '../../stores/useDebtStore';
@@ -168,9 +169,9 @@ export default function StitchDashboard() {
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
   // Patrimonio neto NO va aquí: tiene su propia celda abajo (evita redundancia).
   const metrics = [
-    { l: 'PUEDES GASTAR', v: fmt(summary.puedesGastar), d: summary.estado === 'danger' ? 'Ya no queda' : summary.estado === 'warning' ? 'Justo' : 'Te sobra', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: 'Ingresos del mes menos gastos fijos y compromisos (deuda y ahorro planeados).' },
-    { l: 'TARJETAS POR PAGAR', v: fmt(totalPendingCards), d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: 'Suma de los saldos facturados pendientes de todas tus tarjetas. Es un estado de hoy.', live: true },
-    { l: 'TASA DE AHORRO', v: `${savingsRate.toFixed(1)}%`, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: '(Ingresos menos gastos) dividido entre los ingresos del mes.' },
+    { l: 'PUEDES GASTAR', v: <CountUp value={summary.puedesGastar} format={fmt} />, d: summary.estado === 'danger' ? 'Ya no queda' : summary.estado === 'warning' ? 'Justo' : 'Te sobra', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: 'Ingresos del mes menos gastos fijos y compromisos (deuda y ahorro planeados).' },
+    { l: 'TARJETAS POR PAGAR', v: <CountUp value={totalPendingCards} format={fmt} />, d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: 'Suma de los saldos facturados pendientes de todas tus tarjetas. Es un estado de hoy.', live: true },
+    { l: 'TASA DE AHORRO', v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: '(Ingresos menos gastos) dividido entre los ingresos del mes.' },
   ];
 
   return (
@@ -209,9 +210,9 @@ export default function StitchDashboard() {
               </div>
             </div>
             <div className="grid grid-cols-3 gap-sm mb-md">
-              <Stat label="Ingresos" value={`+${fmt(totals.income)}`} cls="text-tertiary" />
-              <Stat label="Gastos" value={`−${fmt(totals.expense)}`} cls="text-accent-error" />
-              <Stat label="Balance" value={`${totals.balance >= 0 ? '+' : '−'}${fmt(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
+              <Stat label="Ingresos" value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} cls="text-tertiary" />
+              <Stat label="Gastos" value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} cls="text-accent-error" />
+              <Stat label="Balance" value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} />
             <FlowChart series={series} />

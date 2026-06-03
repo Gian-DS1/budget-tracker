@@ -25,7 +25,7 @@ export default function MonthComparison({ data }) {
             <div className="relative flex-grow h-3 bg-surface-container-highest rounded-full overflow-hidden">
               <div className="absolute top-0 bottom-0 left-1/2 w-px bg-border-subtle" />
               <div
-                className="absolute top-0 bottom-0 rounded-full"
+                className="absolute top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
                 style={{
                   background: up ? '#ffb4ab' : '#bdd200',
                   width: `${widthPct}%`,

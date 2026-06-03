@@ -3,6 +3,7 @@
 // resultado de getFinancialHealthScore (calculado en el shell). Color por rango.
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import { EmptyCell } from './dashboardUi';
+import CountUp from '../../CountUp';
 
 function ringColor(score) {
   if (score >= 80) return '#bdd200';
@@ -29,7 +30,7 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
             </RadialBarChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-            <span className="font-headline-md text-[26px] tracking-tight leading-none" style={{ color }}>{health.score}</span>
+            <span className="font-headline-md text-[26px] tracking-tight leading-none" style={{ color }}><CountUp value={health.score} format={(n) => String(Math.round(n))} /></span>
             <span className="font-mono-data text-[9px] text-text-muted uppercase">/ 100</span>
           </div>
         </div>

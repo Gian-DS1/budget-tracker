@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
+import CountUp from '../CountUp';
 import useDebtStore from '../../stores/useDebtStore';
 import { isDemoActive, demoDeleteDebt, demoRestoreDebt } from '../demoMode';
 import { formatCurrency } from '../../utils/formatters';
@@ -65,7 +66,7 @@ export default function StitchDebts() {
             <span className="font-mono-data text-mono-data text-accent-error uppercase tracking-wider">Pasivos · estrategia avalancha</span>
           </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Control de deudas</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-sm">Deuda total activa: <span className="text-accent-error font-mono-data">{fmt(totalDebt)}</span></p>
+          <p className="font-body-md text-body-md text-text-muted mt-sm">Deuda total activa: <span className="text-accent-error font-mono-data"><CountUp value={totalDebt} format={fmt} /></span></p>
         </div>
         <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start">
           <MS name="add" className="text-[16px]" /> Nueva deuda

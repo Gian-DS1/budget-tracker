@@ -34,7 +34,7 @@ export default function CategoryTrendLines({ months, series }) {
           <Tooltip content={<Tip />} isAnimationActive={false} />
           <Legend wrapperStyle={{ fontSize: 11, color: '#9a9da3' }} />
           {series.map((s) => (
-            <Line key={s.name} type="monotone" dataKey={s.name} stroke={s.color} strokeWidth={2} dot={false} isAnimationActive={false} />
+            <Line key={s.name} type="monotone" dataKey={s.name} stroke={s.color} strokeWidth={2} dot={false} isAnimationActive animationDuration={600} animationEasing="ease-out" />
           ))}
         </LineChart>
       </ResponsiveContainer>

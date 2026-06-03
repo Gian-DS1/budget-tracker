@@ -30,8 +30,8 @@ export default function IncomeExpenseBars({ data }) {
           <XAxis dataKey="label" tick={{ fill: '#9a9da3', fontSize: 10 }} axisLine={{ stroke: '#232426' }} tickLine={false} />
           <Tooltip content={<Tip />} isAnimationActive={false} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
           <Legend wrapperStyle={{ fontSize: 11, color: '#9a9da3' }} />
-          <Bar dataKey="income" name="Ingresos" fill="#bdd200" radius={[3, 3, 0, 0]} isAnimationActive={false} />
-          <Bar dataKey="expense" name="Gastos" fill="#ffb4ab" radius={[3, 3, 0, 0]} isAnimationActive={false} />
+          <Bar dataKey="income" name="Ingresos" fill="#bdd200" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+          <Bar dataKey="expense" name="Gastos" fill="#ffb4ab" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
         </BarChart>
       </ResponsiveContainer>
     </div>

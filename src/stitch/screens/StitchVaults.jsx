@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
 import StitchSelect from '../StitchSelect';
+import CountUp from '../CountUp';
 import useSavingsStore from '../../stores/useSavingsStore';
 import { HORIZON_FILTER_OPTIONS } from './vaults/horizons';
 import { isDemoActive, demoDeleteGoal, demoRestoreGoal } from '../demoMode';
@@ -68,7 +69,7 @@ export default function StitchVaults() {
             <span className="font-mono-data text-mono-data text-tertiary uppercase tracking-wider">Sistema activo</span>
           </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Metas de ahorro</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-2">Ahorro total acumulado: <span className="text-tertiary font-mono-data">{fmt(total)}</span></p>
+          <p className="font-body-md text-body-md text-text-muted mt-2">Ahorro total acumulado: <span className="text-tertiary font-mono-data"><CountUp value={total} format={fmt} /></span></p>
         </div>
         <div className="flex items-center gap-sm self-start">
           {goals.length > 0 && (
