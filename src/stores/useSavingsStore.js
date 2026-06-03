@@ -128,11 +128,14 @@ const useSavingsStore = create(
     dbUpdates.status = newStatus;
 
     const { error } = await supabase.from('savings').update(dbUpdates).eq('id', id);
-    if (!error) {
-      set((state) => ({
-        goals: state.goals.map((g) => (g.id === id ? { ...g, ...updates, currentAmount: newCurrent, targetAmount: newTarget, status: newStatus } : g)),
-      }));
+    if (error) {
+      console.error('Error updating saving goal', error);
+      return false;
     }
+    set((state) => ({
+      goals: state.goals.map((g) => (g.id === id ? { ...g, ...updates, currentAmount: newCurrent, targetAmount: newTarget, status: newStatus } : g)),
+    }));
+    return true;
   },
 
   deleteGoal: async (id) => {
@@ -201,9 +204,12 @@ const useSavingsStore = create(
         set((state) => ({
           contributions: state.contributions.map((c) => (c.id === contribData.id ? { ...c, transactionId: txId } : c)),
         }));
+      } else {
+        toast('Aporte guardado, pero no se generó la transacción enlazada.', { duration: 5000 });
       }
     } catch (err) {
       console.error('Error syncing contribution with transactions:', err);
+      toast('Aporte guardado, pero no se pudo enlazar la transacción.', { duration: 5000 });
     }
   },
 
@@ -214,16 +220,21 @@ const useSavingsStore = create(
     if (!contrib) return { ok: false };
     const goal = get().goals.find((g) => g.id === contrib.goalId);
 
+    // Revertir el saldo de la meta PRIMERO; si falla, abortar sin borrar la fila.
+    if (goal) {
+      const restored = Math.max(0, Number(goal.currentAmount) - Number(contrib.amount));
+      const ok = await get().updateGoal(goal.id, { currentAmount: restored });
+      if (!ok) {
+        toast.error('No se pudo revertir el saldo de la meta');
+        return { ok: false };
+      }
+    }
+
     const { error } = await supabase.from('savings_contributions').delete().eq('id', id);
     if (error) {
       console.error('Error deleting contribution', error);
       toast.error('No se pudo eliminar el aporte');
       return { ok: false };
-    }
-
-    if (goal) {
-      const restored = Math.max(0, Number(goal.currentAmount) - Number(contrib.amount));
-      await get().updateGoal(goal.id, { currentAmount: restored });
     }
 
     if (contrib.transactionId) {
