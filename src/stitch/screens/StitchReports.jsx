@@ -12,7 +12,10 @@ import { getFinancialHealthScore, getMonthlySavingCapacity } from '../../utils/c
 import { formatCurrency } from '../../utils/formatters';
 import { MONTHS_SHORT_ES } from '../../utils/constants';
 import { getIncomeVsExpenseSeries, getCategoryTrend, getMonthComparison, getInsights } from './reports/selectors';
+import { getAnalysis } from './reports/analysis';
 import { ReportCard, Kpi } from './reports/reportsUi';
+import { InfoTip } from '../InfoTip';
+import AnalysisPanel from './reports/AnalysisPanel';
 import IncomeExpenseBars from './reports/IncomeExpenseBars';
 import CategoryTrendLines from './reports/CategoryTrendLines';
 import MonthComparison from './reports/MonthComparison';
@@ -54,6 +57,39 @@ export default function StitchReports() {
   const comparison = useMemo(() => getMonthComparison(transactions, categories, now), [transactions, categories, now]);
   const insights = useMemo(() => getInsights(transactions, categories, range, now), [transactions, categories, range, now]);
 
+  // Análisis inteligente: arma los insumos a partir de lo ya calculado.
+  const analysis = useMemo(() => {
+    // Categoría que más subió vs mes anterior (mayor delta absoluto positivo).
+    const risen = comparison.filter((c) => c.current > c.previous);
+    const topRising = risen.length
+      ? { name: risen[0].name, deltaPct: risen[0].deltaPct ?? 100, deltaAbs: risen[0].current - risen[0].previous }
+      : null;
+
+    // Concentración: categoría top del mes actual y su % del gasto del mes.
+    const totalCurrent = comparison.reduce((s, c) => s + c.current, 0);
+    const topCat = comparison.reduce((best, c) => (c.current > (best?.current || 0) ? c : best), null);
+    const concentration = topCat && totalCurrent > 0
+      ? { name: topCat.name, pct: (topCat.current / totalCurrent) * 100 }
+      : null;
+
+    // Tendencia del gasto: primera mitad vs segunda mitad del rango.
+    const exp = incomeExpense.map((x) => x.expense);
+    const half = Math.floor(exp.length / 2);
+    const firstAvg = half ? exp.slice(0, half).reduce((s, v) => s + v, 0) / half : 0;
+    const secondAvg = (exp.length - half) ? exp.slice(half).reduce((s, v) => s + v, 0) / (exp.length - half) : 0;
+    let trendDirection = 'flat';
+    if (firstAvg > 0) {
+      const change = (secondAvg - firstAvg) / firstAvg;
+      if (change > 0.1) trendDirection = 'up';
+      else if (change < -0.1) trendDirection = 'down';
+    }
+
+    const dti = cap.avgIncome > 0 ? getTotalMonthlyPayment() / cap.avgIncome : 0;
+    const hasData = transactions.length > 0 && cap.avgIncome > 0;
+
+    return getAnalysis({ savingsRate: health.savingsRate, topRising, concentration, trendDirection, dti, hasData });
+  }, [comparison, incomeExpense, cap, getTotalMonthlyPayment, health.savingsRate, transactions.length]);
+
   return (
     <div className="max-w-[1728px] mx-auto p-md sm:p-margin-safe w-full">
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-lg border-b border-border-subtle pb-lg mb-xl">
@@ -76,16 +112,24 @@ export default function StitchReports() {
         {/* KPIs salud */}
         <Stagger.Item className="grid grid-cols-2 lg:grid-cols-4 gap-md">
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-sm">
-            <div className="flex justify-between items-start">
-              <span className="font-mono-data text-mono-data text-text-muted uppercase">SALUD FINANCIERA</span>
-              <MS name="favorite" className="!text-[16px]" style={{ color: healthColor }} />
+            <div className="flex justify-between items-start gap-xs">
+              <span className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-xs min-w-0">
+                <span className="truncate">SALUD FINANCIERA</span>
+                <InfoTip text="Score 0–100 que combina tu tasa de ahorro, el ratio de gasto y tu carga de deuda (promedio de los últimos meses)." />
+              </span>
+              <MS name="favorite" className="!text-[16px] shrink-0" style={{ color: healthColor }} />
             </div>
-            <span className="font-headline-md text-headline-md tracking-tight" style={{ color: healthColor }}>{health.score}<span className="text-text-muted text-[18px]">/100</span></span>
+            <span className="font-headline-md text-[20px] tracking-tight whitespace-nowrap" style={{ color: healthColor }}>{health.score}<span className="text-text-muted text-[15px]">/100</span></span>
             <span className="font-label-sm text-label-sm" style={{ color: healthColor }}>{health.label}</span>
           </div>
-          <Kpi l="TASA DE AHORRO" v={`${(health.savingsRate * 100).toFixed(0)}%`} d={health.savingsRate >= 0.2 ? 'Saludable' : 'Mejorable'} c={health.savingsRate >= 0.2 ? 'text-tertiary' : 'text-accent-warning'} icon="savings" />
-          <Kpi l="GASTO DEL MES" v={fmt(monthExpenseTotal)} d={`${monthExpenses.length} mov.`} icon="payments" />
+          <Kpi l="TASA DE AHORRO" v={`${(health.savingsRate * 100).toFixed(0)}%`} d={health.savingsRate >= 0.2 ? 'Saludable' : 'Mejorable'} c={health.savingsRate >= 0.2 ? 'text-tertiary' : 'text-accent-warning'} icon="savings" info="(Ingresos − gastos) ÷ ingresos, promediado en los meses del periodo." />
+          <Kpi l="GASTO DEL MES" v={fmt(monthExpenseTotal)} d={`${monthExpenses.length} mov.`} icon="payments" info="Suma de tus gastos del mes actual, neta de cashback." />
           <Kpi l="MOVIMIENTOS" v={String(transactions.length)} d="en total" icon="receipt_long" />
+        </Stagger.Item>
+
+        {/* Análisis inteligente (recomendaciones priorizadas) */}
+        <Stagger.Item>
+          <AnalysisPanel insights={analysis} />
         </Stagger.Item>
 
         {/* Ingresos vs gastos por mes */}
