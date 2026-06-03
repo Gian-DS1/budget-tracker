@@ -3,6 +3,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
+import { Stagger } from '../StitchMotion';
 
 const WEB3FORMS_ACCESS_KEY = '446c31a3-399d-4d75-81e9-5e6344334122';
 const TYPES = [
@@ -54,8 +55,9 @@ export default function StitchFeedback() {
         <p className="font-body-md text-body-md text-text-muted mt-sm max-w-2xl">Reporta errores, pide mejoras o envía un comentario al equipo.</p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
-        <form onSubmit={submit} className="lg:col-span-2 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-md">
+      <Stagger className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
+        <Stagger.Item className="lg:col-span-2">
+        <form onSubmit={submit} className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-md">
           <div className="flex flex-col gap-xs">
             <label className="font-mono-data text-mono-data text-text-muted uppercase">Tipo</label>
             <div className="grid grid-cols-3 gap-sm">
@@ -80,7 +82,9 @@ export default function StitchFeedback() {
             <MS name="send" className="text-[16px]" /> {sending ? 'Enviando…' : 'Enviar'}
           </button>
         </form>
+        </Stagger.Item>
 
+        <Stagger.Item>
         <aside className="bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-md h-fit">
           <div className="flex items-center gap-sm">
             <MS name="info" className="text-secondary text-[20px]" />
@@ -92,7 +96,8 @@ export default function StitchFeedback() {
             <span className="font-headline-md text-[22px] text-tertiary tracking-tight">&lt; 24h</span>
           </div>
         </aside>
-      </div>
+        </Stagger.Item>
+      </Stagger>
     </div>
   );
 }

@@ -3,6 +3,9 @@ import { useState, useEffect, useRef } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
+import { Stagger } from '../StitchMotion';
+import StitchCurrencyInput from '../StitchCurrencyInput';
+import { isDemoActive } from '../demoMode';
 import useRateStore from '../../stores/useRateStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
@@ -57,6 +60,7 @@ export default function StitchSettings() {
   const onFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
+    if (isDemoActive()) { toast('El import no está disponible en modo demo.', { icon: 'ℹ️' }); e.target.value = ''; return; }
     const ext = file.name.split('.').pop().toLowerCase();
     const process = async (rows) => {
       const txs = rows.map((row) => {
@@ -95,6 +99,18 @@ export default function StitchSettings() {
 
   const dedupe = async () => { const n = await dedupeCategories(); toast.success(n > 0 ? `${n} categorías duplicadas eliminadas` : 'No había duplicados'); };
 
+  // Reset destructivo: confirmación vía toast (patrón Stitch, no confirm() nativo).
+  const confirmReset = () => {
+    toast((t) => (
+      <span className="flex items-center gap-sm">Esto borra tus categorías actuales.
+        <button
+          onClick={() => { toast.dismiss(t.id); resetCategoriesToDefault(); toast.success('Categorías restablecidas'); }}
+          className="text-accent-error font-bold underline"
+        >Restablecer</button>
+      </span>
+    ), { duration: 6000 });
+  };
+
   const budgetLevel = usePrefsStore((s) => s.budgetLevel);
   const setBudgetLevel = usePrefsStore((s) => s.setBudgetLevel);
 
@@ -109,9 +125,9 @@ export default function StitchSettings() {
         <h1 className="font-headline-lg text-headline-lg text-on-surface">Ajustes y utilidades</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+      <Stagger className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
         {/* Nivel de presupuesto */}
-        <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
+        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">NIVEL DE PRESUPUESTO</h2>
             <MS name="tune" className="text-text-muted text-[16px]" />
@@ -138,10 +154,10 @@ export default function StitchSettings() {
               );
             })}
           </div>
-        </div>
+        </Stagger.Item>
 
         {/* Tasa */}
-        <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
+        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">TASA DE CAMBIO · USD→DOP</h2>
             <MS name="currency_exchange" className="text-text-muted text-[16px]" />
@@ -154,14 +170,14 @@ export default function StitchSettings() {
             </span>
           </div>
           <div className="flex gap-sm">
-            <input value={rateInput} onChange={(e) => setRateInput(e.target.value.replace(/[^0-9.]/g, ''))} placeholder="Fijar tasa manual…" className="flex-1 bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-mono-data text-mono-data text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+            <div className="flex-1"><StitchCurrencyInput value={rateInput} onChange={setRateInput} placeholder="Fijar tasa manual…" className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-mono-data text-mono-data text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" /></div>
             <button onClick={saveRate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md rounded hover:bg-primary-container transition-colors">Fijar</button>
             <button onClick={autoRate} className="border border-border-subtle text-on-surface-variant px-md rounded hover:bg-surface-container-high" title="Tasa automática"><MS name="autorenew" className="text-[18px]" /></button>
           </div>
-        </div>
+        </Stagger.Item>
 
         {/* Datos */}
-        <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
+        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">DATOS · {transactions.length} TRANSACCIONES</h2>
             <MS name="database" className="text-text-muted text-[16px]" />
@@ -172,10 +188,10 @@ export default function StitchSettings() {
             <Row icon="download" l="Exportar a CSV" d="Descarga tus datos" onClick={() => doExport('csv')} />
             <Row icon="grid_on" l="Exportar a Excel" d="Formato .xlsx" onClick={() => doExport('xlsx')} />
           </div>
-        </div>
+        </Stagger.Item>
 
         {/* Categorías */}
-        <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
+        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">CATEGORÍAS · {categories.filter((c) => c.isActive).length} ACTIVAS</h2>
             <MS name="category" className="text-text-muted text-[16px]" />
@@ -189,10 +205,10 @@ export default function StitchSettings() {
           </div>
           <div className="flex gap-sm">
             <button onClick={dedupe} className="border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high flex items-center gap-xs"><MS name="cleaning_services" className="text-[14px]" /> Eliminar duplicados</button>
-            <button onClick={() => { if (confirm('¿Restablecer las categorías por defecto? Esto borra tus categorías actuales.')) resetCategoriesToDefault(); }} className="border border-border-subtle text-accent-error font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high flex items-center gap-xs"><MS name="restart_alt" className="text-[14px]" /> Restablecer</button>
+            <button onClick={confirmReset} className="border border-border-subtle text-accent-error font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high flex items-center gap-xs"><MS name="restart_alt" className="text-[14px]" /> Restablecer</button>
           </div>
-        </div>
-      </div>
+        </Stagger.Item>
+      </Stagger>
     </div>
   );
 }
