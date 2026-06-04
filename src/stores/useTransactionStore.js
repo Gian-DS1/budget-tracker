@@ -6,6 +6,10 @@ import useCreditCardStore from './useCreditCardStore';
 import useRateStore from './useRateStore';
 import { computeCashback } from '../utils/creditCards';
 
+// El cashback aplica a CUALQUIER tipo de gasto (fijo o variable), no solo al
+// tipo genérico 'expense'. Misma regla que el formulario de transacciones.
+const earnsCashback = (type) => type === 'expense' || type === 'fixed_expense' || type === 'variable_expense';
+
 // Conversión histórica por fecha (para guardar la transacción al valor del día).
 // Si la red falla, cae a la tasa efectiva del rate store (que respeta el
 // override manual del usuario), no a un número fijo.
@@ -102,7 +106,7 @@ const useTransactionStore = create(
     // Cashback se calcula sobre el monto YA convertido a DOP (no sobre el monto
     // ingresado, que puede estar en USD) y solo para gastos.
     let cashbackEarned = 0;
-    if (transaction.cardId && transaction.type === 'expense') {
+    if (transaction.cardId && earnsCashback(transaction.type)) {
       const card = useCreditCardStore.getState().cards.find((c) => c.id === transaction.cardId);
       cashbackEarned = computeCashback(card, transaction.categoryId, amount);
     }
@@ -307,7 +311,7 @@ const useTransactionStore = create(
     
     const dbUpdatesPromises = transactionsToUpdate.map(t => {
       // Cashback solo para gastos; el monto ya está en DOP.
-      const cashback = (card && t.type === 'expense')
+      const cashback = (card && earnsCashback(t.type))
         ? computeCashback(card, t.categoryId, t.amount)
         : 0;
 
@@ -349,7 +353,7 @@ const useTransactionStore = create(
     toast.loading('Asignando categoría...', { id: 'bulk-update' });
     const dbUpdatesPromises = transactionsToUpdate.map((t) => {
       const card = t.cardId ? cards.find((c) => c.id === t.cardId) : null;
-      const cashback = (card && t.type === 'expense')
+      const cashback = (card && earnsCashback(t.type))
         ? computeCashback(card, dbCategoryId, t.amount) : 0;
       return supabase.from('transactions').update({
         category_id: dbCategoryId, cashback_earned: cashback,
@@ -384,7 +388,7 @@ const useTransactionStore = create(
     const dbTxs = transactions.map(t => {
       const cardId = t.cardId || null;
       const card = cardId ? cards.find((c) => c.id === cardId) : null;
-      const cashback = (card && t.type === 'expense')
+      const cashback = (card && earnsCashback(t.type))
         ? computeCashback(card, t.categoryId, t.amount)
         : 0;
       return {

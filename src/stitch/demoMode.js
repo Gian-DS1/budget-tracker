@@ -12,6 +12,7 @@ import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
 import { defaultCategories } from '../data/defaultCategories';
+import { computeCashback } from '../utils/creditCards';
 
 const FLAG = 'fintrack-demo-mode';
 
@@ -155,6 +156,55 @@ export function demoDeleteTransaction(id) {
 }
 export function demoRestoreTransaction(tx) {
   useTransactionStore.setState((s) => ({ transactions: [{ ...tx, id: demoId() }, ...s.transactions] }));
+}
+
+// ── Acciones en bloque (demo) ────────────────────────────────────────────────
+// Replican bulkDeleteTransactions / restoreManyTransactions / bulkAssignCategory
+// / bulkAssignCard del store, mutando solo el estado local. Devuelven lo mismo
+// que el store real (filas borradas, etc.) para que el toast de "Deshacer"
+// funcione igual en demo.
+export function demoBulkDeleteTransactions(ids) {
+  if (!ids || ids.length === 0) return [];
+  const removed = useTransactionStore.getState().transactions.filter((t) => ids.includes(t.id));
+  useTransactionStore.setState((s) => ({ transactions: s.transactions.filter((t) => !ids.includes(t.id)) }));
+  return removed;
+}
+export function demoRestoreManyTransactions(txs) {
+  if (!txs || txs.length === 0) return false;
+  // Re-inserta con nuevos ids (igual que el store: nada referencia tx por id).
+  const rows = txs.map((tx) => ({ ...tx, id: demoId() }));
+  useTransactionStore.setState((s) => ({ transactions: [...rows, ...s.transactions] }));
+  return true;
+}
+// El cashback aplica a CUALQUIER tipo de gasto (fijo o variable), no solo al
+// tipo genérico 'expense'. Misma regla que el formulario de transacciones.
+const earnsCashback = (type) => type === 'expense' || type === 'fixed_expense' || type === 'variable_expense';
+
+export function demoBulkAssignCategory(ids, categoryId) {
+  if (!ids || ids.length === 0) return;
+  const cid = categoryId || null;
+  const cards = useCreditCardStore.getState().cards;
+  useTransactionStore.setState((s) => ({
+    transactions: s.transactions.map((t) => {
+      if (!ids.includes(t.id)) return t;
+      const card = t.cardId ? cards.find((c) => c.id === t.cardId) : null;
+      const cashback = (card && earnsCashback(t.type)) ? computeCashback(card, cid, t.amount) : 0;
+      return { ...t, categoryId: cid, cashbackEarned: cashback };
+    }),
+  }));
+}
+export function demoBulkAssignCard(ids, cardId) {
+  if (!ids || ids.length === 0) return;
+  const cid = cardId || null;
+  const cards = useCreditCardStore.getState().cards;
+  const card = cid ? cards.find((c) => c.id === cid) : null;
+  useTransactionStore.setState((s) => ({
+    transactions: s.transactions.map((t) => {
+      if (!ids.includes(t.id)) return t;
+      const cashback = (card && earnsCashback(t.type)) ? computeCashback(card, t.categoryId, t.amount) : 0;
+      return { ...t, cardId: cid, cashbackEarned: cashback };
+    }),
+  }));
 }
 
 // Presupuesto (sobres). En demo, setBudget real haría rollback + toast rojo (no

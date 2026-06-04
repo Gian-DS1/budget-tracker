@@ -1,5 +1,6 @@
 // Transacciones (Ledger) — layout Stitch con DATOS REALES + alta/edición/borrado.
 import { useState, useMemo } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
@@ -8,7 +9,11 @@ import StitchSelect from '../StitchSelect';
 import StitchDatePicker from '../StitchDatePicker';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import AutoCatChip from '../AutoCatChip';
-import { isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction } from '../demoMode';
+import {
+  isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction,
+  demoBulkDeleteTransactions, demoRestoreManyTransactions, demoBulkAssignCategory, demoBulkAssignCard,
+} from '../demoMode';
+import { EASE_OUT } from '../motionTokens';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
@@ -27,7 +32,10 @@ const TYPES = [
 const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', currency: 'DOP', isRecurring: false, recurrencePattern: 'monthly' };
 
 export default function StitchLedger() {
-  const { transactions, addTransaction, updateTransaction, deleteTransaction, restoreTransaction } = useTransactionStore();
+  const {
+    transactions, addTransaction, updateTransaction, deleteTransaction, restoreTransaction,
+    bulkDeleteTransactions, restoreManyTransactions, bulkAssignCategory, bulkAssignCard,
+  } = useTransactionStore();
   const { categories } = useCategoryStore();
   const { cards } = useCreditCardStore();
   const addRecurring = useRecurringStore((s) => s.addRecurring);
@@ -45,6 +53,9 @@ export default function StitchLedger() {
   const [dateTo, setDateTo] = useState('');
   const [sortKey, setSortKey] = useState('date'); // 'date' | 'amount'
   const [sortDir, setSortDir] = useState('desc'); // 'asc' | 'desc'
+
+  // Selección múltiple (ids). La barra de acciones aparece cuando hay ≥1.
+  const [selected, setSelected] = useState(() => new Set());
 
   // Render de la categoría con su emoji JoyPixels + nombre.
   const catCell = (id) => {
@@ -172,6 +183,70 @@ export default function StitchLedger() {
   const hasFilters = search || filterType || filterCat || dateFrom || dateTo;
   const clearFilters = () => { setSearch(''); setFilterType(''); setFilterCat(''); setDateFrom(''); setDateTo(''); };
 
+  // ── Selección múltiple ──────────────────────────────────────────────────────
+  // La selección efectiva se DERIVA en render como la intersección entre lo
+  // marcado y lo visible (filtrado). Así, al cambiar los filtros, las filas
+  // ocultas dejan de contar automáticamente sin tocar estado en un effect
+  // (evita cascading renders). El Set `selected` puede contener ids "rezagados"
+  // de filas ocultas; se ignoran al derivar y al ejecutar acciones.
+  const filteredIds = useMemo(() => filtered.map((t) => t.id), [filtered]);
+  const visibleSelectedIds = useMemo(
+    () => filteredIds.filter((id) => selected.has(id)),
+    [filteredIds, selected],
+  );
+  const isSelected = (id) => selected.has(id);
+
+  const selectedCount = visibleSelectedIds.length;
+  const allVisibleSelected = filteredIds.length > 0 && selectedCount === filteredIds.length;
+  const someVisibleSelected = selectedCount > 0 && !allVisibleSelected;
+
+  const toggleOne = (id) => setSelected((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const toggleAll = () => setSelected((prev) => {
+    if (filteredIds.every((id) => prev.has(id))) return new Set(); // todas marcadas → desmarca todo
+    return new Set(filteredIds); // marca todo lo filtrado
+  });
+  const clearSelection = () => setSelected(new Set());
+
+  // Acciones en bloque. La lógica (recalculo de cashback, persistencia) vive en
+  // el store; aquí solo se orquesta + UI/toasts. En demo se usan los mutadores
+  // locales equivalentes. Solo se actúa sobre ids visibles (la intersección).
+  const selectedIds = () => visibleSelectedIds;
+
+  const onBulkCategory = async (categoryId) => {
+    const ids = selectedIds();
+    if (demo) demoBulkAssignCategory(ids, categoryId);
+    else await bulkAssignCategory(ids, categoryId);
+    if (demo) toast.success('Categorías actualizadas');
+    clearSelection();
+  };
+  const onBulkCard = async (cardId) => {
+    const ids = selectedIds();
+    if (demo) demoBulkAssignCard(ids, cardId);
+    else await bulkAssignCard(ids, cardId);
+    if (demo) toast.success('Transacciones actualizadas');
+    clearSelection();
+  };
+  const onBulkDelete = async () => {
+    const ids = selectedIds();
+    const removed = demo ? demoBulkDeleteTransactions(ids) : await bulkDeleteTransactions(ids);
+    clearSelection();
+    if (removed && removed.length > 0) {
+      const n = removed.length;
+      toast((tt) => (
+        <span className="flex items-center gap-sm">{n} transacción{n === 1 ? '' : 'es'} eliminada{n === 1 ? '' : 's'}
+          <button
+            onClick={() => { if (demo) demoRestoreManyTransactions(removed); else restoreManyTransactions(removed); toast.dismiss(tt.id); }}
+            className="text-primary font-bold underline"
+          >Deshacer</button>
+        </span>
+      ), { duration: 6000 });
+    }
+  };
+
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -183,13 +258,13 @@ export default function StitchLedger() {
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary ml-xs status-glow-live align-middle" />
           </p>
         </div>
-        <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
+        <button data-tour="ledger-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
           <MS name="add" className="text-[16px]" /> Nueva transacción
         </button>
       </div>
 
       {/* Filtros */}
-      <div className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg flex flex-wrap gap-sm items-center inner-glow">
+      <div data-tour="ledger-filters" className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg flex flex-wrap gap-sm items-center inner-glow">
         <div className="relative flex-1 min-w-[200px]">
           <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar descripción o notas…" className="w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
@@ -226,7 +301,7 @@ export default function StitchLedger() {
       </div>
 
       {/* Tabla */}
-      <div className="bg-surface-container-lowest border border-border-subtle rounded-lg overflow-x-auto inner-glow relative">
+      <div data-tour="ledger-table" className="bg-surface-container-lowest border border-border-subtle rounded-lg overflow-x-auto inner-glow relative">
         <div className="absolute inset-0 pointer-events-none opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(circle at 1px 1px, white 1px, transparent 0)', backgroundSize: '16px 16px' }} />
         {filtered.length === 0 ? (
           <div className="relative z-10 py-[80px] flex flex-col items-center gap-sm text-center">
@@ -238,6 +313,16 @@ export default function StitchLedger() {
           <table className="w-full text-left border-collapse relative z-10">
             <thead>
               <tr className="border-b border-border-subtle">
+                <th className="py-sm pl-md pr-0 w-[1%] align-middle">
+                  <input
+                    type="checkbox"
+                    className="stitch-check align-middle"
+                    checked={allVisibleSelected}
+                    ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
+                    onChange={toggleAll}
+                    aria-label="Seleccionar todas las transacciones visibles"
+                  />
+                </th>
                 <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">
                   <SortHeader label="Fecha" active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
                 </th>
@@ -253,8 +338,18 @@ export default function StitchLedger() {
             <tbody className="font-body-md text-body-md">
               {filtered.map((t) => {
                 const inc = t.type === 'income';
+                const isSel = isSelected(t.id);
                 return (
-                  <tr key={t.id} className="border-b border-border-subtle hover:bg-surface-container-high transition-colors group">
+                  <tr key={t.id} className={`border-b border-border-subtle transition-colors group ${isSel ? 'bg-primary/[0.06]' : 'hover:bg-surface-container-high'}`}>
+                    <td className="py-sm pl-md pr-0 w-[1%] align-middle">
+                      <input
+                        type="checkbox"
+                        className={`stitch-check align-middle transition-opacity ${isSel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
+                        checked={isSel}
+                        onChange={() => toggleOne(t.id)}
+                        aria-label={`Seleccionar transacción ${t.description || formatDate(t.date)}`}
+                      />
+                    </td>
                     <td className="py-sm px-md text-on-surface-variant whitespace-nowrap font-mono-data text-mono-data">{formatDate(t.date)}</td>
                     <td className="py-sm px-md">
                       <div className="text-on-surface font-medium">{t.description || '—'}</div>
@@ -343,7 +438,136 @@ export default function StitchLedger() {
           </form>
         </Modal>
       )}
+
+      {/* Barra contextual flotante de acciones en bloque */}
+      <BulkBar
+        count={selectedCount}
+        categories={categories}
+        cards={cards}
+        onCategory={onBulkCategory}
+        onCard={onBulkCard}
+        onDelete={onBulkDelete}
+        onClear={clearSelection}
+      />
     </div>
+  );
+}
+
+// Barra flotante (abajo-centro) que aparece al seleccionar ≥1 transacción.
+// Entra con spring (Emil: marketing/feedback puede tener delight contenido),
+// sale más rápido. Respeta reduced-motion. Categoría/Tarjeta abren un popover
+// inline para elegir destino; al confirmar disparan la acción y se cierran.
+function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onClear }) {
+  const reduce = useReducedMotion();
+  const [menu, setMenu] = useState(null); // 'category' | 'card' | null
+  const open = count > 0;
+
+  // Cuando la barra desaparece (selección a 0), el popover ya no aplica. En vez
+  // de un effect (cascading render), se deriva en render: si está cerrado, el
+  // menú efectivo es null. Así no hace falta sincronizar estado.
+  const activeMenu = open ? menu : null;
+
+  const variants = reduce
+    ? { hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.15 } }, exit: { opacity: 0, transition: { duration: 0.1 } } }
+    : {
+        hidden: { opacity: 0, y: 16, scale: 0.98 },
+        show: { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 320, damping: 28 } },
+        exit: { opacity: 0, y: 12, scale: 0.98, transition: { duration: 0.14, ease: EASE_OUT } },
+      };
+
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          variants={variants}
+          initial="hidden"
+          animate="show"
+          exit="exit"
+          className="fixed bottom-lg left-1/2 -translate-x-1/2 z-40 w-[calc(100%-32px)] max-w-[560px]"
+        >
+          <div className="glass-panel rounded-lg inner-glow shadow-2xl px-md py-sm flex items-center gap-sm relative">
+            {/* Conteo */}
+            <span className="font-mono-data text-mono-data text-on-surface uppercase tracking-widest whitespace-nowrap">
+              {count} seleccionada{count === 1 ? '' : 's'}
+            </span>
+            <span className="w-px h-5 bg-border-subtle mx-xs" />
+
+            {/* Acciones */}
+            <button
+              onClick={() => setMenu((m) => (m === 'category' ? null : 'category'))}
+              className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs transition-colors ${activeMenu === 'category' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
+            >
+              <MS name="sell" className="!text-[16px]" /> Categoría
+            </button>
+            <button
+              onClick={() => setMenu((m) => (m === 'card' ? null : 'card'))}
+              className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs transition-colors ${activeMenu === 'card' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
+            >
+              <MS name="credit_card" className="!text-[16px]" /> Tarjeta
+            </button>
+            <button
+              onClick={onDelete}
+              className="flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs text-accent-error hover:bg-accent-error/10 transition-colors"
+            >
+              <MS name="delete" className="!text-[16px]" /> Eliminar
+            </button>
+
+            <span className="flex-1" />
+            <button onClick={onClear} aria-label="Limpiar selección" className="text-text-muted hover:text-on-surface p-xs rounded hover:bg-surface-container-high transition-colors">
+              <MS name="close" className="!text-[18px]" />
+            </button>
+
+            {/* Popover de elección (categoría / tarjeta) */}
+            <AnimatePresence>
+              {activeMenu && (
+                <motion.div
+                  initial={reduce ? { opacity: 0 } : { opacity: 0, y: 8, scale: 0.98 }}
+                  animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1, transition: { type: 'spring', stiffness: 360, damping: 30 } }}
+                  exit={{ opacity: 0, transition: { duration: 0.12 } }}
+                  style={{ transformOrigin: 'bottom left' }}
+                  className="absolute bottom-full left-0 mb-sm w-[280px] bg-surface-card border border-border-subtle rounded-lg inner-glow shadow-xl p-sm max-h-[300px] overflow-y-auto stitch-scroll"
+                >
+                  <div className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest px-sm py-xs">
+                    {activeMenu === 'category' ? 'Mover a categoría' : 'Asignar tarjeta'}
+                  </div>
+                  {activeMenu === 'card' && (
+                    <button
+                      onClick={() => { onCard(''); setMenu(null); }}
+                      className="w-full text-left flex items-center gap-sm px-sm py-sm rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-colors"
+                    >
+                      <MS name="block" className="!text-[16px] text-text-muted" /> Sin tarjeta
+                    </button>
+                  )}
+                  {activeMenu === 'category'
+                    ? categories.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => { onCategory(c.id); setMenu(null); }}
+                          className="w-full text-left flex items-center gap-sm px-sm py-sm rounded font-body-md text-body-md text-on-surface hover:bg-surface-container-high transition-colors"
+                        >
+                          <Emoji e={c.icon} size={16} /> <span className="truncate">{c.name}</span>
+                        </button>
+                      ))
+                    : cards.map((c) => (
+                        <button
+                          key={c.id}
+                          onClick={() => { onCard(c.id); setMenu(null); }}
+                          className="w-full text-left flex items-center gap-sm px-sm py-sm rounded font-body-md text-body-md text-on-surface hover:bg-surface-container-high transition-colors"
+                        >
+                          <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color || '#bec2ff' }} />
+                          <span className="truncate">{c.name}</span>
+                        </button>
+                      ))}
+                  {activeMenu === 'card' && cards.length === 0 && (
+                    <div className="px-sm py-sm font-label-sm text-label-sm text-text-muted">No tienes tarjetas registradas.</div>
+                  )}
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 
