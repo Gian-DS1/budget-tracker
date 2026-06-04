@@ -121,7 +121,7 @@ export default function StitchDashboard() {
         if (t.type === 'income') inc += Number(t.amount);
         else if (['expense', 'fixed_expense', 'variable_expense'].includes(t.type)) exp += Number(t.amount) - Number(t.cashbackEarned || 0);
       });
-      arr.push({ label: MONTHS_SHORT_ES[mm], inc, exp, net: inc - exp });
+      arr.push({ label: MONTHS_SHORT_ES[mm], y: yy, m: mm, inc, exp, net: inc - exp });
     }
     return arr;
   }, [transactions, y, m]);
@@ -215,7 +215,7 @@ export default function StitchDashboard() {
               <Stat label="Balance" value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} />
-            <FlowChart series={series} />
+            <FlowChart series={series} selY={sel.y} selM={sel.m} />
           </BentoCell>
         </Stagger.Item>
 
