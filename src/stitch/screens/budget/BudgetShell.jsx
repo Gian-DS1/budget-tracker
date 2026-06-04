@@ -76,13 +76,22 @@ export default function BudgetShell({ level = 'zero' }) {
     [payments, debts, year, month, fxRate],
   );
 
+  // Categoría de deuda (slug estable; respaldo por nombre para cuentas previas a
+  // la migración del slug). Mismo criterio que la sincronización Deudas→Tx en
+  // useDebtStore. El summary la trata especial para no contar la deuda dos veces.
+  const debtCategoryId = useMemo(() => {
+    const c = categories.find((x) => x.slug === 'pago-deuda')
+      || categories.find((x) => x.name === 'Pago de Préstamos y Deudas' || (x.name && x.name.includes('Préstamos')));
+    return c?.id || null;
+  }, [categories]);
+
   const summary = useMemo(
-    () => getBudgetSummary({ monthTransactions: monthTx, monthBudgets, categories, debtPlanned: getTotalMonthlyPayment(), debtPaid }),
-    [monthTx, monthBudgets, categories, getTotalMonthlyPayment, debtPaid],
+    () => getBudgetSummary({ monthTransactions: monthTx, monthBudgets, categories, debtPlanned: getTotalMonthlyPayment(), debtPaid, debtCategoryId }),
+    [monthTx, monthBudgets, categories, getTotalMonthlyPayment, debtPaid, debtCategoryId],
   );
 
   const meta = LEVEL_META[level] || LEVEL_META.zero;
-  const viewProps = { year, month, monthBudgets, monthTx, categories, summary };
+  const viewProps = { year, month, monthBudgets, monthTx, categories, summary, debtCategoryId };
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -95,7 +104,7 @@ export default function BudgetShell({ level = 'zero' }) {
           </div>
           <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">PRESUPUESTO</h1>
           {/* Cambiador rápido de nivel */}
-          <div className="flex items-center gap-sm mt-md">
+          <div data-tour="budget-mode" className="flex items-center gap-sm mt-md">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">Modo</span>
             <StitchSelect value={level} onChange={setBudgetLevel} options={LEVEL_OPTIONS} compact className="min-w-[150px]" />
           </div>

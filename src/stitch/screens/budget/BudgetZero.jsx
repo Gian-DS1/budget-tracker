@@ -13,7 +13,7 @@ import { formatCurrency } from '../../../utils/formatters';
 
 const fmt = (n) => formatCurrency(n);
 
-export default function BudgetZero({ year, month, monthBudgets, monthTx, categories, summary }) {
+export default function BudgetZero({ year, month, monthBudgets, monthTx, categories, summary, debtCategoryId }) {
   const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const demo = isDemoActive();
 
@@ -22,12 +22,15 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       categories
         .filter((c) => c.isActive)
         .map((cat) => {
+          const isDebt = debtCategoryId && cat.id === debtCategoryId;
           const b = monthBudgets.find((x) => x.categoryId === cat.id);
-          const estimated = b ? b.estimatedAmount : 0;
+          // La categoría de deuda se gestiona desde el módulo Deudas: su
+          // "estimado" es la cuota mensual comprometida (no un sobre editable).
+          const estimated = isDebt ? (summary?.debtCommitted || summary?.debtPlanned || 0) : (b ? b.estimatedAmount : 0);
           const actual = sumAmounts(monthTx.filter((t) => t.categoryId === cat.id));
-          return { cat, estimated, actual, pct: calculateBudgetProgress(actual, estimated) };
+          return { cat, estimated, actual, pct: calculateBudgetProgress(actual, estimated), managed: isDebt };
         }),
-    [categories, monthBudgets, monthTx],
+    [categories, monthBudgets, monthTx, debtCategoryId, summary],
   );
 
   const totalEstimated = rows.reduce((s, r) => s + r.estimated, 0);
@@ -60,7 +63,7 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       </p>
 
       {/* Bento: disponible + daily burn */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
+      <div data-tour="budget-summary" className="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
         <div className="md:col-span-8 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">DISPONIBLE PARA GASTAR</h2>

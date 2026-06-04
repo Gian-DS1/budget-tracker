@@ -132,6 +132,7 @@ export function getBudgetSummary({
   categories = [],
   debtPlanned = 0,
   debtPaid = 0,
+  debtCategoryId = null,
 }) {
   const catById = new Map(categories.map((c) => [c.id, c]));
 
@@ -140,6 +141,10 @@ export function getBudgetSummary({
   for (const b of monthBudgets) {
     const cat = catById.get(b.categoryId);
     if (!cat) continue;
+    // La categoría de deuda se gestiona desde el módulo Deudas (su compromiso es
+    // la cuota mensual, no un sobre): se excluye del estimado para no contarla
+    // dos veces si el usuario le pusiera un sobre a mano.
+    if (debtCategoryId && b.categoryId === debtCategoryId) continue;
     const amt = Number(b.estimatedAmount) || 0;
     if (cat.isAccumulative) { accumulativePlan += amt; continue; }
     if (cat.type in estimatedByType) estimatedByType[cat.type] += amt;
@@ -147,11 +152,16 @@ export function getBudgetSummary({
 
   const actualByType = { income: 0, fixed_expense: 0, variable_expense: 0, savings: 0 };
   let accumulativeSpent = 0;
+  let debtPaidFromTx = 0; // pago real de deuda derivado de sus transacciones
   for (const t of monthTransactions) {
     const cat = catById.get(t.categoryId);
     if (!cat) continue;
     // Gasto efectivo (neto de cashback); en ingresos/ahorro el cashback es 0.
     const amt = getEffectiveAmount(t);
+    // Las transacciones de pago de deuda viven en su propia categoría: NO se
+    // suman a gastosFijosReal (la deuda se compromete vía cuota), se acumulan
+    // aparte como respaldo de debtPaid.
+    if (debtCategoryId && t.categoryId === debtCategoryId) { debtPaidFromTx += amt; continue; }
     if (cat.isAccumulative) { accumulativeSpent += amt; continue; }
     if (cat.type in actualByType) actualByType[cat.type] += amt;
   }
@@ -166,12 +176,19 @@ export function getBudgetSummary({
   const ahorroReal = actualByType.savings;
   const planDebt = Number(debtPlanned) || 0;
 
-  const comprometido = gastosFijosPlan + planDebt + ahorroPlan + accumulativePlan;
+  // Compromiso de deuda = max(cuota planificada, pagado real). Reserva la cuota;
+  // si el pago del mes la supera (sobrepago), refleja lo realmente pagado. El
+  // pagado real es el explícito (debtPaid, ya convertido a DOP por el llamante)
+  // o, en su defecto, el derivado de las transacciones de la categoría de deuda.
+  const debtPaidEffective = (Number(debtPaid) || 0) || debtPaidFromTx;
+  const debtCommitted = Math.max(planDebt, debtPaidEffective);
+
+  const comprometido = gastosFijosPlan + debtCommitted + ahorroPlan + accumulativePlan;
   const disponible = ingresoRecibido - comprometido - variableGastado;
   const puedesGastar = Math.max(0, disponible);
 
   const porAsignar =
-    ingresoEstimado - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - planDebt;
+    ingresoEstimado - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - debtCommitted;
 
   let estado;
   if (ingresoRecibido === 0) estado = 'neutral';
@@ -191,7 +208,8 @@ export function getBudgetSummary({
     accumulativePlan,
     accumulativeSpent,
     debtPlanned: planDebt,
-    debtPaid: Number(debtPaid) || 0,
+    debtPaid: debtPaidEffective,
+    debtCommitted,
     comprometido,
     disponible,
     puedesGastar,

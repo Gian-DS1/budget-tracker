@@ -172,6 +172,10 @@ describe('getBuckets503020', () => {
 });
 
 describe('getBudgetSummary — invariante anti doble-conteo de deuda', () => {
+  // Categoría de deuda (slug pago-deuda) clasificada como fixed_expense, igual
+  // que defaultCategories. Las transacciones de pago de deuda viven aquí.
+  const catsDebt = [...categories, { id: 'debt', type: 'fixed_expense', slug: 'pago-deuda' }];
+
   it('un pago de deuda real (gasto fijo) NO reduce puedesGastar; solo lo hace el plan de deuda', () => {
     // El pago de deuda crea una transacción fixed_expense Y debtPlanned entra en
     // comprometido. puedesGastar debe restar SOLO el plan, nunca también el gasto
@@ -188,6 +192,90 @@ describe('getBudgetSummary — invariante anti doble-conteo de deuda', () => {
     });
     expect(r.comprometido).toBe(10000); // solo el plan de deuda
     expect(r.puedesGastar).toBe(40000); // 50000 - 10000, el 8000 fijo NO se resta
+  });
+
+  it('un sobre puesto a la categoría de deuda NO se suma a comprometido (sin doble conteo)', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'inc', amount: 50000 }],
+      // El usuario presupuestó 9000 a la categoría de deuda: NO debe contar,
+      // porque la cuota (debtPlanned) ya la compromete.
+      monthBudgets: [{ categoryId: 'debt', estimatedAmount: 9000 }],
+      categories: catsDebt,
+      debtPlanned: 10000,
+      debtPaid: 0,
+      debtCategoryId: 'debt',
+    });
+    expect(r.gastosFijosPlan).toBe(0); // el sobre de deuda se excluye
+    expect(r.comprometido).toBe(10000); // solo la cuota, no 10000 + 9000
+  });
+
+  it('una transacción de pago de deuda NO entra en gastosFijosReal (vive aparte)', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 50000 },
+        { categoryId: 'debt', amount: 8000 }, // pago de deuda real
+        { categoryId: 'fix', amount: 3000 },  // gasto fijo normal
+      ],
+      monthBudgets: [],
+      categories: catsDebt,
+      debtPlanned: 10000,
+      debtPaid: 8000,
+      debtCategoryId: 'debt',
+    });
+    expect(r.gastosFijosReal).toBe(3000); // solo el gasto fijo normal, no 11000
+  });
+
+  it('comprometido usa max(cuota, pagado): cuota > pagado → cuota', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'inc', amount: 50000 }, { categoryId: 'debt', amount: 6000 }],
+      monthBudgets: [],
+      categories: catsDebt,
+      debtPlanned: 10000,
+      debtPaid: 6000,
+      debtCategoryId: 'debt',
+    });
+    expect(r.debtCommitted).toBe(10000);
+    expect(r.comprometido).toBe(10000);
+    expect(r.puedesGastar).toBe(40000);
+  });
+
+  it('comprometido usa max(cuota, pagado): pagado > cuota → pagado (refleja sobrepago)', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'inc', amount: 50000 }, { categoryId: 'debt', amount: 13000 }],
+      monthBudgets: [],
+      categories: catsDebt,
+      debtPlanned: 10000,
+      debtPaid: 13000,
+      debtCategoryId: 'debt',
+    });
+    expect(r.debtCommitted).toBe(13000);
+    expect(r.comprometido).toBe(13000);
+    expect(r.puedesGastar).toBe(37000);
+  });
+
+  it('cuota 0 con pago real: compromete lo pagado (no ignora la deuda)', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'inc', amount: 50000 }, { categoryId: 'debt', amount: 5000 }],
+      monthBudgets: [],
+      categories: catsDebt,
+      debtPlanned: 0,
+      debtPaid: 5000,
+      debtCategoryId: 'debt',
+    });
+    expect(r.debtCommitted).toBe(5000);
+    expect(r.comprometido).toBe(5000);
+  });
+
+  it('sin debtPaid explícito, deriva el pagado de las transacciones de la categoría de deuda', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'inc', amount: 50000 }, { categoryId: 'debt', amount: 12000 }],
+      monthBudgets: [],
+      categories: catsDebt,
+      debtPlanned: 10000,
+      // debtPaid omitido: debe usar las tx de la categoría de deuda (12000)
+      debtCategoryId: 'debt',
+    });
+    expect(r.debtCommitted).toBe(12000); // max(10000, 12000 derivado de tx)
   });
 });
 
