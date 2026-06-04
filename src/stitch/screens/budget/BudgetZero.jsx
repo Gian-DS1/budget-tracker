@@ -13,6 +13,24 @@ import { formatCurrency } from '../../../utils/formatters';
 
 const fmt = (n) => formatCurrency(n);
 
+// Agrupación de sobres por tipo, en el orden del flujo base cero. Cada grupo
+// tiene su color de acento (coherente con el resto del tema) e icono.
+const GROUP_ORDER = [
+  { key: 'income', label: 'Ingresos', icon: 'trending_up', cls: 'text-tertiary' },
+  { key: 'fixed_expense', label: 'Gastos fijos', icon: 'event_repeat', cls: 'text-accent-warning' },
+  { key: 'variable_expense', label: 'Gastos variables', icon: 'shopping_cart', cls: 'text-primary' },
+  { key: 'savings', label: 'Ahorro', icon: 'savings', cls: 'text-secondary' },
+];
+// Mapea cualquier tipo de categoría a una de las 4 cubetas (el genérico
+// 'expense' se trata como gasto variable).
+const GROUP_OF = {
+  income: 'income',
+  fixed_expense: 'fixed_expense',
+  variable_expense: 'variable_expense',
+  expense: 'variable_expense',
+  savings: 'savings',
+};
+
 export default function BudgetZero({ year, month, monthBudgets, monthTx, categories, summary, debtCategoryId }) {
   const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const demo = isDemoActive();
@@ -34,6 +52,25 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
   );
 
   const totalEstimated = rows.reduce((s, r) => s + r.estimated, 0);
+
+  // Agrupa los sobres por TIPO de categoría, en el orden del flujo base cero
+  // (ingreso → fijo → variable → ahorro), y alfabético dentro de cada grupo.
+  // Así es fácil ubicarse: las categorías del mismo tipo quedan juntas.
+  const groups = useMemo(() => {
+    const collated = rows.reduce((acc, r) => {
+      const key = GROUP_OF[r.cat.type] || 'variable_expense';
+      (acc[key] = acc[key] || []).push(r);
+      return acc;
+    }, {});
+    return GROUP_ORDER
+      .map((g) => ({
+        ...g,
+        items: (collated[g.key] || []).sort((a, b) =>
+          (a.cat.name || '').localeCompare(b.cat.name || '', 'es', { sensitivity: 'base' })),
+      }))
+      .filter((g) => g.items.length > 0)
+      .map((g) => ({ ...g, subtotal: g.items.reduce((s, r) => s + r.estimated, 0) }));
+  }, [rows]);
 
   // Gasto variable diario promedio.
   const now = new Date();
@@ -116,11 +153,26 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
         {rows.length === 0 ? (
           <p className="font-body-md text-body-md text-text-muted py-lg text-center">No hay categorías activas.</p>
         ) : (
-          <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
-            {rows.map((r) => (
-              <EnvelopeRow key={r.cat.id} {...r} onSave={(v) => handleSave(r.cat, v)} />
+          <div className="flex flex-col gap-lg">
+            {groups.map((g) => (
+              <section key={g.key}>
+                {/* Encabezado de grupo: tipo + subtotal asignado */}
+                <div className="flex items-center justify-between gap-sm mb-md">
+                  <div className="flex items-center gap-sm min-w-0">
+                    <MS name={g.icon} className={`!text-[16px] ${g.cls}`} />
+                    <span className={`font-mono-data text-mono-data uppercase tracking-widest ${g.cls}`}>{g.label}</span>
+                    <span className="font-mono-data text-mono-data text-text-muted">· {g.items.length}</span>
+                  </div>
+                  <span className="font-mono-data text-mono-data text-text-muted whitespace-nowrap">{fmt(g.subtotal)} asignado</span>
+                </div>
+                <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
+                  {g.items.map((r) => (
+                    <EnvelopeRow key={r.cat.id} {...r} onSave={(v) => handleSave(r.cat, v)} />
+                  ))}
+                </Stagger>
+              </section>
             ))}
-          </Stagger>
+          </div>
         )}
       </div>
     </>
