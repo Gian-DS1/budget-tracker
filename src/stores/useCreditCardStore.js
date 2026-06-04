@@ -11,6 +11,9 @@ const mapFromDb = (c) => ({
   cutoffDay: Number(c.cutoff_day),
   dueDay: Number(c.due_day),
   color: c.color || '#6366f1',
+  // Deuda previa al empezar a usar la app (consumos anteriores). Se suma a lo
+  // por pagar; no es una transacción ni afecta el presupuesto. Default 0.
+  openingBalance: Number(c.opening_balance) || 0,
   paidCycles: Array.isArray(c.paid_cycles) ? c.paid_cycles : [],
   payments: Array.isArray(c.payments) ? c.payments : [],
   cashbackRules: Array.isArray(c.cashback_rules) ? c.cashback_rules : [],
@@ -57,6 +60,7 @@ const useCreditCardStore = create(
           cutoff_day: Number(card.cutoffDay),
           due_day: Number(card.dueDay),
           color: card.color || '#6366f1',
+          opening_balance: Number(card.openingBalance) || 0,
           cashback_rules: Array.isArray(card.cashbackRules) ? card.cashbackRules : [],
           catalog_id: card.catalogId || null,
         };
@@ -78,6 +82,7 @@ const useCreditCardStore = create(
         if (updates.cutoffDay !== undefined) dbUpdates.cutoff_day = Number(updates.cutoffDay);
         if (updates.dueDay !== undefined) dbUpdates.due_day = Number(updates.dueDay);
         if (updates.color !== undefined) dbUpdates.color = updates.color;
+        if (updates.openingBalance !== undefined) dbUpdates.opening_balance = Number(updates.openingBalance) || 0;
         if (updates.cashbackRules !== undefined) dbUpdates.cashback_rules = updates.cashbackRules;
         if (updates.catalogId !== undefined) dbUpdates.catalog_id = updates.catalogId || null;
 

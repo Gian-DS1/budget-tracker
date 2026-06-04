@@ -6,6 +6,7 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../../MS';
 import StitchSelect from '../../StitchSelect';
+import StitchCurrencyInput from '../../StitchCurrencyInput';
 import { isDemoActive, demoAddCard, demoUpdateCard } from '../../demoMode';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
 import useCategoryStore from '../../../stores/useCategoryStore';
@@ -14,7 +15,7 @@ import { Modal, Field, FormActions, inputCls } from './cardsUi';
 import CashbackEditor from './CashbackEditor';
 
 const COLORS = ['#bec2ff', '#50d8e9', '#bdd200', '#ffb689', '#ffb4ab', '#9aa0ff', '#e9a0d8'];
-const blank = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#bec2ff', cashbackRules: [], catalogId: null };
+const blank = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#bec2ff', openingBalance: '', cashbackRules: [], catalogId: null };
 
 const dayCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
 
@@ -23,7 +24,9 @@ export default function CardForm({ editing, onClose }) {
   const categories = useCategoryStore((s) => s.categories);
   const demo = isDemoActive();
 
-  const initial = editing ? { ...blank, ...editing, cutoffDay: String(editing.cutoffDay), dueDay: String(editing.dueDay) } : blank;
+  const initial = editing
+    ? { ...blank, ...editing, cutoffDay: String(editing.cutoffDay), dueDay: String(editing.dueDay), openingBalance: editing.openingBalance ? String(editing.openingBalance) : '' }
+    : blank;
   const [mode, setMode] = useState(editing?.catalogId ? 'catalog' : editing ? 'custom' : 'catalog');
   const [form, setForm] = useState(initial);
   const [bank, setBank] = useState(editing?.bank || '');
@@ -69,7 +72,7 @@ export default function CardForm({ editing, onClose }) {
     const cashbackRules = (form.cashbackRules || [])
       .filter((r) => r.categoryId && Number(r.percentage) > 0)
       .map((r) => ({ categoryId: r.categoryId, percentage: Number(r.percentage) }));
-    const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color, cashbackRules, catalogId: form.catalogId || null };
+    const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color, openingBalance: Number(form.openingBalance) || 0, cashbackRules, catalogId: form.catalogId || null };
 
     if (editing) {
       if (demo) { demoUpdateCard(editing.id, payload); toast.success('Tarjeta actualizada'); }
@@ -132,6 +135,14 @@ export default function CardForm({ editing, onClose }) {
           <Field label="Día de corte"><input inputMode="numeric" value={form.cutoffDay} onChange={(e) => set({ cutoffDay: e.target.value.replace(/\D/g, '').slice(0, 2) })} className={dayCls} placeholder="1-31" /></Field>
           <Field label="Día de pago"><input inputMode="numeric" value={form.dueDay} onChange={(e) => set({ dueDay: e.target.value.replace(/\D/g, '').slice(0, 2) })} className={dayCls} placeholder="1-31" /></Field>
         </div>
+
+        {/* Saldo inicial: deuda que YA tenías antes de usar la app. */}
+        <Field label="Saldo actual que ya debes (opcional)">
+          <StitchCurrencyInput value={form.openingBalance} onChange={(v) => set({ openingBalance: v })} placeholder="0" className={inputCls} />
+          <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mt-xs block">
+            Lo que ya debías a esta tarjeta al empezar. Suma a “por pagar”; no cuenta como gasto del mes.
+          </span>
+        </Field>
 
         {/* Cashback (colapsable) */}
         <div className="border border-border-subtle rounded inner-glow">

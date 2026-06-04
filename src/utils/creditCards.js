@@ -212,7 +212,12 @@ export function getLifetimeCashback(card, transactions = []) {
 export function getCardBalances(card, transactions = [], refDate = new Date()) {
   const cycles = getCardCycles(card, refDate);
 
+  // Saldo inicial: deuda previa al empezar a usar la app (consumos anteriores).
+  // Cuenta como ya facturado/por pagar; no es una transacción ni gasto del mes.
+  const opening = Number(card?.openingBalance) || 0;
+
   const billed =
+    opening +
     getStatementAmount(transactions, card.id, EPOCH_ISO, cycles.closedEndISO) -
     getStatementCashback(transactions, card.id, EPOCH_ISO, cycles.closedEndISO);
 

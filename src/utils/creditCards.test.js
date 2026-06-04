@@ -226,4 +226,31 @@ describe('getCardBalances', () => {
     expect(b.pendingBilled).toBe(0);
     expect(b.isPaid).toBe(true);
   });
+
+  // Saldo inicial (deuda previa al empezar a usar la app).
+  it('openingBalance se suma a la deuda por pagar, sin transacciones', () => {
+    const c = { ...card, openingBalance: 12000 };
+    const b = getCardBalances(c, [], ref);
+    expect(b.billed).toBe(12000);
+    expect(b.pendingBilled).toBe(12000);
+    expect(b.openCycle).toBe(0);
+    expect(b.totalBalance).toBe(12000);
+    expect(b.isPaid).toBe(false);
+  });
+
+  it('openingBalance se combina con consumos facturados y se puede abonar', () => {
+    const txs = [{ cardId: 'c1', date: '2026-05-10', amount: 5000, cashbackEarned: 0 }];
+    const c = { ...card, openingBalance: 10000 };
+    const b = getCardBalances(c, txs, ref);
+    expect(b.billed).toBe(15000); // 10000 previo + 5000 facturado
+    expect(b.pendingBilled).toBe(15000);
+    const pagado = { ...c, payments: [{ id: 'a1', amount: 15000, date: '2026-05-21' }] };
+    expect(getCardBalances(pagado, txs, ref).isPaid).toBe(true);
+  });
+
+  it('sin openingBalance (o 0) el comportamiento no cambia', () => {
+    const txs = [{ cardId: 'c1', date: '2026-05-10', amount: 7000, cashbackEarned: 0 }];
+    expect(getCardBalances({ ...card, openingBalance: 0 }, txs, ref).billed).toBe(7000);
+    expect(getCardBalances({ ...card }, txs, ref).billed).toBe(7000); // sin la prop
+  });
 });

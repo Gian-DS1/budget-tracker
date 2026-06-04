@@ -261,7 +261,8 @@ export function demoAddCard(card) {
   const row = {
     id: demoId(), name: card.name, bank: card.bank || '',
     cutoffDay: Number(card.cutoffDay), dueDay: Number(card.dueDay),
-    color: card.color || '#bec2ff', paidCycles: [], payments: [],
+    color: card.color || '#bec2ff', openingBalance: Number(card.openingBalance) || 0,
+    paidCycles: [], payments: [],
     cashbackRules: Array.isArray(card.cashbackRules) ? card.cashbackRules : [],
     catalogId: card.catalogId || null, createdAt: new Date().toISOString(),
   };

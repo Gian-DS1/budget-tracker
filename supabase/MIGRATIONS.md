@@ -47,6 +47,19 @@ ahorro queda temporalmente deshabilitada con aviso, hasta correr las migraciones
   exista la columna (el caché local mitiga dentro del mismo navegador). El resto
   de la app no se ve afectado. Correr la migración resuelve el auto-arranque.
 
+## Saldo inicial de tarjetas (deuda previa)
+
+**`add_card_opening_balance.sql`** — añade `opening_balance numeric` a
+`credit_cards`. Permite registrar la deuda que el usuario YA tenía en la tarjeta
+al empezar a usar la app, sin crear transacciones ni afectar el presupuesto.
+
+### ¿Qué pasa si despliegas el código ANTES de correr esta migración?
+- **Lecturas:** seguras. La columna ausente cae a `0` (el código usa `|| 0`), así
+  que el saldo se comporta como hoy.
+- **Escrituras:** guardar una tarjeta con saldo inicial fallaría al persistir esa
+  columna hasta correr la migración. El resto (corte/pago/cashback) no se ve
+  afectado. Correr la migración habilita el campo.
+
 ## Migraciones previas (ya aplicadas en producción histórica)
 
 `schema.sql` es la fuente de verdad canónica (idempotente; ya incluye las columnas
