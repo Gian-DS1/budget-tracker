@@ -100,7 +100,7 @@ export default function StitchCalendar() {
         </Stagger.Item>
 
         {/* Grid + detalle */}
-        <Stagger.Item className="grid grid-cols-1 lg:grid-cols-3 gap-gutter flex-1 min-h-0">
+        <Stagger.Item data-tour="calendar-grid" className="grid grid-cols-1 lg:grid-cols-3 gap-gutter flex-1 min-h-0">
           <div className="lg:col-span-2 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md overflow-y-auto stitch-scroll">
             <div className="grid grid-cols-7 gap-px mb-sm">
               {DAYS_SHORT_ES.map((d) => <div key={d} className="font-mono-data text-mono-data text-text-muted uppercase text-center py-sm">{d}</div>)}

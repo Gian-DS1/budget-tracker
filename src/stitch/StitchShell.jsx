@@ -1,15 +1,18 @@
 // AppShell Stitch — sidebar + header glass, responsive.
 // Desktop: sidebar fijo 256px. Móvil (<lg): sidebar off-canvas + hamburguesa + overlay.
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { NavLink, useOutlet, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import MS from './MS';
 import Logo from './Logo';
 import { Screen } from './StitchMotion';
 import AccountMenu from './AccountMenu';
+import TourProvider from './tour/TourProvider';
+import { useTour } from './tour/useTour';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
+import usePrefsStore from '../stores/usePrefsStore';
 
 const NAV = [
   { section: 'Principal' },
@@ -25,7 +28,39 @@ const NAV = [
   { to: '/reportes', icon: 'analytics', label: 'Reportes' },
 ];
 
+// Arranca el tutorial automáticamente la 1ª vez (cuando el usuario aún no lo ha
+// visto). Vive dentro de TourProvider para usar start(). Una sola vez por sesión.
+function TourAutoStart() {
+  const { start } = useTour();
+  const tutorialSeen = usePrefsStore((s) => s.tutorialSeen);
+  const loading = usePrefsStore((s) => s.loading);
+  const fired = useRef(false);
+  useEffect(() => {
+    if (fired.current) return;
+    // Esperar a que fetchPrefs resuelva (evita parpadeo para quienes ya lo vieron
+    // en otro dispositivo: el caché local arranca en false hasta traer Supabase).
+    if (loading) return undefined;
+    if (!tutorialSeen) {
+      fired.current = true;
+      // Pequeño delay para que el shell pinte antes de medir anclas.
+      const t = setTimeout(() => start(), 700);
+      return () => clearTimeout(t);
+    }
+    return undefined;
+  }, [tutorialSeen, loading, start]);
+  return null;
+}
+
 export default function StitchShell() {
+  return (
+    <TourProvider>
+      <TourAutoStart />
+      <ShellInner />
+    </TourProvider>
+  );
+}
+
+function ShellInner() {
   const { signOut } = useAuth();
   const demo = isDemoActive();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -46,6 +81,7 @@ export default function StitchShell() {
 
       {/* ── SideNav ── */}
       <nav
+        data-tour="nav"
         className={[
           'bg-surface-panel h-full w-64 border-r border-border-subtle flex flex-col py-lg px-md gap-xs shrink-0 overflow-y-auto',
           'fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0',

@@ -68,7 +68,7 @@ export default function StitchDebts() {
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Control de deudas</h1>
           <p className="font-body-md text-body-md text-text-muted mt-sm">Deuda total activa: <span className="text-accent-error font-mono-data"><CountUp value={totalDebt} format={fmt} /></span></p>
         </div>
-        <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start">
+        <button data-tour="debts-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start">
           <MS name="add" className="text-[16px]" /> Nueva deuda
         </button>
       </div>

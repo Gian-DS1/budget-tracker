@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReducedMotion } from 'framer-motion';
 import MS from './MS';
 import DropdownPanel from './DropdownPanel';
+import { useTour } from './tour/useTour';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
 
@@ -14,6 +15,7 @@ export default function AccountMenu() {
   const navigate = useNavigate();
   const reduce = useReducedMotion();
   const demo = isDemoActive();
+  const { start: startTour } = useTour();
 
   const [open, setOpen] = useState(false);
   const triggerRef = useRef(null);
@@ -48,6 +50,7 @@ export default function AccountMenu() {
     <>
       <button
         ref={triggerRef}
+        data-tour="account"
         onClick={() => setOpen((o) => !o)}
         aria-label="Cuenta"
         aria-haspopup="menu"
@@ -76,6 +79,10 @@ export default function AccountMenu() {
           <button role="menuitem" onClick={() => go('/feedback')} className="w-full flex items-center gap-sm px-md py-sm text-left text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
             <MS name="forum" className="!text-[18px]" />
             <span className="font-body-md text-body-md">Feedback</span>
+          </button>
+          <button role="menuitem" onClick={() => { setOpen(false); startTour(); }} className="w-full flex items-center gap-sm px-md py-sm text-left text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+            <MS name="school" className="!text-[18px]" />
+            <span className="font-body-md text-body-md">Ver tutorial</span>
           </button>
 
           <div className="border-t border-border-subtle mt-xs pt-xs">

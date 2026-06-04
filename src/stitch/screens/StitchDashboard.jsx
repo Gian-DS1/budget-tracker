@@ -186,7 +186,7 @@ export default function StitchDashboard() {
         </div>
       )}
 
-      <Stagger className="grid grid-cols-1 md:grid-cols-12 gap-md auto-rows-min">
+      <Stagger data-tour="dashboard-grid" className="grid grid-cols-1 md:grid-cols-12 gap-md auto-rows-min">
         {/* 1 · Estado inmediato: 3 KPI accionables (patrimonio tiene su celda abajo) */}
         {metrics.map((mx) => (
           <Stagger.Item key={mx.l} className="md:col-span-4">

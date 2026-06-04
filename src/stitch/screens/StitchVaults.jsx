@@ -77,7 +77,7 @@ export default function StitchVaults() {
               <StitchSelect value={horizonFilter} onChange={setHorizonFilter} options={HORIZON_FILTER_OPTIONS} compact />
             </div>
           )}
-          <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
+          <button data-tour="vaults-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
             <MS name="add" className="text-[16px]" /> Nueva meta
           </button>
         </div>

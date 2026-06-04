@@ -34,6 +34,19 @@ Conclusión: lo ideal es correr las dos migraciones (en orden) y luego desplegar
 Si el código sale antes, la app no se rompe; solo la creación/edición de metas de
 ahorro queda temporalmente deshabilitada con aviso, hasta correr las migraciones.
 
+## Tutorial guiado (product tour)
+
+**`add_tutorial_seen.sql`** — añade la columna `tutorial_seen boolean` a
+`profiles`. Controla que el tutorial guiado arranque solo la **primera vez**.
+
+### ¿Qué pasa si despliegas el código ANTES de correr esta migración?
+- **Lecturas:** seguras. `fetchPrefs` ignora la columna ausente y `tutorialSeen`
+  queda en su default (`false`).
+- **Efecto temporal:** como no se puede persistir "ya visto" en Supabase, el
+  auto-arranque del tour podría reaparecer en cada dispositivo/recarga hasta que
+  exista la columna (el caché local mitiga dentro del mismo navegador). El resto
+  de la app no se ve afectado. Correr la migración resuelve el auto-arranque.
+
 ## Migraciones previas (ya aplicadas en producción histórica)
 
 `schema.sql` es la fuente de verdad canónica (idempotente; ya incluye las columnas

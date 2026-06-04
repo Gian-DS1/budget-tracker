@@ -107,7 +107,7 @@ export default function StitchReports() {
         </div>
       </header>
 
-      <Stagger className="flex flex-col gap-gutter">
+      <Stagger data-tour="reports-content" className="flex flex-col gap-gutter">
         {/* KPIs salud */}
         <Stagger.Item className="grid grid-cols-2 lg:grid-cols-4 gap-md">
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-sm">

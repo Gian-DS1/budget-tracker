@@ -50,7 +50,7 @@ export default function StitchCards() {
           <h1 className="font-headline-lg text-headline-lg text-on-surface">Tarjetas de crédito</h1>
           <p className="font-body-md text-body-md text-text-muted mt-sm">Saldo por pagar, ciclo abierto, fechas de corte y pago, cashback.</p>
         </div>
-        <button onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
+        <button data-tour="cards-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
           <MS name="add" className="text-[16px]" /> Nueva tarjeta
         </button>
       </div>

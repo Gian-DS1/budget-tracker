@@ -21,9 +21,12 @@ const usePrefsStore = create(
   persist(
     (set, get) => ({
       budgetLevel: DEFAULT_LEVEL,
+      // ¿El usuario ya vio el tutorial guiado? Controla el auto-arranque (solo la
+      // 1ª vez). En demo vive solo en caché local; con sesión, en profiles.
+      tutorialSeen: false,
       loading: false,
 
-      /** Carga el nivel desde Supabase (si hay sesión). Sin sesión deja el caché. */
+      /** Carga prefs desde Supabase (si hay sesión). Sin sesión deja el caché. */
       fetchPrefs: async () => {
         if (isDemoActive()) return; // demo: solo caché local
         const { data: { session } } = await supabase.auth.getSession();
@@ -32,13 +35,33 @@ const usePrefsStore = create(
         set({ loading: true });
         const { data, error } = await supabase
           .from('profiles')
-          .select('budget_level')
+          .select('budget_level, tutorial_seen')
           .eq('user_id', user.id)
           .maybeSingle();
-        if (!error && data?.budget_level && BUDGET_LEVELS.includes(data.budget_level)) {
-          set({ budgetLevel: data.budget_level, loading: false });
+        if (!error && data) {
+          const next = { loading: false };
+          if (data.budget_level && BUDGET_LEVELS.includes(data.budget_level)) next.budgetLevel = data.budget_level;
+          if (typeof data.tutorial_seen === 'boolean') next.tutorialSeen = data.tutorial_seen;
+          set(next);
         } else {
           set({ loading: false });
+        }
+      },
+
+      /** Marca el tutorial como visto (optimista). En demo solo caché. */
+      setTutorialSeen: async (seen = true) => {
+        const prev = get().tutorialSeen;
+        set({ tutorialSeen: seen }); // optimista
+        if (isDemoActive()) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+        if (!user) return; // sin sesión, solo caché local
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ user_id: user.id, tutorial_seen: seen, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        if (error) {
+          console.error('Error guardando tutorial_seen:', error);
+          set({ tutorialSeen: prev }); // rollback
         }
       },
 
@@ -62,7 +85,7 @@ const usePrefsStore = create(
     }),
     {
       name: 'fintrack-prefs-cache',
-      partialize: (state) => ({ budgetLevel: state.budgetLevel }),
+      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen }),
     },
   ),
 );
