@@ -1,6 +1,9 @@
 import { createRequire } from 'module';
 const require = createRequire(import.meta.url);
 const pdf = require('pdf-parse');
+import { createClient } from '@supabase/supabase-js';
+
+const sanitize = (str) => String(str).replace(/[<>]/g, '');
 
 const BANK_SIGNATURES = {
   popular: ['MC CCN PLUS', 'OFICINA DOWNTOWN CENTER', 'Millas Popular'],
@@ -104,8 +107,8 @@ function parsePopular(text) {
       cardLast4,
       postDate,
       txDate,
-      description: descCity,
-      city,
+      description: sanitize(descCity),
+      city: sanitize(city),
       amount: Math.abs(amount),
       isCredit,
       rawLine: line,
@@ -171,8 +174,8 @@ function parseQik(text) {
       cardLast4,
       postDate: parseDate(d2),
       txDate: parseDate(d1),
-      description: descriptionClean,
-      city,
+      description: sanitize(descriptionClean),
+      city: sanitize(city),
       amount: Math.abs(amount),
       isCredit,
       rawLine: line,
@@ -189,6 +192,22 @@ export default async function handler(req, res) {
   }
 
   try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
+    }
+    const token = authHeader.split(' ')[1];
+    
+    const supabase = createClient(
+      process.env.VITE_SUPABASE_URL,
+      process.env.VITE_SUPABASE_ANON_KEY
+    );
+    
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    if (authError || !user) {
+      return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+
     const { pdfBase64 } = req.body;
     if (!pdfBase64) {
       return res.status(400).json({ error: 'Missing pdfBase64 in body' });

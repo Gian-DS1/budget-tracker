@@ -11,6 +11,7 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
 import StatementImportModal from './StatementImportModal';
+import { supabase } from '../../lib/supabase';
 
 // Niveles de presupuesto (de más simple a más avanzado).
 const BUDGET_LEVEL_CARDS = [
@@ -114,9 +115,15 @@ export default function StitchSettings() {
       reader.onload = async (ev) => {
         try {
           const base64 = ev.target.result.split(',')[1];
+          const { data: { session } } = await supabase.auth.getSession();
+          const token = session?.access_token;
+
           const res = await fetch('/api/parse-pdf', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
             body: JSON.stringify({ pdfBase64: base64 })
           });
           
