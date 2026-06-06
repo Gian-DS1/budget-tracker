@@ -40,3 +40,6 @@ coverage
 .claude/settings.local.json
 .agents/
 skills-lock.json
+
+# Estados de cuenta (datos financieros personales)
+
