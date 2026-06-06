@@ -9,7 +9,7 @@ import { autoCategorize } from '../../data/defaultCategories';
 import { matchTransactions } from '../../utils/statementMatcher';
 
 export default function StatementImportModal({ onClose, pdfData }) {
-  const { transactions: existingTxs, bulkAddTransactions, bulkUpdateTransactions } = useTransactionStore();
+  const { transactions: existingTxs, bulkAddTransactions, bulkAssignCard } = useTransactionStore();
   const { cards } = useCreditCardStore();
   const { categories } = useCategoryStore();
 
@@ -83,21 +83,13 @@ export default function StatementImportModal({ onClose, pdfData }) {
         addedCount = await bulkAddTransactions(allNew);
       }
 
-      // 2. Vincular los matches a la tarjeta
-      const updates = matchResult.matched.map(m => ({
-        id: m.existingTx.id,
-        changes: { cardId: targetCardId }
-      }));
-
-      if (updates.length > 0) {
-        // En Zustand asumo que tienes una forma de actualizar en bulk, o iteramos
-        // Si no tienes bulkUpdateTransactions, hacemos loop con updateTransaction
-        for (const update of updates) {
-          useTransactionStore.getState().updateTransaction(update.id, update.changes);
-        }
+      // 2. Vincular los matches a la tarjeta usando bulkAssignCard para recalcular cashback
+      const matchedIds = matchResult.matched.map(m => m.existingTx.id);
+      if (matchedIds.length > 0) {
+        await bulkAssignCard(matchedIds, targetCardId);
       }
 
-      toast.success(`Importadas: ${addedCount}. Vinculadas: ${updates.length}`);
+      toast.success(`Importadas: ${addedCount}. Vinculadas/Actualizadas: ${matchedIds.length}`);
       requestClose();
     } catch (e) {
       console.error(e);

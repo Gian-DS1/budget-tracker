@@ -37,6 +37,11 @@ function calculateScore(pdfTx, existingTx) {
     score += 0.2;
   }
   
+  // Preferimos cruzar con transacciones que NO tienen tarjeta asignada
+  if (existingTx.cardId) {
+    score -= 0.3; 
+  }
+  
   return score;
 }
 
@@ -50,9 +55,9 @@ export function matchTransactions(pdfTransactions, existingTransactions) {
   const DATE_TOLERANCE = 3; // +/- 3 días
   const AMOUNT_TOLERANCE = 0.50; // +/- RD$ 0.50
   
-  // Solo consideramos gastos (type === 'expense') que NO tengan tarjeta asignada
-  // Si ya tienen tarjeta asignada, no necesitamos cruzarlos (ya se pagaron/importaron)
-  const candidates = existingTransactions.filter(t => t.type === 'expense' && !t.cardId);
+  // Consideramos gastos (type === 'expense').
+  // Ya no filtramos por '!t.cardId' para permitir corregir importaciones erróneas.
+  const candidates = existingTransactions.filter(t => t.type === 'expense');
   
   const matched = [];
   const ambiguous = [];
