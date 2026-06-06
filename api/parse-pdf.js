@@ -1,4 +1,4 @@
-import pdf from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 const BANK_SIGNATURES = {
   popular: ['MC CCN PLUS', 'OFICINA DOWNTOWN CENTER', 'Millas Popular'],
@@ -182,7 +182,9 @@ export default async function handler(req, res) {
     }
 
     const pdfBuffer = Buffer.from(pdfBase64, 'base64');
-    const data = await pdf(pdfBuffer);
+    const uint8 = new Uint8Array(pdfBuffer);
+    const parser = new PDFParse(uint8);
+    const data = await parser.getText();
     const fullText = data.text;
 
     const bank = detectBank(fullText);
