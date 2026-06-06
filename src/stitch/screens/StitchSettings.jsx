@@ -10,6 +10,7 @@ import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
+import StatementImportModal from './StatementImportModal';
 
 // Niveles de presupuesto (de más simple a más avanzado).
 const BUDGET_LEVEL_CARDS = [
@@ -23,7 +24,10 @@ export default function StitchSettings() {
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const fileRef = useRef(null);
+  const pdfRef = useRef(null);
   const [rateInput, setRateInput] = useState('');
+  const [pdfData, setPdfData] = useState(null);
+  const [parsingPdf, setParsingPdf] = useState(false);
   const demo = isDemoActive();
 
   useEffect(() => { fetchRate(); }, [fetchRate]);
@@ -95,6 +99,47 @@ export default function StitchSettings() {
       });
     } else toast.error('Formato no soportado. Usa .csv o .xlsx');
     e.target.value = '';
+  };
+
+  const onPdfFile = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (isDemoActive()) { toast('El import no está disponible en modo demo.', { icon: 'ℹ️' }); e.target.value = ''; return; }
+    
+    setParsingPdf(true);
+    const toastId = toast.loading('Extrayendo estado de cuenta...');
+    try {
+      const reader = new FileReader();
+      reader.onload = async (ev) => {
+        try {
+          const base64 = ev.target.result.split(',')[1];
+          const res = await fetch('/api/parse-pdf', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pdfBase64: base64 })
+          });
+          
+          if (!res.ok) {
+            const err = await res.json();
+            throw new Error(err.error || 'Error parseando PDF');
+          }
+          const data = await res.json();
+          setPdfData(data);
+          toast.success(`Se encontraron ${data.count} consumos en ${data.bank}`, { id: toastId });
+        } catch (err) {
+          toast.error(err.message, { id: toastId });
+        } finally {
+          setParsingPdf(false);
+          e.target.value = '';
+        }
+      };
+      reader.onerror = () => { toast.error('Error leyendo archivo local', { id: toastId }); setParsingPdf(false); e.target.value = ''; };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      toast.error(err.message, { id: toastId });
+      setParsingPdf(false);
+      e.target.value = '';
+    }
   };
 
   const budgetLevel = usePrefsStore((s) => s.budgetLevel);
@@ -169,6 +214,7 @@ export default function StitchSettings() {
             <MS name="database" className="text-text-muted text-[16px]" />
           </div>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="hidden" />
+          <input ref={pdfRef} type="file" accept="application/pdf" onChange={onPdfFile} className="hidden" />
           {demo && (
             <div className="flex items-center gap-sm mb-sm px-md py-sm rounded bg-secondary/10 border border-secondary/30">
               <MS name="info" className="!text-[16px] text-secondary shrink-0" />
@@ -176,6 +222,7 @@ export default function StitchSettings() {
             </div>
           )}
           <div className="flex flex-col gap-sm">
+            <Row icon="picture_as_pdf" l="Importar Estado de Cuenta (PDF)" d={demo ? 'No disponible en modo demo' : (parsingPdf ? 'Procesando...' : 'B. Popular y Qik soportados')} onClick={() => pdfRef.current?.click()} disabled={demo || parsingPdf} />
             <Row icon="upload_file" l="Importar CSV / Excel" d={demo ? 'No disponible en modo demo' : 'Carga masiva de transacciones'} onClick={() => fileRef.current?.click()} disabled={demo} />
             <Row icon="download" l="Exportar a CSV" d="Descarga tus datos" onClick={() => doExport('csv')} />
             <Row icon="grid_on" l="Exportar a Excel" d="Formato .xlsx" onClick={() => doExport('xlsx')} />
@@ -183,6 +230,10 @@ export default function StitchSettings() {
         </Stagger.Item>
 
       </Stagger>
+
+      {pdfData && (
+        <StatementImportModal onClose={() => setPdfData(null)} pdfData={pdfData} />
+      )}
     </div>
   );
 }
