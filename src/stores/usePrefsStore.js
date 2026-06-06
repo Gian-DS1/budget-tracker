@@ -10,7 +10,7 @@
 // con el valor de Supabase al cargar (igual que fetchBudgets reemplaza budgets).
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { isDemoActive } from '../stitch/demoMode';
 
@@ -60,7 +60,7 @@ const usePrefsStore = create(
           .from('profiles')
           .upsert({ user_id: user.id, tutorial_seen: seen, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
         if (error) {
-          console.error('Error guardando tutorial_seen:', error);
+          if (import.meta.env.DEV) console.error('Error guardando tutorial_seen:', error);
           set({ tutorialSeen: prev }); // rollback
         }
       },
@@ -78,13 +78,14 @@ const usePrefsStore = create(
           .from('profiles')
           .upsert({ user_id: user.id, budget_level: level, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
         if (error) {
-          console.error('Error guardando nivel de presupuesto:', error);
+          if (import.meta.env.DEV) console.error('Error guardando nivel de presupuesto:', error);
           set({ budgetLevel: prev }); // rollback
         }
       },
     }),
     {
       name: 'fintrack-prefs-cache',
+  storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen }),
     },
   ),

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCreditCardStore from './useCreditCardStore';
@@ -75,7 +75,7 @@ const useTransactionStore = create(
       }));
       set({ transactions: formattedData, loading: false });
     } else {
-      console.error('Error fetching transactions:', error);
+      if (import.meta.env.DEV) console.error('Error fetching transactions:', error);
       toast.error('No se pudieron cargar las transacciones');
       set({ loading: false });
     }
@@ -126,7 +126,7 @@ const useTransactionStore = create(
 
     const { data, error } = await supabase.from('transactions').insert(dbTx).select().single();
     if (error) {
-      console.error("Transaction insert error:", error);
+      if (import.meta.env.DEV) console.error("Transaction insert error:", error);
       toast.error("Error al guardar: " + error.message);
       return null;
     }
@@ -154,7 +154,7 @@ const useTransactionStore = create(
     if (!id) return false;
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) {
-      console.error('Silent transaction delete error:', error);
+      if (import.meta.env.DEV) console.error('Silent transaction delete error:', error);
       return false;
     }
     set((state) => ({ transactions: state.transactions.filter((t) => t.id !== id) }));
@@ -177,7 +177,7 @@ const useTransactionStore = create(
 
     const { error } = await supabase.from('transactions').update(dbUpdates).eq('id', id);
     if (error) {
-      console.error('Transaction update error:', error);
+      if (import.meta.env.DEV) console.error('Transaction update error:', error);
       toast.error('Error al actualizar: ' + error.message);
       return;
     }
@@ -193,7 +193,7 @@ const useTransactionStore = create(
   deleteTransaction: async (id) => {
     const { error } = await supabase.from('transactions').delete().eq('id', id);
     if (error) {
-      console.error('Transaction delete error:', error);
+      if (import.meta.env.DEV) console.error('Transaction delete error:', error);
       toast.error('Error al eliminar: ' + error.message);
       return false;
     }
@@ -227,7 +227,7 @@ const useTransactionStore = create(
 
     const { data, error } = await supabase.from('transactions').insert(dbTx).select().single();
     if (error) {
-      console.error('Transaction restore error:', error);
+      if (import.meta.env.DEV) console.error('Transaction restore error:', error);
       toast.error('No se pudo restaurar la transacción');
       return false;
     }
@@ -250,7 +250,7 @@ const useTransactionStore = create(
     const removed = get().transactions.filter((t) => ids.includes(t.id));
     const { error } = await supabase.from('transactions').delete().in('id', ids);
     if (error) {
-      console.error('Bulk delete error:', error);
+      if (import.meta.env.DEV) console.error('Bulk delete error:', error);
       toast.error('Error al eliminar transacciones');
       return [];
     }
@@ -282,7 +282,7 @@ const useTransactionStore = create(
 
     const { data, error } = await supabase.from('transactions').insert(dbTxs).select();
     if (error) {
-      console.error('Bulk restore error:', error);
+      if (import.meta.env.DEV) console.error('Bulk restore error:', error);
       toast.error('No se pudieron restaurar las transacciones');
       return false;
     }
@@ -325,7 +325,7 @@ const useTransactionStore = create(
     const hasError = results.some(r => r.error);
     
     if (hasError) {
-      console.error('Bulk update error', results);
+      if (import.meta.env.DEV) console.error('Bulk update error', results);
       toast.error('Error actualizando algunas transacciones', { id: 'bulk-update' });
     } else {
       toast.success('Transacciones actualizadas', { id: 'bulk-update' });
@@ -414,7 +414,7 @@ const useTransactionStore = create(
       const batch = dbTxs.slice(i, i + batchSize);
       const { data, error } = await supabase.from('transactions').insert(batch).select();
       if (error) {
-        console.error('Bulk insert error:', error);
+        if (import.meta.env.DEV) console.error('Bulk insert error:', error);
         hasError = true;
         toast.error('Error importando lote: ' + error.message);
         break;
@@ -459,6 +459,7 @@ const useTransactionStore = create(
 }),
 {
   name: 'fintrack-transactions-cache',
+  storage: createJSONStorage(() => sessionStorage),
   // Cachear solo las 500 transacciones más recientes (ya vienen ordenadas
   // desc por fecha) para no exceder el límite de ~5MB de localStorage en
   // usuarios con mucho historial. Supabase sigue siendo la fuente completa.

@@ -13,6 +13,10 @@
 import { getPopularSellRate } from './_tasareal.js';
 
 export default async function handler(req, res) {
+  if (req.method !== 'GET') {
+    return res.status(405).json({ error: 'method_not_allowed' });
+  }
+
   try {
     const data = await getPopularSellRate(process.env.TASAREAL_API_KEY);
     // Cachea la respuesta en el edge de Vercel 6h (revalida en segundo plano).

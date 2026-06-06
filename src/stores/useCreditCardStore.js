@@ -1,5 +1,5 @@
 ﻿import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { todayISO } from '../utils/formatters';
@@ -42,7 +42,7 @@ const useCreditCardStore = create(
         if (!error && data) {
           set({ cards: data.map(mapFromDb), loading: false });
         } else {
-          console.error('Error fetching cards:', error);
+          if (import.meta.env.DEV) console.error('Error fetching cards:', error);
           toast.error('No se pudieron cargar las tarjetas');
           set({ loading: false });
         }
@@ -67,7 +67,7 @@ const useCreditCardStore = create(
 
         const { data, error } = await supabase.from('credit_cards').insert(payload).select().single();
         if (error) {
-          console.error('Card insert error:', error);
+          if (import.meta.env.DEV) console.error('Card insert error:', error);
           toast.error('Error al guardar la tarjeta');
           return;
         }
@@ -88,7 +88,7 @@ const useCreditCardStore = create(
 
         const { error } = await supabase.from('credit_cards').update(dbUpdates).eq('id', id);
         if (error) {
-          console.error('Card update error:', error);
+          if (import.meta.env.DEV) console.error('Card update error:', error);
           toast.error('Error al actualizar la tarjeta');
           return;
         }
@@ -123,7 +123,7 @@ const useCreditCardStore = create(
 
         const { error } = await supabase.from('credit_cards').update({ payments: newPayments }).eq('id', cardId);
         if (error) {
-          console.error('Add card payment error:', error);
+          if (import.meta.env.DEV) console.error('Add card payment error:', error);
           toast.error('Error al registrar el abono');
           return;
         }
@@ -140,7 +140,7 @@ const useCreditCardStore = create(
 
         const { error } = await supabase.from('credit_cards').update({ payments: newPayments }).eq('id', cardId);
         if (error) {
-          console.error('Delete card payment error:', error);
+          if (import.meta.env.DEV) console.error('Delete card payment error:', error);
           toast.error('Error al eliminar el abono');
           return;
         }
@@ -152,6 +152,7 @@ const useCreditCardStore = create(
     }),
     {
       name: 'fintrack-cards-cache',
+  storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ cards: state.cards }),
     }
   )

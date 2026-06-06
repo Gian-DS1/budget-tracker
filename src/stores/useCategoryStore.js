@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import { defaultCategories, findDuplicateCategories } from '../data/defaultCategories';
 import toast from 'react-hot-toast';
@@ -34,7 +34,7 @@ const useCategoryStore = create(
       .order('created_at', { ascending: true });
 
     if (error) {
-      console.error("Error fetching categories:", error);
+      if (import.meta.env.DEV) console.error("Error fetching categories:", error);
       set({ categories: defaultCategories, loading: false });
       return;
     }
@@ -60,7 +60,7 @@ const useCategoryStore = create(
           .select();
 
         if (insertError) {
-          console.error("Supabase insert error:", insertError);
+          if (import.meta.env.DEV) console.error("Supabase insert error:", insertError);
           toast.error("Error cargando categorías iniciales");
           set({ categories: defaultCategories, loading: false });
           return;
@@ -76,7 +76,7 @@ const useCategoryStore = create(
           return;
         }
       } catch (err) {
-        console.error("Failed to seed categories", err);
+        if (import.meta.env.DEV) console.error("Failed to seed categories", err);
         set({ categories: defaultCategories, loading: false });
         return;
       }
@@ -91,7 +91,7 @@ const useCategoryStore = create(
         }
         await supabase.from('categories').delete().in('id', deleteIds);
       } catch (err) {
-        console.error('Auto-dedupe error:', err);
+        if (import.meta.env.DEV) console.error('Auto-dedupe error:', err);
       }
     }
 
@@ -142,10 +142,10 @@ const useCategoryStore = create(
         if (!insertError && insertedMissing) {
           finalCategories = [...finalCategories, ...insertedMissing];
         } else if (insertError) {
-          console.error("Failed to auto-insert missing categories:", insertError);
+          if (import.meta.env.DEV) console.error("Failed to auto-insert missing categories:", insertError);
         }
       } catch (err) {
-        console.error("Error auto-inserting missing categories:", err);
+        if (import.meta.env.DEV) console.error("Error auto-inserting missing categories:", err);
       }
     }
 
@@ -183,7 +183,7 @@ const useCategoryStore = create(
         .eq('user_id', user.id);
 
       if (deleteError) {
-        console.error("Error deleting categories:", deleteError);
+        if (import.meta.env.DEV) console.error("Error deleting categories:", deleteError);
         toast.error("Error al borrar categorías existentes");
         set({ loading: false });
         return false;
@@ -208,7 +208,7 @@ const useCategoryStore = create(
         .select();
 
       if (insertError) {
-        console.error("Error seeding default categories:", insertError);
+        if (import.meta.env.DEV) console.error("Error seeding default categories:", insertError);
         toast.error("Error insertando nuevas categorías por defecto");
         set({ loading: false });
         return false;
@@ -225,7 +225,7 @@ const useCategoryStore = create(
         return true;
       }
     } catch (err) {
-      console.error("Failed to reset categories", err);
+      if (import.meta.env.DEV) console.error("Failed to reset categories", err);
       toast.error("Error al restablecer categorías");
       set({ loading: false });
       return false;
@@ -290,7 +290,7 @@ const useCategoryStore = create(
 
     const { data, error } = await supabase.from('categories').insert(payload).select().single();
     if (error || !data) {
-      console.error('ensureCategory error:', error);
+      if (import.meta.env.DEV) console.error('ensureCategory error:', error);
       return null;
     }
 
@@ -362,6 +362,7 @@ const useCategoryStore = create(
 }),
 {
   name: 'fintrack-categories-cache',
+  storage: createJSONStorage(() => sessionStorage),
   partialize: (state) => ({ categories: state.categories }),
 }
 )

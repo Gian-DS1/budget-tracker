@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -31,7 +31,7 @@ const useBudgetStore = create(
       });
       set({ budgets: formatted, loading: false });
     } else {
-      console.error('Error fetching budgets:', error);
+      if (import.meta.env.DEV) console.error('Error fetching budgets:', error);
       toast.error('No se pudieron cargar los presupuestos');
       set({ loading: false });
     }
@@ -141,7 +141,7 @@ const useBudgetStore = create(
         throw error || new Error("Error en la respuesta de Supabase");
       }
     } catch (error) {
-      console.error("Budget save error:", error);
+      if (import.meta.env.DEV) console.error("Budget save error:", error);
       // Rollback to previous state on failure
       set({ budgets: previousBudgets });
       toast.error("Error guardando presupuesto");
@@ -212,7 +212,7 @@ const useBudgetStore = create(
 
       return toUpdate.length + toInsert.length;
     } catch (error) {
-      console.error('Bulk set budgets error:', error);
+      if (import.meta.env.DEV) console.error('Bulk set budgets error:', error);
       toast.error('Error al aplicar el presupuesto sugerido');
       return 0;
     }
@@ -285,6 +285,7 @@ const useBudgetStore = create(
 }),
 {
   name: 'fintrack-budgets-cache',
+  storage: createJSONStorage(() => sessionStorage),
   partialize: (state) => ({ budgets: state.budgets }),
 }
 )

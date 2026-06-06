@@ -9,7 +9,7 @@
 // `getRate()` devuelve el override si existe; si no, la tasa en vivo.
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { USD_TO_DOP_RATE } from '../utils/constants';
 
 // Spread estándar de venta de la banca dominicana (~+1.2%).
@@ -99,6 +99,7 @@ const useRateStore = create(
     }),
     {
       name: 'fintrack-rate-cache',
+  storage: createJSONStorage(() => sessionStorage),
     }
   )
 );

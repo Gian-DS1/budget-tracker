@@ -5,7 +5,7 @@
 // las ocurrencias vencidas (recuperando las que se saltaron) y avanza `nextDate`.
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { todayISO } from '../utils/formatters';
@@ -56,7 +56,7 @@ const useRecurringStore = create(
         if (!error && data) {
           set({ recurring: data.map(mapFromDb), loading: false });
         } else {
-          console.error('Error fetching recurring:', error);
+          if (import.meta.env.DEV) console.error('Error fetching recurring:', error);
           set({ loading: false });
         }
       },
@@ -86,7 +86,7 @@ const useRecurringStore = create(
           .select()
           .single();
         if (error) {
-          console.error('Recurring insert error:', error);
+          if (import.meta.env.DEV) console.error('Recurring insert error:', error);
           toast.error('Error al crear la recurrencia');
           return;
         }
@@ -180,6 +180,7 @@ const useRecurringStore = create(
     }),
     {
       name: 'fintrack-recurring-cache',
+  storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ recurring: state.recurring }),
     }
   )

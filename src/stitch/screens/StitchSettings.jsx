@@ -42,6 +42,7 @@ export default function StitchSettings() {
 
   const doExport = async (format) => {
     if (transactions.length === 0) { toast.error('No hay transacciones para exportar'); return; }
+    if (!window.confirm('¿Estás seguro de que deseas exportar todos tus datos financieros?')) return;
     const data = transactions.map((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
       return { Fecha: t.date, Descripción: t.description, Categoría: cat ? cat.name : '', Monto: t.amount, Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto', Moneda: t.currency, Notas: t.notes || '' };
@@ -83,7 +84,7 @@ export default function StitchSettings() {
           else { const d = new Date(date); if (!isNaN(d.getTime())) fdate = d.toISOString().split('T')[0]; }
         } catch { /* ignore */ }
         const match = autoCategorize(String(desc), categories);
-        return { date: fdate, amount, type, description: String(desc) || 'Importado', categoryId: match ? match.id : '', currency: 'DOP', notes: null };
+        return { date: fdate, amount, type, description: String(desc).slice(0, 500).replace(/[<>]/g, '') || 'Importado', categoryId: match ? match.id : '', currency: 'DOP', notes: null };
       }).filter(Boolean);
       if (txs.length === 0) { toast.error('No se encontraron filas válidas'); return; }
       const n = await bulkAddTransactions(txs);

@@ -1,5 +1,5 @@
 ﻿import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCategoryStore from './useCategoryStore';
@@ -32,7 +32,7 @@ const useSavingsStore = create(
     ]);
 
     if (goalsRes.error) {
-      console.error('Error fetching savings goals:', goalsRes.error);
+      if (import.meta.env.DEV) console.error('Error fetching savings goals:', goalsRes.error);
       toast.error('No se pudieron cargar las metas de ahorro');
       return set({ loading: false });
     }
@@ -106,7 +106,7 @@ const useSavingsStore = create(
       set((state) => ({ goals: [...state.goals, formatted] }));
       return formatted;
     } else {
-      console.error('Error adding saving goal', error);
+      if (import.meta.env.DEV) console.error('Error adding saving goal', error);
       toast.error('No se pudo crear la meta. Si acabas de actualizar, puede faltar una migración de la base de datos.');
     }
   },
@@ -138,7 +138,7 @@ const useSavingsStore = create(
 
     const { error } = await supabase.from('savings').update(dbUpdates).eq('id', id);
     if (error) {
-      console.error('Error updating saving goal', error);
+      if (import.meta.env.DEV) console.error('Error updating saving goal', error);
       toast.error('No se pudo actualizar la meta. Si acabas de actualizar la app, puede faltar una migración de la base de datos.');
       return false;
     }
@@ -184,7 +184,7 @@ const useSavingsStore = create(
     const { data: contribData, error: contribErr } = await supabase
       .from('savings_contributions').insert(contribPayload).select().single();
     if (contribErr) {
-      console.error('Error adding contribution', contribErr);
+      if (import.meta.env.DEV) console.error('Error adding contribution', contribErr);
       toast.error('No se pudo registrar el aporte');
       return;
     }
@@ -220,7 +220,7 @@ const useSavingsStore = create(
         toast('Aporte guardado, pero no se generó la transacción enlazada.', { duration: 5000 });
       }
     } catch (err) {
-      console.error('Error syncing contribution with transactions:', err);
+      if (import.meta.env.DEV) console.error('Error syncing contribution with transactions:', err);
       toast('Aporte guardado, pero no se pudo enlazar la transacción.', { duration: 5000 });
     }
   },
@@ -244,7 +244,7 @@ const useSavingsStore = create(
 
     const { error } = await supabase.from('savings_contributions').delete().eq('id', id);
     if (error) {
-      console.error('Error deleting contribution', error);
+      if (import.meta.env.DEV) console.error('Error deleting contribution', error);
       toast.error('No se pudo eliminar el aporte');
       return { ok: false };
     }
@@ -289,7 +289,7 @@ const useSavingsStore = create(
 
     const { data: goalData, error: goalErr } = await supabase.from('savings').insert(dbPayload).select().single();
     if (goalErr || !goalData) {
-      console.error('Error restoring saving goal', goalErr);
+      if (import.meta.env.DEV) console.error('Error restoring saving goal', goalErr);
       toast.error('No se pudo restaurar la meta.');
       return;
     }
@@ -322,7 +322,7 @@ const useSavingsStore = create(
         const { data: contribData, error: contribErr } = await supabase
           .from('savings_contributions').insert(contribPayload).select().single();
         if (contribErr || !contribData) {
-          console.error('Error restoring contribution', contribErr);
+          if (import.meta.env.DEV) console.error('Error restoring contribution', contribErr);
           continue;
         }
 
@@ -338,7 +338,7 @@ const useSavingsStore = create(
             notes: c.notes || 'Generado automáticamente desde Ahorros',
           });
         } catch (err) {
-          console.error('Error recreating linked transaction on restore:', err);
+          if (import.meta.env.DEV) console.error('Error recreating linked transaction on restore:', err);
         }
 
         if (txId) {
@@ -356,7 +356,7 @@ const useSavingsStore = create(
           }],
         }));
       } catch (err) {
-        console.error('Error restoring contribution row:', err);
+        if (import.meta.env.DEV) console.error('Error restoring contribution row:', err);
       }
     }
   },
@@ -377,6 +377,7 @@ const useSavingsStore = create(
 }),
 {
   name: 'fintrack-savings-cache',
+  storage: createJSONStorage(() => sessionStorage),
   partialize: (state) => ({ goals: state.goals, contributions: state.contributions }),
 }
 )

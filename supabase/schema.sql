@@ -15,6 +15,14 @@
 -- a los roles de Supabase, por eso al final se hacen los GRANT explícitos.
 -- ============================================================================
 
+-- ── Perfiles (Preferencias) ─────────────────────────────────────────────────
+create table if not exists public.profiles (
+  user_id       uuid primary key references auth.users(id) on delete cascade,
+  budget_level  text not null default 'tracking',
+  tutorial_seen boolean not null default false,
+  updated_at    timestamptz not null default now()
+);
+
 -- ── Categorías ──────────────────────────────────────────────────────────────
 create table if not exists public.categories (
   id                 uuid primary key default gen_random_uuid(),
@@ -40,6 +48,7 @@ create table if not exists public.credit_cards (
   bank           text,
   cutoff_day     integer not null,                  -- día de corte (1-31)
   due_day        integer not null,                  -- día de pago (1-31)
+  opening_balance numeric not null default 0,
   color          text default '#6366f1',
   paid_cycles    jsonb not null default '[]'::jsonb,  -- historial de estados de cuenta pagados (legado)
   payments       jsonb not null default '[]'::jsonb,  -- abonos / pagos parciales [{ id, amount, date, note }]
@@ -61,7 +70,9 @@ create table if not exists public.transactions (
   notes           text,
   currency        text not null default 'DOP',
   cashback_earned numeric not null default 0,
-  created_at      timestamptz not null default now()
+  created_at      timestamptz not null default now(),
+  constraint transactions_type_check check (type in ('income','expense','fixed_expense','variable_expense','savings')),
+  constraint transactions_amount_positive check (amount >= 0)
 );
 create index if not exists transactions_user_date_idx on public.transactions (user_id, date desc);
 
@@ -105,7 +116,8 @@ create table if not exists public.debts (
   due_date        date,                              -- fecha de pago (alimenta los recordatorios)
   status          text not null default 'active',    -- active | paid_off
   currency        text not null default 'DOP',
-  created_at      timestamptz not null default now()
+  created_at      timestamptz not null default now(),
+  constraint debts_balance_non_negative check (current_balance >= 0)
 );
 
 -- ── Pagos de deudas ─────────────────────────────────────────────────────────
@@ -204,7 +216,7 @@ do $$
 declare
   t text;
   tables text[] := array[
-    'categories', 'credit_cards', 'transactions', 'budgets', 'savings',
+    'profiles', 'categories', 'credit_cards', 'transactions', 'budgets', 'savings',
     'savings_contributions',
     'debts', 'debt_payments', 'plans', 'recurring_transactions'
   ];

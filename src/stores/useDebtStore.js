@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useRateStore from './useRateStore';
@@ -25,7 +25,7 @@ const useDebtStore = create(
     ]);
 
     if (debtsRes.error || paymentsRes.error) {
-      console.error('Error fetching debts/payments:', debtsRes.error || paymentsRes.error);
+      if (import.meta.env.DEV) console.error('Error fetching debts/payments:', debtsRes.error || paymentsRes.error);
       toast.error('No se pudieron cargar las deudas');
     }
 
@@ -176,7 +176,7 @@ const useDebtStore = create(
     // We do both: insert payment and update debt
     const { data: paymentData, error: paymentError } = await supabase.from('debt_payments').insert(paymentPayload).select().single();
     if (paymentError) {
-      console.error("Error adding payment", paymentError);
+      if (import.meta.env.DEV) console.error("Error adding payment", paymentError);
       return;
     }
 
@@ -238,7 +238,7 @@ const useDebtStore = create(
           }
         }
       } catch (err) {
-        console.error('Error syncing debt payment with transactions:', err);
+        if (import.meta.env.DEV) console.error('Error syncing debt payment with transactions:', err);
       }
     }
   },
@@ -262,7 +262,7 @@ const useDebtStore = create(
         .update({ current_balance: restoredBalance, status: restoredStatus })
         .eq('id', debt.id);
       if (debtErr) {
-        console.error('Error reverting debt balance on payment delete:', debtErr);
+        if (import.meta.env.DEV) console.error('Error reverting debt balance on payment delete:', debtErr);
         toast.error('No se pudo revertir el saldo de la deuda');
         return { ok: false };
       }
@@ -271,7 +271,7 @@ const useDebtStore = create(
     // Borrar la fila del pago.
     const { error: payErr } = await supabase.from('debt_payments').delete().eq('id', paymentId);
     if (payErr) {
-      console.error('Error deleting payment:', payErr);
+      if (import.meta.env.DEV) console.error('Error deleting payment:', payErr);
       toast.error('No se pudo eliminar el pago');
       return { ok: false };
     }
@@ -337,6 +337,7 @@ const useDebtStore = create(
 }),
 {
   name: 'fintrack-debts-cache',
+  storage: createJSONStorage(() => sessionStorage),
   partialize: (state) => ({ debts: state.debts, payments: state.payments }),
 }
 )

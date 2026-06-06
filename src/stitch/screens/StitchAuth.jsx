@@ -26,6 +26,10 @@ export default function StitchAuth() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (mode === MODES.signup && password.length < 8) {
+      toast.error('La contraseña debe tener al menos 8 caracteres');
+      return;
+    }
     setBusy(true);
     try {
       if (mode === MODES.login) {
@@ -100,6 +104,7 @@ export default function StitchAuth() {
             <input
               id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.com"
+              autoComplete="username"
               className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted"
             />
           </div>
@@ -110,6 +115,7 @@ export default function StitchAuth() {
               <input
                 id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
+                autoComplete={mode === MODES.signup ? "new-password" : "current-password"}
                 className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted"
               />
             </div>
@@ -169,7 +175,7 @@ function NewPasswordScreen({ updatePassword }) {
 
   const submit = async (e) => {
     e.preventDefault();
-    if (pwd.length < 6) { toast.error('La contraseña debe tener al menos 6 caracteres'); return; }
+    if (pwd.length < 8) { toast.error('La contraseña debe tener al menos 8 caracteres'); return; }
     if (pwd !== pwd2) { toast.error('Las contraseñas no coinciden'); return; }
     setBusy(true);
     try {
@@ -194,11 +200,11 @@ function NewPasswordScreen({ updatePassword }) {
         <form onSubmit={submit} className="flex flex-col gap-md">
           <div className="flex flex-col gap-xs">
             <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np1">Nueva contraseña</label>
-            <input id="np1" type="password" required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+            <input id="np1" type="password" required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" autoComplete="new-password" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
           </div>
           <div className="flex flex-col gap-xs">
             <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np2">Confirmar contraseña</label>
-            <input id="np2" type="password" required value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="••••••••" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+            <input id="np2" type="password" required value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="••••••••" autoComplete="new-password" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
           </div>
           <button type="submit" disabled={busy} className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs">
             {busy ? 'Guardando…' : 'Guardar contraseña'}

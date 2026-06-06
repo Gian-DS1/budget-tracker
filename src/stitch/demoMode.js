@@ -19,7 +19,7 @@ const FLAG = 'fintrack-demo-mode';
 // TEMPORAL: habilita el modo demo en producción para pruebas externas
 // (TestSprite). Volver a `false` cuando termine el testing para que el demo
 // quede solo en localhost.
-const DEMO_IN_PROD = false;
+const DEMO_IN_PROD = import.meta.env.VITE_DEMO_IN_PROD === 'true';
 
 // Permite demo en localhost / 127.0.0.1 (y en producción si DEMO_IN_PROD).
 export function isLocalhost() {
