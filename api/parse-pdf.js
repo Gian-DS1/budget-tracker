@@ -18,9 +18,10 @@ function detectBank(text) {
 }
 
 function parsePopular(text) {
-  const POPULAR_HEADER_RE = /\*{4}-\*{4}-\*{4}-(\d{4})\s+[\d,]+\.\d{2}\s+[\d,]+\.\d{2}\s+(\d{2}\/\d{2}\/\d{4})\s+(\d{2}\/\d{2}\/\d{4})\s+[\d,]+\.\d{2}/;
-  const POPULAR_TX_RE = /^(\d{2}\/\d{2})\s+(\d{2}\/\d{2})\s+(\d{7,})\s+(.+?)\s+(-?[\d,]+\.\d{2})$/;
+  const POPULAR_HEADER_RE = /\*{4}-\*{4}-\*{4}-(\d{4})[\d,]+\.\d{2}[\d,]+\.\d{2}(\d{2}\/\d{2}\/\d{4})(\d{2}\/\d{2}\/\d{4})[\d,]+\.\d{2}/;
+  const POPULAR_TX_RE = /^(\d{2}\/\d{2})(\d{2}\/\d{2})(\d{7,})(.+)$/;
   const POPULAR_MCC_RE = /^\d{4}\s+\d{6}$/;
+  const AMOUNT_RE = /^-?[\d,]+\.\d{2}$/;
 
   const SKIP_PATTERNS = [
     'Puede recibir su próximo', 'Tu cuenta de Millas', 'Tasa de Interés Anual',
@@ -65,8 +66,27 @@ function parsePopular(text) {
     const postDate = inferYear(match[1]);
     const txDate = inferYear(match[2]);
     let descCity = match[4].trim();
-    const amountStr = match[5].replace(/,/g, '');
-    const amount = parseFloat(amountStr);
+
+    let mcc = '';
+    let amountStr = '';
+    
+    let j = i + 1;
+    if (j < lines.length && POPULAR_MCC_RE.test(lines[j])) {
+      mcc = lines[j].split(/\s+/)[0];
+      j++;
+    }
+    
+    if (j < lines.length && AMOUNT_RE.test(lines[j])) {
+      amountStr = lines[j];
+      i = j; // skip forward
+    } else if (j + 1 < lines.length && AMOUNT_RE.test(lines[j+1])) {
+      amountStr = lines[j+1];
+      i = j + 1; // skip forward
+    }
+    
+    if (!amountStr) continue;
+
+    const amount = parseFloat(amountStr.replace(/,/g, ''));
     const isCredit = amount < 0;
 
     let city = '';
@@ -76,15 +96,6 @@ function parsePopular(text) {
         city = descCity.substring(idx).trim();
         descCity = descCity.substring(0, idx).trim();
         break;
-      }
-    }
-
-    let mcc = '';
-    if (i + 1 < lines.length) {
-      const nextLine = lines[i + 1].trim();
-      if (POPULAR_MCC_RE.test(nextLine)) {
-        mcc = nextLine.split(/\s+/)[0];
-        i++; // consume mcc line
       }
     }
 
@@ -109,7 +120,7 @@ function parseQik(text) {
   const cardMatch = text.match(/\*{12}(\d{4})/);
   const cardLast4 = cardMatch ? cardMatch[1] : '0000';
 
-  const QIK_TX_RE = /^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}\/\d{2}\/\d{4})\s+(.+?)\s+RD\$\s+([\d,]+\.\d{2})$/;
+  const QIK_TX_RE = /^(\d{2}\/\d{2}\/\d{4})\s*(\d{2}\/\d{2}\/\d{4})\s*(.+?)\s*RD\$\s*([\d,]+\.\d{2})$/;
   const QIK_CREDIT_PATTERNS = ['Payment Return/prepaid', 'Recompensas Qik Rebate', 'Pago A Tarjeta', 'Pago a Tarjeta'];
   const QIK_SKIP_PATTERNS = [
     'Hola,', 'Período:', 'Fecha de corte', 'Límite Aprobado', 'Este es tu estado',
