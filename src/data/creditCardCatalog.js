@@ -36,9 +36,16 @@ export const DEFAULT_CATEGORY_KEYS = {
   'hogar':           { slug: 'hogar',           name: 'Hogar',                   type: 'variable_expense' },
 };
 
+// NOTA SOBRE LAS TASAS: muchas tarjetas reales tienen topes mensuales, mínimos de
+// consumo, reglas por día de semana o topes en USD que el motor de cashback NO
+// modela (solo % plano por categoría y niveles tipo CCN). Aquí cada tarjeta usa
+// su MEJOR tasa por categoría como aproximación, y esos topes/mínimos/días se
+// documentan en `note` para que el usuario los conozca. El cashback mostrado es
+// una estimación optimista (sin tope), no el valor exacto que pagará el banco.
 export const CREDIT_CARD_CATALOG = [
   // ── Banco Popular Dominicano ─────────────────────────────────
   { id: 'popular-visa-isi', bank: 'Banco Popular Dominicano', name: 'Visa ISI', color: '#e30613',
+    note: '5% en súper (mín. RD$2,500/mes) y combustible (mín. RD$1,500/mes), tope RD$2,000/mes c/u. 2% online internacional (→ Amazon). 1% en el resto.',
     cashback: [
       { categoryKey: 'supermercado', percentage: 5 },
       { categoryKey: 'combustible', percentage: 5 },
@@ -46,7 +53,7 @@ export const CREDIT_CARD_CATALOG = [
       { categoryKey: 'all', percentage: 1 },
     ] },
   { id: 'popular-mc-infinia', bank: 'Banco Popular Dominicano', name: 'Mastercard Infinia', color: '#e30613',
-    note: 'La categoría del 10% es rotativa cada trimestre — ajústala al trimestre vigente.',
+    note: '10% en categorías rotativas comunicadas cada trimestre (ajústala al trimestre vigente; aquí mapeada a Supermercado). 2% en telecomunicaciones (→ Internet/Teléfono). 1% en el resto.',
     cashback: [
       { categoryKey: 'supermercado', percentage: 10 },
       { categoryKey: 'internet', percentage: 2 },
@@ -54,10 +61,12 @@ export const CREDIT_CARD_CATALOG = [
       { categoryKey: 'all', percentage: 1 },
     ] },
   { id: 'popular-mc-gnial', bank: 'Banco Popular Dominicano', name: 'Mastercard Gnial', color: '#e30613',
+    note: '5% en comida rápida (→ Restaurantes), juegos/streaming/cines (→ Entretenimiento y Suscripciones) y veterinarias (→ Mascotas). Tope RD$1,000/mes por categoría. Solo aplica a streamings listados (Netflix, Spotify, etc.). Devolución extra RD$300/mes por pago puntual con facturación ≥ RD$25,000.',
     cashback: [
       { categoryKey: 'restaurantes', percentage: 5 },
       { categoryKey: 'entretenimiento', percentage: 5 },
       { categoryKey: 'streaming', percentage: 5 },
+      { categoryKey: 'mascotas', percentage: 5 },
       { categoryKey: 'all', percentage: 1 },
     ] },
   { id: 'popular-mc-plus-ccn', bank: 'Banco Popular Dominicano', name: 'Mastercard Plus CCN', color: '#e30613',
@@ -72,6 +81,7 @@ export const CREDIT_CARD_CATALOG = [
 
   // ── Banco BHD ────────────────────────────────────────────────
   { id: 'bhd-visa-premia', bank: 'Banco BHD', name: 'Visa Premia', color: '#003f87',
+    note: '5% en súper (mín. RD$2,500, tope RD$3,000/mes), telecom (mín. RD$2,000, tope RD$2,500/mes), streaming (mín. US$10, tope US$35/mes) y veterinarias (mín. RD$1,500, tope RD$2,500/mes).',
     cashback: [
       { categoryKey: 'supermercado', percentage: 5 },
       { categoryKey: 'internet', percentage: 5 },
@@ -81,18 +91,19 @@ export const CREDIT_CARD_CATALOG = [
       { categoryKey: 'all', percentage: 1 },
     ] },
   { id: 'bhd-visa-mipais', bank: 'Banco BHD', name: 'Visa Mi País', color: '#003f87',
-    note: '6% en Tiendas Corripio (mapeado a Hogar).',
+    note: '5% en consumos diarios: farmacias, restaurantes y fast food (tope RD$1,000/mes, mín. RD$1,000). 6% en Tiendas Corripio y 8% en Listo Ferretería (ambos → Hogar; incluyen descuento en caja + devolución al corte, tope RD$1,000/mes c/u).',
     cashback: [
       { categoryKey: 'farmacia', percentage: 5 },
       { categoryKey: 'restaurantes', percentage: 5 },
-      { categoryKey: 'hogar', percentage: 6 },
+      { categoryKey: 'hogar', percentage: 8 },
       { categoryKey: 'all', percentage: 1 },
     ] },
 
   // ── Scotiabank ───────────────────────────────────────────────
-  { id: 'scotia-visa-bravo', bank: 'Scotiabank', name: 'Visa Bravo', color: '#e2231a',
+  { id: 'scotia-bravo-visa', bank: 'Scotiabank', name: 'Bravo Visa', color: '#e2231a',
+    note: '8% de ahorro en el ecosistema Bravo (7% devolución + 1% en puntos Club Bravísimo), tope RD$11,000/mes. 5% en streaming y transporte (Uber, Netflix, Spotify, Disney+, Google, iTunes, App Store), tope RD$1,000/mes.',
     cashback: [
-      { categoryKey: 'bravo', percentage: 7 },
+      { categoryKey: 'bravo', percentage: 8 },
       { categoryKey: 'streaming', percentage: 5 },
       { categoryKey: 'transporte', percentage: 5 },
       { categoryKey: 'all', percentage: 1 },
@@ -100,19 +111,23 @@ export const CREDIT_CARD_CATALOG = [
 
   // ── Banco Santa Cruz ─────────────────────────────────────────
   { id: 'santacruz-visa-bravo', bank: 'Banco Santa Cruz', name: 'Visa Bravo', color: '#f58220',
+    note: '7% en el ecosistema Bravo (tope RD$10,500/mes). 5% en streaming y taxi (Uber, Netflix, Spotify, etc.; tope combinado RD$1,500/mes) y 5% en Amazon (tope US$50/mes). 1% en el resto (tope RD$1,500/mes).',
     cashback: [
       { categoryKey: 'bravo', percentage: 7 },
+      { categoryKey: 'streaming', percentage: 5 },
+      { categoryKey: 'transporte', percentage: 5 },
       { categoryKey: 'amazon', percentage: 5 },
       { categoryKey: 'all', percentage: 1 },
     ] },
 
   // ── Qik Banco Digital ────────────────────────────────────────
-  { id: 'qik-credito-basica', bank: 'Qik Banco Digital', name: 'Qik Crédito Básica', color: '#7b2ff7',
+  { id: 'qik-credito-basica', bank: 'Qik Banco Digital', name: 'Mastercard Qik Básica', color: '#7b2ff7',
+    note: '1% de cashback en todas las categorías.',
     cashback: [
       { categoryKey: 'all', percentage: 1 },
     ] },
-  { id: 'qik-pro', bank: 'Qik Banco Digital', name: 'Qik Pro', color: '#7b2ff7',
-    note: '5% en una categoría personalizable (excluye súper y combustible) — elige la tuya.',
+  { id: 'qik-pro', bank: 'Qik Banco Digital', name: 'Mastercard Qik', color: '#7b2ff7',
+    note: 'Hasta 5% en categorías personalizables (ej. 3% restaurantes + 2% súper). Aquí precargado 5% en Restaurantes — edítalo a tu mezcla. 1% en el resto.',
     cashback: [
       { categoryKey: 'restaurantes', percentage: 5 },
       { categoryKey: 'all', percentage: 1 },
@@ -120,28 +135,52 @@ export const CREDIT_CARD_CATALOG = [
 
   // ── APAP ─────────────────────────────────────────────────────
   { id: 'apap-visa-familiar', bank: 'APAP', name: 'Visa Familiar', color: '#00833e',
+    note: '5% en súper (mín. RD$2,500; tope RD$2,000/día, RD$3,000/mes). 3% en combustible (solo viernes), farmacias, lavanderías y educación (mín. RD$5,000; → Hogar/Educación). Topes diarios y mensuales por categoría.',
     cashback: [
-      { categoryKey: 'supermercado', percentage: 10 },
-      { categoryKey: 'combustible', percentage: 5 },
-      { categoryKey: 'farmacia', percentage: 5 },
-      { categoryKey: 'educacion', percentage: 4 },
+      { categoryKey: 'supermercado', percentage: 5 },
+      { categoryKey: 'combustible', percentage: 3 },
+      { categoryKey: 'farmacia', percentage: 3 },
+      { categoryKey: 'educacion', percentage: 3 },
+      { categoryKey: 'all', percentage: 1 },
     ] },
   { id: 'apap-visa-sirena', bank: 'APAP', name: 'Visa Sirena', color: '#00833e',
-    note: 'Incluye un plan complementario personalizable (Digital, Estilo u Hogar).',
+    note: '8% de ahorro en Sirena (7% cashback + 1% puntos Club Siremás; tope RD$10,000/mes). 7% en Lavanderías Pressto. Plan complementario hasta 5% (Digital/Estilo/Hogar): 2% en streaming/belleza/telecom + 1% en delivery/combustible/online. Tope plan RD$3,000/mes.',
     cashback: [
       { categoryKey: 'sirena', percentage: 8 },
+      { categoryKey: 'streaming', percentage: 2 },
       { categoryKey: 'all', percentage: 1 },
     ] },
 
   // ── Banreservas ──────────────────────────────────────────────
   { id: 'banreservas-visa-ser', bank: 'Banreservas', name: 'Visa SER', color: '#0067b1',
-    note: 'Tasas variables no publicadas por el banco — ajústalas según tu tarifario.',
+    note: '3% en farmacias (lun/mié), súper (mar/jue), gasolineras (vie) y salud — topes RD$1,000–1,500/mes. 4% en educación, 5% en transporte/servicios/entretenimiento (tope RD$1,000/mes c/u). Aquí se usa la mejor tasa de cada categoría (sin restricción de día).',
     cashback: [
-      { categoryKey: 'supermercado', percentage: 1 },
-      { categoryKey: 'farmacia', percentage: 1 },
-      { categoryKey: 'combustible', percentage: 1 },
-      { categoryKey: 'educacion', percentage: 1 },
-      { categoryKey: 'transporte', percentage: 1 },
+      { categoryKey: 'transporte', percentage: 5 },
+      { categoryKey: 'entretenimiento', percentage: 5 },
+      { categoryKey: 'educacion', percentage: 4 },
+      { categoryKey: 'farmacia', percentage: 3 },
+      { categoryKey: 'supermercado', percentage: 3 },
+      { categoryKey: 'combustible', percentage: 3 },
+      { categoryKey: 'all', percentage: 1 },
+    ] },
+
+  // ── Banco BDI ────────────────────────────────────────────────
+  { id: 'bdi-visa-clasica', bank: 'Banco BDI', name: 'Visa Clásica', color: '#1a3c70',
+    note: '15-20% en comercios y días específicos: lun Zara/Anthony\'s/Services Travel; mar salones/barberías; mié couriers/El Catador; jue-dom City Market, Vitasalud (15%) y Ruta Gastronómica (20%). Aquí se aproxima 15% en súper (City Market) y restaurantes (Ruta Gastronómica); el resto requiere comercio/día específico.',
+    cashback: [
+      { categoryKey: 'supermercado', percentage: 15 },
+      { categoryKey: 'restaurantes', percentage: 20 },
+      { categoryKey: 'all', percentage: 1 },
+    ] },
+
+  // ── Banesco ──────────────────────────────────────────────────
+  { id: 'banesco-supercashback', bank: 'Banesco', name: 'SuperCashback', color: '#1aa64b',
+    note: '7% fijo en categorías seleccionadas: súper y liquor stores (tope RD$5,000/mes), salones/barberías (RD$1,000/mes), servicios de agua y luz (RD$2,000/mes → Hogar) y comida rápida (RD$500/mes → Restaurantes). Acreditado al corte; la tarjeta debe estar al día.',
+    cashback: [
+      { categoryKey: 'supermercado', percentage: 7 },
+      { categoryKey: 'restaurantes', percentage: 7 },
+      { categoryKey: 'entretenimiento', percentage: 7 },
+      { categoryKey: 'hogar', percentage: 7 },
       { categoryKey: 'all', percentage: 1 },
     ] },
 ];
