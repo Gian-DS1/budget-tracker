@@ -57,6 +57,7 @@ export default function EmojiPicker({ value = '', onChange, id, className = '' }
         id={id}
         aria-haspopup="listbox"
         aria-expanded={open}
+        aria-controls={listboxId}
         onClick={toggle}
         className="w-12 h-12 rounded border border-border-subtle bg-surface-container-lowest flex items-center justify-center inner-glow hover:border-primary transition-colors"
       >
@@ -72,6 +73,7 @@ export default function EmojiPicker({ value = '', onChange, id, className = '' }
                 ref={searchRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } }}
                 placeholder="Buscar emoji…"
                 className="w-full bg-transparent py-sm pl-[32px] pr-sm font-body-md text-body-md text-on-surface focus:outline-none placeholder:text-text-muted"
               />
