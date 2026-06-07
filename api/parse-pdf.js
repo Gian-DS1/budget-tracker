@@ -247,7 +247,9 @@ export default async function handler(req, res) {
     });
 
   } catch (error) {
+    // Loguea el detalle solo en el servidor; al cliente un mensaje genérico para
+    // no filtrar internals (rutas, stack, versiones de librerías).
     console.error('PDF parsing error:', error);
-    res.status(500).json({ error: 'Error interno al parsear el PDF: ' + error.message });
+    res.status(500).json({ error: 'No se pudo procesar el PDF. Intenta de nuevo.' });
   }
 }
