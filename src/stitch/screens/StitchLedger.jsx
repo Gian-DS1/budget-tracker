@@ -33,12 +33,16 @@ const TYPES = [
 const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', currency: 'DOP', isRecurring: false, recurrencePattern: 'monthly' };
 
 export default function StitchLedger() {
+  // `transactions` se suscribe con selector (es el dato que muta y dispara
+  // renders); las acciones del store son referencias estables, así que tomarlas
+  // por separado no añade superficie de suscripción al estado completo.
+  const transactions = useTransactionStore((s) => s.transactions);
   const {
-    transactions, addTransaction, updateTransaction, deleteTransaction, restoreTransaction,
+    addTransaction, updateTransaction, deleteTransaction, restoreTransaction,
     bulkDeleteTransactions, restoreManyTransactions, bulkAssignCategory, bulkAssignCard,
   } = useTransactionStore();
-  const { categories } = useCategoryStore();
-  const { cards } = useCreditCardStore();
+  const categories = useCategoryStore((s) => s.categories);
+  const cards = useCreditCardStore((s) => s.cards);
   const addRecurring = useRecurringStore((s) => s.addRecurring);
   const fxRate = useRateStore((s) => s.getRate());
 

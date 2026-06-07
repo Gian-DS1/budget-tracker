@@ -11,7 +11,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import { isDemoActive } from '../stitch/demoMode';
 
 export const BUDGET_LEVELS = ['tracking', '503020', 'zero'];
@@ -29,8 +29,7 @@ const usePrefsStore = create(
       /** Carga prefs desde Supabase (si hay sesión). Sin sesión deja el caché. */
       fetchPrefs: async () => {
         if (isDemoActive()) return; // demo: solo caché local
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return;
         set({ loading: true });
         const { data, error } = await supabase
@@ -53,8 +52,7 @@ const usePrefsStore = create(
         const prev = get().tutorialSeen;
         set({ tutorialSeen: seen }); // optimista
         if (isDemoActive()) return;
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return; // sin sesión, solo caché local
         const { error } = await supabase
           .from('profiles')
@@ -71,8 +69,7 @@ const usePrefsStore = create(
         const prev = get().budgetLevel;
         set({ budgetLevel: level }); // optimista
         if (isDemoActive()) return;
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return; // sin sesión, solo caché local
         const { error } = await supabase
           .from('profiles')

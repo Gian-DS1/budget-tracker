@@ -28,8 +28,8 @@ const LEGEND = [
 
 export default function StitchCalendar() {
   const navigate = useNavigate();
-  const { transactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
+  const transactions = useTransactionStore((s) => s.transactions);
+  const categories = useCategoryStore((s) => s.categories);
   const debts = useDebtStore((s) => s.debts);
   const cards = useCreditCardStore((s) => s.cards);
   const goals = useSavingsStore((s) => s.goals);

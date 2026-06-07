@@ -1,6 +1,6 @@
 ﻿import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
@@ -22,8 +22,7 @@ const useSavingsStore = create(
 
   fetchGoals: async () => {
     set({ loading: true });
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return set({ goals: [], contributions: [], loading: false });
 
     const [goalsRes, contribRes] = await Promise.all([
@@ -69,8 +68,7 @@ const useSavingsStore = create(
   },
 
   addGoal: async (goal) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
 
     const dbPayload = {
@@ -167,8 +165,7 @@ const useSavingsStore = create(
   // la meta y crea la transacción de ahorro enlazada (transaction_id), espejo de
   // addPayment en useDebtStore.
   addContribution: async (goalId, amount, date, notes = '') => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
     const goal = get().goals.find((g) => g.id === goalId);
     if (!goal) return;
@@ -269,8 +266,7 @@ const useSavingsStore = create(
   // re-sumar) e inserta las filas de aporte tal cual, recreando su transacción
   // enlazada. NO usa addGoal/addContribution para evitar el doble-conteo del saldo.
   restoreGoalWithContributions: async (goal, contribs = []) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
 
     const dbPayload = {

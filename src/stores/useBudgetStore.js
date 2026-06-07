@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 
 const useBudgetStore = create(
@@ -11,8 +11,7 @@ const useBudgetStore = create(
 
   fetchBudgets: async () => {
     set({ loading: true });
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return set({ budgets: [], loading: false });
 
     const { data, error } = await supabase.from('budgets').select('*').eq('user_id', user.id);
@@ -69,8 +68,7 @@ const useBudgetStore = create(
     });
 
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
+      const user = await getCurrentUser();
       if (!user) {
         throw new Error("Usuario no autenticado");
       }
@@ -154,8 +152,7 @@ const useBudgetStore = create(
   // entries: [{ categoryId, amount }]. Devuelve cuántas categorías se aplicaron.
   bulkSetBudgets: async (year, month, entries) => {
     if (!entries || entries.length === 0) return 0;
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return 0;
 
     const dbMonth = `${year}-${String(month + 1).padStart(2, '0')}`;
@@ -252,8 +249,7 @@ const useBudgetStore = create(
 
     if (newBudgetsToCopy.length === 0) return true;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return false;
 
     const dbPayload = newBudgetsToCopy.map(pb => ({
