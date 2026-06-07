@@ -26,6 +26,7 @@ const NAV = [
   { section: 'Herramientas' },
   { to: '/calendario', icon: 'calendar_month', label: 'Calendario' },
   { to: '/reportes', icon: 'analytics', label: 'Reportes' },
+  { to: '/categorias', icon: 'sell', label: 'Categorías' },
 ];
 
 // Arranca el tutorial automáticamente la 1ª vez (cuando el usuario aún no lo ha
