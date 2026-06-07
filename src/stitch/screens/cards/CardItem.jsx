@@ -2,8 +2,8 @@
 //   1. Ciclo abierto (consumo, informativo)
 //   2. POR PAGAR (protagonista) + Abonar / Pagar todo
 //   3. Saldo total de la tarjeta
-import toast from 'react-hot-toast';
 import MS from '../../MS';
+import { toastCelebrate } from '../../toastCelebrate';
 import { Stagger } from '../../StitchMotion';
 import { isDemoActive, demoAddCardPayment } from '../../demoMode';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
@@ -26,7 +26,7 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
     const amt = Math.round(bal.pendingBilled * 100) / 100;
     if (amt <= 0) return;
     const payload = { amount: amt, date: todayISO(), note: 'Pago total' };
-    if (isDemoActive()) { demoAddCardPayment(card.id, payload); toast.success('Estado de cuenta saldado 🎉', { duration: 4000 }); }
+    if (isDemoActive()) { demoAddCardPayment(card.id, payload); toastCelebrate('Estado de cuenta saldado'); }
     else await addCardPayment(card.id, payload);
   };
 

@@ -2,6 +2,7 @@
 // con borrar + Deshacer. El borrado revierte saldo y la transacción enlazada.
 import toast from 'react-hot-toast';
 import MS from '../../MS';
+import Emoji from '../../Emoji';
 import useSavingsStore from '../../../stores/useSavingsStore';
 import { isDemoActive, demoDeleteContribution, demoAddContribution } from '../../demoMode';
 import { formatCurrency, formatDate, toISODate } from '../../../utils/formatters';
@@ -61,7 +62,7 @@ export default function HistoryModal({ goal: goalProp, onClose }) {
       </div>
 
       {proj.done ? (
-        <p className="font-mono-data text-mono-data text-tertiary normal-case tracking-normal mb-md">Meta completada. 🎉</p>
+        <p className="font-mono-data text-mono-data text-tertiary normal-case tracking-normal mb-md inline-flex items-center gap-xs">Meta completada. <Emoji e="🎉" size={14} /></p>
       ) : proj.reachable ? (
         <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mb-md">
           A este ritmo, lista en <span className="text-tertiary">{proj.months} {proj.months === 1 ? 'mes' : 'meses'}</span>{proj.projectedDate ? ` (${formatDate(toISODate(proj.projectedDate))})` : ''}.

@@ -7,6 +7,7 @@ import StitchDatePicker from '../../StitchDatePicker';
 import useDebtStore from '../../../stores/useDebtStore';
 import { isDemoActive, demoAddDebtPayment } from '../../demoMode';
 import { todayISO, formatCurrency } from '../../../utils/formatters';
+import { toastCelebrate } from '../../toastCelebrate';
 import { Modal, Field, FormActions, inputCls } from './debtsUi';
 
 const fmt = (n, c) => formatCurrency(n, c);
@@ -24,7 +25,8 @@ export default function PaymentModal({ debt, onClose }) {
     if (isDemoActive()) demoAddDebtPayment(debt.id, amt, date, note.trim());
     else await addPayment(debt.id, amt, date, note.trim());
     const newBal = Number(debt.currentBalance) - amt;
-    toast.success(newBal <= 0 ? '🎉 ¡Deuda liquidada!' : `Pago de ${fmt(amt, debt.currency)} registrado`, { duration: 4000 });
+    if (newBal <= 0) toastCelebrate('¡Deuda liquidada!');
+    else toast.success(`Pago de ${fmt(amt, debt.currency)} registrado`, { duration: 4000 });
     onClose();
   };
 
