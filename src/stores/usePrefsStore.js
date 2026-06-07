@@ -25,12 +25,17 @@ const usePrefsStore = create(
       // 1ª vez). En demo vive solo en caché local; con sesión, en profiles.
       tutorialSeen: false,
       loading: false,
+      // ¿Ya resolvió fetchPrefs al menos una vez? El auto-arranque del tutorial
+      // espera a esto para no decidir con el caché provisional (evita disparar el
+      // tour a quien ya lo vio en otro dispositivo, y evita la carrera con OAuth
+      // donde loading hace false→true→false tras el primer paint).
+      prefsLoaded: false,
 
       /** Carga prefs desde Supabase (si hay sesión). Sin sesión deja el caché. */
       fetchPrefs: async () => {
-        if (isDemoActive()) return; // demo: solo caché local
+        if (isDemoActive()) { set({ prefsLoaded: true }); return; } // demo: solo caché local
         const user = await getCurrentUser();
-        if (!user) return;
+        if (!user) { set({ prefsLoaded: true }); return; }
         set({ loading: true });
         const { data, error } = await supabase
           .from('profiles')
@@ -38,12 +43,14 @@ const usePrefsStore = create(
           .eq('user_id', user.id)
           .maybeSingle();
         if (!error && data) {
-          const next = { loading: false };
+          const next = { loading: false, prefsLoaded: true };
           if (data.budget_level && BUDGET_LEVELS.includes(data.budget_level)) next.budgetLevel = data.budget_level;
           if (typeof data.tutorial_seen === 'boolean') next.tutorialSeen = data.tutorial_seen;
           set(next);
         } else {
-          set({ loading: false });
+          // Usuario nuevo sin fila en profiles (data null): tutorialSeen queda
+          // en false → el tutorial debe arrancar.
+          set({ loading: false, prefsLoaded: true });
         }
       },
 

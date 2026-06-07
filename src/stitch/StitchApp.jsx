@@ -85,8 +85,13 @@ function AuthGate() {
   const fetchRate = useRateStore((s) => s.fetchRate);
 
   useEffect(() => {
-    if (demo) queueMicrotask(seedDemoStores);
-  }, [demo]);
+    if (demo) {
+      queueMicrotask(seedDemoStores);
+      // En demo no corre el effect de fetches (no hay user real); fetchPrefs marca
+      // prefsLoaded para que el auto-arranque del tutorial pueda decidir.
+      fetchPrefs();
+    }
+  }, [demo, fetchPrefs]);
 
   useEffect(() => { fetchRate(); }, [fetchRate]);
 

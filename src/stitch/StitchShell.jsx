@@ -32,24 +32,40 @@ const NAV = [
 
 // Arranca el tutorial automáticamente la 1ª vez (cuando el usuario aún no lo ha
 // visto). Vive dentro de TourProvider para usar start(). Una sola vez por sesión.
+//
+// Importante (bug de carrera con login de Google): antes este effect dependía de
+// `loading` y devolvía un cleanup que hacía clearTimeout. Con OAuth, fetchPrefs
+// resuelve DESPUÉS del primer paint: loading hacía false→true→false, y el cambio
+// a true ejecutaba el cleanup del render previo CANCELANDO el setTimeout ya
+// programado; como `fired` ya estaba marcado, no se reprogramaba y el tour nunca
+// aparecía. La corrección: solo programamos el timeout cuando loading ya es false
+// y tutorialSeen es false, y NO lo cancelamos por cambios posteriores de estado
+// (el guard `fired` garantiza que sea una sola vez). El timeout solo se limpia al
+// desmontar el componente de verdad.
 function TourAutoStart() {
   const { start } = useTour();
   const tutorialSeen = usePrefsStore((s) => s.tutorialSeen);
-  const loading = usePrefsStore((s) => s.loading);
+  const prefsLoaded = usePrefsStore((s) => s.prefsLoaded);
   const fired = useRef(false);
+  const timerRef = useRef(null);
+
   useEffect(() => {
     if (fired.current) return;
-    // Esperar a que fetchPrefs resuelva (evita parpadeo para quienes ya lo vieron
-    // en otro dispositivo: el caché local arranca en false hasta traer Supabase).
-    if (loading) return undefined;
+    // Esperar a que fetchPrefs resuelva (prefsLoaded) para decidir con el valor
+    // real de Supabase, no con el caché provisional. Así no parpadea para quien ya
+    // lo vio en otro dispositivo ni se pierde el arranque por la carrera con OAuth.
+    if (!prefsLoaded) return;
     if (!tutorialSeen) {
       fired.current = true;
       // Pequeño delay para que el shell pinte antes de medir anclas.
-      const t = setTimeout(() => start(), 700);
-      return () => clearTimeout(t);
+      timerRef.current = setTimeout(() => start(), 700);
     }
-    return undefined;
-  }, [tutorialSeen, loading, start]);
+  }, [tutorialSeen, prefsLoaded, start]);
+
+  // Limpia el timeout solo al desmontar (no en cada cambio de loading/seen), para
+  // que un re-render intermedio no cancele un arranque ya programado.
+  useEffect(() => () => clearTimeout(timerRef.current), []);
+
   return null;
 }
 
