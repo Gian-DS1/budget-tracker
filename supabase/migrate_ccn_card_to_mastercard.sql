@@ -13,30 +13,29 @@
 -- por su id (UUID), que NO cambia. Solo actualizamos columnas de la misma fila,
 -- así que todas las transacciones siguen apuntando a la misma tarjeta.
 --
--- Seguro de correr: usa tu auth.uid() (solo toca TUS filas) y es idempotente
--- (puedes correrlo más de una vez). Ejecútalo en el SQL Editor de Supabase
--- mientras tu sesión está activa (auth.uid() debe resolver a tu usuario).
+-- NOTA: auth.uid() retorna null en el SQL Editor (sin sesión activa).
+-- Se usa el UUID hardcodeado del usuario en su lugar.
 -- ============================================================================
 
+-- UUID del usuario (Giancarlos)
+do $$ begin
+  -- solo para documentar; las queries usan la constante directamente
+end $$;
+
 -- ── 1 · Asegurar la categoría "Grupo CCN" ───────────────────────────────────
--- La regla de cashback necesita apuntar al id de esta categoría. Si no existe,
--- la creamos con los keywords del Grupo CCN para que el auto-categorizador rutee
--- las compras (Nacional, Jumbo, Casa Cuesta, etc.) a ella automáticamente.
 insert into public.categories (user_id, name, type, icon, color, slug, keywords, is_active, sort_order)
 select
-  auth.uid(), 'Grupo CCN', 'variable_expense', '🛒', '#004b87', 'eco-grupo-ccn',
+  '24e05fb8-dac4-45bc-9cdf-22cb4c707a81'::uuid,
+  'Grupo CCN', 'variable_expense', '🛒', '#004b87', 'eco-grupo-ccn',
   array['nacional','supermercados nacional','jumbo','jumbo express','casa cuesta','ferreteria cuesta','jugueton','cuesta libros','bebe mundo','bebemundo','la bodega','merca jumbo'],
   true,
-  coalesce((select max(sort_order) + 1 from public.categories where user_id = auth.uid()), 0)
+  coalesce((select max(sort_order) + 1 from public.categories where user_id = '24e05fb8-dac4-45bc-9cdf-22cb4c707a81'::uuid), 0)
 where not exists (
   select 1 from public.categories
-  where user_id = auth.uid() and slug = 'eco-grupo-ccn'
+  where user_id = '24e05fb8-dac4-45bc-9cdf-22cb4c707a81'::uuid and slug = 'eco-grupo-ccn'
 );
 
 -- ── 2 · Actualizar la tarjeta CCN in-place ──────────────────────────────────
--- Construye la regla escalonada apuntando al id real de tu categoría Grupo CCN y
--- la guarda junto con la nueva identidad de la tarjeta (Mastercard). El resto de
--- columnas (corte, pago, saldo, abonos, transacciones enlazadas) queda intacto.
 update public.credit_cards c
 set
   name           = 'Mastercard Plus CCN',
@@ -47,7 +46,7 @@ set
     jsonb_build_object(
       'categoryId', (
         select id::text from public.categories
-        where user_id = auth.uid() and slug = 'eco-grupo-ccn'
+        where user_id = '24e05fb8-dac4-45bc-9cdf-22cb4c707a81'::uuid and slug = 'eco-grupo-ccn'
         limit 1
       ),
       'tiers', jsonb_build_array(
@@ -59,7 +58,7 @@ set
       )
     )
   )
-where c.user_id = auth.uid()
+where c.user_id = '24e05fb8-dac4-45bc-9cdf-22cb4c707a81'::uuid
   and (c.catalog_id = 'popular-visa-plus-ccn' or c.name = 'Visa Plus CCN');
 
 -- ── 3 · Verificación (opcional) ─────────────────────────────────────────────
@@ -68,4 +67,4 @@ where c.user_id = auth.uid()
 -- select c.id, c.name, c.bank, c.catalog_id, c.cashback_rules,
 --        (select count(*) from public.transactions t where t.card_id = c.id) as num_transacciones
 -- from public.credit_cards c
--- where c.user_id = auth.uid() and c.catalog_id = 'popular-mc-plus-ccn';
+-- where c.user_id = '24e05fb8-dac4-45bc-9cdf-22cb4c707a81'::uuid and c.catalog_id = 'popular-mc-plus-ccn';
