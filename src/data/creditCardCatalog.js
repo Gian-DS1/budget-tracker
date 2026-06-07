@@ -126,7 +126,7 @@ export const CREDIT_CARD_CATALOG = [
     cashback: [
       { categoryKey: 'all', percentage: 1 },
     ] },
-  { id: 'qik-pro', bank: 'Qik Banco Digital', name: 'Mastercard Qik', color: '#7b2ff7',
+  { id: 'qik-pro', bank: 'Qik Banco Digital', name: 'Mastercard Qik Pro', color: '#7b2ff7',
     note: 'Hasta 5% en categorías personalizables (ej. 3% restaurantes + 2% súper). Aquí precargado 5% en Restaurantes — edítalo a tu mezcla. 1% en el resto.',
     cashback: [
       { categoryKey: 'restaurantes', percentage: 5 },
