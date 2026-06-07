@@ -167,7 +167,12 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
                 </div>
                 <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
                   {g.items.map((r) => (
-                    <EnvelopeRow key={r.cat.id} {...r} onSave={(v) => handleSave(r.cat, v)} />
+                    // La key incluye año-mes para que React REMONTE la fila al
+                    // cambiar de período. Sin esto, el estado local del input
+                    // (inicializado solo al montar) conservaba el monto del mes
+                    // anterior y, al perder foco, lo guardaba en el mes actual
+                    // ("el presupuesto se cambia solo / jala datos de meses previos").
+                    <EnvelopeRow key={`${r.cat.id}-${year}-${month}`} {...r} onSave={(v) => handleSave(r.cat, v)} />
                   ))}
                 </Stagger>
               </section>

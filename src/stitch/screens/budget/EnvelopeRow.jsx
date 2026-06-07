@@ -2,7 +2,7 @@
 // (StitchCurrencyInput, persiste on-blur) + gastado real + barra de progreso.
 // La fila "gestionada" (managed: deuda) muestra la cuota como solo lectura, ya
 // que su monto vive en el módulo Deudas (no es un sobre editable).
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import MS from '../../MS';
 import Emoji from '../../Emoji';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
@@ -17,6 +17,16 @@ const typeColor = (t) =>
 export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, managed = false }) {
   // El input es controlado (onChange por tecla); persistimos solo al perder foco.
   const [v, setV] = useState(estimated ? String(estimated) : '');
+  const focused = useRef(false);
+
+  // Sincroniza el input cuando el estimado cambia DESDE FUERA (recarga de datos,
+  // "copiar mes anterior", cambio de mes con misma key) — pero nunca mientras el
+  // usuario está escribiendo, para no pisar su edición en curso. Esto evita que
+  // el input conserve un monto rezagado y lo guarde en el período equivocado.
+  useEffect(() => {
+    if (!focused.current) setV(estimated ? String(estimated) : '');
+  }, [estimated]);
+
   const over = pct > 100;
 
   return (
@@ -36,7 +46,8 @@ export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, manag
           <StitchCurrencyInput
             value={v}
             onChange={setV}
-            onBlur={() => onSave(v)}
+            onFocus={() => { focused.current = true; }}
+            onBlur={() => { focused.current = false; onSave(v); }}
             placeholder="0"
             className="w-24 bg-surface-container-lowest border border-border-subtle rounded py-xs px-sm font-mono-data text-[11px] text-right text-on-surface focus:outline-none focus:border-primary inner-glow"
           />
