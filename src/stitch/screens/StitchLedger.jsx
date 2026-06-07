@@ -207,20 +207,18 @@ export default function StitchLedger() {
     ), { duration: 6000 });
   };
 
-  // Cashback a MOSTRAR por transacción. Para tarjetas con regla plana es el valor
-  // congelado (cashbackEarned). Para tarjetas escalonadas (CCN) el congelado es 0
-  // por diseño, así que estimamos el cashback derivado de la fila (proporcional al
-  // nivel del ciclo) para que el usuario lo vea. Mapa id→cashback, memoizado.
+  // Cashback a MOSTRAR por transacción, calculado EN VIVO desde las reglas
+  // actuales de la tarjeta (planas y escalonadas) vía getTransactionCashback. No
+  // dependemos del cashbackEarned congelado: este podía quedar en 0 (transacción
+  // creada/importada antes de configurar la regla) y la fila no mostraba el
+  // cashback aunque al editar sí aparecía. Calcular en vivo lo hace consistente
+  // para todas las tarjetas de todos los usuarios. Mapa id→cashback, memoizado.
   const cashbackById = useMemo(() => {
     const map = new Map();
     const cardById = new Map(cards.map((c) => [c.id, c]));
     for (const t of transactions) {
       const card = t.cardId ? cardById.get(t.cardId) : null;
-      if (card && hasTieredRule(card)) {
-        map.set(t.id, getTransactionCashback(card, t, transactions));
-      } else {
-        map.set(t.id, Number(t.cashbackEarned) || 0);
-      }
+      map.set(t.id, card ? getTransactionCashback(card, t, transactions) : 0);
     }
     return map;
   }, [transactions, cards]);
