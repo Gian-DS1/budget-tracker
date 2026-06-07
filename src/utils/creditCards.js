@@ -287,16 +287,16 @@ export function tierPercentage(tiers, accumulated) {
 /**
  * Cashback estimado (en DOP) de UNA transacción, redondeado a 2 decimales.
  * Para reglas planas delega en computeCashback (% fijo del monto). Para reglas
- * escalonadas, replica la lógica de getDerivedCashback a nivel de fila: ubica el
- * ciclo de corte de la transacción, calcula el nivel por el acumulado de ese ciclo
- * y aplica ese % al monto de la transacción. Así la suma de las filas del ciclo
- * coincide con getDerivedCashback (que mide el ciclo completo).
+ * escalonadas, ubica el ciclo de corte que CONTIENE la fecha de la transacción
+ * (no el ciclo actual), calcula el nivel por el acumulado de ESE ciclo y aplica
+ * ese % al monto de la transacción. Así cada transacción —de cualquier ciclo,
+ * pasado o presente— muestra el cashback del nivel que alcanzó en su propio
+ * ciclo, y la suma de las filas de un ciclo coincide con su cashback derivado.
  * @param {object} card
  * @param {object} tx          - la transacción a estimar
  * @param {Array}  transactions - todas las transacciones (para el acumulado del ciclo)
- * @param {Date}   refDate      - hoy (para ubicar el ciclo abierto en reglas tiered)
  */
-export function getTransactionCashback(card, tx, transactions = [], refDate = new Date()) {
+export function getTransactionCashback(card, tx, transactions = []) {
   const amt = Number(tx?.amount);
   if (!card || !amt || isNaN(amt) || amt <= 0) return 0;
 
@@ -304,16 +304,18 @@ export function getTransactionCashback(card, tx, transactions = [], refDate = ne
     return computeCashback(card, tx.categoryId, amt);
   }
 
-  // Reglas escalonadas: solo aplican a transacciones de la tarjeta dentro del
-  // ciclo abierto actual y de la categoría escalonada.
-  if (tx.cardId !== card.id) return 0;
-  const { openStartISO, openEndISO } = getCardCycles(card, refDate);
-  if (!tx.date || tx.date < openStartISO || tx.date > openEndISO) return 0;
+  // Reglas escalonadas: aplican a transacciones de la tarjeta y de la categoría
+  // escalonada. El nivel se mide por el acumulado del ciclo de corte que contiene
+  // la fecha de la transacción (ubicado con esa misma fecha como referencia).
+  if (tx.cardId !== card.id || !tx.date) return 0;
 
   const rule = card.cashbackRules.find(
     (r) => Array.isArray(r.tiers) && r.tiers.length > 0 && r.categoryId === tx.categoryId
   );
   if (!rule) return 0;
+
+  // Ciclo de corte de ESTA transacción (su fecha como referencia).
+  const { openStartISO, openEndISO } = getCardCycles(card, new Date(tx.date + 'T00:00:00'));
 
   const accumulated = transactions.reduce((sum, t) => {
     if (t.cardId !== card.id) return sum;

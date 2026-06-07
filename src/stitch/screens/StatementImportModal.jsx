@@ -43,6 +43,13 @@ export default function StatementImportModal({ onClose, pdfData }) {
     return result;
   }, [pdfData, existingTxs, categories]);
 
+  // Tipo derivado de la categoría (la categoría manda). Sin categoría o sin tipo
+  // de gasto válido, cae a 'variable_expense' (ya no usamos el genérico 'expense').
+  const typeForCategory = (categoryId) => {
+    const t = categories.find((c) => c.id === categoryId)?.type;
+    return t === 'fixed_expense' || t === 'variable_expense' ? t : 'variable_expense';
+  };
+
   const handleImport = async (requestClose) => {
     if (!targetCardId) {
       toast.error('Selecciona una tarjeta destino');
@@ -55,7 +62,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
       const newTxs = matchResult.toImport.map(pdfTx => ({
         date: pdfTx.txDate,
         amount: pdfTx.amount,
-        type: 'expense',
+        type: typeForCategory(pdfTx.suggestedCategoryId),
         description: pdfTx.description,
         categoryId: pdfTx.suggestedCategoryId || '',
         cardId: targetCardId,
@@ -66,16 +73,19 @@ export default function StatementImportModal({ onClose, pdfData }) {
       // Para las ambiguas, por ahora las importamos como nuevas (o el usuario podría resolverlas en una v2)
       // Agregaremos las ambiguas a newTxs también, a menos que el usuario las ignore.
       // Para esta versión, las agregamos con una nota especial.
-      const ambiguousTxs = matchResult.ambiguous.map(item => ({
-        date: item.pdfTx.txDate,
-        amount: item.pdfTx.amount,
-        type: 'expense',
-        description: item.pdfTx.description,
-        categoryId: autoCategorize(item.pdfTx.description, categories)?.id || '',
-        cardId: targetCardId,
-        currency: 'DOP',
-        notes: `Importado (Ambigüedad detectada en el estado de cuenta)`
-      }));
+      const ambiguousTxs = matchResult.ambiguous.map(item => {
+        const categoryId = autoCategorize(item.pdfTx.description, categories)?.id || '';
+        return {
+          date: item.pdfTx.txDate,
+          amount: item.pdfTx.amount,
+          type: typeForCategory(categoryId),
+          description: item.pdfTx.description,
+          categoryId,
+          cardId: targetCardId,
+          currency: 'DOP',
+          notes: `Importado (Ambigüedad detectada en el estado de cuenta)`
+        };
+      });
 
       const allNew = [...newTxs, ...ambiguousTxs];
       let addedCount = 0;

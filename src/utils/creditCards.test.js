@@ -387,19 +387,39 @@ describe('getTransactionCashback — cashback estimado por transacción', () => 
     expect(sum).toBeCloseTo(getDerivedCashback(tieredCard, txs, ref), 2);
   });
 
-  it('transacción escalonada fuera del ciclo abierto → 0', () => {
-    const txs = [{ cardId: 'card1', categoryId: 'ccn', amount: 9999, date: '2026-05-20' }];
-    expect(getTransactionCashback(tieredCard, txs[0], txs, ref)).toBe(0);
-  });
-
   it('transacción de otra categoría en tarjeta escalonada → 0', () => {
     const txs = [{ cardId: 'card1', categoryId: 'super', amount: 5000, date: '2026-06-10' }];
-    expect(getTransactionCashback(tieredCard, txs[0], txs, ref)).toBe(0);
+    expect(getTransactionCashback(tieredCard, txs[0], txs)).toBe(0);
   });
 
   it('sin tarjeta o monto inválido → 0', () => {
-    expect(getTransactionCashback(null, { amount: 1000 }, [], ref)).toBe(0);
-    expect(getTransactionCashback(tieredCard, { cardId: 'card1', categoryId: 'ccn', amount: 0, date: '2026-06-10' }, [], ref)).toBe(0);
+    expect(getTransactionCashback(null, { amount: 1000 }, [])).toBe(0);
+    expect(getTransactionCashback(tieredCard, { cardId: 'card1', categoryId: 'ccn', amount: 0, date: '2026-06-10' }, [])).toBe(0);
+  });
+
+  it('transacción de un CICLO PASADO: usa el acumulado de SU propio ciclo', () => {
+    // Una transacción del ciclo anterior (26 abr–25 may) estima su cashback con
+    // el acumulado de ESE ciclo, no del actual.
+    const txs = [
+      // Ciclo abril–mayo (26 abr–25 may): 5000 → nivel 5%.
+      { cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-05-10' },
+      // Ciclo actual (26 may–25 jun): 12000 → nivel 6%.
+      { cardId: 'card1', categoryId: 'ccn', amount: 12000, date: '2026-06-10' },
+    ];
+    // La del ciclo pasado: 5000 acumulado → 5% → 250.
+    expect(getTransactionCashback(tieredCard, txs[0], txs)).toBe(250);
+    // La del ciclo actual: 12000 acumulado → 6% → 720.
+    expect(getTransactionCashback(tieredCard, txs[1], txs)).toBe(720);
+  });
+
+  it('cada ciclo acumula por separado (no se mezclan al subir de nivel)', () => {
+    // Dos transacciones, una por ciclo. Cada una sola en su ciclo → nivel 5%.
+    const txs = [
+      { cardId: 'card1', categoryId: 'ccn', amount: 6000, date: '2026-04-10' }, // ciclo mar–abr
+      { cardId: 'card1', categoryId: 'ccn', amount: 6000, date: '2026-05-10' }, // ciclo abr–may
+    ];
+    expect(getTransactionCashback(tieredCard, txs[0], txs)).toBe(300); // 6000 * 5%
+    expect(getTransactionCashback(tieredCard, txs[1], txs)).toBe(300); // 6000 * 5%
   });
 });
 

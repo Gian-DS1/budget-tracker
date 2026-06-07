@@ -25,8 +25,10 @@ import { autoCategorize } from '../../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, titleCase, getTypeLabel } from '../../utils/formatters';
 
 const fmt = (n, c) => formatCurrency(n, c);
+// Tipos visibles en filtros. El tipo genérico 'expense' es legado (migrado a
+// 'variable_expense'); ya no se ofrece. La categoría deriva el tipo real.
 const TYPES = [
-  { v: 'income', l: 'Ingreso' }, { v: 'expense', l: 'Gasto' },
+  { v: 'income', l: 'Ingreso' },
   { v: 'fixed_expense', l: 'Gasto fijo' }, { v: 'variable_expense', l: 'Gasto variable' },
   { v: 'savings', l: 'Ahorro' },
 ];
