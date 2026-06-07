@@ -57,7 +57,7 @@ export const EMOJI_CATALOG = [
   { char: '👟', name: 'Zapato deportivo', keywords: ['calzado', 'tenis'], group: 'compras' },
   { char: '👠', name: 'Tacón', keywords: ['calzado', 'zapatos'], group: 'compras' },
   { char: '💄', name: 'Labial', keywords: ['belleza', 'maquillaje', 'cosmetica'], group: 'compras' },
-  { char: '💅', name: 'Manicura', keywords: ['belleza', 'salon', 'uñas'], group: 'compras' },
+  { char: '💅', name: 'Manicura', keywords: ['belleza', 'salon', 'unas'], group: 'compras' },
   { char: '💈', name: 'Barbería', keywords: ['barberia', 'corte', 'pelo'], group: 'compras' },
   { char: '🎁', name: 'Regalo', keywords: ['regalo', 'obsequio'], group: 'compras' },
   { char: '💎', name: 'Joya', keywords: ['joyeria', 'lujo'], group: 'compras' },
