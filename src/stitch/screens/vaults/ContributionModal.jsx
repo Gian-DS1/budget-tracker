@@ -7,6 +7,7 @@ import StitchDatePicker from '../../StitchDatePicker';
 import useSavingsStore from '../../../stores/useSavingsStore';
 import { isDemoActive, demoAddContribution } from '../../demoMode';
 import { todayISO, formatCurrency } from '../../../utils/formatters';
+import { toastCelebrate } from '../../toastCelebrate';
 import { Modal, Field, FormActions, inputCls } from './vaultsUi';
 
 const fmt = (n, c) => formatCurrency(n, c);
@@ -24,7 +25,8 @@ export default function ContributionModal({ goal, onClose }) {
     if (isDemoActive()) demoAddContribution(goal.id, amt, date, note.trim());
     else await addContribution(goal.id, amt, date, note.trim());
     const done = Number(goal.currentAmount) + amt >= Number(goal.targetAmount);
-    toast.success(done ? '🎉 ¡Meta completada!' : `Aporte de ${fmt(amt, goal.currency)} registrado`, { duration: 4000 });
+    if (done) toastCelebrate('¡Meta completada!');
+    else toast.success(`Aporte de ${fmt(amt, goal.currency)} registrado`, { duration: 4000 });
     onClose();
   };
 

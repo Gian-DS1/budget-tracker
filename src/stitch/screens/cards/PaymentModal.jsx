@@ -8,6 +8,7 @@ import { isDemoActive, demoAddCardPayment } from '../../demoMode';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
 import { getCardBalances } from '../../../utils/creditCards';
 import { todayISO, formatCurrency } from '../../../utils/formatters';
+import { toastCelebrate } from '../../toastCelebrate';
 import { Modal, Field, FormActions, inputCls } from './cardsUi';
 
 const fmt = (n) => formatCurrency(n);
@@ -33,7 +34,7 @@ export default function PaymentModal({ card, transactions, onClose }) {
     // ¿Este abono SALDÓ un estado de cuenta que estaba pendiente? (no en prepagos
     // sobre una tarjeta que ya estaba al día).
     if (bal.pendingBilled > 0.01 && amt + bal.paid >= bal.billed - 0.01) {
-      toast.success('Estado de cuenta saldado 🎉', { duration: 4000 });
+      toastCelebrate('Estado de cuenta saldado');
     }
     onClose();
   };

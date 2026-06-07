@@ -11,6 +11,7 @@ import { isDemoActive, demoAddCard, demoUpdateCard } from '../../demoMode';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
 import useCategoryStore from '../../../stores/useCategoryStore';
 import { getCatalogBanks, getCatalogCardsByBank, getCatalogCard, resolveCardCashback } from '../../../data/creditCardCatalog';
+import { normalizeCashbackRules } from '../../../utils/creditCards';
 import { Modal, Field, FormActions, inputCls } from './cardsUi';
 import CashbackEditor from './CashbackEditor';
 
@@ -69,9 +70,8 @@ export default function CardForm({ editing, onClose }) {
       toast.error('Completa nombre y días de corte/pago (1-31)');
       return;
     }
-    const cashbackRules = (form.cashbackRules || [])
-      .filter((r) => r.categoryId && Number(r.percentage) > 0)
-      .map((r) => ({ categoryId: r.categoryId, percentage: Number(r.percentage) }));
+    // Preserva reglas escalonadas (tiers) y planas (percentage); descarta vacías.
+    const cashbackRules = normalizeCashbackRules(form.cashbackRules);
     const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color, openingBalance: Number(form.openingBalance) || 0, cashbackRules, catalogId: form.catalogId || null };
 
     if (editing) {

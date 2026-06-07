@@ -284,6 +284,27 @@ export function tierPercentage(tiers, accumulated) {
   return Number(tiers[tiers.length - 1].pct) || 0;
 }
 
+/**
+ * Normaliza las reglas de cashback de un formulario para guardar: conserva las
+ * reglas escalonadas (con `tiers`) tal cual y las planas (con `percentage` > 0)
+ * como { categoryId, percentage }. Descarta reglas sin categoryId o con % ≤ 0.
+ * Evita el bug de aplanar/descartar reglas escalonadas al guardar la tarjeta.
+ */
+export function normalizeCashbackRules(rules) {
+  return (Array.isArray(rules) ? rules : [])
+    .map((r) => {
+      if (!r || !r.categoryId) return null;
+      if (Array.isArray(r.tiers) && r.tiers.length > 0) {
+        return { categoryId: r.categoryId, tiers: r.tiers };
+      }
+      if (Number(r.percentage) > 0) {
+        return { categoryId: r.categoryId, percentage: Number(r.percentage) };
+      }
+      return null;
+    })
+    .filter(Boolean);
+}
+
 /** ¿La tarjeta tiene al menos una regla escalonada (con `tiers`)? */
 export function hasTieredRule(card) {
   return Array.isArray(card?.cashbackRules)
