@@ -40,7 +40,7 @@ where catalog_id = 'qik-credito-basica'
 
 -- ── Qik Pro → "Mastercard Qik" (mismo id: qik-pro)
 update public.credit_cards
-set name = 'Mastercard Qik'
+set name = 'Mastercard Qik Pro'
 where catalog_id = 'qik-pro'
   and name = 'Qik Pro';
 
