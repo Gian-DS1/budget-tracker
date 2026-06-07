@@ -33,6 +33,7 @@
     }
   ],
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/privacidad", "destination": "/privacidad.html" },
+    { "source": "/((?!api/|privacidad).*)", "destination": "/index.html" }
   ]
 }
