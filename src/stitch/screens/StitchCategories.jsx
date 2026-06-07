@@ -85,7 +85,7 @@ export default function StitchCategories() {
               <h2 className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{section.label}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-sm">
                 {items.map((c) => (
-                  <div key={c.id} className="flex items-center gap-sm bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md">
+                  <div key={c.id} data-testid="category-row" data-category-name={c.name} className="flex items-center gap-sm bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md">
                     <span className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: `${c.color}22` }}>
                       <Emoji e={c.icon} size={18} />
                     </span>
