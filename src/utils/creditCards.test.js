@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances, tierPercentage, getDerivedCashback, hasTieredRule } from './creditCards';
+import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances, tierPercentage, getDerivedCashback, hasTieredRule, normalizeCashbackRules } from './creditCards';
 
 describe('getCardCycles', () => {
   it('corte 20 / pago 5: el pago cae el mes siguiente al corte', () => {
@@ -323,6 +323,40 @@ describe('getDerivedCashback — cashback CCN derivado por mes', () => {
   it('tarjeta sin regla escalonada → 0', () => {
     const flat = { id: 'card1', cashbackRules: [{ categoryId: 'ccn', percentage: 5 }] };
     expect(getDerivedCashback(flat, txs, '2026-06')).toBe(0);
+  });
+});
+
+describe('normalizeCashbackRules — preserva tiers al guardar', () => {
+  it('conserva una regla escalonada (tiers) tal cual', () => {
+    const tiers = [{ upTo: 7999, pct: 5 }, { upTo: Infinity, pct: 8 }];
+    const out = normalizeCashbackRules([{ categoryId: 'ccn', tiers }]);
+    expect(out).toEqual([{ categoryId: 'ccn', tiers }]);
+  });
+  it('conserva reglas planas con % > 0 y descarta % ≤ 0', () => {
+    const out = normalizeCashbackRules([
+      { categoryId: 'a', percentage: 5 },
+      { categoryId: 'b', percentage: 0 },
+      { categoryId: 'c', percentage: '3' },
+    ]);
+    expect(out).toEqual([
+      { categoryId: 'a', percentage: 5 },
+      { categoryId: 'c', percentage: 3 },
+    ]);
+  });
+  it('descarta reglas sin categoryId', () => {
+    expect(normalizeCashbackRules([{ percentage: 5 }, { tiers: [{ upTo: 1, pct: 2 }] }])).toEqual([]);
+  });
+  it('mezcla tiers y planas en la misma tarjeta', () => {
+    const tiers = [{ upTo: 100, pct: 5 }];
+    const out = normalizeCashbackRules([
+      { categoryId: 'ccn', tiers },
+      { categoryId: 'all', percentage: 1 },
+    ]);
+    expect(out).toEqual([{ categoryId: 'ccn', tiers }, { categoryId: 'all', percentage: 1 }]);
+  });
+  it('entrada no-array → []', () => {
+    expect(normalizeCashbackRules(null)).toEqual([]);
+    expect(normalizeCashbackRules(undefined)).toEqual([]);
   });
 });
 
