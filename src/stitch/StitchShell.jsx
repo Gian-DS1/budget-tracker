@@ -13,6 +13,7 @@ import { useTour } from './tour/useTour';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
 import usePrefsStore from '../stores/usePrefsStore';
+import { usePageTitle } from './usePageTitle';
 
 const NAV = [
   { section: 'Principal' },
@@ -67,6 +68,7 @@ function ShellInner() {
   const [menuOpen, setMenuOpen] = useState(false);
   const outlet = useOutlet();
   const location = useLocation();
+  usePageTitle();
 
   const handleSignOut = () => {
     if (demo) { exitDemo(); window.location.reload(); return; }

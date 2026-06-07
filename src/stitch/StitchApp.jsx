@@ -2,7 +2,7 @@
 // Replica el flujo de src/App.jsx (auth, fetches de stores, rutas protegidas,
 // keep-alive, recurrentes) renderizando el shell + pantallas Stitch.
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
 import { useEffect, useState } from 'react';
@@ -22,6 +22,7 @@ import StitchCalendar from './screens/StitchCalendar';
 import StitchSettings from './screens/StitchSettings';
 import StitchFeedback from './screens/StitchFeedback';
 import StitchCategories from './screens/StitchCategories';
+import { DEFAULT_TITLE } from './usePageTitle';
 import './stitch.css';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -60,22 +61,17 @@ function LoadingScreen({ label }) {
   );
 }
 
-export default function StitchApp() {
+// Gate de autenticación que vive DENTRO del router para poder leer la ruta
+// y redirigir a / cuando no hay sesión, evitando URLs residuales.
+function AuthGate() {
   const { user, loading, isRecoveringPassword } = useAuth();
+  const location = useLocation();
 
-  // Modo QA/Demo (solo localhost): trata al "usuario demo" como autenticado y
-  // siembra los stores con datos de ejemplo, sin tocar Supabase ni producción.
   const demo = isDemoActive();
   const authedUser = user || (demo ? { id: 'demo', email: 'demo@local' } : null);
+  const isPublic = !authedUser || isRecoveringPassword;
 
-  // Visitante no logueado: landing por defecto; "Acceder" muestra el login.
   const [showAuth, setShowAuth] = useState(false);
-
-  useEffect(() => {
-    // Tras recargar con demo activo, re-sembrar los stores. Fuera del ciclo de
-    // render (microtask) para no disparar setState síncrono dentro del effect.
-    if (demo) queueMicrotask(seedDemoStores);
-  }, [demo]);
 
   const fetchCategories = useCategoryStore((s) => s.fetchCategories);
   const fetchTransactions = useTransactionStore((s) => s.fetchTransactions);
@@ -88,10 +84,12 @@ export default function StitchApp() {
   const materializeDue = useRecurringStore((s) => s.materializeDue);
   const fetchRate = useRateStore((s) => s.fetchRate);
 
-  // Tasa USD→DOP: pública, una vez al cargar.
+  useEffect(() => {
+    if (demo) queueMicrotask(seedDemoStores);
+  }, [demo]);
+
   useEffect(() => { fetchRate(); }, [fetchRate]);
 
-  // Keep-alive de Supabase (free tier).
   useEffect(() => {
     if (!user) return;
     const ping = async () => {
@@ -102,7 +100,6 @@ export default function StitchApp() {
     return () => clearInterval(id);
   }, [user]);
 
-  // Carga de datos del usuario al iniciar sesión.
   useEffect(() => {
     if (!user) return;
     fetchCategories();
@@ -114,7 +111,6 @@ export default function StitchApp() {
     fetchPrefs();
   }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchCards, fetchPrefs]);
 
-  // Recurrentes: cargar plantillas y materializar las vencidas.
   useEffect(() => {
     if (!user) return;
     let cancelled = false;
@@ -129,50 +125,56 @@ export default function StitchApp() {
     return () => { cancelled = true; };
   }, [user, fetchRecurring, materializeDue]);
 
-  // En modo demo no esperamos a Supabase: entramos directo.
+  // Restaurar título por defecto cuando no hay sesión.
+  useEffect(() => {
+    if (isPublic) document.title = DEFAULT_TITLE;
+  }, [isPublic]);
+
+  // Cargando sesión de Supabase: spinner neutral sin tocar la URL.
   if (loading && !demo) {
-    return (
-      <>
-        <StitchHead />
-        <LoadingScreen label="Cargando aplicación…" />
-      </>
-    );
+    return <LoadingScreen label="Cargando aplicación…" />;
   }
 
-  // Sin sesión: landing pública; "Acceder" o recuperación → pantalla de acceso.
-  if (!authedUser || isRecoveringPassword) {
+  // Sin sesión: redirigir a / para limpiar cualquier URL residual, luego
+  // mostrar landing o auth desde la ruta raíz.
+  if (isPublic) {
+    if (location.pathname !== '/') {
+      return <Navigate to="/" replace />;
+    }
     const showLanding = !isRecoveringPassword && !showAuth;
-    return (
-      <>
-        <StitchHead />
-        <Toaster {...toasterOptions} />
-        {showLanding ? <StitchLanding onAccess={() => setShowAuth(true)} /> : <StitchAuth />}
-      </>
-    );
+    return showLanding
+      ? <StitchLanding onAccess={() => setShowAuth(true)} />
+      : <StitchAuth />;
   }
 
-  // App autenticada.
+  // App autenticada: renderizar las rutas protegidas.
+  return (
+    <Routes>
+      <Route element={<StitchShell />}>
+        <Route index element={<StitchDashboard />} />
+        <Route path="transacciones" element={<StitchLedger />} />
+        <Route path="presupuesto" element={<StitchBudget />} />
+        <Route path="tarjetas" element={<StitchCards />} />
+        <Route path="deudas" element={<StitchDebts />} />
+        <Route path="ahorros" element={<StitchVaults />} />
+        <Route path="reportes" element={<StitchReports />} />
+        <Route path="calendario" element={<StitchCalendar />} />
+        <Route path="categorias" element={<StitchCategories />} />
+        <Route path="ajustes" element={<StitchSettings />} />
+        <Route path="feedback" element={<StitchFeedback />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Route>
+    </Routes>
+  );
+}
+
+export default function StitchApp() {
   return (
     <>
       <StitchHead />
       <Toaster {...toasterOptions} />
       <BrowserRouter>
-        <Routes>
-          <Route element={<StitchShell />}>
-            <Route index element={<StitchDashboard />} />
-            <Route path="transacciones" element={<StitchLedger />} />
-            <Route path="presupuesto" element={<StitchBudget />} />
-            <Route path="tarjetas" element={<StitchCards />} />
-            <Route path="deudas" element={<StitchDebts />} />
-            <Route path="ahorros" element={<StitchVaults />} />
-            <Route path="reportes" element={<StitchReports />} />
-            <Route path="calendario" element={<StitchCalendar />} />
-            <Route path="categorias" element={<StitchCategories />} />
-            <Route path="ajustes" element={<StitchSettings />} />
-            <Route path="feedback" element={<StitchFeedback />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
+        <AuthGate />
       </BrowserRouter>
     </>
   );
