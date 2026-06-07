@@ -9,6 +9,7 @@ import StitchSelect from '../StitchSelect';
 import StitchDatePicker from '../StitchDatePicker';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import AutoCatChip from '../AutoCatChip';
+import { inputCls, Field, FormActions, Modal } from '../formUi';
 import {
   isDemoActive, demoAddTransaction, demoUpdateTransaction, demoDeleteTransaction, demoRestoreTransaction,
   demoBulkDeleteTransactions, demoRestoreManyTransactions, demoBulkAssignCategory, demoBulkAssignCard,
@@ -378,7 +379,7 @@ export default function StitchLedger() {
       </div>
 
       {showForm && (
-        <Modal onClose={() => setShowForm(false)} title={editing ? 'Editar transacción' : 'Nueva transacción'}>
+        <Modal onClose={() => setShowForm(false)} title={editing ? 'Editar transacción' : 'Nueva transacción'} width="520px">
           <form onSubmit={submit} className="flex flex-col gap-md">
             <div className="grid grid-cols-2 gap-md">
               <Field label="Fecha" error={errors.date}>
@@ -431,10 +432,7 @@ export default function StitchLedger() {
                 <span className="font-label-sm text-label-sm text-on-surface-variant">Repetir automáticamente ({form.recurrencePattern === 'monthly' ? 'mensual' : form.recurrencePattern})</span>
               </label>
             )}
-            <div className="flex gap-sm justify-end mt-sm">
-              <button type="button" onClick={() => setShowForm(false)} className="px-md py-sm border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high">Cancelar</button>
-              <button type="submit" className="px-md py-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold rounded hover:bg-primary-container inner-glow">{editing ? 'Guardar' : 'Registrar'}</button>
-            </div>
+            <FormActions onCancel={() => setShowForm(false)} label={editing ? 'Guardar' : 'Registrar'} />
           </form>
         </Modal>
       )}
@@ -571,7 +569,6 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
   );
 }
 
-const inputCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
 
 // Badge de solo lectura del tipo derivado de la categoría. Color por tipo,
 // alineado con los tokens del tema (lima=ingreso, durazno=fijo, periwinkle=
@@ -618,28 +615,4 @@ function SortHeader({ label, active, dir, onClick, alignRight = false }) {
   );
 }
 
-function Field({ label, error, extra, children }) {
-  return (
-    <div className="flex flex-col gap-xs">
-      <label className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-sm">
-        {label}{extra}
-      </label>
-      {children}
-      {error && <span className="font-label-sm text-label-sm text-accent-error">Requerido</span>}
-    </div>
-  );
-}
 
-function Modal({ title, onClose, children }) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-md" style={{ background: 'rgba(0,0,0,0.66)' }} onClick={onClose}>
-      <div className="bg-surface-card border border-border-subtle rounded-lg inner-glow w-full max-w-[520px] max-h-[85vh] overflow-y-auto p-lg" onClick={(e) => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-lg">
-          <h3 className="font-headline-md text-[20px] font-bold text-on-surface tracking-tight">{title}</h3>
-          <button onClick={onClose} className="text-text-muted hover:text-on-surface p-xs"><MS name="close" className="text-[20px]" /></button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
