@@ -506,6 +506,7 @@ export function demoAddCategory(category) {
     keywords: category.keywords || [], isActive: true,
     sortOrder: useCategoryStore.getState().categories.length,
     createdAt: new Date().toISOString(),
+    isAccumulative: false, accumulationStart: null,
   };
   useCategoryStore.setState((s) => ({
     categories: [...s.categories, row].sort((a, b) =>
