@@ -346,6 +346,25 @@ const useCategoryStore = create(
     }
   },
 
+  restoreCategory: async (category) => {
+    const user = await getCurrentUser();
+    if (!user) return;
+    const dbCategory = {
+      id: category.id, user_id: user.id, name: category.name, type: category.type,
+      icon: category.icon, color: category.color, slug: category.slug || null,
+      keywords: category.keywords || [], is_active: category.isActive !== false,
+      sort_order: category.sortOrder ?? 0,
+    };
+    const { data, error } = await supabase.from('categories').insert(dbCategory).select().single();
+    if (!error && data) {
+      const newCat = { ...data, isActive: data.is_active, sortOrder: data.sort_order };
+      set((state) => ({
+        categories: [...state.categories, newCat].sort((a, b) =>
+          (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })),
+      }));
+    }
+  },
+
   toggleCategory: async (id) => {
     const cat = get().categories.find(c => c.id === id);
     if (!cat) return;

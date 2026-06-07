@@ -9,7 +9,7 @@ import Emoji from '../Emoji';
 import { Stagger } from '../StitchMotion';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useTransactionStore from '../../stores/useTransactionStore';
-import { isDemoActive, demoDeleteCategory } from '../demoMode';
+import { isDemoActive, demoDeleteCategory, demoRestoreCategory } from '../demoMode';
 import CategoryForm from './categories/CategoryForm';
 
 const TYPE_SECTIONS = [
@@ -22,6 +22,7 @@ const TYPE_SECTIONS = [
 export default function StitchCategories() {
   const categories = useCategoryStore((s) => s.categories);
   const deleteCategory = useCategoryStore((s) => s.deleteCategory);
+  const restoreCategory = useCategoryStore((s) => s.restoreCategory);
   const transactions = useTransactionStore((s) => s.transactions);
 
   const [showForm, setShowForm] = useState(false);
@@ -34,9 +35,24 @@ export default function StitchCategories() {
     const used = transactions.filter((t) => t.categoryId === cat.id).length;
     if (isDemoActive()) demoDeleteCategory(cat.id);
     else await deleteCategory(cat.id);
-    toast.success(used > 0
-      ? `Categoría eliminada · ${used} transacción${used === 1 ? '' : 'es'} quedaron sin categoría`
-      : 'Categoría eliminada');
+    toast((t) => (
+      <span className="flex items-center gap-sm">
+        {used > 0
+          ? `Categoría eliminada · ${used} transacción${used === 1 ? '' : 'es'} sin categoría`
+          : 'Categoría eliminada'}
+        <button
+          onClick={async () => {
+            if (isDemoActive()) {
+              demoRestoreCategory(cat);
+            } else {
+              await restoreCategory(cat);
+            }
+            toast.dismiss(t.id);
+          }}
+          className="text-primary font-bold underline"
+        >Deshacer</button>
+      </span>
+    ), { duration: 6000 });
   };
 
   return (
@@ -53,6 +69,12 @@ export default function StitchCategories() {
           <MS name="add" className="text-[16px]" /> Nueva categoría
         </button>
       </div>
+
+      {categories.length === 0 && (
+        <div className="text-center py-xl font-body-md text-text-muted">
+          Aún no tienes categorías. Crea la primera con &quot;Nueva&quot;.
+        </div>
+      )}
 
       <Stagger className="flex flex-col gap-lg">
         {TYPE_SECTIONS.map((section) => {

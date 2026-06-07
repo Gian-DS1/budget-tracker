@@ -522,3 +522,9 @@ export function demoUpdateCategory(id, updates) {
 export function demoDeleteCategory(id) {
   useCategoryStore.setState((s) => ({ categories: s.categories.filter((c) => c.id !== id) }));
 }
+export function demoRestoreCategory(category) {
+  useCategoryStore.setState((s) => ({
+    categories: [...s.categories, category].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })),
+  }));
+}
