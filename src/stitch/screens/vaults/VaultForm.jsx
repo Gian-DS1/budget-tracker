@@ -2,7 +2,7 @@
 // solo se declara al CREAR (al editar el saldo cambia vía aportes).
 import { useState } from 'react';
 import toast from 'react-hot-toast';
-import Emoji from '../../Emoji';
+import EmojiPicker from '../../EmojiPicker';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
 import StitchSelect from '../../StitchSelect';
 import StitchDatePicker from '../../StitchDatePicker';
@@ -10,8 +10,6 @@ import useSavingsStore from '../../../stores/useSavingsStore';
 import { isDemoActive, demoAddGoal, demoUpdateGoal } from '../../demoMode';
 import { Modal, Field, FormActions, inputCls } from './vaultsUi';
 import { HORIZON_FORM_OPTIONS } from './horizons';
-
-const EMOJIS = ['🎯', '🏠', '✈️', '🚗', '💻', '📱', '👶', '🎓', '💍', '🆘', '🏖️', '🏦'];
 
 const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP', horizon: '' };
 
@@ -79,7 +77,7 @@ export default function VaultForm({ editing, onClose }) {
           <StitchSelect value={form.horizon} onChange={(v) => set({ horizon: v })} options={HORIZON_FORM_OPTIONS} placeholder="Sin horizonte" />
         </Field>
         <Field label="Ícono">
-          <div className="flex flex-wrap gap-xs">{EMOJIS.map((em) => <button type="button" key={em} aria-label={`Ícono ${em}`} aria-pressed={form.icon === em} onClick={() => set({ icon: em })} className={`w-8 h-8 rounded border flex items-center justify-center ${form.icon === em ? 'border-primary bg-primary/10' : 'border-border-subtle'}`}><Emoji e={em} size={16} /></button>)}</div>
+          <EmojiPicker value={form.icon} onChange={(char) => set({ icon: char })} />
         </Field>
         <FormActions onCancel={onClose} label={editing ? 'Guardar' : 'Crear'} />
       </form>
