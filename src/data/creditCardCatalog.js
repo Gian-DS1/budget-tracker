@@ -14,7 +14,7 @@ export const CATALOG_CATEGORIES = {
   },
   'grupo-ccn': {
     slug: 'eco-grupo-ccn', name: 'Grupo CCN', type: 'variable_expense', icon: '🛒', color: '#004b87',
-    keywords: ['nacional', 'supermercados nacional', 'jumbo', 'jumbo express', 'casa cuesta', 'jugueton', 'ferreteria cuesta', 'cuesta libros', 'bebemundo', 'la bodega', 'merca jumbo'],
+    keywords: ['nacional', 'supermercados nacional', 'jumbo', 'jumbo express', 'casa cuesta', 'ferreteria cuesta', 'jugueton', 'cuesta libros', 'bebe mundo', 'bebemundo', 'la bodega', 'merca jumbo'],
   },
 };
 
@@ -61,9 +61,13 @@ export const CREDIT_CARD_CATALOG = [
       { categoryKey: 'all', percentage: 1 },
     ] },
   { id: 'popular-mc-plus-ccn', bank: 'Banco Popular Dominicano', name: 'Mastercard Plus CCN', color: '#e30613',
-    note: 'Devolución escalonada por monto del consumo en el Grupo CCN: 5% hasta RD$7,999, 6% de RD$8,000 a RD$19,999, 8% desde RD$20,000. Sin tope mensual.',
+    note: 'Devolución escalonada por consumo mensual acumulado en el Grupo CCN: 5% hasta RD$7,999, 6% de RD$8,000 a RD$19,999, 8% desde RD$20,000. Sin tope mensual.',
     cashback: [
-      { categoryKey: 'grupo-ccn', percentage: 5 },
+      { categoryKey: 'grupo-ccn', tiers: [
+        { upTo: 7999, pct: 5 },
+        { upTo: 19999, pct: 6 },
+        { upTo: Infinity, pct: 8 },
+      ] },
     ] },
 
   // ── Banco BHD ────────────────────────────────────────────────
@@ -183,9 +187,12 @@ export async function resolveCardCashback(template, userCategories, ensureCatego
   for (const rule of template?.cashback || []) {
     const key = rule.categoryKey;
     const pct = Number(rule.percentage);
+    const tiers = Array.isArray(rule.tiers) ? rule.tiers : null;
+    // Construye la regla resuelta preservando los tiers (escalonada) o el % plano.
+    const build = (categoryId) => (tiers ? { categoryId, tiers } : { categoryId, percentage: pct });
 
     if (key === 'all') {
-      rules.push({ categoryId: 'all', percentage: pct });
+      rules.push({ categoryId: 'all', percentage: pct }); // 'all' nunca es escalonada
       continue;
     }
 
@@ -193,14 +200,14 @@ export async function resolveCardCashback(template, userCategories, ensureCatego
     if (ecoDef) {
       const existing = findCat(ecoDef);
       const id = existing ? existing.id : await ensureCategory(ecoDef);
-      if (id) rules.push({ categoryId: id, percentage: pct });
+      if (id) rules.push(build(id));
       continue;
     }
 
     const def = DEFAULT_CATEGORY_KEYS[key];
     if (def) {
       const match = findCat(def);
-      if (match) rules.push({ categoryId: match.id, percentage: pct });
+      if (match) rules.push(build(match.id));
       // sin match (categoría borrada) → se omite la regla.
       continue;
     }

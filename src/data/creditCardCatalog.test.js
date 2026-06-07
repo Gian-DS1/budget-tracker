@@ -25,7 +25,7 @@ describe('CREDIT_CARD_CATALOG — integridad', () => {
     }
   });
 
-  it('cada regla usa una categoryKey válida y un % numérico', () => {
+  it('cada regla usa una categoryKey válida y un % numérico o tiers', () => {
     const valid = new Set([
       'all',
       ...Object.keys(CATALOG_CATEGORIES),
@@ -34,7 +34,9 @@ describe('CREDIT_CARD_CATALOG — integridad', () => {
     for (const card of CREDIT_CARD_CATALOG) {
       for (const r of card.cashback) {
         expect(valid.has(r.categoryKey), `${card.id}:${r.categoryKey}`).toBe(true);
-        expect(typeof r.percentage, `${card.id}:${r.categoryKey}`).toBe('number');
+        const hasFlat = typeof r.percentage === 'number';
+        const hasTiers = Array.isArray(r.tiers) && r.tiers.length > 0;
+        expect(hasFlat || hasTiers, `${card.id}:${r.categoryKey}`).toBe(true);
       }
     }
   });
@@ -108,6 +110,21 @@ describe('resolveCardCashback', () => {
     const rules = await resolveCardCashback(tpl, cats, async () => 'x');
     expect(rules).toContainEqual({ categoryId: 'u-net', percentage: 5 });
     expect(rules).toContainEqual({ categoryId: 'u-tel', percentage: 5 });
+  });
+
+  it('CCN: propaga los tiers (regla escalonada) a la categoría resuelta', async () => {
+    const tpl = getCatalogCard('popular-mc-plus-ccn');
+    // La categoría de ecosistema Grupo CCN se crea bajo demanda (ensure → id).
+    const rules = await resolveCardCashback(tpl, [], async () => 'u-ccn');
+    expect(rules).toHaveLength(1);
+    expect(rules[0].categoryId).toBe('u-ccn');
+    expect(Array.isArray(rules[0].tiers)).toBe(true);
+    expect(rules[0].tiers).toEqual([
+      { upTo: 7999, pct: 5 },
+      { upTo: 19999, pct: 6 },
+      { upTo: Infinity, pct: 8 },
+    ]);
+    expect(rules[0].percentage).toBeUndefined();
   });
 });
 
