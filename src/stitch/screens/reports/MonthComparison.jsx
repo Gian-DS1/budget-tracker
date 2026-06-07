@@ -1,5 +1,6 @@
 // Comparativa mes actual vs anterior por categoría: barra divergente + delta %.
 import { formatCurrency } from '../../../utils/formatters';
+import { CHART } from '../../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
 
@@ -27,7 +28,7 @@ export default function MonthComparison({ data }) {
               <div
                 className="absolute top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
                 style={{
-                  background: up ? '#ffb4ab' : '#bdd200',
+                  background: up ? CHART.error : CHART.tertiary,
                   width: `${widthPct}%`,
                   left: up ? '50%' : `${50 - widthPct}%`,
                 }}

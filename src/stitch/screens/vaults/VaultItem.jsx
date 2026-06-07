@@ -7,6 +7,7 @@ import { Stagger } from '../../StitchMotion';
 import { formatCurrency, formatDate, toISODate } from '../../../utils/formatters';
 import { getProjection } from './projection';
 import { HORIZON_CHIP } from './horizons';
+import { CHART } from '../../chartTokens';
 
 const fmt = (n, c) => formatCurrency(n, c);
 
@@ -23,10 +24,10 @@ export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDel
         {HORIZON_CHIP[goal.horizon] && <span className="font-mono-data text-[8px] text-text-muted border border-border-subtle rounded px-1 shrink-0">{HORIZON_CHIP[goal.horizon]}</span>}
       </div>
 
-      <div className={`font-headline-md text-headline-md tracking-tight ${proj.done ? 'text-tertiary' : 'text-on-surface'}`} style={proj.done ? { color: '#bdd200' } : undefined}>{fmt(goal.currentAmount, goal.currency)}</div>
+      <div className={`font-headline-md text-headline-md tracking-tight ${proj.done ? 'text-tertiary' : 'text-on-surface'}`} style={proj.done ? { color: CHART.tertiary } : undefined}>{fmt(goal.currentAmount, goal.currency)}</div>
 
       <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
-        <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, proj.pct))}%`, background: proj.done ? '#bdd200' : (goal.color || '#bec2ff') }} />
+        <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, proj.pct))}%`, background: proj.done ? CHART.tertiary : (goal.color || '#bec2ff') }} />
       </div>
       <div className="flex justify-between font-mono-data text-mono-data text-text-muted">
         <span>Meta {fmt(goal.targetAmount, goal.currency)}</span>

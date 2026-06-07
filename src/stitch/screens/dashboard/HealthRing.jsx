@@ -4,12 +4,13 @@
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import { EmptyCell } from './dashboardUi';
 import CountUp from '../../CountUp';
+import { CHART } from '../../chartTokens';
 
 function ringColor(score) {
-  if (score >= 80) return '#bdd200';
-  if (score >= 60) return '#50d8e9';
-  if (score >= 40) return '#ffb689';
-  return '#ffb4ab';
+  if (score >= 80) return CHART.tertiary;
+  if (score >= 60) return CHART.secondary;
+  if (score >= 40) return CHART.warning;
+  return CHART.error;
 }
 
 export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
@@ -32,7 +33,7 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
                 <ResponsiveContainer width="100%" height="100%">
                   <RadialBarChart innerRadius="74%" outerRadius="100%" data={data} startAngle={90} endAngle={-270}>
                     <PolarAngleAxis type="number" domain={[0, 100]} tick={false} />
-                    <RadialBar background={{ fill: '#232426' }} dataKey="value" cornerRadius={8} isAnimationActive={false} />
+                    <RadialBar background={{ fill: CHART.border }} dataKey="value" cornerRadius={8} isAnimationActive={false} />
                   </RadialBarChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">

@@ -1,6 +1,7 @@
 // Barras agrupadas: ingreso vs gasto por mes. Tooltip fijo con ambos + balance.
 import { ResponsiveContainer, BarChart, Bar, XAxis, Tooltip, Legend } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
+import { CHART } from '../../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
 
@@ -27,11 +28,11 @@ export default function IncomeExpenseBars({ data }) {
     <div className="h-72">
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 8 }} barGap={2} barCategoryGap="20%">
-          <XAxis dataKey="label" tick={{ fill: '#9a9da3', fontSize: 10 }} axisLine={{ stroke: '#232426' }} tickLine={false} />
+          <XAxis dataKey="label" tick={{ fill: CHART.muted, fontSize: 10 }} axisLine={{ stroke: CHART.border }} tickLine={false} />
           <Tooltip content={<Tip />} isAnimationActive={false} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
-          <Legend wrapperStyle={{ fontSize: 11, color: '#9a9da3' }} />
-          <Bar dataKey="income" name="Ingresos" fill="#bdd200" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
-          <Bar dataKey="expense" name="Gastos" fill="#ffb4ab" radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+          <Legend wrapperStyle={{ fontSize: 11, color: CHART.muted }} />
+          <Bar dataKey="income" name="Ingresos" fill={CHART.tertiary} radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+          <Bar dataKey="expense" name="Gastos" fill={CHART.error} radius={[3, 3, 0, 0]} isAnimationActive animationDuration={600} animationEasing="ease-out" />
         </BarChart>
       </ResponsiveContainer>
     </div>

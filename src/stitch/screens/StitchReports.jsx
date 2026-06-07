@@ -20,6 +20,7 @@ import AnalysisPanel from './reports/AnalysisPanel';
 import IncomeExpenseBars from './reports/IncomeExpenseBars';
 import MonthComparison from './reports/MonthComparison';
 import InsightsRow from './reports/InsightsRow';
+import { CHART } from '../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
 
@@ -42,7 +43,7 @@ export default function StitchReports() {
   // Salud (incluye el mes actual, honesta y reactiva — como el Dashboard).
   const cap = useMemo(() => getMonthlySavingCapacity(transactions, now, 3, true), [transactions, now]);
   const health = useMemo(() => getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt: getTotalMonthlyPayment() }), [cap, getTotalMonthlyPayment]);
-  const healthColor = health.score >= 80 ? '#bdd200' : health.score >= 60 ? '#50d8e9' : health.score >= 40 ? '#ffb689' : '#ffb4ab';
+  const healthColor = health.score >= 80 ? CHART.tertiary : health.score >= 60 ? CHART.secondary : health.score >= 40 ? CHART.warning : CHART.error;
 
   // Gasto del mes actual (para el KPI).
   const monthExpenses = useMemo(() => transactions.filter((t) => {

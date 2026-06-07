@@ -18,11 +18,12 @@ import { getDayMovements, getDueEvents, getMonthSummary, getUpcoming } from './c
 import DayCell from './calendar/DayCell';
 import DayDetail from './calendar/DayDetail';
 import UpcomingRail from './calendar/UpcomingRail';
+import { CHART } from '../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
 const LEGEND = [
-  { c: '#ffb4ab', l: 'Deuda' }, { c: '#ffb689', l: 'Tarjeta' },
-  { c: '#bdd200', l: 'Meta' }, { c: '#50d8e9', l: 'Recurrente' },
+  { c: CHART.error, l: 'Deuda' }, { c: CHART.warning, l: 'Tarjeta' },
+  { c: CHART.tertiary, l: 'Meta' }, { c: CHART.secondary, l: 'Recurrente' },
 ];
 
 export default function StitchCalendar() {
