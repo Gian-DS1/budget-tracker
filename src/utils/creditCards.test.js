@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances } from './creditCards';
+import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances, tierPercentage, getDerivedCashback, hasTieredRule } from './creditCards';
 
 describe('getCardCycles', () => {
   it('corte 20 / pago 5: el pago cae el mes siguiente al corte', () => {
@@ -252,5 +252,90 @@ describe('getCardBalances', () => {
     const txs = [{ cardId: 'c1', date: '2026-05-10', amount: 7000, cashbackEarned: 0 }];
     expect(getCardBalances({ ...card, openingBalance: 0 }, txs, ref).billed).toBe(7000);
     expect(getCardBalances({ ...card }, txs, ref).billed).toBe(7000); // sin la prop
+  });
+});
+
+describe('tierPercentage — nivel escalonado por monto acumulado', () => {
+  const tiers = [
+    { upTo: 7999, pct: 5 },
+    { upTo: 19999, pct: 6 },
+    { upTo: Infinity, pct: 8 },
+  ];
+
+  it('aplica 5% por debajo del primer umbral', () => {
+    expect(tierPercentage(tiers, 5000)).toBe(5);
+    expect(tierPercentage(tiers, 7999)).toBe(5);
+  });
+  it('aplica 6% en el tramo medio', () => {
+    expect(tierPercentage(tiers, 8000)).toBe(6);
+    expect(tierPercentage(tiers, 19999)).toBe(6);
+  });
+  it('aplica 8% desde el umbral superior', () => {
+    expect(tierPercentage(tiers, 20000)).toBe(8);
+    expect(tierPercentage(tiers, 100000)).toBe(8);
+  });
+  it('monto 0 o negativo → 0%', () => {
+    expect(tierPercentage(tiers, 0)).toBe(0);
+    expect(tierPercentage(tiers, -10)).toBe(0);
+  });
+  it('sin tiers → 0%', () => {
+    expect(tierPercentage([], 5000)).toBe(0);
+    expect(tierPercentage(null, 5000)).toBe(0);
+  });
+});
+
+describe('getDerivedCashback — cashback CCN derivado por mes', () => {
+  const card = {
+    id: 'card1',
+    cashbackRules: [
+      { categoryId: 'ccn', tiers: [
+        { upTo: 7999, pct: 5 },
+        { upTo: 19999, pct: 6 },
+        { upTo: Infinity, pct: 8 },
+      ] },
+    ],
+  };
+  // 3 compras CCN en 2026-06: 5000 + 6000 + 12000 = 23000 acumulado → nivel 8%.
+  const txs = [
+    { cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-06-03' },
+    { cardId: 'card1', categoryId: 'ccn', amount: 6000, date: '2026-06-10' },
+    { cardId: 'card1', categoryId: 'ccn', amount: 12000, date: '2026-06-20' },
+    // Otra tarjeta / otra categoría / otro mes: no cuentan.
+    { cardId: 'otra', categoryId: 'ccn', amount: 9999, date: '2026-06-05' },
+    { cardId: 'card1', categoryId: 'super', amount: 9999, date: '2026-06-05' },
+    { cardId: 'card1', categoryId: 'ccn', amount: 9999, date: '2026-05-30' },
+  ];
+
+  it('hasTieredRule detecta la regla escalonada', () => {
+    expect(hasTieredRule(card)).toBe(true);
+    expect(hasTieredRule({ cashbackRules: [{ categoryId: 'x', percentage: 1 }] })).toBe(false);
+  });
+
+  it('aplica el nivel del acumulado mensual a todo el gasto CCN del mes', () => {
+    // Acumulado 23000 → 8%. Cashback = 23000 * 8% = 1840.
+    expect(getDerivedCashback(card, txs, '2026-06')).toBe(1840);
+  });
+
+  it('mes sin consumo CCN → 0', () => {
+    expect(getDerivedCashback(card, txs, '2026-07')).toBe(0);
+  });
+
+  it('tarjeta sin regla escalonada → 0', () => {
+    const flat = { id: 'card1', cashbackRules: [{ categoryId: 'ccn', percentage: 5 }] };
+    expect(getDerivedCashback(flat, txs, '2026-06')).toBe(0);
+  });
+});
+
+describe('computeCashback ignora reglas escalonadas', () => {
+  const card = {
+    cashbackRules: [
+      { categoryId: 'ccn', tiers: [{ upTo: 7999, pct: 5 }, { upTo: Infinity, pct: 8 }] },
+      { categoryId: 'all', percentage: 1 },
+    ],
+  };
+  it('una compra CCN no congela cashback (lo maneja el camino derivado) → cae a all 1%', () => {
+    // Sin el fix, encontraría la regla 'ccn' (tiers, sin percentage) y devolvería 0/NaN.
+    // Con el fix, salta la regla escalonada y usa 'all' (1%): 1000 * 1% = 10.
+    expect(computeCashback(card, 'ccn', 1000)).toBe(10);
   });
 });

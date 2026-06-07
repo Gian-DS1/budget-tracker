@@ -258,9 +258,59 @@ export function getCardBalances(card, transactions = [], refDate = new Date()) {
 export function computeCashback(card, categoryId, amount) {
   const amt = Number(amount);
   if (!card || !Array.isArray(card.cashbackRules) || !amt || isNaN(amt)) return 0;
+  // Las reglas escalonadas (tiers) NO congelan cashback: las maneja
+  // getDerivedCashback (en vivo, por acumulado mensual). Aquí solo % plano.
+  const flatRules = card.cashbackRules.filter((r) => typeof r.percentage === 'number');
   const rule =
-    card.cashbackRules.find((r) => r.categoryId === categoryId) ||
-    card.cashbackRules.find((r) => r.categoryId === 'all');
+    flatRules.find((r) => r.categoryId === categoryId) ||
+    flatRules.find((r) => r.categoryId === 'all');
   if (!rule) return 0;
   return Math.round((amt * Number(rule.percentage)) / 100 * 100) / 100;
+}
+
+/**
+ * Devuelve el % del nivel correspondiente a un monto ACUMULADO, dada una lista
+ * de tiers ordenados ascendentemente por `upTo` (inclusivo). El último tier suele
+ * tener upTo: Infinity. Monto ≤ 0 o sin tiers → 0.
+ * @param {Array<{upTo:number, pct:number}>} tiers
+ * @param {number} accumulated
+ */
+export function tierPercentage(tiers, accumulated) {
+  const amt = Number(accumulated);
+  if (!Array.isArray(tiers) || tiers.length === 0 || !amt || amt <= 0) return 0;
+  for (const t of tiers) {
+    if (amt <= Number(t.upTo)) return Number(t.pct) || 0;
+  }
+  return Number(tiers[tiers.length - 1].pct) || 0;
+}
+
+/** ¿La tarjeta tiene al menos una regla escalonada (con `tiers`)? */
+export function hasTieredRule(card) {
+  return Array.isArray(card?.cashbackRules)
+    && card.cashbackRules.some((r) => Array.isArray(r.tiers) && r.tiers.length > 0);
+}
+
+/**
+ * Cashback DERIVADO (en vivo) del mes `monthKey` ('YYYY-MM') para las reglas
+ * escalonadas de una tarjeta. Para cada regla con `tiers`, suma el gasto de esa
+ * categoría en ese mes, determina el nivel por el ACUMULADO y aplica ese % a todo
+ * el acumulado. Devuelve el total en DOP, redondeado a 2 decimales.
+ * Las reglas planas (sin tiers) NO entran aquí: su cashback va congelado por
+ * transacción (computeCashback), como siempre.
+ */
+export function getDerivedCashback(card, transactions = [], monthKey) {
+  if (!hasTieredRule(card) || !monthKey) return 0;
+  let total = 0;
+  for (const rule of card.cashbackRules) {
+    if (!Array.isArray(rule.tiers) || rule.tiers.length === 0) continue;
+    const accumulated = transactions.reduce((sum, t) => {
+      if (t.cardId !== card.id) return sum;
+      if (t.categoryId !== rule.categoryId) return sum;
+      if (!t.date || !String(t.date).startsWith(monthKey)) return sum;
+      return sum + (Number(t.amount) || 0);
+    }, 0);
+    const pct = tierPercentage(rule.tiers, accumulated);
+    total += (accumulated * pct) / 100;
+  }
+  return Math.round(total * 100) / 100;
 }
