@@ -101,6 +101,17 @@ export default function StitchLedger() {
   // de presupuesto base-cero usa). Por eso no se elige "Tipo" a mano.
   const typeOfCategory = (id) => categories.find((c) => c.id === id)?.type || 'variable_expense';
 
+  // Tarjeta cuya regla de cashback apunta a esta categoría (p. ej. la CCN para el
+  // Grupo CCN). Si hay varias, la primera. Devuelve su id o '' si ninguna aplica.
+  const cardForCategory = (categoryId) => {
+    if (!categoryId) return '';
+    const card = cards.find((c) =>
+      Array.isArray(c.cashbackRules) &&
+      c.cashbackRules.some((r) => r.categoryId === categoryId)
+    );
+    return card ? card.id : '';
+  };
+
   const onDescription = (description) => {
     setForm((prev) => {
       const u = { ...prev, description };
@@ -111,6 +122,12 @@ export default function StitchLedger() {
         if (sug) {
           u.categoryId = sug.id;
           u.type = sug.type; // el tipo lo manda la categoría
+          // Sugiere también la tarjeta de cashback de esa categoría (p. ej. CCN),
+          // sin pisar una tarjeta ya elegida manualmente.
+          if (!prev.cardId) {
+            const suggested = cardForCategory(sug.id);
+            if (suggested) u.cardId = suggested;
+          }
           setAutoCat(true);
         }
       }
@@ -119,9 +136,18 @@ export default function StitchLedger() {
   };
 
   // Cambio manual de categoría: apaga "auto" y deriva el tipo de la categoría.
+  // Si la categoría tiene una tarjeta de cashback asociada (p. ej. Grupo CCN → la
+  // tarjeta CCN) y aún no hay tarjeta elegida, la sugiere sin pisar una manual.
   const onCategoryManual = (id) => {
     setAutoCat(false);
-    setForm((f) => ({ ...f, categoryId: id, type: id ? typeOfCategory(id) : f.type }));
+    setForm((f) => {
+      const next = { ...f, categoryId: id, type: id ? typeOfCategory(id) : f.type };
+      if (id && !f.cardId) {
+        const suggested = cardForCategory(id);
+        if (suggested) next.cardId = suggested;
+      }
+      return next;
+    });
   };
 
   const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); setAutoCat(false); setShowForm(true); };
