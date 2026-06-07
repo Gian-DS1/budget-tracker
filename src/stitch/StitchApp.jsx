@@ -21,6 +21,7 @@ import StitchReports from './screens/StitchReports';
 import StitchCalendar from './screens/StitchCalendar';
 import StitchSettings from './screens/StitchSettings';
 import StitchFeedback from './screens/StitchFeedback';
+import StitchCategories from './screens/StitchCategories';
 import './stitch.css';
 
 import { useAuth } from '../contexts/AuthContext';
@@ -166,6 +167,7 @@ export default function StitchApp() {
             <Route path="ahorros" element={<StitchVaults />} />
             <Route path="reportes" element={<StitchReports />} />
             <Route path="calendario" element={<StitchCalendar />} />
+            <Route path="categorias" element={<StitchCategories />} />
             <Route path="ajustes" element={<StitchSettings />} />
             <Route path="feedback" element={<StitchFeedback />} />
             <Route path="*" element={<Navigate to="/" replace />} />

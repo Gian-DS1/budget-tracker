@@ -7,15 +7,20 @@ import MS from '../../MS';
 import { Stagger } from '../../StitchMotion';
 import { isDemoActive, demoAddCardPayment } from '../../demoMode';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
-import { getCardBalances, getLifetimeCashback } from '../../../utils/creditCards';
+import { getCardBalances, getLifetimeCashback, getDerivedCashback, hasTieredRule } from '../../../utils/creditCards';
 import { formatCurrency, formatDate, todayISO } from '../../../utils/formatters';
 
 const fmt = (n) => formatCurrency(n);
+const monthKeyOf = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
 
 export default function CardItem({ card, transactions, onPay, onHistory, onEdit, onDelete }) {
   const addCardPayment = useCreditCardStore((s) => s.addCardPayment);
   const bal = getCardBalances(card, transactions, new Date());
-  const cashback = getLifetimeCashback(card, transactions);
+  // Cashback congelado (reglas % plano) + derivado del mes (reglas escalonadas
+  // tipo CCN, que dependen del consumo mensual acumulado y no se congelan).
+  const tiered = hasTieredRule(card);
+  const cashback = getLifetimeCashback(card, transactions)
+    + (tiered ? getDerivedCashback(card, transactions, monthKeyOf(new Date())) : 0);
 
   const payAll = async () => {
     const amt = Math.round(bal.pendingBilled * 100) / 100;
@@ -95,7 +100,9 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
         </div>
         <div className="flex flex-col text-right">
           <span className="font-mono-data text-[15px] text-on-surface-variant">{fmt(bal.totalBalance)}</span>
-          <span className="font-mono-data text-mono-data text-tertiary mt-0.5">cashback +{fmt(cashback)}</span>
+          <span className="font-mono-data text-mono-data text-tertiary mt-0.5">
+            cashback +{fmt(cashback)}{tiered && <span className="text-text-muted"> · estimado del mes</span>}
+          </span>
         </div>
       </div>
     </Stagger.Item>

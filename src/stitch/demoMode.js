@@ -497,3 +497,34 @@ export function demoDeleteContribution(id) {
   }));
   return { ok: true, contribution: contrib };
 }
+
+// ── Categorías (en demo no hay sesión: el store sale sin efecto) ──────────────
+export function demoAddCategory(category) {
+  const row = {
+    id: demoId(), name: category.name, type: category.type,
+    icon: category.icon, color: category.color, slug: category.slug || null,
+    keywords: category.keywords || [], isActive: true,
+    sortOrder: useCategoryStore.getState().categories.length,
+    createdAt: new Date().toISOString(),
+    isAccumulative: false, accumulationStart: null,
+  };
+  useCategoryStore.setState((s) => ({
+    categories: [...s.categories, row].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })),
+  }));
+  return row;
+}
+export function demoUpdateCategory(id, updates) {
+  useCategoryStore.setState((s) => ({
+    categories: s.categories.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+  }));
+}
+export function demoDeleteCategory(id) {
+  useCategoryStore.setState((s) => ({ categories: s.categories.filter((c) => c.id !== id) }));
+}
+export function demoRestoreCategory(category) {
+  useCategoryStore.setState((s) => ({
+    categories: [...s.categories, category].sort((a, b) =>
+      (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })),
+  }));
+}
