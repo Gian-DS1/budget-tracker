@@ -57,3 +57,40 @@ a SSR o se elimina goober, se puede endurecer `style-src-elem`.
 - `.env` está en `.gitignore`; solo se versiona `.env.example` (sin valores reales).
 - Variables con prefijo `VITE_` se exponen al cliente (solo la URL y anon key de
   Supabase, que son públicas). El resto es server-only.
+
+## Login con Google — marca en la pantalla de consentimiento
+
+Al iniciar sesión con Google, la pantalla de consentimiento mostraba el subdominio
+crudo de Supabase (`<ref>.supabase.co`) en vez de la marca de la app. Esto NO se
+arregla en el código (`signInWithOAuth` en `src/contexts/AuthContext.jsx` solo
+controla el `redirectTo` de vuelta). Se configura en Google Cloud Console.
+
+### Mostrar "FinTrack" + logo (gratis, sin dominio propio)
+1. [console.cloud.google.com](https://console.cloud.google.com) → seleccionar el
+   proyecto donde están las credenciales OAuth (el del Client ID configurado en
+   Supabase → Authentication → Providers → Google).
+2. **APIs & Services → OAuth consent screen → Branding**:
+   - App name: `FinTrack`
+   - User support email + Developer contact email
+   - App logo: subir el logo (cuadrado, ≤1MB) — opcional
+   - Authorized domains: `vercel.app` (o el dominio propio cuando exista)
+3. Guardar. La pantalla pasa a decir "FinTrack quiere acceder…".
+
+**Notas:**
+- El cambio de **nombre** aplica de inmediato y no requiere verificación con el
+  scope básico de login (email/perfil).
+- Subir **logo** puede disparar la verificación de Google (días/semanas). El nombre
+  solo suele ir directo.
+- En modo "Testing" no hay verificación pero limita a 100 usuarios; "Production"
+  con scopes básicos normalmente va directo.
+
+### Mostrar tu propio dominio en el callback (requiere dominio propio + pago)
+Para que aparezca `auth.tudominio.do` en vez de `<ref>.supabase.co`:
+1. Registrar un dominio propio.
+2. Supabase → Custom Domains (add-on de pago, ~$10/mes): agregar `auth.tudominio.do`
+   y configurar el CNAME en DNS.
+3. Actualizar el callback en Google Cloud Console a
+   `https://auth.tudominio.do/auth/v1/callback`.
+
+> Nota: con el subdominio gratuito `*.vercel.app` esto no es posible (no controlas
+> el DNS de `vercel.app`). Pendiente para cuando se registre un dominio propio.
