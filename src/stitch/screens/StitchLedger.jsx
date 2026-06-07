@@ -380,60 +380,62 @@ export default function StitchLedger() {
 
       {showForm && (
         <Modal onClose={() => setShowForm(false)} title={editing ? 'Editar transacción' : 'Nueva transacción'} width="520px">
-          <form onSubmit={submit} className="flex flex-col gap-md">
-            <div className="grid grid-cols-2 gap-md">
-              <Field label="Fecha" error={errors.date}>
-                <StitchDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
+          {(requestClose) => (
+            <form onSubmit={submit} className="flex flex-col gap-md">
+              <div className="grid grid-cols-2 gap-md">
+                <Field label="Fecha" error={errors.date}>
+                  <StitchDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
+                </Field>
+                <Field label="Monto" error={errors.amount}>
+                  <StitchCurrencyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className={inputCls} />
+                </Field>
+              </div>
+              <Field label="Descripción">
+                <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder="Ej. Supermercado Nacional" className={inputCls} />
               </Field>
-              <Field label="Monto" error={errors.amount}>
-                <StitchCurrencyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className={inputCls} />
+              <div className="grid grid-cols-2 gap-md">
+                <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
+                  <StitchCategorySelect
+                    value={form.categoryId}
+                    onChange={onCategoryManual}
+                    options={categories}
+                    placeholder="Elige una categoría…"
+                  />
+                </Field>
+                <Field label="Moneda">
+                  <StitchSelect
+                    value={form.currency}
+                    onChange={(v) => setForm({ ...form, currency: v })}
+                    options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]}
+                  />
+                </Field>
+              </div>
+              {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
+                  es ingreso, gasto fijo, gasto variable o ahorro; clasificar a mano
+                  era redundante. Se muestra como badge para dar claridad. */}
+              <Field label="Tipo (según la categoría)">
+                <TypeBadge type={form.type} hasCategory={!!form.categoryId} />
               </Field>
-            </div>
-            <Field label="Descripción">
-              <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder="Ej. Supermercado Nacional" className={inputCls} />
-            </Field>
-            <div className="grid grid-cols-2 gap-md">
-              <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
-                <StitchCategorySelect
-                  value={form.categoryId}
-                  onChange={onCategoryManual}
-                  options={categories}
-                  placeholder="Elige una categoría…"
-                />
-              </Field>
-              <Field label="Moneda">
-                <StitchSelect
-                  value={form.currency}
-                  onChange={(v) => setForm({ ...form, currency: v })}
-                  options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]}
-                />
-              </Field>
-            </div>
-            {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
-                es ingreso, gasto fijo, gasto variable o ahorro; clasificar a mano
-                era redundante. Se muestra como badge para dar claridad. */}
-            <Field label="Tipo (según la categoría)">
-              <TypeBadge type={form.type} hasCategory={!!form.categoryId} />
-            </Field>
-            {isExpenseType(form.type) && cards.length > 0 && (
-              <Field label="Tarjeta (opcional)">
-                <StitchSelect
-                  value={form.cardId}
-                  onChange={(v) => setForm({ ...form, cardId: v })}
-                  options={[{ value: '', label: 'Sin tarjeta' }, ...cards.map((c) => ({ value: c.id, label: c.name }))]}
-                  placeholder="Sin tarjeta"
-                />
-              </Field>
-            )}
-            {cashbackPreview > 0 && <p className="font-mono-data text-mono-data text-tertiary">Cashback estimado: +{fmt(cashbackPreview)}</p>}
-            {!editing && (
-              <label className="flex items-center gap-sm cursor-pointer">
-                <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} className="stitch-check" />
-                <span className="font-label-sm text-label-sm text-on-surface-variant">Repetir automáticamente ({form.recurrencePattern === 'monthly' ? 'mensual' : form.recurrencePattern})</span>
-              </label>
-            )}
-            <FormActions onCancel={() => setShowForm(false)} label={editing ? 'Guardar' : 'Registrar'} />
-          </form>
+              {isExpenseType(form.type) && cards.length > 0 && (
+                <Field label="Tarjeta (opcional)">
+                  <StitchSelect
+                    value={form.cardId}
+                    onChange={(v) => setForm({ ...form, cardId: v })}
+                    options={[{ value: '', label: 'Sin tarjeta' }, ...cards.map((c) => ({ value: c.id, label: c.name }))]}
+                    placeholder="Sin tarjeta"
+                  />
+                </Field>
+              )}
+              {cashbackPreview > 0 && <p className="font-mono-data text-mono-data text-tertiary">Cashback estimado: +{fmt(cashbackPreview)}</p>}
+              {!editing && (
+                <label className="flex items-center gap-sm cursor-pointer">
+                  <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} className="stitch-check" />
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">Repetir automáticamente ({form.recurrencePattern === 'monthly' ? 'mensual' : form.recurrencePattern})</span>
+                </label>
+              )}
+              <FormActions onCancel={requestClose} label={editing ? 'Guardar' : 'Registrar'} />
+            </form>
+          )}
         </Modal>
       )}
 
