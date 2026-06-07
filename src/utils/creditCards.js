@@ -285,6 +285,48 @@ export function tierPercentage(tiers, accumulated) {
 }
 
 /**
+ * Cashback estimado (en DOP) de UNA transacción, redondeado a 2 decimales.
+ * Para reglas planas delega en computeCashback (% fijo del monto). Para reglas
+ * escalonadas, replica la lógica de getDerivedCashback a nivel de fila: ubica el
+ * ciclo de corte de la transacción, calcula el nivel por el acumulado de ese ciclo
+ * y aplica ese % al monto de la transacción. Así la suma de las filas del ciclo
+ * coincide con getDerivedCashback (que mide el ciclo completo).
+ * @param {object} card
+ * @param {object} tx          - la transacción a estimar
+ * @param {Array}  transactions - todas las transacciones (para el acumulado del ciclo)
+ * @param {Date}   refDate      - hoy (para ubicar el ciclo abierto en reglas tiered)
+ */
+export function getTransactionCashback(card, tx, transactions = [], refDate = new Date()) {
+  const amt = Number(tx?.amount);
+  if (!card || !amt || isNaN(amt) || amt <= 0) return 0;
+
+  if (!hasTieredRule(card)) {
+    return computeCashback(card, tx.categoryId, amt);
+  }
+
+  // Reglas escalonadas: solo aplican a transacciones de la tarjeta dentro del
+  // ciclo abierto actual y de la categoría escalonada.
+  if (tx.cardId !== card.id) return 0;
+  const { openStartISO, openEndISO } = getCardCycles(card, refDate);
+  if (!tx.date || tx.date < openStartISO || tx.date > openEndISO) return 0;
+
+  const rule = card.cashbackRules.find(
+    (r) => Array.isArray(r.tiers) && r.tiers.length > 0 && r.categoryId === tx.categoryId
+  );
+  if (!rule) return 0;
+
+  const accumulated = transactions.reduce((sum, t) => {
+    if (t.cardId !== card.id) return sum;
+    if (t.categoryId !== rule.categoryId) return sum;
+    if (!t.date || t.date < openStartISO || t.date > openEndISO) return sum;
+    return sum + (Number(t.amount) || 0);
+  }, 0);
+
+  const pct = tierPercentage(rule.tiers, accumulated);
+  return Math.round((amt * pct) / 100 * 100) / 100;
+}
+
+/**
  * Normaliza las reglas de cashback de un formulario para guardar: conserva las
  * reglas escalonadas (con `tiers`) tal cual y las planas (con `percentage` > 0)
  * como { categoryId, percentage }. Descarta reglas sin categoryId o con % ≤ 0.

@@ -20,7 +20,7 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useRecurringStore, { advanceDate } from '../../stores/useRecurringStore';
 import useRateStore from '../../stores/useRateStore';
-import { computeCashback } from '../../utils/creditCards';
+import { computeCashback, getTransactionCashback, hasTieredRule } from '../../utils/creditCards';
 import { autoCategorize } from '../../data/defaultCategories';
 import { formatCurrency, formatDate, todayISO, titleCase, getTypeLabel } from '../../utils/formatters';
 
@@ -72,12 +72,29 @@ export default function StitchLedger() {
   // ¿Es un gasto? (fijo o variable). El cashback y la tarjeta solo aplican a gastos.
   const isExpenseType = (t) => t === 'expense' || t === 'fixed_expense' || t === 'variable_expense';
 
-  const cashbackPreview = useMemo(() => {
+  // Cashback que se CONGELA en la transacción (cashback_earned). Solo aplica a
+  // reglas planas; las escalonadas NO se congelan (su cashback es derivado en
+  // vivo por ciclo, vía getDerivedCashback). Esto es lo que se guarda.
+  const cashbackToFreeze = useMemo(() => {
     if (!form.cardId || !isExpenseType(form.type)) return 0;
     const card = cards.find((c) => c.id === form.cardId);
     const base = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
     return computeCashback(card, form.categoryId, base);
   }, [form, cards, fxRate]);
+
+  // Cashback ESTIMADO que se muestra al usuario en el form. Incluye el escalonado
+  // (proporcional al nivel del ciclo) para que las tarjetas CCN no muestren 0.
+  const cashbackPreview = useMemo(() => {
+    if (!form.cardId || !isExpenseType(form.type)) return 0;
+    const card = cards.find((c) => c.id === form.cardId);
+    if (!card) return 0;
+    const base = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
+    if (!hasTieredRule(card)) return computeCashback(card, form.categoryId, base);
+    // Para escalonadas, estima incluyendo esta transacción en el acumulado del ciclo.
+    const txDraft = { cardId: form.cardId, categoryId: form.categoryId, amount: base, date: form.date };
+    const others = transactions.filter((t) => t.id !== editing);
+    return getTransactionCashback(card, txDraft, [...others, txDraft]);
+  }, [form, cards, fxRate, transactions, editing]);
 
   // El tipo de una transacción se DERIVA de su categoría: la categoría ya sabe
   // si es ingreso, gasto fijo, gasto variable o ahorro (eso es lo que el motor
@@ -121,11 +138,13 @@ export default function StitchLedger() {
     if (Object.keys(err).length) { setErrors(err); return; }
 
     const description = titleCase(form.description);
-    const data = { ...form, description, amount: Number(form.amount), cashbackEarned: cashbackPreview };
+    const data = { ...form, description, amount: Number(form.amount), cashbackEarned: cashbackToFreeze };
 
     if (editing) {
       if (demo) demoUpdateTransaction(editing, data); else await updateTransaction(editing, data);
-      toast.success('Transacción actualizada');
+      // El store ya muestra "Transacción actualizada" en login real; en demo no
+      // hay backend que avise, así que lo emitimos aquí. (Evita el doble toast.)
+      if (demo) toast.success('Transacción actualizada');
     } else {
       if (demo) demoAddTransaction(data); else await addTransaction(data);
       if (form.isRecurring && !demo) {
@@ -159,6 +178,24 @@ export default function StitchLedger() {
       </span>
     ), { duration: 6000 });
   };
+
+  // Cashback a MOSTRAR por transacción. Para tarjetas con regla plana es el valor
+  // congelado (cashbackEarned). Para tarjetas escalonadas (CCN) el congelado es 0
+  // por diseño, así que estimamos el cashback derivado de la fila (proporcional al
+  // nivel del ciclo) para que el usuario lo vea. Mapa id→cashback, memoizado.
+  const cashbackById = useMemo(() => {
+    const map = new Map();
+    const cardById = new Map(cards.map((c) => [c.id, c]));
+    for (const t of transactions) {
+      const card = t.cardId ? cardById.get(t.cardId) : null;
+      if (card && hasTieredRule(card)) {
+        map.set(t.id, getTransactionCashback(card, t, transactions));
+      } else {
+        map.set(t.id, Number(t.cashbackEarned) || 0);
+      }
+    }
+    return map;
+  }, [transactions, cards]);
 
   const filtered = useMemo(() => {
     let r = [...transactions];
@@ -366,8 +403,8 @@ export default function StitchLedger() {
                     </td>
                     <td className={`py-sm px-md text-right font-mono-data tabular-nums whitespace-nowrap ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
                       {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)), t.currency)}
-                      {Number(t.cashbackEarned) > 0 && (
-                        <span className="block font-mono-data text-[9px] text-tertiary">cashback +{fmt(Number(t.cashbackEarned))}</span>
+                      {(cashbackById.get(t.id) || 0) > 0 && (
+                        <span className="block font-mono-data text-[9px] text-tertiary">cashback +{fmt(cashbackById.get(t.id))}</span>
                       )}
                     </td>
                     <td className="py-sm px-md text-right whitespace-nowrap">

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances, tierPercentage, getDerivedCashback, hasTieredRule, normalizeCashbackRules } from './creditCards';
+import { getCardCycles, getStatementAmount, isStatementPaid, computeCashback, getStatementHistory, getLifetimeCashback, paidCyclesToPayments, getCardBalances, tierPercentage, getDerivedCashback, getTransactionCashback, hasTieredRule, normalizeCashbackRules } from './creditCards';
 
 describe('getCardCycles', () => {
   it('corte 20 / pago 5: el pago cae el mes siguiente al corte', () => {
@@ -340,6 +340,66 @@ describe('getDerivedCashback — cashback CCN acumulado por CICLO DE CORTE', () 
   it('tarjeta sin regla escalonada → 0', () => {
     const flat = { id: 'card1', cutoffDay: 25, dueDay: 5, cashbackRules: [{ categoryId: 'ccn', percentage: 5 }] };
     expect(getDerivedCashback(flat, txs, ref)).toBe(0);
+  });
+});
+
+describe('getTransactionCashback — cashback estimado por transacción', () => {
+  const tieredCard = {
+    id: 'card1', cutoffDay: 25, dueDay: 5,
+    cashbackRules: [
+      { categoryId: 'ccn', tiers: [
+        { upTo: 7999, pct: 5 },
+        { upTo: 19999, pct: 6 },
+        { upTo: Infinity, pct: 8 },
+      ] },
+    ],
+  };
+  const flatCard = {
+    id: 'card2', cashbackRules: [{ categoryId: 'super', percentage: 3 }, { categoryId: 'all', percentage: 1 }],
+  };
+  // refDate = 7 jun 2026 → ciclo abierto: 26 may 2026 a 25 jun 2026.
+  const ref = new Date(2026, 5, 7);
+
+  it('tarjeta plana: delega en computeCashback (% por transacción)', () => {
+    const tx = { cardId: 'card2', categoryId: 'super', amount: 1000, date: '2026-06-10' };
+    expect(getTransactionCashback(flatCard, tx, [tx], ref)).toBe(30);
+  });
+
+  it('tarjeta escalonada: aplica el % del nivel del ciclo al monto de la transacción', () => {
+    // Ciclo acumula 23000 (5000+6000+12000) → nivel 8%. Cada fila estima 8% de su monto.
+    const txs = [
+      { cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-05-28' },
+      { cardId: 'card1', categoryId: 'ccn', amount: 6000, date: '2026-06-10' },
+      { cardId: 'card1', categoryId: 'ccn', amount: 12000, date: '2026-06-24' },
+    ];
+    expect(getTransactionCashback(tieredCard, txs[0], txs, ref)).toBe(400);  // 5000 * 8%
+    expect(getTransactionCashback(tieredCard, txs[1], txs, ref)).toBe(480);  // 6000 * 8%
+    expect(getTransactionCashback(tieredCard, txs[2], txs, ref)).toBe(960);  // 12000 * 8%
+  });
+
+  it('la suma de las filas del ciclo iguala getDerivedCashback', () => {
+    const txs = [
+      { cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-05-28' },
+      { cardId: 'card1', categoryId: 'ccn', amount: 6000, date: '2026-06-10' },
+      { cardId: 'card1', categoryId: 'ccn', amount: 12000, date: '2026-06-24' },
+    ];
+    const sum = txs.reduce((s, t) => s + getTransactionCashback(tieredCard, t, txs, ref), 0);
+    expect(sum).toBeCloseTo(getDerivedCashback(tieredCard, txs, ref), 2);
+  });
+
+  it('transacción escalonada fuera del ciclo abierto → 0', () => {
+    const txs = [{ cardId: 'card1', categoryId: 'ccn', amount: 9999, date: '2026-05-20' }];
+    expect(getTransactionCashback(tieredCard, txs[0], txs, ref)).toBe(0);
+  });
+
+  it('transacción de otra categoría en tarjeta escalonada → 0', () => {
+    const txs = [{ cardId: 'card1', categoryId: 'super', amount: 5000, date: '2026-06-10' }];
+    expect(getTransactionCashback(tieredCard, txs[0], txs, ref)).toBe(0);
+  });
+
+  it('sin tarjeta o monto inválido → 0', () => {
+    expect(getTransactionCashback(null, { amount: 1000 }, [], ref)).toBe(0);
+    expect(getTransactionCashback(tieredCard, { cardId: 'card1', categoryId: 'ccn', amount: 0, date: '2026-06-10' }, [], ref)).toBe(0);
   });
 });
 
