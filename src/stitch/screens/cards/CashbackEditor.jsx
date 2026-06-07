@@ -36,7 +36,7 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
         isTiered(r) ? (
           // Regla escalonada (CCN): de solo lectura. No se edita como % plano para
           // no perder los niveles; se puede quitar. El cálculo lo hace el motor
-          // (getDerivedCashback) por consumo mensual acumulado.
+          // (getDerivedCashback) por consumo acumulado del ciclo de corte.
           <div key={i} className="flex items-center gap-sm">
             <div className="flex-1 min-w-0 flex items-center gap-sm bg-surface-container-lowest border border-border-subtle rounded px-md py-sm inner-glow">
               <MS name="stairs" className="!text-[16px] text-tertiary shrink-0" />

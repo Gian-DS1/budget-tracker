@@ -284,9 +284,12 @@ describe('tierPercentage — nivel escalonado por monto acumulado', () => {
   });
 });
 
-describe('getDerivedCashback — cashback CCN derivado por mes', () => {
+describe('getDerivedCashback — cashback CCN acumulado por CICLO DE CORTE', () => {
+  // Tarjeta CCN con corte el día 25. El ciclo abierto se mide entre cortes:
+  // (corte anterior, próximo corte]. El acumulado para el nivel es ese rango,
+  // NO el mes calendario.
   const card = {
-    id: 'card1',
+    id: 'card1', cutoffDay: 25, dueDay: 5,
     cashbackRules: [
       { categoryId: 'ccn', tiers: [
         { upTo: 7999, pct: 5 },
@@ -295,15 +298,20 @@ describe('getDerivedCashback — cashback CCN derivado por mes', () => {
       ] },
     ],
   };
-  // 3 compras CCN en 2026-06: 5000 + 6000 + 12000 = 23000 acumulado → nivel 8%.
+  // refDate = 7 jun 2026 → ciclo abierto: 26 may 2026 a 25 jun 2026.
+  const ref = new Date(2026, 5, 7);
   const txs = [
-    { cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-06-03' },
+    // Dentro del ciclo (26 may–25 jun): 5000 + 6000 + 12000 = 23000 → nivel 8%.
+    { cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-05-28' },
     { cardId: 'card1', categoryId: 'ccn', amount: 6000, date: '2026-06-10' },
-    { cardId: 'card1', categoryId: 'ccn', amount: 12000, date: '2026-06-20' },
-    // Otra tarjeta / otra categoría / otro mes: no cuentan.
-    { cardId: 'otra', categoryId: 'ccn', amount: 9999, date: '2026-06-05' },
-    { cardId: 'card1', categoryId: 'super', amount: 9999, date: '2026-06-05' },
-    { cardId: 'card1', categoryId: 'ccn', amount: 9999, date: '2026-05-30' },
+    { cardId: 'card1', categoryId: 'ccn', amount: 12000, date: '2026-06-24' },
+    // Fuera del ciclo: antes del corte anterior (ciclo previo).
+    { cardId: 'card1', categoryId: 'ccn', amount: 9999, date: '2026-05-20' },
+    // En el día del próximo corte +1 (ya es el siguiente ciclo): no cuenta.
+    { cardId: 'card1', categoryId: 'ccn', amount: 9999, date: '2026-06-26' },
+    // Otra tarjeta / otra categoría: no cuentan.
+    { cardId: 'otra', categoryId: 'ccn', amount: 9999, date: '2026-06-10' },
+    { cardId: 'card1', categoryId: 'super', amount: 9999, date: '2026-06-10' },
   ];
 
   it('hasTieredRule detecta la regla escalonada', () => {
@@ -311,18 +319,27 @@ describe('getDerivedCashback — cashback CCN derivado por mes', () => {
     expect(hasTieredRule({ cashbackRules: [{ categoryId: 'x', percentage: 1 }] })).toBe(false);
   });
 
-  it('aplica el nivel del acumulado mensual a todo el gasto CCN del mes', () => {
-    // Acumulado 23000 → 8%. Cashback = 23000 * 8% = 1840.
-    expect(getDerivedCashback(card, txs, '2026-06')).toBe(1840);
+  it('acumula solo las transacciones del ciclo de corte y aplica ese nivel', () => {
+    // Acumulado del ciclo 26 may–25 jun = 23000 → 8%. Cashback = 23000 * 8% = 1840.
+    expect(getDerivedCashback(card, txs, ref)).toBe(1840);
   });
 
-  it('mes sin consumo CCN → 0', () => {
-    expect(getDerivedCashback(card, txs, '2026-07')).toBe(0);
+  it('una transacción justo en el corte anterior NO entra; el día siguiente SÍ', () => {
+    // El ciclo abierto arranca el día DESPUÉS del corte (openStartISO).
+    const onlyCutoffDay = [{ cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-05-25' }];
+    expect(getDerivedCashback(card, onlyCutoffDay, ref)).toBe(0); // 25 = corte anterior, fuera
+    const dayAfter = [{ cardId: 'card1', categoryId: 'ccn', amount: 5000, date: '2026-05-26' }];
+    expect(getDerivedCashback(card, dayAfter, ref)).toBe(250); // 5000 * 5%
+  });
+
+  it('ciclo sin consumo CCN → 0', () => {
+    const otherRef = new Date(2026, 7, 7); // ago: ciclo 26 jul–25 ago, sin txs CCN
+    expect(getDerivedCashback(card, txs, otherRef)).toBe(0);
   });
 
   it('tarjeta sin regla escalonada → 0', () => {
-    const flat = { id: 'card1', cashbackRules: [{ categoryId: 'ccn', percentage: 5 }] };
-    expect(getDerivedCashback(flat, txs, '2026-06')).toBe(0);
+    const flat = { id: 'card1', cutoffDay: 25, dueDay: 5, cashbackRules: [{ categoryId: 'ccn', percentage: 5 }] };
+    expect(getDerivedCashback(flat, txs, ref)).toBe(0);
   });
 });
 

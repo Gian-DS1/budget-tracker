@@ -259,7 +259,7 @@ export function computeCashback(card, categoryId, amount) {
   const amt = Number(amount);
   if (!card || !Array.isArray(card.cashbackRules) || !amt || isNaN(amt)) return 0;
   // Las reglas escalonadas (tiers) NO congelan cashback: las maneja
-  // getDerivedCashback (en vivo, por acumulado mensual). Aquí solo % plano.
+  // getDerivedCashback (en vivo, por acumulado del ciclo de corte). Aquí solo % plano.
   const flatRules = card.cashbackRules.filter((r) => typeof r.percentage === 'number');
   const rule =
     flatRules.find((r) => r.categoryId === categoryId) ||
@@ -312,22 +312,31 @@ export function hasTieredRule(card) {
 }
 
 /**
- * Cashback DERIVADO (en vivo) del mes `monthKey` ('YYYY-MM') para las reglas
- * escalonadas de una tarjeta. Para cada regla con `tiers`, suma el gasto de esa
- * categoría en ese mes, determina el nivel por el ACUMULADO y aplica ese % a todo
- * el acumulado. Devuelve el total en DOP, redondeado a 2 decimales.
- * Las reglas planas (sin tiers) NO entran aquí: su cashback va congelado por
- * transacción (computeCashback), como siempre.
+ * Cashback DERIVADO (en vivo) para las reglas escalonadas de una tarjeta, medido
+ * por CICLO DE FACTURACIÓN (entre cortes), no por mes calendario. El acumulado de
+ * cada categoría escalonada se calcula sobre las transacciones del ciclo abierto
+ * actual —(corte anterior, próximo corte]—, se determina el nivel por ese
+ * acumulado y se aplica ese % a todo el acumulado del ciclo.
+ *
+ * Ej.: tarjeta que corta el 25 → el rango es del 26 de un mes al 25 del siguiente.
+ *
+ * Devuelve el total en DOP, redondeado a 2 decimales. Las reglas planas (sin
+ * tiers) NO entran aquí: su cashback va congelado por transacción (computeCashback).
+ * @param {object} card
+ * @param {Array}  transactions
+ * @param {Date}   refDate - fecha de referencia (hoy) para ubicar el ciclo abierto.
  */
-export function getDerivedCashback(card, transactions = [], monthKey) {
-  if (!hasTieredRule(card) || !monthKey) return 0;
+export function getDerivedCashback(card, transactions = [], refDate = new Date()) {
+  if (!hasTieredRule(card)) return 0;
+  // Ventana del ciclo abierto actual: (corte anterior, próximo corte].
+  const { openStartISO, openEndISO } = getCardCycles(card, refDate);
   let total = 0;
   for (const rule of card.cashbackRules) {
     if (!Array.isArray(rule.tiers) || rule.tiers.length === 0) continue;
     const accumulated = transactions.reduce((sum, t) => {
       if (t.cardId !== card.id) return sum;
       if (t.categoryId !== rule.categoryId) return sum;
-      if (!t.date || !String(t.date).startsWith(monthKey)) return sum;
+      if (!t.date || t.date < openStartISO || t.date > openEndISO) return sum;
       return sum + (Number(t.amount) || 0);
     }, 0);
     const pct = tierPercentage(rule.tiers, accumulated);
