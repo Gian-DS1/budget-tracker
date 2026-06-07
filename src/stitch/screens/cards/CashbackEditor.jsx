@@ -12,8 +12,12 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
   const removeRule = (i) => onChange(rules.filter((_, idx) => idx !== i));
   const addRule = () => onChange([...rules, { categoryId: 'all', percentage: 1 }]);
 
-  // El selector de categoría no maneja 'all'; lo ofrecemos como opción aparte.
-  const isAll = (r) => r.categoryId === 'all';
+  // El select usa '' para representar la opción "Todas las categorías"
+  // (includeAllOption); en las reglas esa opción se guarda como el literal 'all'.
+  // Mapeamos en ambos sentidos para que "Todas" sea una opción más del dropdown
+  // (antes era un botón aparte que, al deseleccionarse, no podía volver a elegirse).
+  const toSelectValue = (categoryId) => (categoryId === 'all' ? '' : categoryId);
+  const fromSelectValue = (value) => (value === '' ? 'all' : value);
 
   return (
     <div className="flex flex-col gap-sm">
@@ -24,18 +28,13 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
       {rules.map((r, i) => (
         <div key={i} className="flex items-center gap-sm">
           <div className="flex-1 min-w-0">
-            {isAll(r) ? (
-              <button type="button" onClick={() => setRule(i, { categoryId: '' })} className="w-full h-[42px] bg-surface-container-lowest border border-border-subtle rounded px-md font-body-md text-body-md text-on-surface text-left flex items-center gap-sm inner-glow">
-                <MS name="apps" className="!text-[18px] text-text-muted" /> Todas las categorías
-              </button>
-            ) : (
-              <StitchCategorySelect
-                value={r.categoryId}
-                onChange={(id) => setRule(i, { categoryId: id })}
-                options={categories}
-                placeholder="Elige categoría…"
-              />
-            )}
+            <StitchCategorySelect
+              value={toSelectValue(r.categoryId)}
+              onChange={(id) => setRule(i, { categoryId: fromSelectValue(id) })}
+              options={categories}
+              includeAllOption
+              placeholder="Elige categoría…"
+            />
           </div>
           <div className="relative w-[88px] shrink-0">
             <input

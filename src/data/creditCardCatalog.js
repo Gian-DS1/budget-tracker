@@ -12,10 +12,6 @@ export const CATALOG_CATEGORIES = {
     slug: 'eco-sirena', name: 'Sirena', type: 'variable_expense', icon: '🛒', color: '#0aa3a3',
     keywords: ['sirena', 'la sirena', 'sirena market'],
   },
-  'plaza-lama': {
-    slug: 'eco-plaza-lama', name: 'Plaza Lama', type: 'variable_expense', icon: '🛒', color: '#c8102e',
-    keywords: ['plaza lama', 'lama'],
-  },
   'grupo-ccn': {
     slug: 'eco-grupo-ccn', name: 'Grupo CCN', type: 'variable_expense', icon: '🛒', color: '#004b87',
     keywords: ['nacional', 'supermercados nacional', 'jumbo', 'jumbo express', 'casa cuesta', 'jugueton', 'ferreteria cuesta', 'cuesta libros', 'bebemundo', 'la bodega', 'merca jumbo'],
@@ -64,8 +60,8 @@ export const CREDIT_CARD_CATALOG = [
       { categoryKey: 'streaming', percentage: 5 },
       { categoryKey: 'all', percentage: 1 },
     ] },
-  { id: 'popular-visa-plus-ccn', bank: 'Banco Popular Dominicano', name: 'Visa Plus CCN', color: '#e30613',
-    note: 'Devolución escalonada (5/6/8%) según el consumo mensual en el Grupo CCN.',
+  { id: 'popular-mc-plus-ccn', bank: 'Banco Popular Dominicano', name: 'Mastercard Plus CCN', color: '#e30613',
+    note: 'Devolución escalonada por monto del consumo en el Grupo CCN: 5% hasta RD$7,999, 6% de RD$8,000 a RD$19,999, 8% desde RD$20,000. Sin tope mensual.',
     cashback: [
       { categoryKey: 'grupo-ccn', percentage: 5 },
     ] },
@@ -142,13 +138,6 @@ export const CREDIT_CARD_CATALOG = [
       { categoryKey: 'combustible', percentage: 1 },
       { categoryKey: 'educacion', percentage: 1 },
       { categoryKey: 'transporte', percentage: 1 },
-      { categoryKey: 'all', percentage: 1 },
-    ] },
-
-  // ── Banco Promerica ──────────────────────────────────────────
-  { id: 'promerica-visa-lama', bank: 'Banco Promerica', name: 'Visa Lama Plazos', color: '#ed1c24',
-    cashback: [
-      { categoryKey: 'plaza-lama', percentage: 9 },
       { categoryKey: 'all', percentage: 1 },
     ] },
 ];
