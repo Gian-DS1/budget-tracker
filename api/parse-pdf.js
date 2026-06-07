@@ -209,8 +209,15 @@ export default async function handler(req, res) {
     }
 
     const { pdfBase64 } = req.body;
-    if (!pdfBase64) {
+    if (!pdfBase64 || typeof pdfBase64 !== 'string') {
       return res.status(400).json({ error: 'Missing pdfBase64 in body' });
+    }
+
+    // Límite de tamaño (anti-DoS): un base64 enorme podría agotar memoria/tiempo
+    // de la función al decodificarlo y parsearlo. ~8M chars de base64 ≈ 6MB de
+    // PDF, holgado para un estado de cuenta y por debajo del tope de Vercel.
+    if (pdfBase64.length > 8_000_000) {
+      return res.status(413).json({ error: 'El PDF es demasiado grande (máx. ~6MB).' });
     }
 
     const pdfBuffer = Buffer.from(pdfBase64, 'base64');

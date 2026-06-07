@@ -6,7 +6,7 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { todayISO } from '../utils/formatters';
 import { advanceDate } from '../utils/recurrence';
@@ -43,8 +43,7 @@ const useRecurringStore = create(
 
       fetchRecurring: async () => {
         set({ loading: true });
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return set({ recurring: [], loading: false });
 
         const { data, error } = await supabase
@@ -62,8 +61,7 @@ const useRecurringStore = create(
       },
 
       addRecurring: async (t) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return;
 
         const payload = {

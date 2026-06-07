@@ -80,8 +80,10 @@ export const AuthProvider = ({ children }) => {
     if (error) throw error;
     setIsRecoveringPassword(false);
     // Clear cached financial data so another person on this same device/browser
-    // can't see the previous user's transactions, budgets, debts, etc. The theme
-    // preference (fintrack-theme) is intentionally kept — it's not sensitive.
+    // can't see the previous user's transactions, budgets, debts, etc. These
+    // caches live in sessionStorage (see the stores' persist config), so we must
+    // clear them there — not localStorage. The theme preference is kept (not
+    // sensitive) and lives elsewhere.
     [
       'fintrack-transactions-cache',
       'fintrack-budgets-cache',
@@ -91,7 +93,7 @@ export const AuthProvider = ({ children }) => {
       'fintrack-plans-cache',
       'fintrack-cards-cache',
       'fintrack-recurring-cache',
-    ].forEach((key) => localStorage.removeItem(key));
+    ].forEach((key) => sessionStorage.removeItem(key));
     toast.success('Sesión cerrada');
   };
 

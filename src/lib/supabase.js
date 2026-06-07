@@ -15,3 +15,14 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     detectSessionInUrl: true,
   },
 });
+
+// Lectura de usuario centralizada para los stores. Antes cada acción llamaba a
+// supabase.auth.getSession() por su cuenta (27 sitios): en el arranque eso son
+// varias lecturas de sesión simultáneas, cada una capaz de gatillar un refresh
+// de token. getSession() ya devuelve la sesión cacheada en memoria por el SDK,
+// así que el ahorro real es de claridad y de un único punto de cambio; devuelve
+// el user autenticado o null, sin lanzar.
+export async function getCurrentUser() {
+  const { data: { session } } = await supabase.auth.getSession();
+  return session?.user ?? null;
+}

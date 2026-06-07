@@ -1,6 +1,6 @@
 ﻿import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { todayISO } from '../utils/formatters';
 
@@ -29,8 +29,7 @@ const useCreditCardStore = create(
 
       fetchCards: async () => {
         set({ loading: true });
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return set({ cards: [], loading: false });
 
         const { data, error } = await supabase
@@ -49,8 +48,7 @@ const useCreditCardStore = create(
       },
 
       addCard: async (card) => {
-        const { data: { session } } = await supabase.auth.getSession();
-        const user = session?.user;
+        const user = await getCurrentUser();
         if (!user) return;
 
         const payload = {

@@ -31,8 +31,8 @@ const RANGE_OPTIONS = [
 ];
 
 export default function StitchReports() {
-  const { transactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
+  const transactions = useTransactionStore((s) => s.transactions);
+  const categories = useCategoryStore((s) => s.categories);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
 
   const now = useMemo(() => new Date(), []);

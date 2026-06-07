@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCreditCardStore from './useCreditCardStore';
 import useRateStore from './useRateStore';
@@ -10,33 +10,32 @@ import { computeCashback } from '../utils/creditCards';
 // tipo genérico 'expense'. Misma regla que el formulario de transacciones.
 const earnsCashback = (type) => type === 'expense' || type === 'fixed_expense' || type === 'variable_expense';
 
-// Conversión histórica por fecha (para guardar la transacción al valor del día).
-// Si la red falla, cae a la tasa efectiva del rate store (que respeta el
-// override manual del usuario), no a un número fijo.
-export async function fetchUSDRate(dateStr) {
-  let rate = useRateStore.getState().getRate();
+// Pide la tasa USD→DOP a la CDN de currency-api con timeout (AbortSignal). Sin
+// timeout, un fetch colgado dejaría el await pendiente y bloquearía el guardado
+// de una transacción en USD. Devuelve la tasa numérica o null si falla/expira.
+const RATE_FETCH_TIMEOUT_MS = 6000;
+async function fetchRateFromCdn(version) {
   try {
-    const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${dateStr}/v1/currencies/usd.json`);
-    if (response.ok) {
-      const data = await response.json();
-      if (data && data.usd && typeof data.usd.dop === 'number') {
-        rate = data.usd.dop;
-      }
-    }
+    const response = await fetch(
+      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${version}/v1/currencies/usd.json`,
+      { signal: AbortSignal.timeout(RATE_FETCH_TIMEOUT_MS) }
+    );
+    if (!response.ok) return null;
+    const data = await response.json();
+    return (data && typeof data.usd?.dop === 'number') ? data.usd.dop : null;
   } catch (e) {
-    console.warn("Error fetching historical rate for USD:", e);
-    try {
-      const response = await fetch(`https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json`);
-      if (response.ok) {
-        const data = await response.json();
-        if (data && data.usd && typeof data.usd.dop === 'number') {
-          rate = data.usd.dop;
-        }
-      }
-    } catch (err) {
-      console.warn("Error fetching latest rate for USD:", err);
-    }
+    console.warn(`Error fetching USD rate (@${version}):`, e);
+    return null;
   }
+}
+
+// Conversión histórica por fecha (para guardar la transacción al valor del día).
+// Intenta la tasa del día; si falla, la más reciente; si ambas fallan, cae a la
+// tasa efectiva del rate store (que respeta el override manual del usuario), no
+// a un número fijo. Ningún fetch puede colgar el guardado: ambos tienen timeout.
+export async function fetchUSDRate(dateStr) {
+  const fetched = (await fetchRateFromCdn(dateStr)) ?? (await fetchRateFromCdn('latest'));
+  const rate = fetched ?? useRateStore.getState().getRate();
 
   // Dominican bank selling rate has a standard spread (aprox +1.2%)
   const bankSellingRate = Math.round(rate * 1.012 * 100) / 100;
@@ -51,8 +50,7 @@ const useTransactionStore = create(
 
   fetchTransactions: async () => {
     set({ loading: true });
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) {
       set({ transactions: [], loading: false });
       return;
@@ -82,8 +80,7 @@ const useTransactionStore = create(
   },
 
   addTransaction: async (transaction) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
 
     // Convert USD to DOP if needed
@@ -208,8 +205,7 @@ const useTransactionStore = create(
   // que restaurar devuelve exactamente lo que se eliminó. El id cambia (fila
   // nueva), lo cual es seguro: nada referencia una transacción por id.
   restoreTransaction: async (tx) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return false;
 
     const dbTx = {
@@ -263,8 +259,7 @@ const useTransactionStore = create(
   // Re-inserta varias transacciones borradas (para "Deshacer" en bloque).
   restoreManyTransactions: async (txs) => {
     if (!txs || txs.length === 0) return false;
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return false;
 
     const dbTxs = txs.map((tx) => ({
@@ -378,8 +373,7 @@ const useTransactionStore = create(
   },
 
   bulkAddTransactions: async (transactions) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return 0;
 
     // Las filas pueden traer cardId (p. ej. recurrentes pagadas con tarjeta).

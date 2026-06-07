@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import { defaultCategories, findDuplicateCategories } from '../data/defaultCategories';
 import toast from 'react-hot-toast';
 
@@ -19,8 +19,7 @@ const useCategoryStore = create(
     if (fetchInFlight) return fetchInFlight;
     fetchInFlight = (async () => {
     set({ loading: true, error: null });
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) {
       set({ categories: [], loading: false });
       return;
@@ -168,8 +167,7 @@ const useCategoryStore = create(
 
   resetCategoriesToDefault: async () => {
     set({ loading: true, error: null });
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) {
       set({ loading: false });
       return false;
@@ -233,8 +231,7 @@ const useCategoryStore = create(
   },
 
   addCategory: async (category) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
     
     const dbCategory = {
@@ -272,8 +269,7 @@ const useCategoryStore = create(
     );
     if (found) return found.id;
 
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return null;
 
     const payload = {

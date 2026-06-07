@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import ModalShell, { useModalClose } from '../ModalShell';
-import MS from '../MS';
+import ModalShell from '../ModalShell';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useCategoryStore from '../../stores/useCategoryStore';
@@ -9,38 +8,39 @@ import { autoCategorize } from '../../data/defaultCategories';
 import { matchTransactions } from '../../utils/statementMatcher';
 
 export default function StatementImportModal({ onClose, pdfData }) {
-  const { transactions: existingTxs, bulkAddTransactions, bulkAssignCard } = useTransactionStore();
-  const { cards } = useCreditCardStore();
-  const { categories } = useCategoryStore();
+  const existingTxs = useTransactionStore((s) => s.transactions);
+  const bulkAddTransactions = useTransactionStore((s) => s.bulkAddTransactions);
+  const bulkAssignCard = useTransactionStore((s) => s.bulkAssignCard);
+  const cards = useCreditCardStore((s) => s.cards);
+  const categories = useCategoryStore((s) => s.categories);
 
-  const [targetCardId, setTargetCardId] = useState('');
-  const [matchResult, setMatchResult] = useState({ matched: [], ambiguous: [], toImport: [] });
-  const [importing, setImporting] = useState(false);
-
-  // Intentar pre-seleccionar la tarjeta si coinciden los últimos 4 dígitos
-  useEffect(() => {
-    if (pdfData?.cardLast4 && cards.length > 0) {
-      // FinTrack no guarda last4 nativamente a menos que esté en el nombre o notas,
-      // pero si el nombre incluye last4 (ej. "CCN 3093") lo podemos detectar.
-      const suggested = cards.find(c => c.name.includes(pdfData.cardLast4));
-      if (suggested) {
-        setTargetCardId(suggested.id);
-      } else {
-        setTargetCardId(cards[0]?.id || '');
-      }
-    }
+  // Tarjeta sugerida: derivada de los datos, no sincronizada con un effect. Si el
+  // nombre de una tarjeta incluye los últimos 4 dígitos del PDF (ej. "CCN 3093")
+  // la preferimos; si no, la primera tarjeta. (FinTrack no guarda last4 nativo.)
+  const suggestedCardId = useMemo(() => {
+    if (!pdfData?.cardLast4 || cards.length === 0) return '';
+    const match = cards.find((c) => c.name.includes(pdfData.cardLast4));
+    return (match || cards[0])?.id || '';
   }, [cards, pdfData]);
 
-  // Ejecutar el cruce de datos
-  useEffect(() => {
-    if (!pdfData || !pdfData.transactions) return;
+  // El usuario puede cambiar la tarjeta; mientras no lo haga (null), usamos la
+  // sugerida. Esto evita un useEffect que sincronice estado derivado.
+  const [pickedCardId, setPickedCardId] = useState(null);
+  const targetCardId = pickedCardId ?? suggestedCardId;
+
+  const [importing, setImporting] = useState(false);
+
+  // Cruce de datos: derivado puro de (pdfData, existingTxs, categories). Antes
+  // era un useEffect + setState; como solo depende de props/estado de stores, un
+  // useMemo es el patrón correcto (https://react.dev/learn/you-might-not-need-an-effect).
+  const matchResult = useMemo(() => {
+    if (!pdfData || !pdfData.transactions) return { matched: [], ambiguous: [], toImport: [] };
     const result = matchTransactions(pdfData.transactions, existingTxs);
-    // Auto-categorizar los toImport
-    result.toImport = result.toImport.map(tx => {
+    result.toImport = result.toImport.map((tx) => {
       const cat = autoCategorize(tx.description, categories);
       return { ...tx, suggestedCategoryId: cat ? cat.id : null };
     });
-    setMatchResult(result);
+    return result;
   }, [pdfData, existingTxs, categories]);
 
   const handleImport = async (requestClose) => {
@@ -119,7 +119,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
               <label className="block font-label-sm text-text-muted mb-xs">Tarjeta de Destino</label>
               <select
                 value={targetCardId}
-                onChange={(e) => setTargetCardId(e.target.value)}
+                onChange={(e) => setPickedCardId(e.target.value)}
                 className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-on-surface focus:outline-none focus:border-primary inner-glow"
               >
                 <option value="" disabled>Selecciona la tarjeta...</option>

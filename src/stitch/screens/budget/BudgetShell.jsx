@@ -40,8 +40,8 @@ export default function BudgetShell({ level = 'zero' }) {
   const setBudgetLevel = usePrefsStore((s) => s.setBudgetLevel);
 
   const budgets = useBudgetStore((s) => s.budgets);
-  const { transactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
+  const transactions = useTransactionStore((s) => s.transactions);
+  const categories = useCategoryStore((s) => s.categories);
   const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);

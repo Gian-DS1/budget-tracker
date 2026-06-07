@@ -32,10 +32,11 @@ const fmt = (n) => formatCurrency(n);
 
 export default function StitchDashboard() {
   const navigate = useNavigate();
-  const { transactions } = useTransactionStore();
-  const { categories } = useCategoryStore();
-  const { getTotalSaved } = useSavingsStore();
-  const { getTotalDebt, getTotalMonthlyPayment } = useDebtStore();
+  const transactions = useTransactionStore((s) => s.transactions);
+  const categories = useCategoryStore((s) => s.categories);
+  const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
+  const getTotalDebt = useDebtStore((s) => s.getTotalDebt);
+  const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
   const budgets = useBudgetStore((s) => s.budgets);
   const payments = useDebtStore((s) => s.payments);
   const debts = useDebtStore((s) => s.debts);

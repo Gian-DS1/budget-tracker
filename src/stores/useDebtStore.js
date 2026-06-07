@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { supabase } from '../lib/supabase';
+import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useRateStore from './useRateStore';
 import useCategoryStore from './useCategoryStore';
@@ -15,8 +15,7 @@ const useDebtStore = create(
 
   fetchDebtsAndPayments: async () => {
     set({ loading: true });
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return set({ debts: [], payments: [], loading: false });
 
     const [debtsRes, paymentsRes] = await Promise.all([
@@ -71,8 +70,7 @@ const useDebtStore = create(
   },
 
   addDebt: async (debt) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
 
     const currentBal = Number(debt.currentBalance !== undefined ? debt.currentBalance : debt.originalAmount);
@@ -154,8 +152,7 @@ const useDebtStore = create(
   },
 
   addPayment: async (debtId, amount, date, notes = '') => {
-    const { data: { session } } = await supabase.auth.getSession();
-    const user = session?.user;
+    const user = await getCurrentUser();
     if (!user) return;
 
     const debt = get().debts.find((d) => d.id === debtId);
