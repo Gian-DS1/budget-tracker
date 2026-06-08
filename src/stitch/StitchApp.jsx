@@ -1,6 +1,5 @@
-// StitchApp — app real sobre la carrocería Stitch.
-// Replica el flujo de src/App.jsx (auth, fetches de stores, rutas protegidas,
-// keep-alive, recurrentes) renderizando el shell + pantallas Stitch.
+// StitchApp — raíz de la app (auth, fetches de stores, rutas protegidas,
+// keep-alive, recurrentes) montando el shell + pantallas Stitch.
 
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
