@@ -87,7 +87,7 @@ export default function AccountMenu() {
 
           <div className="border-t border-border-subtle mt-xs pt-xs">
             <button role="menuitem" onClick={handleSignOut} className="w-full flex items-center gap-sm px-md py-sm text-left text-accent-error hover:bg-accent-error/10 transition-colors">
-              <MS name={demo ? 'logout' : 'logout'} className="!text-[18px]" />
+              <MS name="logout" className="!text-[18px]" />
               <span className="font-body-md text-body-md">{demo ? 'Salir del demo' : 'Cerrar sesión'}</span>
             </button>
           </div>

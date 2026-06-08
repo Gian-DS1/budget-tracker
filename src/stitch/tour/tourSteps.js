@@ -10,151 +10,81 @@
 //   cabe (clamp a viewport).
 // `padding`: holgura (px) del halo alrededor del elemento. Default 8.
 //
-// Lenguaje: español sencillo, directo, sin jerga. Qué es · para qué sirve · cómo.
+// Diseño del guión: 7 pasos, enfocados en el NÚCLEO (lo más difícil de entender):
+// el flujo del dinero (transacciones → la categoría define el tipo) y los niveles
+// de presupuesto. El patrimonio y las herramientas se mencionan de pasada; el
+// usuario los descubre solo. Lenguaje: español sencillo, sentence-case, sin em
+// dashes. Qué es · para qué sirve · cómo.
 
 export const TOUR_STEPS = [
-  // ── Bienvenida ──────────────────────────────────────────────────────────────
+  // ── 1. Bienvenida ────────────────────────────────────────────────────────────
   {
     id: 'welcome',
     route: '/',
     anchor: null,
     placement: 'center',
     title: '¡Bienvenido a FinTrack! 👋',
-    body: 'Te voy a mostrar la app en un minuto. Verás para qué sirve cada parte y cómo hacer lo importante. Puedes salir cuando quieras con “Saltar”.',
+    body: 'Te muestro lo esencial en un minuto: cómo registrar tu dinero y cómo organizarlo con un presupuesto. Puedes salir cuando quieras con “Saltar”.',
   },
 
-  // ── Navegación ───────────────────────────────────────────────────────────────
+  // ── 2. Navegación ──────────────────────────────────────────────────────────────
   {
     id: 'nav',
     route: '/',
     anchor: '[data-tour="nav"]',
     placement: 'right',
     padding: 10,
-    title: 'Tu menú de navegación',
-    body: 'Desde aquí llegas a todo. Está dividido en tres bloques: Principal (tu día a día), Patrimonio (lo que tienes y lo que debes) y Herramientas (calendario y reportes).',
+    title: 'Tu menú',
+    body: 'Desde aquí llegas a todo, en tres bloques: Principal (tu día a día), Patrimonio (lo que tienes y lo que debes) y Herramientas (calendario, reportes y categorías).',
   },
 
-  // ── Resumen / Dashboard ──────────────────────────────────────────────────────
+  // ── 3. Transacciones: el corazón (flujo del dinero) ──────────────────────────
   {
-    id: 'dashboard',
-    route: '/',
-    anchor: '[data-tour="dashboard-grid"]',
-    placement: 'center',
-    title: 'Resumen: tu foto del mes',
-    body: 'Esta es tu pantalla principal. De un vistazo ves cuánto puedes gastar, tus ingresos y gastos, tu patrimonio y tu “salud financiera”. Es el mejor lugar para empezar cada día.',
-  },
-
-  // ── Transacciones ────────────────────────────────────────────────────────────
-  {
-    id: 'ledger-intro',
+    id: 'ledger',
     route: '/transacciones',
     anchor: '[data-tour="ledger-new"]',
     placement: 'left',
-    title: 'Registra tus movimientos',
-    body: 'Aquí anotas cada ingreso y gasto. Pulsa “Nueva transacción” para añadir uno. Al escribir la descripción, la app intenta adivinar la categoría sola para ahorrarte tiempo.',
-  },
-  {
-    id: 'ledger-filters',
-    route: '/transacciones',
-    anchor: '[data-tour="ledger-filters"]',
-    placement: 'bottom',
-    title: 'Busca y filtra',
-    body: 'Encuentra cualquier movimiento por texto, tipo, categoría o rango de fechas. Útil cuando tienes muchos registros y buscas algo puntual.',
-  },
-  {
-    id: 'ledger-bulk',
-    route: '/transacciones',
-    anchor: '[data-tour="ledger-table"]',
-    placement: 'top',
-    title: 'Edita en bloque',
-    body: 'Pasa el mouse sobre una fila y aparece una casilla. Marca varias para cambiarles la categoría o la tarjeta, o borrarlas, todas a la vez desde la barra que aparece abajo.',
+    title: 'Registra tu dinero',
+    body: 'Este es el corazón de la app. Con “Nueva transacción” anotas cada ingreso o gasto. No eliges si es ingreso o gasto: lo define la categoría que escojas. Y al escribir la descripción, la app sugiere la categoría sola.',
   },
 
-  // ── Presupuesto ──────────────────────────────────────────────────────────────
+  // ── 4. Presupuesto por niveles ───────────────────────────────────────────────
   {
-    id: 'budget-mode',
+    id: 'budget-levels',
     route: '/presupuesto',
     anchor: '[data-tour="budget-mode"]',
     placement: 'bottom',
-    title: 'Tu presupuesto, a tu ritmo',
-    body: 'Hay tres modos. “Seguimiento” solo observa tus gastos; “50/30/20” reparte tu dinero en necesidades, gustos y ahorro; “Base cero” asigna cada peso a un sobre. Empieza simple y sube de nivel cuando quieras.',
+    title: 'Tu presupuesto, por niveles',
+    body: 'Tu presupuesto crece contigo. “Seguimiento” solo observa tus gastos; “50/30/20” reparte tu dinero en necesidades, gustos y ahorro; “Base cero” asigna cada peso a un sobre. Empieza simple y sube de nivel cuando quieras.',
   },
+
+  // ── 5. Cuánto puedes gastar (integración sin duplicar) ───────────────────────
   {
-    id: 'budget-summary',
+    id: 'budget-spend',
     route: '/presupuesto',
     anchor: '[data-tour="budget-summary"]',
     placement: 'bottom',
     title: 'Cuánto puedes gastar',
-    body: 'Aquí ves lo que tienes comprometido (gastos fijos, ahorro y deudas) y lo que te queda libre. Las deudas se cuentan solas desde tu módulo de Deudas, sin contarlas dos veces.',
+    body: 'Aquí ves cuánto tienes comprometido (gastos fijos, ahorro y deudas) y cuánto te queda libre. Lo mejor: tus deudas, tarjetas y metas de ahorro se descuentan solas desde sus módulos, sin que las cuentes dos veces.',
   },
 
-  // ── Ahorros ──────────────────────────────────────────────────────────────────
+  // ── 6. Todo conectado (cierre conceptual) ────────────────────────────────────
   {
-    id: 'vaults',
-    route: '/ahorros',
-    anchor: '[data-tour="vaults-new"]',
-    placement: 'left',
-    title: 'Metas de ahorro',
-    body: 'Crea objetivos (un viaje, un fondo de emergencia…) con “Nueva meta”. Aporta poco a poco y mira crecer la barra de progreso hasta llegar a tu meta.',
-  },
-
-  // ── Deudas ───────────────────────────────────────────────────────────────────
-  {
-    id: 'debts',
-    route: '/deudas',
-    anchor: '[data-tour="debts-new"]',
-    placement: 'left',
-    title: 'Control de deudas',
-    body: 'Registra tus préstamos y tarjetas con “Nueva deuda”. La app usa la estrategia “avalancha” para sugerirte cuál pagar primero y salir de deudas más rápido pagando menos intereses.',
-  },
-
-  // ── Tarjetas ─────────────────────────────────────────────────────────────────
-  {
-    id: 'cards',
-    route: '/tarjetas',
-    anchor: '[data-tour="cards-new"]',
-    placement: 'left',
-    title: 'Tarjetas de crédito',
-    body: 'Añade tus tarjetas con sus fechas de corte y pago. La app calcula tu saldo, te avisa antes del pago y suma el cashback que ganas por categoría.',
-  },
-
-  // ── Calendario ───────────────────────────────────────────────────────────────
-  {
-    id: 'calendar',
-    route: '/calendario',
-    anchor: '[data-tour="calendar-grid"]',
-    placement: 'center',
-    title: 'Calendario financiero',
-    body: 'Mira en qué días caen tus pagos, cortes de tarjeta y movimientos. Toca un día para ver el detalle. Ideal para no perder de vista ninguna fecha importante.',
-  },
-
-  // ── Reportes ─────────────────────────────────────────────────────────────────
-  {
-    id: 'reports',
-    route: '/reportes',
-    anchor: '[data-tour="reports-content"]',
-    placement: 'center',
-    title: 'Reportes y tendencias',
-    body: 'Aquí ves tu dinero a lo largo del tiempo: en qué gastas más, cómo cambian tus meses y tu progreso. Te ayuda a tomar mejores decisiones con datos claros.',
-  },
-
-  // ── Cuenta / Ajustes ─────────────────────────────────────────────────────────
-  {
-    id: 'account',
+    id: 'connected',
     route: '/',
-    anchor: '[data-tour="account"]',
-    placement: 'bottom',
-    title: 'Tu cuenta y ajustes',
-    body: 'Desde tu avatar abres Ajustes (importar/exportar datos, tasa de cambio, nivel de presupuesto), dejas Feedback y, cuando quieras, vuelves a ver este tutorial.',
+    anchor: '[data-tour="dashboard-grid"]',
+    placement: 'center',
+    title: 'Todo conectado',
+    body: 'Todo lo que registras se conecta solo. Este resumen, el calendario de vencimientos y los reportes se llenan a partir de tus transacciones. No hay nada más que configurar: explora a tu ritmo.',
   },
 
-  // ── Cierre ───────────────────────────────────────────────────────────────────
+  // ── 7. Cierre ────────────────────────────────────────────────────────────────
   {
     id: 'done',
     route: '/',
     anchor: null,
     placement: 'center',
     title: '¡Listo! 🎉',
-    body: 'Ya conoces lo esencial. Empieza registrando tus primeros movimientos y arma tu presupuesto. ¿Quieres repetir el tutorial? Lo encuentras en tu menú de cuenta, arriba a la derecha.',
+    body: 'Ya conoces lo esencial. Empieza registrando tus primeros movimientos y arma tu presupuesto. ¿Quieres repetir el tutorial? Está en tu menú de cuenta, arriba a la derecha.',
   },
 ];
