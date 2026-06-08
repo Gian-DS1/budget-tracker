@@ -89,7 +89,7 @@ const usePrefsStore = create(
     }),
     {
       name: 'fintrack-prefs-cache',
-  storage: createJSONStorage(() => sessionStorage),
+      storage: createJSONStorage(() => sessionStorage),
       partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen }),
     },
   ),
