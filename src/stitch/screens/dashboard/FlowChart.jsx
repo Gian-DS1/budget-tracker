@@ -5,6 +5,7 @@
 import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { formatCurrency, formatCurrencyCompact } from '../../../utils/formatters';
 import { EmptyCell } from './dashboardUi';
+import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { CHART } from '../../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
@@ -12,16 +13,17 @@ const INC = CHART.tertiary;
 const EXP = CHART.error;
 
 function FlowTip({ active, payload }) {
+  const strings = useScreenStrings();
   if (!active || !payload || !payload.length) return null;
   const d = payload[0].payload;
   const net = d.inc - d.exp;
   return (
     <div className="bg-surface-card border border-border-subtle rounded p-sm inner-glow">
       <div className="font-mono-data text-mono-data text-on-surface uppercase mb-xs">{d.label} {d.y}</div>
-      <div className="font-mono-data text-mono-data text-tertiary">Ingresos {fmt(d.inc)}</div>
-      <div className="font-mono-data text-mono-data text-accent-error">Gastos {fmt(d.exp)}</div>
+      <div className="font-mono-data text-mono-data text-tertiary">{strings.charts.income} {fmt(d.inc)}</div>
+      <div className="font-mono-data text-mono-data text-accent-error">{strings.charts.expenses} {fmt(d.exp)}</div>
       <div className={`font-mono-data text-mono-data ${net >= 0 ? 'text-on-surface' : 'text-accent-error'} mt-xs pt-xs border-t border-border-subtle`}>
-        Balance {net >= 0 ? '+' : '−'}{fmt(Math.abs(net))}
+        {strings.charts.balance} {net >= 0 ? '+' : '−'}{fmt(Math.abs(net))}
       </div>
     </div>
   );
@@ -46,8 +48,9 @@ function makeSelDot(selY, selM, color) {
 }
 
 export default function FlowChart({ series, selY, selM }) {
+  const strings = useScreenStrings();
   const hasData = series.some((s) => s.inc !== 0 || s.exp !== 0);
-  if (!hasData) return <EmptyCell icon="show_chart" message="Aún sin movimientos para graficar." />;
+  if (!hasData) return <EmptyCell icon="show_chart" message={strings.charts.noMovements} />;
 
   const selPoint = series.find((s) => s.y === selY && s.m === selM);
   const selEmpty = selPoint && selPoint.inc === 0 && selPoint.exp === 0;
@@ -59,13 +62,13 @@ export default function FlowChart({ series, selY, selM }) {
       <div className="flex items-center justify-between gap-sm mb-sm">
         <div className="flex items-center gap-md">
           <span className="flex items-center gap-xs font-mono-data text-mono-data text-text-muted uppercase">
-            <span className="w-2.5 h-0.5 rounded-full" style={{ background: INC }} /> Ingresos
+            <span className="w-2.5 h-0.5 rounded-full" style={{ background: INC }} /> {strings.charts.income}
           </span>
           <span className="flex items-center gap-xs font-mono-data text-mono-data text-text-muted uppercase">
-            <span className="w-2.5 h-0.5 rounded-full" style={{ background: EXP }} /> Gastos
+            <span className="w-2.5 h-0.5 rounded-full" style={{ background: EXP }} /> {strings.charts.expenses}
           </span>
         </div>
-        <span className="font-mono-data text-mono-data text-text-muted uppercase">Últimos 6 meses</span>
+        <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.charts.last6Months}</span>
       </div>
 
       <div className="flex-grow min-h-[190px]">

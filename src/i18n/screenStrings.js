@@ -133,6 +133,23 @@ export const SCREEN_STRINGS = {
     incomeVsExpenses: 'Income vs Expenses',
   },
 
+  // Chart labels (dashboard gráficos)
+  charts: {
+    income: 'common.income',
+    expenses: 'common.expenses',
+    last6Months: 'Last 6 months',
+    noMovements: 'No movements to chart yet.',
+    balance: 'common.balance',
+    estimationWithMonth: 'dashboard.estimation',
+    basedOn: 'dashboard.basedOn',
+    months: 'dashboard.months',
+    atRisk: 'At risk',
+    excellent: 'Excellent',
+    netWorth: 'Net worth',
+    saved: 'Saved',
+    debt: 'Debt',
+  },
+
   // Categories
   categories: {
     title: 'nav.categories',
