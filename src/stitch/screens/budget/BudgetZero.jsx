@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../../MS';
 import { Stagger } from '../../StitchMotion';
+import { useI18n } from '../../../contexts/I18nContext';
 import EnvelopeRow from './EnvelopeRow';
 import useBudgetStore from '../../../stores/useBudgetStore';
 import { isDemoActive, demoSetBudget, demoCopyBudgetFromPreviousMonth } from '../../demoMode';
@@ -32,6 +33,7 @@ const GROUP_OF = {
 };
 
 export default function BudgetZero({ year, month, monthBudgets, monthTx, categories, summary, debtCategoryId }) {
+  const { t } = useI18n();
   const { setBudget, copyBudgetFromPreviousMonth } = useBudgetStore();
   const demo = isDemoActive();
 
@@ -90,13 +92,13 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
 
   const handleCopy = async () => {
     const ok = demo ? demoCopyBudgetFromPreviousMonth(year, month) : await copyBudgetFromPreviousMonth(year, month);
-    toast[ok ? 'success' : 'error'](ok ? 'Presupuesto copiado del mes anterior' : 'No hay presupuesto en el mes anterior');
+    toast[ok ? 'success' : 'error'](ok ? t('dashboard.budgetCopy') : t('dashboard.noPreviousBudget'));
   };
 
   return (
     <>
       <p className="font-body-md text-body-md text-on-surface-variant mb-lg">
-        Asigna cada peso. Lo comprometido sale del ingreso; lo que queda es lo que puedes gastar.
+        {t('dashboard.assignBudget')}
       </p>
 
       {/* Bento: disponible + daily burn */}
