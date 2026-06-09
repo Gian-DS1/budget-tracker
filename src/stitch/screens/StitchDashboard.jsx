@@ -6,6 +6,7 @@ import MS from '../MS';
 import { Stagger } from '../StitchMotion';
 import StitchSelect from '../StitchSelect';
 import CountUp from '../CountUp';
+import { useI18n } from '../../contexts/I18nContext';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useDebtStore from '../../stores/useDebtStore';
@@ -31,6 +32,7 @@ import SignalsRail from './dashboard/SignalsRail';
 const fmt = (n) => formatCurrency(n);
 
 export default function StitchDashboard() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
@@ -205,15 +207,15 @@ export default function StitchDashboard() {
         <Stagger.Item className="md:col-span-8">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-md gap-sm">
-              <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs"><MS name="show_chart" className="!text-[14px] text-text-muted" /> Flujo del mes</span>
+              <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs"><MS name="show_chart" className="!text-[14px] text-text-muted" /> {t('dashboard.monthFlow')}</span>
               <div className="w-[150px]">
                 <StitchSelect value={`${sel.y}-${sel.m}`} onChange={(v) => { const [yy, mm] = v.split('-').map(Number); setSel({ y: yy, m: mm }); }} options={monthOptions} compact />
               </div>
             </div>
             <div className="grid grid-cols-3 gap-sm mb-md">
-              <Stat label="Ingresos" value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} cls="text-tertiary" />
-              <Stat label="Gastos" value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} cls="text-accent-error" />
-              <Stat label="Balance" value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
+              <Stat label={t('dashboard.income')} value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} cls="text-tertiary" />
+              <Stat label={t('dashboard.expenses')} value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} cls="text-accent-error" />
+              <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} />
             <FlowChart series={series} selY={sel.y} selM={sel.m} />
@@ -223,17 +225,17 @@ export default function StitchDashboard() {
         {/* 3 · Columna derecha del hero: Salud + Patrimonio apiladas (compactas,
             estado de hoy). Juntas llenan el alto del hero sin espacio vacío. */}
         <Stagger.Item className="md:col-span-4 flex flex-col gap-md">
-          <BentoCell title="Salud financiera · hoy" icon="favorite" className="flex-grow">
+          <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="flex-grow">
             <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} />
           </BentoCell>
-          <BentoCell title="Patrimonio · hoy" icon="account_balance" className="flex-grow">
+          <BentoCell title={`${t('dashboard.netWorth')} · ${t('calendar.today')}`} icon="account_balance" className="flex-grow">
             <NetWorthBar split={split} />
           </BentoCell>
         </Stagger.Item>
 
         {/* 4 · ¿En qué gasto? Donut a ancho completo */}
         <Stagger.Item className="md:col-span-12">
-          <BentoCell title="Gastos por categoría" icon="donut_small" className="h-full">
+          <BentoCell title={t('dashboard.expenses') + ' ' + t('pages.analysis')} icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} />
           </BentoCell>
         </Stagger.Item>

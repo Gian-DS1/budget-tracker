@@ -69,7 +69,7 @@ export default function StitchShell() {
 
 function ShellInner() {
   const { signOut } = useAuth();
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const demo = isDemoActive();
   const [menuOpen, setMenuOpen] = useState(false);
   const outlet = useOutlet();

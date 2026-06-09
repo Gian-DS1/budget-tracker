@@ -209,7 +209,7 @@ function LedgerMockup({ t }) {
 // ── Pantalla ─────────────────────────────────────────────────────────────────
 
 export default function StitchLanding({ onAccess }) {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const v = useLandingVariants();
   const heroRef = useRef(null);
 
@@ -270,20 +270,20 @@ export default function StitchLanding({ onAccess }) {
               variants={v.item}
               className="font-hero-headline text-[clamp(40px,8vw,72px)] text-on-surface tracking-tighter leading-[1.05] mb-md"
             >
-              {t('language') === 'es' ? 'Cada peso,' : 'Take control'}<br />
-              {t('language') === 'es' ? 'bajo control.' : 'of your money.'}
+              {language === 'es' ? 'Cada peso,' : 'Take control'}<br />
+              {language === 'es' ? 'bajo control.' : 'of your money.'}
             </motion.h1>
             <motion.p
               variants={v.item}
               className="font-body-lg text-body-lg text-on-surface-variant max-w-[34rem] mb-lg"
             >
-              {t('language') === 'es'
+              {language === 'es'
                 ? 'Presupuesto base cero, tarjetas, deudas y ahorro en una sola app pensada para República Dominicana. Clara, rápida y sin complicaciones.'
                 : 'Zero-based budget, credit cards, debts and savings in one app designed for the Dominican Republic. Clear, fast and straightforward.'}
             </motion.p>
             <motion.div variants={v.item} className="flex flex-wrap gap-sm">
               <PrimaryCTA onClick={onAccess} snap={v.snap} className="px-lg py-md">
-                <MS name="rocket_launch" className="text-[18px]" /> {t('language') === 'es' ? 'Empezar gratis' : 'Get started free'}
+                <MS name="rocket_launch" className="text-[18px]" /> {language === 'es' ? 'Empezar gratis' : 'Get started free'}
               </PrimaryCTA>
               {isLocalhost() && (
                 <motion.button
@@ -293,7 +293,7 @@ export default function StitchLanding({ onAccess }) {
                   transition={v.snap}
                   className="border border-dashed border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase tracking-widest px-lg py-md rounded hover:bg-surface-container-high hover:text-on-surface inline-flex items-center gap-sm"
                 >
-                  <MS name="science" className="text-[16px]" /> {t('language') === 'es' ? 'Ver demo' : 'See demo'}
+                  <MS name="science" className="text-[16px]" /> {language === 'es' ? 'Ver demo' : 'See demo'}
                 </motion.button>
               )}
             </motion.div>
@@ -344,7 +344,7 @@ export default function StitchLanding({ onAccess }) {
             whileInView="show"
             viewport={inViewport}
           >
-            {t('language') === 'es' ? 'Todo tu dinero, en una vista' : 'All your money, in one place'}
+            {language === 'es' ? 'Todo tu dinero, en una vista' : 'All your money, in one place'}
           </motion.h2>
 
           {/* Grid asimétrico (bento). 6 columnas en lg para mezclar tamaños. */}
@@ -379,9 +379,9 @@ export default function StitchLanding({ onAccess }) {
               <div className="w-10 h-10 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
                 <MS name="account_balance" className="text-[20px] text-primary" />
               </div>
-              <h3 className="font-headline-md text-[18px] text-on-surface tracking-tight mb-xs">{t('language') === 'es' ? 'Presupuesto base cero' : 'Zero-based Budget'}</h3>
+              <h3 className="font-headline-md text-[18px] text-on-surface tracking-tight mb-xs">{language === 'es' ? 'Presupuesto base cero' : 'Zero-based Budget'}</h3>
               <p className="font-body-md text-body-md text-on-surface-variant">
-                {t('language') === 'es'
+                {language === 'es'
                   ? 'Asigna cada peso hasta llegar a cero y sabe exactamente cuánto puedes gastar.'
                   : 'Allocate each dollar until you reach zero and know exactly how much you can spend.'}
               </p>
@@ -423,22 +423,22 @@ export default function StitchLanding({ onAccess }) {
           viewport={inViewport}
         >
           <motion.span variants={v.inItem} className="font-mono-data text-mono-data text-tertiary uppercase tracking-widest">
-            {t('language') === 'es' ? 'Empieza hoy' : 'Start today'}
+            {language === 'es' ? 'Empieza hoy' : 'Start today'}
           </motion.span>
           <motion.h2
             variants={v.inItem}
             className="font-hero-headline text-[clamp(28px,5vw,48px)] text-on-surface tracking-tighter leading-[1.05] max-w-[20ch]"
           >
-            {t('language') === 'es' ? 'Toma el control de tu dinero' : 'Take control of your money'}
+            {language === 'es' ? 'Toma el control de tu dinero' : 'Take control of your money'}
           </motion.h2>
           <motion.p variants={v.inItem} className="font-body-lg text-body-lg text-on-surface-variant max-w-[36rem]">
-            {t('language') === 'es'
+            {language === 'es'
               ? 'Gratis, sin tarjetas y pensada para República Dominicana. Empieza en menos de un minuto.'
               : 'Free, no credit card required, and built for the Dominican Republic. Get started in under a minute.'}
           </motion.p>
           <motion.div variants={v.inItem}>
             <PrimaryCTA onClick={onAccess} snap={v.snap} className="px-xl py-md">
-              <MS name="rocket_launch" className="text-[18px]" /> {t('language') === 'es' ? 'Crear cuenta gratis' : 'Create free account'}
+              <MS name="rocket_launch" className="text-[18px]" /> {language === 'es' ? 'Crear cuenta gratis' : 'Create free account'}
             </PrimaryCTA>
           </motion.div>
         </motion.div>
