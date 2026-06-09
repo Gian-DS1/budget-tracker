@@ -1,12 +1,14 @@
 // Recordatorios: tarjetas clicables. Recibe la lista ya calculada y el navigate.
 import MS from '../../MS';
+import { useI18n } from '../../../contexts/I18nContext';
 
 export default function SignalsRail({ signals, onNavigate }) {
+  const { t } = useI18n();
   if (!signals || signals.length === 0) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center text-center gap-sm py-lg">
         <MS name="check_circle" className="text-[24px] text-tertiary" />
-        <p className="font-body-md text-body-md text-text-muted">Sin pagos próximos.</p>
+        <p className="font-body-md text-body-md text-text-muted">{t('dashboard.noUpcomingPayments')}</p>
       </div>
     );
   }

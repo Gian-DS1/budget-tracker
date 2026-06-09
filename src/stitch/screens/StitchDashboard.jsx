@@ -172,9 +172,9 @@ export default function StitchDashboard() {
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
   // Patrimonio neto NO va aquí: tiene su propia celda abajo (evita redundancia).
   const metrics = [
-    { l: 'PUEDES GASTAR', v: <CountUp value={summary.puedesGastar} format={fmt} />, d: summary.estado === 'danger' ? 'Ya no queda' : summary.estado === 'warning' ? 'Justo' : 'Te sobra', c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: 'Ingresos del mes menos gastos fijos y compromisos (deuda y ahorro planeados).' },
-    { l: 'TARJETAS POR PAGAR', v: <CountUp value={totalPendingCards} format={fmt} />, d: totalPendingCards > 0 ? 'Pendiente' : 'Al día', warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: 'Suma de los saldos facturados pendientes de todas tus tarjetas. Es un estado de hoy.', live: true },
-    { l: 'TASA DE AHORRO', v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, d: 'del ingreso', c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: '(Ingresos menos gastos) dividido entre los ingresos del mes.' },
+    { l: t('dashboard.canSpend').toUpperCase(), v: <CountUp value={summary.puedesGastar} format={fmt} />, d: summary.estado === 'danger' ? t('dashboard.tooMuchSpent') : summary.estado === 'warning' ? t('dashboard.justRight') : t('dashboard.leftover'), c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.incomeMinusExpenses') },
+    { l: t('dashboard.creditCardsPayable').toUpperCase(), v: <CountUp value={totalPendingCards} format={fmt} />, d: totalPendingCards > 0 ? t('dashboard.pending') : t('dashboard.upToDate'), warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.cardStatus'), live: true },
+    { l: t('dashboard.savingsRate').toUpperCase(), v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, d: t('dashboard.ofIncome'), c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: t('dashboard.savingsFormula') },
   ];
 
   return (

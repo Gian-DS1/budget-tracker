@@ -4,6 +4,7 @@
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
 import { EmptyCell } from './dashboardUi';
 import CountUp from '../../CountUp';
+import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
 
 function ringColor(score) {
@@ -14,9 +15,10 @@ function ringColor(score) {
 }
 
 export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
-  if (!hasData) return <EmptyCell icon="favorite" message="Registra ingresos para evaluar tu salud financiera." />;
+  const { t } = useI18n();
+  if (!hasData) return <EmptyCell icon="favorite" message={t('dashboard.registerIncome') || 'Registra ingresos para evaluar tu salud financiera.'} />;
   const color = ringColor(health.score);
-  const basis = monthsCounted <= 1 ? 'Estimación con 1 mes' : `Basado en ${monthsCounted} meses`;
+  const basis = monthsCounted <= 1 ? t('dashboard.estimation') : `${t('dashboard.basedOn')} ${monthsCounted} ${t('dashboard.months')}`;
 
   // Un solo CountUp provee el score animado; el anillo, el número y la barra
   // inferior lo consumen para subir en sincronía. Recharts anima por dataKey al
