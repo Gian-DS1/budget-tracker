@@ -3,6 +3,7 @@
 // @tailwindcss/vite + los tokens @theme en stitch.css.)
 
 import { useEffect } from 'react';
+import { useI18n } from '../contexts/I18nContext';
 
 function ensureLink(href, id) {
   if (document.getElementById(id)) return;
@@ -14,6 +15,8 @@ function ensureLink(href, id) {
 }
 
 export default function StitchHead() {
+  const { language, isInitialized } = useI18n();
+
   useEffect(() => {
     ensureLink(
       'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Manrope:wght@500;600;700;800&display=swap',
@@ -24,6 +27,13 @@ export default function StitchHead() {
       'stitch-material-symbols'
     );
   }, []);
+
+  // Actualizar lang en el documento cuando cambia el idioma
+  useEffect(() => {
+    if (isInitialized) {
+      document.documentElement.lang = language === 'es' ? 'es-DO' : 'en';
+    }
+  }, [language, isInitialized]);
 
   return null;
 }

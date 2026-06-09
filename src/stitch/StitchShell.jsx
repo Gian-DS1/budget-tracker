@@ -8,27 +8,16 @@ import MS from './MS';
 import Logo from './Logo';
 import { Screen } from './StitchMotion';
 import AccountMenu from './AccountMenu';
+import LanguageSelector from './LanguageSelector';
 import TourProvider from './tour/TourProvider';
 import { useTour } from './tour/useTour';
 import { useAuth } from '../contexts/AuthContext';
 import { isDemoActive, exitDemo } from './demoMode';
 import usePrefsStore from '../stores/usePrefsStore';
 import { usePageTitle } from './usePageTitle';
+import { useI18n } from '../contexts/I18nContext';
 
-const NAV = [
-  { section: 'Principal' },
-  { to: '/', icon: 'dashboard', label: 'Resumen', end: true },
-  { to: '/transacciones', icon: 'list_alt', label: 'Transacciones' },
-  { to: '/presupuesto', icon: 'account_balance', label: 'Presupuesto' },
-  { section: 'Patrimonio' },
-  { to: '/ahorros', icon: 'account_balance_wallet', label: 'Ahorros' },
-  { to: '/deudas', icon: 'trending_down', label: 'Deudas' },
-  { to: '/tarjetas', icon: 'credit_card', label: 'Tarjetas' },
-  { section: 'Herramientas' },
-  { to: '/calendario', icon: 'calendar_month', label: 'Calendario' },
-  { to: '/reportes', icon: 'analytics', label: 'Reportes' },
-  { to: '/categorias', icon: 'sell', label: 'Categorías' },
-];
+// NAV se genera dinámicamente en el componente para usar las traducciones
 
 // Arranca el tutorial automáticamente la 1ª vez (cuando el usuario aún no lo ha
 // visto). Vive dentro de TourProvider para usar start(). Una sola vez por sesión.
@@ -80,6 +69,7 @@ export default function StitchShell() {
 
 function ShellInner() {
   const { signOut } = useAuth();
+  const { t } = useI18n();
   const demo = isDemoActive();
   const [menuOpen, setMenuOpen] = useState(false);
   const outlet = useOutlet();
@@ -90,6 +80,21 @@ function ShellInner() {
     if (demo) { exitDemo(); window.location.reload(); return; }
     signOut();
   };
+
+  const NAV = [
+    { section: t('nav.section.main') },
+    { to: '/', icon: 'dashboard', label: t('nav.dashboard'), end: true },
+    { to: '/transacciones', icon: 'list_alt', label: t('nav.transactions') },
+    { to: '/presupuesto', icon: 'account_balance', label: t('nav.budget') },
+    { section: t('nav.section.assets') },
+    { to: '/ahorros', icon: 'account_balance_wallet', label: t('nav.savings') },
+    { to: '/deudas', icon: 'trending_down', label: t('nav.debts') },
+    { to: '/tarjetas', icon: 'credit_card', label: t('nav.creditCards') },
+    { section: t('nav.section.tools') },
+    { to: '/calendario', icon: 'calendar_month', label: t('nav.calendar') },
+    { to: '/reportes', icon: 'analytics', label: t('nav.reports') },
+    { to: '/categorias', icon: 'sell', label: t('nav.categories') },
+  ];
 
   return (
     <div className="stitch-root flex h-screen overflow-hidden grid-pattern bg-surface-background font-body-md text-body-md text-on-surface">
@@ -110,10 +115,10 @@ function ShellInner() {
         <div className="mb-lg px-sm flex items-center justify-between">
           <div>
             <Logo size={26} withText />
-            <div className="text-text-muted font-label-sm text-label-sm pl-[34px] -mt-xs">Control financiero</div>
+            <div className="text-text-muted font-label-sm text-label-sm pl-[34px] -mt-xs">{t('nav.tagline')}</div>
           </div>
           {/* Cerrar en móvil */}
-          <button onClick={() => setMenuOpen(false)} className="lg:hidden text-text-muted hover:text-on-surface p-xs" aria-label="Cerrar menú">
+          <button onClick={() => setMenuOpen(false)} className="lg:hidden text-text-muted hover:text-on-surface p-xs" aria-label={t('shell.closeMenu')}>
             <MS name="close" className="text-[20px]" />
           </button>
         </div>
@@ -154,7 +159,7 @@ function ShellInner() {
           onClick={handleSignOut}
           className="mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center justify-center gap-sm"
         >
-          <MS name="logout" className="text-[16px]" /> {demo ? 'Salir del modo demo' : 'Cerrar sesión'}
+          <MS name="logout" className="text-[16px]" /> {demo ? t('auth.signOut') : t('auth.signOut')}
         </button>
       </nav>
 
@@ -162,7 +167,7 @@ function ShellInner() {
       <div className="flex flex-col flex-grow h-full overflow-hidden relative min-w-0">
         <header className="bg-surface-background sticky top-0 z-10 border-b border-border-subtle w-full h-16 flex justify-between items-center px-md sm:px-margin-safe inner-glow shrink-0 gap-sm">
           <div className="flex items-center gap-sm min-w-0">
-            <button onClick={() => setMenuOpen(true)} className="lg:hidden text-on-surface-variant hover:text-on-surface p-xs -ml-xs" aria-label="Abrir menú">
+            <button onClick={() => setMenuOpen(true)} className="lg:hidden text-on-surface-variant hover:text-on-surface p-xs -ml-xs" aria-label={t('shell.closeMenu')}>
               <MS name="menu" className="text-[24px]" />
             </button>
             <div className="font-headline-md text-headline-md font-bold text-on-surface truncate">FinTrack</div>
@@ -173,7 +178,8 @@ function ShellInner() {
             )}
           </div>
           <div className="flex-1" />
-          <div className="flex items-center shrink-0">
+          <div className="flex items-center shrink-0 gap-sm">
+            <LanguageSelector />
             <AccountMenu />
           </div>
         </header>
