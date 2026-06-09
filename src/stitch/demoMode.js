@@ -62,24 +62,78 @@ const categories = defaultCategories.map((c, i) => ({
 // Resuelve el id real de una categoría por nombre (las default generan ids).
 const catId = (name) => categories.find((c) => c.name === name)?.id || '';
 
+// Helper para crear transacciones con fecha específica (año-mes-día)
+const txWithDate = (id, catName, amount, type, description, dateStr, cashback = 0, cardId = null) => ({
+  id, categoryId: catId(catName), cardId, amount, type, description, date: dateStr,
+  notes: null, currency: 'DOP', cashbackEarned: cashback, createdAt: new Date().toISOString(),
+});
+
 const tx = (id, catName, amount, type, description, day, cashback = 0, cardId = null) => ({
   id, categoryId: catId(catName), cardId, amount, type, description, date: dayOf(day),
   notes: null, currency: 'DOP', cashbackEarned: cashback, createdAt: new Date().toISOString(),
 });
 
-// Algunos consumos van con la tarjeta demo (cc1) para que Tarjetas muestre saldos
-// y cashback reales. El cashback es 1% (regla 'all' de la tarjeta).
-const transactions = [
-  tx('t1', 'Salario', 85000, 'income', 'Salario quincenal', 1),
-  tx('t2', 'Salario', 85000, 'income', 'Salario quincenal', 16),
-  tx('t3', 'Alquiler', 32000, 'fixed_expense', 'Alquiler', 2),
-  tx('t4', 'Supermercado', 4250, 'variable_expense', 'Supermercado Nacional', 4, 42.5, 'cc1'),
-  tx('t5', 'Supermercado', 3120, 'variable_expense', 'Jumbo', 12, 31.2, 'cc1'),
-  tx('t6', 'Combustible', 1800, 'variable_expense', 'Gasolina', 6, 18, 'cc1'),
-  tx('t7', 'Taxi y Transporte', 950, 'variable_expense', 'Uber', 9),
-  tx('t8', 'Restaurantes y Delivery', 2400, 'variable_expense', 'Cena fuera', 14, 24, 'cc1'),
-  tx('t9', 'Suscripciones Digitales', 590, 'variable_expense', 'Netflix', 10),
-];
+// Genera transacciones sintéticas para un mes específico (year, month: 0-11)
+function generateMonthlyTransactions(year, month, baseId) {
+  const monthStr = String(month + 1).padStart(2, '0');
+  const txList = [];
+  let idCounter = baseId;
+
+  const iso = (day) => `${year}-${monthStr}-${String(day).padStart(2, '0')}`;
+
+  // Ingresos (2 salarios quincenales: día 1 y 15)
+  txList.push(txWithDate(`t${idCounter++}`, 'Salario', 85000, 'income', 'Salario quincenal', iso(1)));
+  txList.push(txWithDate(`t${idCounter++}`, 'Salario', 85000, 'income', 'Salario quincenal', iso(15)));
+
+  // Gastos fijos
+  txList.push(txWithDate(`t${idCounter++}`, 'Alquiler', 32000, 'fixed_expense', 'Alquiler mensual', iso(2)));
+  txList.push(txWithDate(`t${idCounter++}`, 'Internet', 1200, 'fixed_expense', 'Internet residencial', iso(5)));
+  txList.push(txWithDate(`t${idCounter++}`, 'Servicios Públicos', 3500, 'fixed_expense', 'Agua, luz y gas', iso(10)));
+
+  // Gastos variables - Supermercado (2-3 visitas por mes)
+  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', 4800, 'variable_expense', 'Supermercado Nacional', iso(4), 48, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', 3200, 'variable_expense', 'Jumbo', iso(11), 32, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', 2900, 'variable_expense', 'Carrefour', iso(20), 29, 'cc1'));
+
+  // Combustible (1-2 cargas por mes)
+  txList.push(txWithDate(`t${idCounter++}`, 'Combustible', 1800, 'variable_expense', 'Gasolina', iso(6), 18, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Combustible', 1800, 'variable_expense', 'Gasolina', iso(18), 18, 'cc1'));
+
+  // Taxi y transporte
+  txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', 450, 'variable_expense', 'Uber', iso(3), 4.5, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', 350, 'variable_expense', 'Uber', iso(9), 3.5, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', 520, 'variable_expense', 'Uber', iso(21), 5.2, 'cc1'));
+
+  // Restaurantes y delivery
+  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', 1200, 'variable_expense', 'Almuerzo', iso(7), 12, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', 1450, 'variable_expense', 'Cena con amigos', iso(14), 14.5, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', 890, 'variable_expense', 'Comida rápida', iso(25), 8.9, 'cc1'));
+
+  // Suscripciones digitales (mensuales)
+  txList.push(txWithDate(`t${idCounter++}`, 'Suscripciones Digitales', 599, 'variable_expense', 'Netflix', iso(5)));
+  txList.push(txWithDate(`t${idCounter++}`, 'Suscripciones Digitales', 299, 'variable_expense', 'Spotify', iso(6)));
+
+  // Compras personales/categoría variada
+  txList.push(txWithDate(`t${idCounter++}`, 'Ropa y Accesorios', 2500, 'variable_expense', 'Compra en tienda', iso(8), 25, 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Higiene y Salud', 450, 'variable_expense', 'Farmacia', iso(12), 4.5, 'cc1'));
+
+  // Ocio/entretenimiento
+  txList.push(txWithDate(`t${idCounter++}`, 'Entretenimiento', 800, 'variable_expense', 'Cine', iso(16), 8, 'cc1'));
+
+  return txList;
+}
+
+// Generar transacciones de enero a junio (6 meses)
+// Enero = 0, Febrero = 1, ..., Junio = 5
+const allTransactions = [];
+let txId = 1;
+for (let month = 0; month < 6; month++) {
+  const monthTxs = generateMonthlyTransactions(2026, month, txId);
+  allTransactions.push(...monthTxs);
+  txId += monthTxs.length;
+}
+
+const transactions = allTransactions;
 
 const budgets = [
   { id: 'b1', categoryId: catId('Alquiler'), year: yearIdx, month: monthIdx, estimatedAmount: 32000, currency: 'DOP', createdAt: '' },
