@@ -5,6 +5,7 @@
 import MS from '../../MS';
 import { toastCelebrate } from '../../toastCelebrate';
 import { Stagger } from '../../StitchMotion';
+import { useI18n } from '../../../contexts/I18nContext';
 import { isDemoActive, demoAddCardPayment } from '../../demoMode';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
 import { getCardBalances, getLifetimeCashback, getDerivedCashback, hasTieredRule } from '../../../utils/creditCards';
@@ -13,6 +14,7 @@ import { formatCurrency, formatDate, todayISO } from '../../../utils/formatters'
 const fmt = (n) => formatCurrency(n);
 
 export default function CardItem({ card, transactions, onPay, onHistory, onEdit, onDelete }) {
+  const { t } = useI18n();
   const addCardPayment = useCreditCardStore((s) => s.addCardPayment);
   const bal = getCardBalances(card, transactions, new Date());
   const tiered = hasTieredRule(card);
@@ -24,8 +26,8 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
   const payAll = async () => {
     const amt = Math.round(bal.pendingBilled * 100) / 100;
     if (amt <= 0) return;
-    const payload = { amount: amt, date: todayISO(), note: 'Pago total' };
-    if (isDemoActive()) { demoAddCardPayment(card.id, payload); toastCelebrate('Estado de cuenta saldado'); }
+    const payload = { amount: amt, date: todayISO(), note: t('common.save') };
+    if (isDemoActive()) { demoAddCardPayment(card.id, payload); toastCelebrate(t('creditCards.amountPaid')); }
     else await addCardPayment(card.id, payload);
   };
 
@@ -52,8 +54,8 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
       {/* Línea 1 — ciclo abierto (informativo) */}
       <div className="px-lg py-sm flex justify-between items-center relative z-10 border-t border-border-subtle">
         <div className="flex flex-col">
-          <span className="font-mono-data text-mono-data text-text-muted">CICLO ABIERTO (CONSUMO)</span>
-          <span className="font-mono-data text-mono-data text-text-muted mt-0.5">Corte al {formatDate(bal.cycles.nextCutoffISO)}</span>
+          <span className="font-mono-data text-mono-data text-text-muted">{t('creditCards.openCycle').toUpperCase()}</span>
+          <span className="font-mono-data text-mono-data text-text-muted mt-0.5">{t('creditCards.nextCutoff')} {formatDate(bal.cycles.nextCutoffISO)}</span>
         </div>
         <span className="font-mono-data text-[15px] text-on-surface-variant">{fmt(bal.openCycle)}</span>
       </div>
@@ -62,20 +64,20 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
       <div className="px-lg py-md relative z-10 border-t border-border-subtle bg-surface-container-lowest/40">
         {bal.isPaid ? (
           <div className="flex items-center justify-between gap-sm">
-            <span className="font-label-sm text-label-sm text-tertiary flex items-center gap-xs"><MS name="check_circle" className="!text-[16px]" /> Al día</span>
+            <span className="font-label-sm text-label-sm text-tertiary flex items-center gap-xs"><MS name="check_circle" className="!text-[16px]" /> {t('creditCards.upToDate')}</span>
             {/* Aun sin saldo, se puede adelantar un abono (prepago). */}
-            <button onClick={() => onPay(card)} className="border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">Adelantar abono</button>
+            <button onClick={() => onPay(card)} className="border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">{t('creditCards.advancePayment')}</button>
           </div>
         ) : (
           <>
             <div className="flex justify-between items-end">
               <div className="flex flex-col">
-                <span className="font-mono-data text-mono-data text-accent-warning">POR PAGAR ANTES DEL {formatDate(bal.cycles.dueDateISO)}</span>
+                <span className="font-mono-data text-mono-data text-accent-warning">{t('creditCards.toPay')} {formatDate(bal.cycles.dueDateISO)}</span>
                 <span className="font-headline-md text-[28px] text-on-surface tracking-tighter mt-0.5">{fmt(bal.pendingBilled)}</span>
               </div>
             </div>
             {bal.spansMultipleCycles && (
-              <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal block mt-xs">Incluye saldo de meses anteriores.</span>
+              <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal block mt-xs">{t('creditCards.multipleMonths')}</span>
             )}
             <div className="flex items-center justify-between mt-md gap-sm">
               <span className="font-mono-data text-mono-data text-text-muted">Abonado: {fmt(bal.paid)}</span>
