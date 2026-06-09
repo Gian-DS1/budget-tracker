@@ -74,6 +74,7 @@ const tx = (id, catName, amount, type, description, day, cashback = 0, cardId = 
 });
 
 // Genera transacciones sintéticas para un mes específico (year, month: 0-11)
+// Cada mes tiene variaciones realistas en gastos variables, compras, etc.
 function generateMonthlyTransactions(year, month, baseId) {
   const monthStr = String(month + 1).padStart(2, '0');
   const txList = [];
@@ -81,44 +82,92 @@ function generateMonthlyTransactions(year, month, baseId) {
 
   const iso = (day) => `${year}-${monthStr}-${String(day).padStart(2, '0')}`;
 
+  // Variación pseudoaleatoria por mes (seed basado en mes para reproducibilidad)
+  const seed = month * 7 + 13;
+  const random = () => {
+    const x = Math.sin(seed * idCounter++) * 10000;
+    return x - Math.floor(x);
+  };
+
   // Ingresos (2 salarios quincenales: día 1 y 15)
   txList.push(txWithDate(`t${idCounter++}`, 'Salario', 85000, 'income', 'Salario quincenal', iso(1)));
   txList.push(txWithDate(`t${idCounter++}`, 'Salario', 85000, 'income', 'Salario quincenal', iso(15)));
 
-  // Gastos fijos
+  // Gastos fijos (consistentes pero con pequeñas variaciones)
   txList.push(txWithDate(`t${idCounter++}`, 'Alquiler', 32000, 'fixed_expense', 'Alquiler mensual', iso(2)));
   txList.push(txWithDate(`t${idCounter++}`, 'Internet', 1200, 'fixed_expense', 'Internet residencial', iso(5)));
-  txList.push(txWithDate(`t${idCounter++}`, 'Servicios Públicos', 3500, 'fixed_expense', 'Agua, luz y gas', iso(10)));
+  const utilities = Math.round(3500 + (random() - 0.5) * 800); // Varía 3100-3900 por clima/consumo
+  txList.push(txWithDate(`t${idCounter++}`, 'Servicios Públicos', utilities, 'fixed_expense', 'Agua, luz y gas', iso(10)));
 
-  // Gastos variables - Supermercado (2-3 visitas por mes)
-  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', 4800, 'variable_expense', 'Supermercado Nacional', iso(4), 48, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', 3200, 'variable_expense', 'Jumbo', iso(11), 32, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', 2900, 'variable_expense', 'Carrefour', iso(20), 29, 'cc1'));
+  // Gastos variables - Supermercado (2-4 visitas, montos variados)
+  const grocery1 = Math.round(4800 + (random() - 0.5) * 1200); // 4200-5400
+  const grocery2 = Math.round(3200 + (random() - 0.5) * 800); // 2800-3600
+  const grocery3 = Math.round(2900 + (random() - 0.5) * 800); // 2500-3300
+  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', grocery1, 'variable_expense', 'Supermercado Nacional', iso(4), Math.round(grocery1 * 0.01), 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', grocery2, 'variable_expense', 'Jumbo', iso(11), Math.round(grocery2 * 0.01), 'cc1'));
+  txList.push(txWithDate(`t${idCounter++}`, 'Supermercado', grocery3, 'variable_expense', 'Carrefour', iso(20), Math.round(grocery3 * 0.01), 'cc1'));
 
-  // Combustible (1-2 cargas por mes)
-  txList.push(txWithDate(`t${idCounter++}`, 'Combustible', 1800, 'variable_expense', 'Gasolina', iso(6), 18, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Combustible', 1800, 'variable_expense', 'Gasolina', iso(18), 18, 'cc1'));
+  // Combustible (1-2 cargas, precio variable)
+  const fuel1 = Math.round(1800 + (random() - 0.5) * 400); // 1600-2000
+  const fuel2 = Math.round(1800 + (random() - 0.5) * 400);
+  txList.push(txWithDate(`t${idCounter++}`, 'Combustible', fuel1, 'variable_expense', 'Gasolina', iso(6), Math.round(fuel1 * 0.01), 'cc1'));
+  if (random() > 0.3) { // 70% de probabilidad de segunda carga
+    txList.push(txWithDate(`t${idCounter++}`, 'Combustible', fuel2, 'variable_expense', 'Gasolina', iso(18), Math.round(fuel2 * 0.01), 'cc1'));
+  }
 
-  // Taxi y transporte
-  txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', 450, 'variable_expense', 'Uber', iso(3), 4.5, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', 350, 'variable_expense', 'Uber', iso(9), 3.5, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', 520, 'variable_expense', 'Uber', iso(21), 5.2, 'cc1'));
+  // Taxi y transporte (varía mucho cada mes)
+  if (random() > 0.2) txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', Math.round(450 + random() * 300), 'variable_expense', 'Uber', iso(3), 0, 'cc1'));
+  if (random() > 0.3) txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', Math.round(350 + random() * 200), 'variable_expense', 'Uber', iso(9), 0, 'cc1'));
+  if (random() > 0.25) txList.push(txWithDate(`t${idCounter++}`, 'Taxi y Transporte', Math.round(520 + random() * 300), 'variable_expense', 'Uber', iso(21), 0, 'cc1'));
 
-  // Restaurantes y delivery
-  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', 1200, 'variable_expense', 'Almuerzo', iso(7), 12, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', 1450, 'variable_expense', 'Cena con amigos', iso(14), 14.5, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', 890, 'variable_expense', 'Comida rápida', iso(25), 8.9, 'cc1'));
+  // Restaurantes y delivery (varía mucho - viajes, invitaciones, etc.)
+  const dining1 = Math.round(1200 + (random() - 0.5) * 500); // 950-1450
+  const dining2 = Math.round(1450 + (random() - 0.5) * 600); // 1150-1750
+  const dining3 = Math.round(890 + (random() - 0.5) * 400); // 690-1090
+  txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', dining1, 'variable_expense', 'Almuerzo', iso(7), Math.round(dining1 * 0.01), 'cc1'));
+  if (random() > 0.25) txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', dining2, 'variable_expense', 'Cena con amigos', iso(14), Math.round(dining2 * 0.01), 'cc1'));
+  if (random() > 0.3) txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', dining3, 'variable_expense', 'Comida rápida', iso(25), Math.round(dining3 * 0.01), 'cc1'));
 
-  // Suscripciones digitales (mensuales)
+  // Suscripciones digitales (fijas mensuales pero algunas meses hay nuevas)
   txList.push(txWithDate(`t${idCounter++}`, 'Suscripciones Digitales', 599, 'variable_expense', 'Netflix', iso(5)));
   txList.push(txWithDate(`t${idCounter++}`, 'Suscripciones Digitales', 299, 'variable_expense', 'Spotify', iso(6)));
+  if (month === 2) txList.push(txWithDate(`t${idCounter++}`, 'Suscripciones Digitales', 299, 'variable_expense', 'Disney+', iso(3))); // Marzo: nueva suscripción
+  if (month === 5 && random() > 0.4) txList.push(txWithDate(`t${idCounter++}`, 'Suscripciones Digitales', 199, 'variable_expense', 'YouTube Premium', iso(8))); // Junio: posible compra
 
-  // Compras personales/categoría variada
-  txList.push(txWithDate(`t${idCounter++}`, 'Ropa y Accesorios', 2500, 'variable_expense', 'Compra en tienda', iso(8), 25, 'cc1'));
-  txList.push(txWithDate(`t${idCounter++}`, 'Higiene y Salud', 450, 'variable_expense', 'Farmacia', iso(12), 4.5, 'cc1'));
+  // Compras personales (MUCHA variación - algunos meses mucho, otros poco)
+  if (month === 0 || month === 2 || month === 5) { // Enero, Marzo, Junio - más gastos
+    const shopping1 = Math.round(3000 + random() * 2000); // 3000-5000
+    txList.push(txWithDate(`t${idCounter++}`, 'Ropa y Accesorios', shopping1, 'variable_expense', 'Centro Comercial', iso(8 + Math.floor(random() * 10)), Math.round(shopping1 * 0.01), 'cc1'));
+  } else if (random() > 0.5) {
+    const shopping2 = Math.round(1500 + random() * 1500); // 1500-3000
+    txList.push(txWithDate(`t${idCounter++}`, 'Ropa y Accesorios', shopping2, 'variable_expense', 'Tienda online', iso(12 + Math.floor(random() * 10)), Math.round(shopping2 * 0.01), 'cc1'));
+  }
 
-  // Ocio/entretenimiento
-  txList.push(txWithDate(`t${idCounter++}`, 'Entretenimiento', 800, 'variable_expense', 'Cine', iso(16), 8, 'cc1'));
+  // Higiene y salud (pequeñas variaciones)
+  if (random() > 0.3) {
+    const health = Math.round(450 + (random() - 0.5) * 200); // 350-550
+    txList.push(txWithDate(`t${idCounter++}`, 'Higiene y Salud', health, 'variable_expense', 'Farmacia', iso(12 + Math.floor(random() * 10)), Math.round(health * 0.01), 'cc1'));
+  }
+
+  // Ocio/entretenimiento (varía según mes)
+  if (month === 5) { // Junio: verano, más diversión
+    txList.push(txWithDate(`t${idCounter++}`, 'Entretenimiento', 1200, 'variable_expense', 'Concierto/evento', iso(15 + Math.floor(random() * 10)), 12, 'cc1'));
+  } else if (random() > 0.4) {
+    const entertainment = Math.round(800 + (random() - 0.5) * 400); // 600-1000
+    txList.push(txWithDate(`t${idCounter++}`, 'Entretenimiento', entertainment, 'variable_expense', 'Cine/actividad', iso(16 + Math.floor(random() * 8)), Math.round(entertainment * 0.01), 'cc1'));
+  }
+
+  // Gastos ocasionales según mes
+  if (month === 1) { // Febrero: San Valentín
+    txList.push(txWithDate(`t${idCounter++}`, 'Regalos', Math.round(1500 + random() * 1000), 'variable_expense', 'Regalo especial', iso(14), 0));
+  }
+  if (month === 3) { // Abril: Semana Santa - viaje
+    txList.push(txWithDate(`t${idCounter++}`, 'Viajes y Turismo', Math.round(8000 + random() * 3000), 'variable_expense', 'Hospedaje vacaciones', iso(8 + Math.floor(random() * 10)), 0));
+    txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', Math.round(2500 + random() * 1500), 'variable_expense', 'Comidas en viaje', iso(10 + Math.floor(random() * 8)), 0));
+  }
+  if (month === 4) { // Mayo: fin de mes con bonificación
+    txList.push(txWithDate(`t${idCounter++}`, 'Salario', 12000, 'income', 'Bonificación performance', iso(28)));
+  }
 
   return txList;
 }
