@@ -41,8 +41,7 @@ export default function LanguageSelector() {
         aria-label={t('settings.language')}
         title={t('settings.language')}
       >
-        <span className="text-[16px]">{currentLang?.flag}</span>
-        <span className="font-label-sm text-label-sm text-on-surface hidden sm:inline uppercase tracking-widest">
+        <span className="font-label-sm text-label-sm text-on-surface uppercase tracking-widest">
           {language === 'es' ? 'ES' : 'EN'}
         </span>
         <MS

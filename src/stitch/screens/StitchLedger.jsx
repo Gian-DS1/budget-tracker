@@ -4,6 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
+import { useScreenStrings } from '../../i18n/useScreenStrings';
 import StitchCategorySelect from '../StitchCategorySelect';
 import StitchSelect from '../StitchSelect';
 import StitchDatePicker from '../StitchDatePicker';
@@ -27,14 +28,20 @@ import { formatCurrency, formatDate, todayISO, titleCase, getTypeLabel } from '.
 const fmt = (n, c) => formatCurrency(n, c);
 // Tipos visibles en filtros. El tipo genérico 'expense' es legado (migrado a
 // 'variable_expense'); ya no se ofrece. La categoría deriva el tipo real.
-const TYPES = [
-  { v: 'income', l: 'Ingreso' },
-  { v: 'fixed_expense', l: 'Gasto fijo' }, { v: 'variable_expense', l: 'Gasto variable' },
-  { v: 'savings', l: 'Ahorro' },
-];
+// TYPES se construye dinámicamente en el componente usando strings del hook
 const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', currency: 'DOP', isRecurring: false, recurrencePattern: 'monthly' };
 
 export default function StitchLedger() {
+  const strings = useScreenStrings();
+
+  // TYPES construido dinámicamente
+  const TYPES = [
+    { v: 'income', l: strings.ledger.income },
+    { v: 'fixed_expense', l: strings.ledger.fixedExpense },
+    { v: 'variable_expense', l: strings.ledger.variableExpense },
+    { v: 'savings', l: 'Ahorro' }, // TODO: agregar a strings
+  ];
+
   // `transactions` se suscribe con selector (es el dato que muta y dispara
   // renders); las acciones del store son referencias estables, así que tomarlas
   // por separado no añade superficie de suscripción al estado completo.
@@ -295,7 +302,7 @@ export default function StitchLedger() {
     const ids = selectedIds();
     if (demo) demoBulkAssignCard(ids, cardId);
     else await bulkAssignCard(ids, cardId);
-    if (demo) toast.success('Transacciones actualizadas');
+    if (demo) toast.success(strings.ledger.transactionsUpdated || 'Transacciones actualizadas');
     clearSelection();
   };
   const onBulkDelete = async () => {
@@ -320,14 +327,14 @@ export default function StitchLedger() {
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-xl gap-md">
         <div>
-          <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">Transacciones</h2>
+          <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">{strings.ledger.title}</h2>
           <p className="font-mono-data text-mono-data text-text-muted mt-sm uppercase">
-            {transactions.length} registros · Sincronizado
+            {transactions.length} {strings.ledger.records} · {strings.ledger.synchronized}
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary ml-xs status-glow-live align-middle" />
           </p>
         </div>
         <button data-tour="ledger-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
-          <MS name="add" className="text-[16px]" /> Nueva transacción
+          <MS name="add" className="text-[16px]" /> {strings.buttons.newTransaction}
         </button>
       </div>
 
@@ -335,13 +342,13 @@ export default function StitchLedger() {
       <div data-tour="ledger-filters" className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg flex flex-wrap gap-sm items-center inner-glow">
         <div className="relative flex-1 min-w-[200px]">
           <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Buscar descripción o notas…" className="w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={strings.ledger.searchPlaceholder} className="w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
         </div>
         <StitchSelect
           value={filterType}
           onChange={setFilterType}
-          options={[{ value: '', label: 'Todos los tipos' }, ...TYPES.map((t) => ({ value: t.v, label: t.l }))]}
-          placeholder="Todos los tipos"
+          options={[{ value: '', label: strings.ledger.typeFilterAll }, ...TYPES.map((t) => ({ value: t.v, label: t.l }))]}
+          placeholder={strings.ledger.typeFilterAll}
           compact
           className="min-w-[150px]"
         />
@@ -350,7 +357,7 @@ export default function StitchLedger() {
           onChange={setFilterCat}
           options={categories}
           includeAllOption
-          allLabel="Todas las categorías"
+          allLabel={strings.ledger.categoryFilterAll}
           compact
           className="min-w-[200px]"
         />
@@ -446,7 +453,7 @@ export default function StitchLedger() {
       </div>
 
       {showForm && (
-        <Modal onClose={() => setShowForm(false)} title={editing ? 'Editar transacción' : 'Nueva transacción'} width="520px">
+        <Modal onClose={() => setShowForm(false)} title={editing ? strings.ledger.editTransaction : strings.buttons.newTransaction} width="520px">
           {(requestClose) => (
             <form onSubmit={submit} className="flex flex-col gap-md">
               <div className="grid grid-cols-2 gap-md">
