@@ -102,16 +102,16 @@ function HealthMockup({ t }) {
   const pct = 0.87;
   const C = 2 * Math.PI * 52;
   const healthDetails = [
-    { label: t('budget.title') + ' ' + t('budget.noBudget'), value: t('common.save'), color: 'text-tertiary' },
-    { label: t('creditCards.title') + ' ' + t('common.yes'), value: '0 ' + t('common.no'), color: 'text-secondary' },
-    { label: t('savings.title') + ' ' + t('common.save'), value: '73.8%', color: 'text-primary' },
+    { label: t('pages.zeroBudget'), value: t('landing.mockup.assigned'), color: 'text-tertiary' },
+    { label: t('landing.mockup.cardsUpToDate'), value: t('landing.mockup.overdue'), color: 'text-secondary' },
+    { label: t('dashboard.savingsRate'), value: '73.8%', color: 'text-primary' },
   ];
 
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-lg">
-        <span className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{t('dashboard.title')}</span>
-        <span className="font-mono-data text-mono-data text-tertiary uppercase">Excellent</span>
+        <span className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{t('dashboard.financialHealth')}</span>
+        <span className="font-mono-data text-mono-data text-tertiary uppercase">{t('dashboard.excellent')}</span>
       </div>
       <div className="flex items-center gap-lg flex-grow">
         <div className="relative shrink-0" style={{ width: 132, height: 132 }}>
@@ -126,7 +126,7 @@ function HealthMockup({ t }) {
             <span className="font-hero-headline text-[34px] text-on-surface tracking-tighter leading-none">
               <CountUp value={87} duration={900} format={(v) => String(Math.round(v))} />
             </span>
-            <span className="font-mono-data text-mono-data text-text-muted uppercase mt-xs">of 100</span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase mt-xs">{t('landing.mockup.of100')}</span>
           </div>
         </div>
         <div className="min-w-0 flex-grow space-y-sm">
@@ -145,15 +145,15 @@ function HealthMockup({ t }) {
 // Mockup mediano: barras de presupuesto base cero por categoría.
 function BudgetMockup({ t }) {
   const rows = [
-    ['Rent', 100, 'bg-tertiary'],
-    ['Groceries', 64, 'bg-primary'],
-    ['Transport', 38, 'bg-secondary'],
+    [t('landing.mockup.rent'), 100, 'bg-tertiary'],
+    [t('landing.mockup.groceries'), 64, 'bg-primary'],
+    [t('landing.mockup.transport'), 38, 'bg-secondary'],
   ];
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center justify-between mb-md">
         <span className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{t('budget.title')}</span>
-        <span className="font-mono-data text-mono-data text-tertiary uppercase">Base Zero</span>
+        <span className="font-mono-data text-mono-data text-tertiary uppercase">{t('landing.mockup.zeroBased')}</span>
       </div>
       <div className="space-y-md flex-grow flex flex-col justify-center">
         {rows.map(([l, w, bg]) => (
@@ -181,9 +181,9 @@ function BudgetMockup({ t }) {
 // Mockup mediano: lista de transacciones recientes.
 function LedgerMockup({ t }) {
   const rows = [
-    ['shopping_cart', 'Grocery Store', '−RD$ 4,250', 'text-accent-error'],
-    ['payments', 'Biweekly Salary', '+RD$ 85,000', 'text-tertiary'],
-    ['local_gas_station', 'Gas', '−RD$ 1,800', 'text-accent-error'],
+    ['shopping_cart', t('landing.mockup.groceryStore'), '−RD$ 4,250', 'text-accent-error'],
+    ['payments', t('landing.mockup.biweeklySalary'), '+RD$ 85,000', 'text-tertiary'],
+    ['local_gas_station', t('landing.mockup.gas'), '−RD$ 1,800', 'text-accent-error'],
   ];
   return (
     <div className="flex flex-col h-full">
