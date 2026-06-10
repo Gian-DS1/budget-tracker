@@ -26,11 +26,16 @@ function parsePopular(text) {
   const POPULAR_MCC_RE = /^\d{4}\s+\d{6}$/;
   const AMOUNT_RE = /^-?[\d,]+\.\d{2}$/;
 
+  // Patrones personales (nombre del titular, email) se cargan desde env var
+  // para no exponer PII en el código: STATEMENT_SKIP_PATTERNS="NOMBRE,email"
+  const extraSkipPatterns = (process.env.STATEMENT_SKIP_PATTERNS || '')
+    .split(',').map(s => s.trim()).filter(Boolean);
+
   const SKIP_PATTERNS = [
     'Puede recibir su próximo', 'Tu cuenta de Millas', 'Tasa de Interés Anual',
     'Saldo Promedio Diario', 'Interés si Opta', 'Interés por Financiamiento',
-    'GIANCARLOS ESTEVEZ', 'EL OFICIAL QUE MANEJA', 'EN LA OFICINA', 'Página:',
-    'giancarlos.estevez', 'Tel:',
+    'EL OFICIAL QUE MANEJA', 'EN LA OFICINA', 'Página:', 'Tel:',
+    ...extraSkipPatterns,
   ];
 
   const headerMatch = text.match(POPULAR_HEADER_RE);
