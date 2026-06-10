@@ -5,6 +5,7 @@ import MS from '../MS';
 import { Stagger } from '../StitchMotion';
 import StitchCurrencyInput from '../StitchCurrencyInput';
 import { isDemoActive } from '../demoMode';
+import { useI18n } from '../../contexts/I18nContext';
 import useRateStore from '../../stores/useRateStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
@@ -13,14 +14,16 @@ import { autoCategorize } from '../../data/defaultCategories';
 import StatementImportModal from './StatementImportModal';
 import { supabase } from '../../lib/supabase';
 
-// Niveles de presupuesto (de más simple a más avanzado).
-const BUDGET_LEVEL_CARDS = [
-  { value: 'tracking', icon: 'visibility', title: 'Seguimiento', desc: 'Solo registra tus gastos y mira a dónde se va tu dinero. Sin metas.' },
-  { value: '503020', icon: 'pie_chart', title: 'Regla 50/30/20', desc: 'Tres baldes: necesidades, gustos y ahorro. Simple y automático.' },
-  { value: 'zero', icon: 'account_balance_wallet', title: 'Base cero', desc: 'Asigna cada peso por categoría. Control total para avanzados.' },
-];
-
 export default function StitchSettings() {
+  const { t } = useI18n();
+
+  // Niveles de presupuesto (de más simple a más avanzado).
+  const BUDGET_LEVEL_CARDS = [
+    { value: 'tracking', icon: 'visibility', title: t('screens.budget.trackingMode'), desc: t('screens.settings.levelTrackingDesc') },
+    { value: '503020', icon: 'pie_chart', title: t('screens.settings.rule503020'), desc: t('screens.settings.level503020Desc') },
+    { value: 'zero', icon: 'account_balance_wallet', title: t('screens.budget.zeroMode'), desc: t('screens.settings.levelZeroDesc') },
+  ];
+
   const { manualRate, source, getRate, fetchRate, setManualRate } = useRateStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
@@ -34,16 +37,16 @@ export default function StitchSettings() {
   useEffect(() => { fetchRate(); }, [fetchRate]);
 
   const saveRate = () => {
-    if (!rateInput) { setManualRate(null); toast.success('Usando la tasa automática del mercado'); return; }
+    if (!rateInput) { setManualRate(null); toast.success(t('screens.settings.usingAutoRate')); return; }
     const v = Number(rateInput);
-    if (isNaN(v) || v <= 0) { toast.error('Ingresa una tasa válida'); return; }
-    setManualRate(v); toast.success(`Tasa fijada: RD$ ${v}`); setRateInput('');
+    if (isNaN(v) || v <= 0) { toast.error(t('screens.settings.invalidRate')); return; }
+    setManualRate(v); toast.success(t('screens.settings.rateFixed').replace('{v}', v)); setRateInput('');
   };
-  const autoRate = async () => { setManualRate(null); await fetchRate(); toast.success('Tasa actualizada desde el mercado'); };
+  const autoRate = async () => { setManualRate(null); await fetchRate(); toast.success(t('screens.settings.rateUpdated')); };
 
   const doExport = async (format) => {
-    if (transactions.length === 0) { toast.error('No hay transacciones para exportar'); return; }
-    if (!window.confirm('¿Estás seguro de que deseas exportar todos tus datos financieros?')) return;
+    if (transactions.length === 0) { toast.error(t('screens.settings.nothingToExport')); return; }
+    if (!window.confirm(t('screens.settings.confirmExport'))) return;
     const data = transactions.map((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
       return { Fecha: t.date, Descripción: t.description, Categoría: cat ? cat.name : '', Monto: t.amount, Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto', Moneda: t.currency, Notas: t.notes || '' };
@@ -54,19 +57,19 @@ export default function StitchSettings() {
       const blob = new Blob([Papa.unparse(data)], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob); const a = document.createElement('a');
       a.href = url; a.download = `FinTrack_Export_${stamp}.csv`; a.click(); URL.revokeObjectURL(url);
-      toast.success('CSV exportado');
+      toast.success(t('screens.settings.csvExported'));
     } else {
       const XLSX = await import('xlsx');
       const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Transacciones'); XLSX.writeFile(wb, `FinTrack_Export_${stamp}.xlsx`);
-      toast.success('Excel exportado');
+      toast.success(t('screens.settings.excelExported'));
     }
   };
 
   const onFile = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (isDemoActive()) { toast('El import no está disponible en modo demo.', { icon: 'ℹ️' }); e.target.value = ''; return; }
+    if (isDemoActive()) { toast(t('screens.settings.importNotInDemo'), { icon: 'ℹ️' }); e.target.value = ''; return; }
     const ext = file.name.split('.').pop().toLowerCase();
     const process = async (rows) => {
       const txs = rows.map((row) => {
@@ -85,31 +88,31 @@ export default function StitchSettings() {
           else { const d = new Date(date); if (!isNaN(d.getTime())) fdate = d.toISOString().split('T')[0]; }
         } catch { /* ignore */ }
         const match = autoCategorize(String(desc), categories);
-        return { date: fdate, amount, type, description: String(desc).slice(0, 500).replace(/[<>]/g, '') || 'Importado', categoryId: match ? match.id : '', currency: 'DOP', notes: null };
+        return { date: fdate, amount, type, description: String(desc).slice(0, 500).replace(/[<>]/g, '') || t('screens.settings.imported'), categoryId: match ? match.id : '', currency: 'DOP', notes: null };
       }).filter(Boolean);
-      if (txs.length === 0) { toast.error('No se encontraron filas válidas'); return; }
+      if (txs.length === 0) { toast.error(t('screens.settings.noValidRows')); return; }
       const n = await bulkAddTransactions(txs);
-      toast.success(`Se importaron ${n} transacciones`);
+      toast.success(t('screens.settings.importedN').replace('{n}', n));
     };
     if (ext === 'csv') {
-      import('papaparse').then(({ default: Papa }) => Papa.parse(file, { header: true, skipEmptyLines: true, complete: (r) => process(r.data), error: () => toast.error('Error leyendo el CSV') }));
+      import('papaparse').then(({ default: Papa }) => Papa.parse(file, { header: true, skipEmptyLines: true, complete: (r) => process(r.data), error: () => toast.error(t('screens.settings.csvReadError')) }));
     } else if (ext === 'xlsx' || ext === 'xls') {
       import('xlsx').then((XLSX) => {
         const reader = new FileReader();
-        reader.onload = (ev) => { try { const wb = XLSX.read(ev.target.result, { type: 'array' }); process(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])); } catch { toast.error('Error leyendo el Excel'); } };
+        reader.onload = (ev) => { try { const wb = XLSX.read(ev.target.result, { type: 'array' }); process(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]])); } catch { toast.error(t('screens.settings.excelReadError')); } };
         reader.readAsArrayBuffer(file);
       });
-    } else toast.error('Formato no soportado. Usa .csv o .xlsx');
+    } else toast.error(t('screens.settings.unsupportedFormat'));
     e.target.value = '';
   };
 
   const onPdfFile = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    if (isDemoActive()) { toast('El import no está disponible en modo demo.', { icon: 'ℹ️' }); e.target.value = ''; return; }
-    
+    if (isDemoActive()) { toast(t('screens.settings.importNotInDemo'), { icon: 'ℹ️' }); e.target.value = ''; return; }
+
     setParsingPdf(true);
-    const toastId = toast.loading('Extrayendo estado de cuenta...');
+    const toastId = toast.loading(t('screens.settings.extractingStatement'));
     try {
       const reader = new FileReader();
       reader.onload = async (ev) => {
@@ -129,11 +132,11 @@ export default function StitchSettings() {
           
           if (!res.ok) {
             const err = await res.json();
-            throw new Error(err.error || 'Error parseando PDF');
+            throw new Error(err.error || t('screens.settings.pdfParseError'));
           }
           const data = await res.json();
           setPdfData(data);
-          toast.success(`Se encontraron ${data.count} consumos en ${data.bank}`, { id: toastId });
+          toast.success(t('screens.settings.foundConsumptions').replace('{n}', data.count).replace('{bank}', data.bank), { id: toastId });
         } catch (err) {
           toast.error(err.message, { id: toastId });
         } finally {
@@ -141,7 +144,7 @@ export default function StitchSettings() {
           e.target.value = '';
         }
       };
-      reader.onerror = () => { toast.error('Error leyendo archivo local', { id: toastId }); setParsingPdf(false); e.target.value = ''; };
+      reader.onerror = () => { toast.error(t('screens.settings.localFileError'), { id: toastId }); setParsingPdf(false); e.target.value = ''; };
       reader.readAsDataURL(file);
     } catch (err) {
       toast.error(err.message, { id: toastId });
@@ -159,19 +162,19 @@ export default function StitchSettings() {
         <div className="flex items-center gap-sm mb-xs">
           <span className="font-mono-data text-mono-data text-secondary">SYS.CFG</span>
           <span className="w-1 h-1 rounded-full bg-border-subtle" />
-          <span className="font-mono-data text-mono-data text-on-surface-variant uppercase">Configuración</span>
+          <span className="font-mono-data text-mono-data text-on-surface-variant uppercase">{t('screens.settings.configuration')}</span>
         </div>
-        <h1 className="font-headline-lg text-headline-lg text-on-surface">Ajustes y utilidades</h1>
+        <h1 className="font-headline-lg text-headline-lg text-on-surface">{t('screens.settings.title')}</h1>
       </div>
 
       <Stagger className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
         {/* Nivel de presupuesto */}
         <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">NIVEL DE PRESUPUESTO</h2>
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.budgetLevel').toUpperCase()}</h2>
             <MS name="tune" className="text-text-muted text-[16px]" />
           </div>
-          <p className="font-body-md text-body-md text-on-surface-variant mb-md">Elige cuánto control quieres. Puedes cambiarlo cuando quieras; no se pierde ningún dato.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant mb-md">{t('screens.settings.budgetLevelDesc')}</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
             {BUDGET_LEVEL_CARDS.map((lv) => {
               const active = budgetLevel === lv.value;
@@ -198,27 +201,27 @@ export default function StitchSettings() {
         {/* Tasa */}
         <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">TASA DE CAMBIO · USD→DOP</h2>
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.exchangeRate').toUpperCase()}</h2>
             <MS name="currency_exchange" className="text-text-muted text-[16px]" />
           </div>
           <div className="flex items-end gap-md mb-md">
             <span className="font-headline-md text-[40px] text-on-surface tracking-tighter">{getRate().toFixed(2)}</span>
             <span className="font-mono-data text-mono-data text-tertiary mb-sm flex items-center gap-xs">
               <span className="w-1.5 h-1.5 rounded-full bg-tertiary live-dot" />
-              {manualRate ? 'MANUAL' : source === 'popular' ? 'BANCO POPULAR' : 'MERCADO'}
+              {manualRate ? t('screens.settings.manual') : source === 'popular' ? 'BANCO POPULAR' : t('screens.settings.market')}
             </span>
           </div>
           <div className="flex gap-sm">
-            <div className="flex-1"><StitchCurrencyInput value={rateInput} onChange={setRateInput} placeholder="Fijar tasa manual…" className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-mono-data text-mono-data text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" /></div>
-            <button onClick={saveRate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md rounded hover:bg-primary-container transition-colors">Fijar</button>
-            <button onClick={autoRate} className="border border-border-subtle text-on-surface-variant px-md rounded hover:bg-surface-container-high" title="Tasa automática"><MS name="autorenew" className="text-[18px]" /></button>
+            <div className="flex-1"><StitchCurrencyInput value={rateInput} onChange={setRateInput} placeholder={t('screens.settings.fixRatePlaceholder')} className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-mono-data text-mono-data text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" /></div>
+            <button onClick={saveRate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md rounded hover:bg-primary-container transition-colors">{t('screens.settings.fix')}</button>
+            <button onClick={autoRate} className="border border-border-subtle text-on-surface-variant px-md rounded hover:bg-surface-container-high" title={t('screens.settings.autoRateTitle')}><MS name="autorenew" className="text-[18px]" /></button>
           </div>
         </Stagger.Item>
 
         {/* Datos */}
         <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">DATOS · {transactions.length} TRANSACCIONES</h2>
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.data').toUpperCase()} · {transactions.length} {t('screens.settings.transactionsUpper').toUpperCase()}</h2>
             <MS name="database" className="text-text-muted text-[16px]" />
           </div>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="hidden" />
@@ -226,14 +229,14 @@ export default function StitchSettings() {
           {demo && (
             <div className="flex items-center gap-sm mb-sm px-md py-sm rounded bg-secondary/10 border border-secondary/30">
               <MS name="info" className="!text-[16px] text-secondary shrink-0" />
-              <span className="font-mono-data text-mono-data text-secondary normal-case tracking-normal">La importación no está disponible en modo demo. El export sí funciona con los datos de ejemplo.</span>
+              <span className="font-mono-data text-mono-data text-secondary normal-case tracking-normal">{t('screens.settings.demoImportNote')}</span>
             </div>
           )}
           <div className="flex flex-col gap-sm">
-            <Row icon="picture_as_pdf" l="Importar Estado de Cuenta (PDF)" d={demo ? 'No disponible en modo demo' : (parsingPdf ? 'Procesando...' : 'B. Popular y Qik soportados')} onClick={() => pdfRef.current?.click()} disabled={demo || parsingPdf} />
-            <Row icon="upload_file" l="Importar CSV / Excel" d={demo ? 'No disponible en modo demo' : 'Carga masiva de transacciones'} onClick={() => fileRef.current?.click()} disabled={demo} />
-            <Row icon="download" l="Exportar a CSV" d="Descarga tus datos" onClick={() => doExport('csv')} />
-            <Row icon="grid_on" l="Exportar a Excel" d="Formato .xlsx" onClick={() => doExport('xlsx')} />
+            <Row icon="picture_as_pdf" l={t('screens.settings.importPdf')} d={demo ? t('screens.settings.notAvailableDemo') : (parsingPdf ? t('screens.settings.processing') : t('screens.settings.banksSupported'))} onClick={() => pdfRef.current?.click()} disabled={demo || parsingPdf} />
+            <Row icon="upload_file" l={t('screens.settings.importCsv')} d={demo ? t('screens.settings.notAvailableDemo') : t('screens.settings.bulkLoad')} onClick={() => fileRef.current?.click()} disabled={demo} />
+            <Row icon="download" l={t('screens.settings.exportCsv')} d={t('screens.settings.downloadData')} onClick={() => doExport('csv')} />
+            <Row icon="grid_on" l={t('screens.settings.exportExcel')} d={t('screens.settings.xlsxFormat')} onClick={() => doExport('xlsx')} />
           </div>
         </Stagger.Item>
 

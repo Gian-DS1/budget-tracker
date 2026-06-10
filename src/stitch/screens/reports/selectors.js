@@ -2,7 +2,7 @@
 // cargadas; reusan getEffectiveAmount/groupByCategory de utils. Todos toman un
 // rango en meses y una refDate (último mes del rango).
 import { getEffectiveAmount, groupByCategory } from '../../../utils/calculations';
-import { MONTHS_SHORT_ES } from '../../../utils/constants';
+import { monthShort, tr } from '../../../i18n/runtime';
 
 const EXPENSE_TYPES = ['expense', 'fixed_expense', 'variable_expense'];
 const isExpense = (t) => EXPENSE_TYPES.includes(t.type);
@@ -34,7 +34,7 @@ export function getIncomeVsExpenseSeries(transactions, range, refDate = new Date
       if (t.type === 'income') income += Number(t.amount) || 0;
       else if (isExpense(t)) expense += getEffectiveAmount(t);
     }
-    return { label: MONTHS_SHORT_ES[m], income, expense };
+    return { label: monthShort(m), income, expense };
   });
 }
 
@@ -48,7 +48,7 @@ export function getMonthComparison(transactions, categories, refDate = new Date(
   const map = new Map(); // name -> { name, color, current, previous }
   const bump = (t, key) => {
     const cat = categories.find((c) => c.id === t.categoryId);
-    const name = cat?.name || 'Sin categoría';
+    const name = cat?.name || tr('screens.charts.uncategorized');
     const color = cat?.color || '#94a3b8';
     if (!map.has(name)) map.set(name, { name, color, current: 0, previous: 0 });
     map.get(name)[key] += getEffectiveAmount(t);
@@ -72,7 +72,7 @@ export function getInsights(transactions, categories, range, refDate = new Date(
 
   // Gasto por mes (del rango).
   const perMonth = months.map(({ y, m }) => ({
-    label: MONTHS_SHORT_ES[m],
+    label: monthShort(m),
     amount: expenses.filter((t) => inMonth(t, y, m)).reduce((s, t) => s + getEffectiveAmount(t), 0),
   }));
   const monthsWithExpense = perMonth.filter((x) => x.amount > 0);

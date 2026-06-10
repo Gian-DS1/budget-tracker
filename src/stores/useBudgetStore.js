@@ -240,43 +240,16 @@ const useBudgetStore = create(
 
     if (previousBudgets.length === 0) return false;
 
-    const currentBudgets = get().budgets.filter(
-      (b) => b.year === year && b.month === month
-    );
-
-    const newBudgetsToCopy = previousBudgets
-      .filter((pb) => !currentBudgets.some((cb) => cb.categoryId === pb.categoryId));
-
-    if (newBudgetsToCopy.length === 0) return true;
-
-    const user = await getCurrentUser();
-    if (!user) return false;
-
-    const dbPayload = newBudgetsToCopy.map(pb => ({
-      user_id: user.id,
-      category_id: pb.categoryId,
+    // PISA los montos del mes destino con los del anterior (e inserta los que
+    // falten) vía bulkSetBudgets. Antes solo insertaba las categorías sin fila:
+    // si ya existía una (p. ej. creada con 0 al tocar un sobre), conservaba su
+    // monto viejo y "copiar mes anterior" no dejaba el mes igual al anterior.
+    const entries = previousBudgets.map((pb) => ({
+      categoryId: pb.categoryId,
       amount: pb.estimatedAmount,
-      month: `${year}-${String(month + 1).padStart(2, '0')}`
     }));
-
-    const { data, error } = await supabase.from('budgets').insert(dbPayload).select();
-    if (!error && data) {
-       const formatted = data.map(b => {
-        const [y, m] = b.month.split('-');
-        return {
-          id: b.id,
-          categoryId: b.category_id,
-          year: parseInt(y, 10),
-          month: parseInt(m, 10) - 1,
-          estimatedAmount: Number(b.amount),
-          currency: 'DOP',
-          createdAt: b.created_at
-        };
-      });
-      set((state) => ({ budgets: [...state.budgets, ...formatted] }));
-      return true;
-    }
-    return false;
+    const applied = await get().bulkSetBudgets(year, month, entries);
+    return applied > 0;
   },
 }),
 {

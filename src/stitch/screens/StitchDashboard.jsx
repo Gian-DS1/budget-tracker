@@ -19,7 +19,7 @@ import {
 } from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
-import { MONTHS_SHORT_ES } from '../../utils/constants';
+import { monthShort } from '../../i18n/runtime';
 import { getCategoryBreakdown, getBudgetUsage, getNetWorthSplit } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
 import FlowChart from './dashboard/FlowChart';
@@ -32,7 +32,7 @@ import SignalsRail from './dashboard/SignalsRail';
 const fmt = (n) => formatCurrency(n);
 
 export default function StitchDashboard() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
   const navigate = useNavigate();
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
@@ -62,10 +62,10 @@ export default function StitchDashboard() {
     for (let i = 0; i < 12; i++) {
       let mm = now.getMonth() - i, yy = now.getFullYear();
       while (mm < 0) { mm += 12; yy -= 1; }
-      opts.push({ value: `${yy}-${mm}`, label: `${MONTHS_SHORT_ES[mm]} ${yy}` });
+      opts.push({ value: `${yy}-${mm}`, label: `${monthShort(mm)} ${yy}` });
     }
     return opts;
-  }, [now]);
+  }, [now, language]);
 
   const monthTx = useMemo(
     () => transactions.filter((t) => {
@@ -124,10 +124,10 @@ export default function StitchDashboard() {
         if (t.type === 'income') inc += Number(t.amount);
         else if (['expense', 'fixed_expense', 'variable_expense'].includes(t.type)) exp += Number(t.amount) - Number(t.cashbackEarned || 0);
       });
-      arr.push({ label: MONTHS_SHORT_ES[mm], y: yy, m: mm, inc, exp, net: inc - exp });
+      arr.push({ label: monthShort(mm), y: yy, m: mm, inc, exp, net: inc - exp });
     }
     return arr;
-  }, [transactions, y, m]);
+  }, [transactions, y, m, language]);
 
   // Donut de gastos
   const breakdown = useMemo(() => getCategoryBreakdown(monthTx, categories), [monthTx, categories]);
@@ -152,22 +152,22 @@ export default function StitchDashboard() {
       const due = new Date(bal.cycles.dueDateISO + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({ tag: 'Tarjeta por pagar', tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? 'HOY' : `EN ${days}D`, body: `${card.name}: ${fmt(bal.pendingBilled)} vence ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
+      out.push({ tag: t('dashboard.cardToPay'), tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${card.name}: ${fmt(bal.pendingBilled)} ${t('dashboard.dueOn')} ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
     });
     debts.filter((d) => d.status === 'active' && d.due_date).forEach((d) => {
       const due = new Date(String(d.due_date).slice(0, 10) + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({ tag: 'Cuota de deuda', tc: 'text-accent-error', t: days === 0 ? 'HOY' : `EN ${days}D`, body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment) * (d.currency === 'USD' ? fxRate : 1))}.`, to: '/deudas' });
+      out.push({ tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment) * (d.currency === 'USD' ? fxRate : 1))}.`, to: '/deudas' });
     });
     goals.filter((g) => g.status !== 'completed' && g.deadline).forEach((g) => {
       const due = new Date(g.deadline + 'T00:00:00');
       const days = Math.ceil((due - todayMid) / 86400000);
       if (days < 0 || days > 30) return;
-      out.push({ tag: 'Meta próxima', tc: 'text-secondary', t: `EN ${days}D`, body: `"${g.title}" vence ${formatDate(g.deadline)}.`, to: '/ahorros' });
+      out.push({ tag: t('dashboard.goalUpcoming'), tc: 'text-secondary', t: t('dashboard.inDays').replace('{d}', days), body: `"${g.title}" ${t('dashboard.dueOn')} ${formatDate(g.deadline)}.`, to: '/ahorros' });
     });
     return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
-  }, [cards, debts, goals, transactions, fxRate, now]);
+  }, [cards, debts, goals, transactions, fxRate, now, t]);
 
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
   // Patrimonio neto NO va aquí: tiene su propia celda abajo (evita redundancia).
@@ -183,9 +183,9 @@ export default function StitchDashboard() {
       {!isCurrentMonth && (
         <div className="flex items-center gap-sm mb-md px-md py-sm rounded bg-secondary/10 border border-secondary/30">
           <MS name="history" className="!text-[16px] text-secondary" />
-          <span className="font-mono-data text-mono-data text-secondary uppercase">Viendo: {MONTHS_SHORT_ES[m]} {y}</span>
-          <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">— patrimonio, tarjetas, salud y recordatorios siguen siendo de hoy.</span>
-          <button onClick={() => setSel({ y: now.getFullYear(), m: now.getMonth() })} className="ml-auto font-mono-data text-mono-data text-primary hover:underline">Volver a hoy</button>
+          <span className="font-mono-data text-mono-data text-secondary uppercase">{t('dashboard.viewing')} {monthShort(m)} {y}</span>
+          <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">{t('dashboard.pastMonthNote')}</span>
+          <button onClick={() => setSel({ y: now.getFullYear(), m: now.getMonth() })} className="ml-auto font-mono-data text-mono-data text-primary hover:underline">{t('dashboard.backToToday')}</button>
         </div>
       )}
 
@@ -195,7 +195,7 @@ export default function StitchDashboard() {
           <Stagger.Item key={mx.l} className="md:col-span-4">
             <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
               <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
-                <span className="flex items-center gap-xs">{mx.l}{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1">HOY</span>}</span>
+                <span className="flex items-center gap-xs">{mx.l}{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1">{t('calendar.today').toUpperCase()}</span>}</span>
                 <InfoTip text={mx.info} />
               </div>
               <Stat value={mx.v} cls={mx.c} sub={mx.d} warn={mx.warn} />
@@ -242,7 +242,7 @@ export default function StitchDashboard() {
 
         {/* 5 · ¿Qué viene? Recordatorios (de hoy) */}
         <Stagger.Item className="md:col-span-12">
-          <BentoCell title="Recordatorios · hoy" icon="radar">
+          <BentoCell title={t('dashboard.monthReminder')} icon="radar">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
         </Stagger.Item>

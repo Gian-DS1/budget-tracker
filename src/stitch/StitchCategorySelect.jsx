@@ -21,14 +21,15 @@ import MS from './MS';
 import Emoji from './Emoji';
 import { TRIGGER_BASE, TRIGGER_COMPACT } from './dropdownShared';
 import DropdownPanel from './DropdownPanel';
+import { tr } from '../i18n/runtime';
 
 export default function StitchCategorySelect({
   value = '',
   onChange,
   options = [],
-  placeholder = 'Elige una categoría…',
+  placeholder = tr('screens.ledger.chooseCategoryPlaceholder'),
   includeAllOption = false,
-  allLabel = 'Todas las categorías',
+  allLabel = tr('common.allCategories'),
   compact = false,
   className = '',
   id,
@@ -149,7 +150,7 @@ export default function StitchCategorySelect({
                 value={query}
                 onChange={(e) => { setQuery(e.target.value); setActive(0); }}
                 onKeyDown={onKeyDown}
-                placeholder="Buscar…"
+                placeholder={tr('common.searchPlaceholder')}
                 className="w-full bg-transparent py-sm pl-[32px] pr-sm font-body-md text-body-md text-on-surface focus:outline-none placeholder:text-text-muted"
               />
             </div>
@@ -157,7 +158,7 @@ export default function StitchCategorySelect({
             {/* Opciones (solo esta zona scrollea) */}
             <div ref={listRef} className="stitch-scroll overflow-y-auto overflow-x-hidden py-xs min-h-0">
               {items.length === 0 ? (
-                <div className="px-md py-sm font-label-sm text-label-sm text-text-muted">Sin coincidencias</div>
+                <div className="px-md py-sm font-label-sm text-label-sm text-text-muted">{tr('common.noMatches')}</div>
               ) : (
                 items.map((c, i) => {
                   const isSel = c.id === value;

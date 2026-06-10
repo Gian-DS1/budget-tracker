@@ -46,7 +46,7 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
                 </div>
               </div>
               <div className="flex flex-col gap-xs min-w-0">
-                <span className="font-headline-md text-[18px] tracking-tight" style={{ color }}>{health.label}</span>
+                <span className="font-headline-md text-[18px] tracking-tight" style={{ color }}>{health.labelKey ? t(health.labelKey) : health.label}</span>
                 <span className="font-mono-data text-mono-data text-text-muted">{basis}</span>
               </div>
             </div>
@@ -57,8 +57,8 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
                 <div className="h-full rounded-full" style={{ width: `${Math.max(2, Math.min(100, animated))}%`, background: color }} />
               </div>
               <div className="flex justify-between font-mono-data text-[9px] text-text-muted uppercase">
-                <span>En riesgo</span>
-                <span>Excelente</span>
+                <span>{strings.charts.atRisk}</span>
+                <span>{strings.charts.excellent}</span>
               </div>
             </div>
           </div>

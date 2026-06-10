@@ -7,6 +7,7 @@ import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from './MS';
 import Emoji from './Emoji';
 import DropdownPanel from './DropdownPanel';
+import { tr } from '../i18n/runtime';
 import { EMOJI_GROUPS, searchEmojis } from '../data/emojiCatalog';
 
 export default function EmojiPicker({ value = '', onChange, id, className = '' }) {
@@ -74,13 +75,13 @@ export default function EmojiPicker({ value = '', onChange, id, className = '' }
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); close(); } }}
-                placeholder="Buscar emoji…"
+                placeholder={tr('common.searchEmoji')}
                 className="w-full bg-transparent py-sm pl-[32px] pr-sm font-body-md text-body-md text-on-surface focus:outline-none placeholder:text-text-muted"
               />
             </div>
             <div className="stitch-scroll overflow-y-auto overflow-x-hidden py-xs min-h-0 max-h-[280px] w-[280px]">
               {grouped.length === 0 ? (
-                <div className="px-md py-sm font-label-sm text-label-sm text-text-muted">Sin coincidencias</div>
+                <div className="px-md py-sm font-label-sm text-label-sm text-text-muted">{tr('common.noMatches')}</div>
               ) : (
                 grouped.map((g) => (
                   <div key={g.id} className="px-xs pb-xs">

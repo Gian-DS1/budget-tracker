@@ -3,6 +3,7 @@
 // (getFinancialHealthScore) y la capacidad (getMonthlySavingCapacity) se reusan
 // directo desde utils/calculations en el shell.
 import { groupByCategory } from '../../../utils/calculations';
+import { tr } from '../../../i18n/runtime';
 
 const OTROS_COLOR = '#6b7280';
 
@@ -22,7 +23,7 @@ export function getCategoryBreakdown(monthTransactions, categories) {
   if (grouped.length <= 5) return grouped;
   const top = grouped.slice(0, 5);
   const rest = grouped.slice(5).reduce((s, g) => s + g.value, 0);
-  return [...top, { name: 'Otros', value: rest, color: OTROS_COLOR }];
+  return [...top, { name: tr('screens.charts.others'), value: rest, color: OTROS_COLOR }];
 }
 
 // Uso del presupuesto del mes a partir del summary de getBudgetSummary.

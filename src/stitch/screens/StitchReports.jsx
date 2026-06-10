@@ -10,7 +10,8 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import useDebtStore from '../../stores/useDebtStore';
 import { getFinancialHealthScore, getMonthlySavingCapacity } from '../../utils/calculations';
 import { formatCurrency } from '../../utils/formatters';
-import { MONTHS_SHORT_ES } from '../../utils/constants';
+import { monthShort } from '../../i18n/runtime';
+import { useI18n } from '../../contexts/I18nContext';
 import { getIncomeVsExpenseSeries, getMonthComparison, getInsights } from './reports/selectors';
 import { getAnalysis } from './reports/analysis';
 import { ReportCard, Kpi } from './reports/reportsUi';
@@ -24,13 +25,9 @@ import { CHART } from '../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
 
-const RANGE_OPTIONS = [
-  { value: '6', label: 'Últimos 6 meses' },
-  { value: '12', label: 'Últimos 12 meses' },
-  { value: '24', label: 'Últimos 24 meses' },
-];
-
 export default function StitchReports() {
+  const { t } = useI18n();
+  const RANGE_OPTIONS = ['6', '12', '24'].map((n) => ({ value: n, label: t('screens.reports.rangeMonths').replace('{n}', n) }));
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
@@ -95,13 +92,13 @@ export default function StitchReports() {
       <header className="flex flex-col md:flex-row md:items-end justify-between gap-lg border-b border-border-subtle pb-lg mb-xl">
         <div>
           <div className="flex items-center gap-sm mb-md">
-            <span className="bg-surface-container-highest px-sm py-xs rounded font-mono-data text-mono-data text-primary uppercase border border-border-subtle">{MONTHS_SHORT_ES[m]} {y}</span>
+            <span className="bg-surface-container-highest px-sm py-xs rounded font-mono-data text-mono-data text-primary uppercase border border-border-subtle">{monthShort(m)} {y}</span>
             <span className="flex items-center gap-xs font-mono-data text-mono-data text-tertiary uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary status-glow-live" /> Centro de análisis
+              <span className="w-1.5 h-1.5 rounded-full bg-tertiary status-glow-live" /> {t('screens.reports.analysisCenter')}
             </span>
           </div>
-          <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">Reportes</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-sm max-w-2xl">Análisis de salud financiera, tendencias y distribución del gasto en el tiempo.</p>
+          <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">{t('reports.title')}</h1>
+          <p className="font-body-md text-body-md text-text-muted mt-sm max-w-2xl">{t('screens.reports.subtitle')}</p>
         </div>
         <div className="w-[200px] self-start md:self-end">
           <StitchSelect value={String(range)} onChange={(v) => setRange(Number(v))} options={RANGE_OPTIONS} compact />
@@ -114,23 +111,23 @@ export default function StitchReports() {
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-sm">
             <div className="flex justify-between items-start gap-xs">
               <span className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-xs min-w-0">
-                <span className="truncate">SALUD FINANCIERA</span>
-                <InfoTip text="Score 0–100 que combina tu tasa de ahorro, el ratio de gasto y tu carga de deuda (promedio de los últimos meses)." />
+                <span className="truncate">{t('dashboard.financialHealth').toUpperCase()}</span>
+                <InfoTip text={t('screens.reports.healthInfo')} />
               </span>
               <MS name="favorite" className="!text-[16px] shrink-0" style={{ color: healthColor }} />
             </div>
             <span className="font-headline-md text-[20px] tracking-tight whitespace-nowrap" style={{ color: healthColor }}><CountUp value={health.score} format={(n) => String(Math.round(n))} /><span className="text-text-muted text-[15px]">/100</span></span>
-            <span className="font-label-sm text-label-sm" style={{ color: healthColor }}>{health.label}</span>
+            <span className="font-label-sm text-label-sm" style={{ color: healthColor }}>{health.labelKey ? t(health.labelKey) : health.label}</span>
           </div>
-          <Kpi l="TASA DE AHORRO" v={<CountUp value={health.savingsRate * 100} format={(n) => `${n.toFixed(0)}%`} />} d={health.savingsRate >= 0.2 ? 'Saludable' : 'Mejorable'} c={health.savingsRate >= 0.2 ? 'text-tertiary' : 'text-accent-warning'} icon="savings" info="(Ingresos − gastos) ÷ ingresos, promediado en los meses del periodo." />
-          <Kpi l="GASTO DEL MES" v={<CountUp value={monthExpenseTotal} format={fmt} />} d={`${monthExpenses.length} mov.`} icon="payments" info="Suma de tus gastos del mes actual, neta de cashback." />
-          <Kpi l="MOVIMIENTOS" v={<CountUp value={transactions.length} format={(n) => String(Math.round(n))} />} d="en total" icon="receipt_long" />
+          <Kpi l={t('dashboard.savingsRate').toUpperCase()} v={<CountUp value={health.savingsRate * 100} format={(n) => `${n.toFixed(0)}%`} />} d={health.savingsRate >= 0.2 ? t('screens.reports.healthy') : t('screens.reports.improvable')} c={health.savingsRate >= 0.2 ? 'text-tertiary' : 'text-accent-warning'} icon="savings" info={t('screens.reports.savingsInfo')} />
+          <Kpi l={t('screens.reports.expenseOfMonth').toUpperCase()} v={<CountUp value={monthExpenseTotal} format={fmt} />} d={`${monthExpenses.length} ${t('screens.reports.movAbbrev')}`} icon="payments" info={t('screens.reports.monthExpenseInfo')} />
+          <Kpi l={t('screens.reports.movements').toUpperCase()} v={<CountUp value={transactions.length} format={(n) => String(Math.round(n))} />} d={t('screens.reports.inTotal')} icon="receipt_long" />
         </Stagger.Item>
 
         {/* Análisis inteligente + Ingresos vs gastos en dos columnas */}
         <Stagger.Item className="grid grid-cols-1 lg:grid-cols-2 gap-gutter items-start">
           <AnalysisPanel insights={analysis} />
-          <ReportCard title={`Ingresos vs gastos · ${range} meses`} icon="bar_chart" className="h-full">
+          <ReportCard title={`${t('screens.reports.incomeVsExpenses')} · ${range} ${t('dashboard.months')}`} icon="bar_chart" className="h-full">
             <IncomeExpenseBars data={incomeExpense} />
           </ReportCard>
         </Stagger.Item>
@@ -142,7 +139,7 @@ export default function StitchReports() {
 
         {/* Comparativa mes vs anterior */}
         <Stagger.Item>
-          <ReportCard title="Cambios vs mes anterior" icon="compare_arrows">
+          <ReportCard title={t('screens.reports.changesVsPrev')} icon="compare_arrows">
             <MonthComparison data={comparison} />
           </ReportCard>
         </Stagger.Item>

@@ -11,29 +11,38 @@ import useCategoryStore from '../../../stores/useCategoryStore';
 import useDebtStore from '../../../stores/useDebtStore';
 import useRateStore from '../../../stores/useRateStore';
 import { getBudgetSummary } from '../../../utils/calculations';
-import { MONTHS_ES } from '../../../utils/constants';
+import { monthName } from '../../../i18n/runtime';
+import { useI18n } from '../../../contexts/I18nContext';
 import BudgetZero from './BudgetZero';
 import Budget503020 from './Budget503020';
 import BudgetTracking from './BudgetTracking';
 
-const ESTADO_LABEL = { good: 'ÓPTIMO', warning: 'AJUSTADO', danger: 'EN RIESGO', neutral: 'SIN DATOS' };
 const ESTADO_COLOR = { good: 'text-tertiary', warning: 'text-accent-warning', danger: 'text-accent-error', neutral: 'text-text-muted' };
 
-// Metadatos del nivel (título + subtítulo del header). Cada nivel habla el
-// idioma de su público (decisión de producto).
-const LEVEL_META = {
-  tracking: { tag: 'Seguimiento de gastos', dot: 'bg-secondary' },
-  '503020': { tag: 'Regla 50/30/20', dot: 'bg-tertiary' },
-  zero: { tag: 'Presupuesto base cero', dot: 'bg-secondary' },
-};
-
-const LEVEL_OPTIONS = [
-  { value: 'tracking', label: 'Seguimiento', icon: 'visibility' },
-  { value: '503020', label: '50 / 30 / 20', icon: 'pie_chart' },
-  { value: 'zero', label: 'Base cero', icon: 'account_balance_wallet' },
-];
-
 export default function BudgetShell({ level = 'zero' }) {
+  const { t } = useI18n();
+
+  const ESTADO_LABEL = {
+    good: t('screens.budget.stateOptimal'),
+    warning: t('screens.budget.stateTight'),
+    danger: t('screens.budget.stateAtRisk'),
+    neutral: t('screens.budget.stateNoData'),
+  };
+
+  // Metadatos del nivel (título + subtítulo del header). Cada nivel habla el
+  // idioma de su público (decisión de producto).
+  const LEVEL_META = {
+    tracking: { tag: t('screens.budget.tagTracking'), dot: 'bg-secondary' },
+    '503020': { tag: t('screens.budget.tag503020'), dot: 'bg-tertiary' },
+    zero: { tag: t('screens.budget.tagZero'), dot: 'bg-secondary' },
+  };
+
+  const LEVEL_OPTIONS = [
+    { value: 'tracking', label: t('screens.budget.trackingMode'), icon: 'visibility' },
+    { value: '503020', label: '50 / 30 / 20', icon: 'pie_chart' },
+    { value: 'zero', label: t('screens.budget.zeroMode'), icon: 'account_balance_wallet' },
+  ];
+
   const now = new Date();
   const [year, setYear] = useState(now.getFullYear());
   const [month, setMonth] = useState(now.getMonth());
@@ -102,22 +111,22 @@ export default function BudgetShell({ level = 'zero' }) {
             <div className={`w-1.5 h-1.5 rounded-full ${meta.dot} live-dot`} />
             <span className="font-mono-data text-mono-data text-on-surface-variant uppercase">{meta.tag}</span>
           </div>
-          <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">PRESUPUESTO</h1>
+          <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">{t('budget.title').toUpperCase()}</h1>
           {/* Cambiador rápido de nivel */}
           <div data-tour="budget-mode" className="flex items-center gap-sm mt-md">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">Modo</span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.budget.mode')}</span>
             <StitchSelect value={level} onChange={setBudgetLevel} options={LEVEL_OPTIONS} compact className="min-w-[150px]" />
           </div>
         </div>
         <div className="flex gap-md bg-surface-card p-sm rounded border border-border-subtle inner-glow items-center">
           <button onClick={() => navMonth(-1)} className="p-xs rounded hover:bg-surface-container-high text-on-surface-variant"><MS name="chevron_left" className="text-[18px]" /></button>
           <div className="flex flex-col px-sm py-xs border-x border-border-subtle text-center min-w-[120px]">
-            <span className="font-mono-data text-mono-data text-text-muted">PERÍODO</span>
-            <span className="font-label-sm text-label-sm text-on-background mt-1">{MONTHS_ES[month]} {year}</span>
+            <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.period').toUpperCase()}</span>
+            <span className="font-label-sm text-label-sm text-on-background mt-1">{monthName(month)} {year}</span>
           </div>
           <button onClick={() => navMonth(1)} disabled={isCurrentMonth} className="p-xs rounded hover:bg-surface-container-high text-on-surface-variant disabled:opacity-30"><MS name="chevron_right" className="text-[18px]" /></button>
           <div className="flex flex-col px-md py-xs">
-            <span className="font-mono-data text-mono-data text-text-muted">ESTADO</span>
+            <span className="font-mono-data text-mono-data text-text-muted">{t('common.status').toUpperCase()}</span>
             <span className={`font-label-sm text-label-sm mt-1 ${ESTADO_COLOR[summary.estado]}`}>{ESTADO_LABEL[summary.estado]}</span>
           </div>
         </div>

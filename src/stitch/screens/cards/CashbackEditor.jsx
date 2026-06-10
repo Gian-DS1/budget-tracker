@@ -4,12 +4,15 @@
 import MS from '../../MS';
 import StitchCategorySelect from '../../StitchCategorySelect';
 import useCategoryStore from '../../../stores/useCategoryStore';
+import { useI18n } from '../../../contexts/I18nContext';
+import { tr } from '../../../i18n/runtime';
 
 // Resumen legible de los niveles de una regla escalonada (ej. "5/6/8% por nivel").
 const tiersLabel = (tiers) =>
-  `${tiers.map((t) => t.pct).join('/')}% por nivel`;
+  `${tiers.map((t) => t.pct).join('/')}% ${tr('screens.cards.perTier')}`;
 
 export default function CashbackEditor({ rules, onChange, onRestore, demoNote }) {
+  const { t } = useI18n();
   const categories = useCategoryStore((s) => s.categories);
 
   const setRule = (i, patch) => onChange(rules.map((r, idx) => (idx === i ? { ...r, ...patch } : r)));
@@ -17,7 +20,7 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
   const addRule = () => onChange([...rules, { categoryId: 'all', percentage: 1 }]);
 
   const isTiered = (r) => Array.isArray(r.tiers) && r.tiers.length > 0;
-  const catName = (id) => categories.find((c) => c.id === id)?.name || 'categoría';
+  const catName = (id) => categories.find((c) => c.id === id)?.name || t('screens.cards.category');
 
   // El select usa '' para representar la opción "Todas las categorías"
   // (includeAllOption); en las reglas esa opción se guarda como el literal 'all'.
@@ -29,7 +32,7 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
   return (
     <div className="flex flex-col gap-sm">
       {rules.length === 0 && (
-        <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">Sin reglas de cashback. Agrega una para estimar el reembolso por categoría.</p>
+        <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">{t('screens.cards.noCashbackRules')}</p>
       )}
 
       {rules.map((r, i) => (
@@ -43,7 +46,7 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
               <span className="font-body-md text-body-md text-on-surface truncate">{catName(r.categoryId)}</span>
               <span className="font-mono-data text-mono-data text-text-muted ml-auto shrink-0">{tiersLabel(r.tiers)}</span>
             </div>
-            <button type="button" onClick={() => removeRule(i)} className="text-text-muted hover:text-accent-error p-xs shrink-0" aria-label="Quitar regla"><MS name="close" className="!text-[16px]" /></button>
+            <button type="button" onClick={() => removeRule(i)} className="text-text-muted hover:text-accent-error p-xs shrink-0" aria-label={t('screens.cards.removeRule')}><MS name="close" className="!text-[16px]" /></button>
           </div>
         ) : (
           <div key={i} className="flex items-center gap-sm">
@@ -53,7 +56,7 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
                 onChange={(id) => setRule(i, { categoryId: fromSelectValue(id) })}
                 options={categories}
                 includeAllOption
-                placeholder="Elige categoría…"
+                placeholder={t('screens.cards.chooseCategory')}
               />
             </div>
             <div className="relative w-[88px] shrink-0">
@@ -65,18 +68,18 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
               />
               <span className="absolute right-sm top-1/2 -translate-y-1/2 font-mono-data text-mono-data text-text-muted">%</span>
             </div>
-            <button type="button" onClick={() => removeRule(i)} className="text-text-muted hover:text-accent-error p-xs shrink-0" aria-label="Quitar regla"><MS name="close" className="!text-[16px]" /></button>
+            <button type="button" onClick={() => removeRule(i)} className="text-text-muted hover:text-accent-error p-xs shrink-0" aria-label={t('screens.cards.removeRule')}><MS name="close" className="!text-[16px]" /></button>
           </div>
         )
       ))}
 
       <div className="flex flex-wrap gap-sm mt-xs">
         <button type="button" onClick={addRule} className="flex items-center gap-xs border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">
-          <MS name="add" className="!text-[14px]" /> Regla
+          <MS name="add" className="!text-[14px]" /> {t('screens.cards.rule')}
         </button>
         {onRestore && (
           <button type="button" onClick={onRestore} className="flex items-center gap-xs border border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-surface-container-high transition-colors">
-            <MS name="restart_alt" className="!text-[14px]" /> Restaurar valores del banco
+            <MS name="restart_alt" className="!text-[14px]" /> {t('screens.cards.restoreBankValues')}
           </button>
         )}
       </div>

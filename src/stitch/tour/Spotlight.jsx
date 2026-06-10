@@ -13,6 +13,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from '../MS';
+import { useI18n } from '../../contexts/I18nContext';
 import { SPRING_SOFT, SPRING_SNAP } from '../landingMotion';
 
 const TOOLTIP_W = 340;
@@ -38,6 +39,7 @@ function waitForAnchor(selector, timeout = 1400) {
 }
 
 export default function Spotlight({ step, stepIndex, total, navigate, onNext, onPrev, onSkip }) {
+  const { t } = useI18n();
   const reduce = useReducedMotion();
   const [rect, setRect] = useState(null); // rect del anchor o null (centrado)
   const [ready, setReady] = useState(false);
@@ -127,7 +129,7 @@ export default function Spotlight({ step, stepIndex, total, navigate, onNext, on
   const overlaySpring = reduce ? { duration: 0.18 } : SPRING_SOFT;
 
   return createPortal(
-    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label="Tutorial guiado">
+    <div className="fixed inset-0 z-[100]" role="dialog" aria-modal="true" aria-label={t('common.guidedTutorial')}>
       {/* Capa que captura clics (evita interactuar con la app durante el tour) */}
       <div className="absolute inset-0" onClick={onSkip} aria-hidden="true" />
 
@@ -161,9 +163,9 @@ export default function Spotlight({ step, stepIndex, total, navigate, onNext, on
           >
             <div className="flex items-center justify-between">
               <span className="font-mono-data text-mono-data text-primary uppercase tracking-widest">
-                Paso {stepIndex + 1} de {total}
+                {t('tour.stepOf').replace('{a}', stepIndex + 1).replace('{b}', total)}
               </span>
-              <button onClick={onSkip} className="text-text-muted hover:text-on-surface p-xs -mr-xs rounded hover:bg-surface-container-high transition-colors" aria-label="Saltar tutorial">
+              <button onClick={onSkip} className="text-text-muted hover:text-on-surface p-xs -mr-xs rounded hover:bg-surface-container-high transition-colors" aria-label={t('tour.skipTutorial')}>
                 <MS name="close" className="!text-[18px]" />
               </button>
             </div>
@@ -183,16 +185,16 @@ export default function Spotlight({ step, stepIndex, total, navigate, onNext, on
 
             <div className="flex items-center justify-between gap-sm">
               <button onClick={onSkip} className="font-label-sm text-label-sm text-text-muted hover:text-on-surface transition-colors">
-                Saltar tutorial
+                {t('tour.skipTutorial')}
               </button>
               <div className="flex items-center gap-sm">
                 {!isFirst && (
                   <button onClick={onPrev} className="px-md py-sm border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high transition-colors">
-                    Atrás
+                    {t('tour.back')}
                   </button>
                 )}
                 <button onClick={onNext} className="px-md py-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold rounded hover:bg-primary-container inner-glow transition-colors flex items-center gap-xs">
-                  {isLast ? 'Terminar' : 'Siguiente'}
+                  {isLast ? t('tour.finish') : t('common.next')}
                   {!isLast && <MS name="arrow_forward" className="!text-[16px]" />}
                 </button>
               </div>

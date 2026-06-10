@@ -104,7 +104,7 @@ export default function FlowChart({ series, selY, selM }) {
 
       {selEmpty && (
         <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mt-sm">
-          Sin movimientos en {selLabel}. La curva muestra tus meses anteriores.
+          {strings.charts.noMovementsIn.replace('{m}', selLabel)}
         </span>
       )}
     </div>

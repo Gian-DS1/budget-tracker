@@ -3,22 +3,24 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
+import { useI18n } from '../../contexts/I18nContext';
 import { Stagger } from '../StitchMotion';
 
 const WEB3FORMS_ACCESS_KEY = '446c31a3-399d-4d75-81e9-5e6344334122';
-const TYPES = [
-  { v: 'bug', l: 'Reportar un error', icon: '🔴' },
-  { v: 'improvement', l: 'Sugerencia de mejora', icon: '💡' },
-  { v: 'general', l: 'Comentario general', icon: '💬' },
-];
 
 export default function StitchFeedback() {
+  const { t } = useI18n();
+  const TYPES = [
+    { v: 'bug', l: t('screens.feedback.reportBug'), icon: '🔴' },
+    { v: 'improvement', l: t('screens.feedback.suggestImprovement'), icon: '💡' },
+    { v: 'general', l: t('screens.feedback.generalComment'), icon: '💬' },
+  ];
   const [form, setForm] = useState({ type: 'bug', subject: '', description: '' });
   const [sending, setSending] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
-    if (!form.subject || !form.description) { toast.error('Completa asunto y descripción'); return; }
+    if (!form.subject || !form.description) { toast.error(t('screens.feedback.completeFields')); return; }
     setSending(true);
     const tl = form.type === 'bug' ? '🔴 [ERROR]' : form.type === 'improvement' ? '💡 [MEJORA]' : '💬 [COMENTARIO]';
     try {
@@ -36,11 +38,11 @@ export default function StitchFeedback() {
         }),
       });
       const result = await res.json();
-      if (res.ok && result.success) { toast.success('¡Feedback enviado!'); setForm({ type: 'bug', subject: '', description: '' }); }
+      if (res.ok && result.success) { toast.success(t('screens.feedback.sent')); setForm({ type: 'bug', subject: '', description: '' }); }
       else throw new Error(result.message);
     } catch (err) {
       console.error('Feedback error:', err);
-      toast.error('No se pudo enviar. Revisa tu conexión e inténtalo de nuevo.');
+      toast.error(t('screens.feedback.sendError'));
     } finally { setSending(false); }
   };
 
@@ -49,17 +51,17 @@ export default function StitchFeedback() {
       <div className="mb-xl">
         <div className="flex items-center gap-sm mb-xs">
           <span className="w-2 h-2 rounded-full bg-primary live-dot" />
-          <span className="font-mono-data text-mono-data text-primary uppercase tracking-wider">Canal beta</span>
+          <span className="font-mono-data text-mono-data text-primary uppercase tracking-wider">{t('screens.feedback.betaChannel')}</span>
         </div>
         <h1 className="font-headline-lg text-headline-lg text-on-surface">Feedback</h1>
-        <p className="font-body-md text-body-md text-text-muted mt-sm max-w-2xl">Reporta errores, pide mejoras o envía un comentario al equipo.</p>
+        <p className="font-body-md text-body-md text-text-muted mt-sm max-w-2xl">{t('screens.feedback.subtitle')}</p>
       </div>
 
       <Stagger className="grid grid-cols-1 lg:grid-cols-3 gap-gutter">
         <Stagger.Item className="lg:col-span-2">
         <form onSubmit={submit} className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-md">
           <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase">Tipo</label>
+            <label className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.type')}</label>
             <div className="grid grid-cols-3 gap-sm">
               {TYPES.map((t) => (
                 <button type="button" key={t.v} onClick={() => setForm({ ...form, type: t.v })}
@@ -71,15 +73,15 @@ export default function StitchFeedback() {
             </div>
           </div>
           <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase">Asunto</label>
-            <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className={inputCls} placeholder="Resumen breve" />
+            <label className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.feedback.subject')}</label>
+            <input value={form.subject} onChange={(e) => setForm({ ...form, subject: e.target.value })} className={inputCls} placeholder={t('screens.feedback.briefSummary')} />
           </div>
           <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase">Descripción</label>
-            <textarea rows={6} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputCls} resize-none`} placeholder="Describe el detalle…" />
+            <label className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.description')}</label>
+            <textarea rows={6} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className={`${inputCls} resize-none`} placeholder={t('screens.feedback.describeDetail')} />
           </div>
           <button type="submit" disabled={sending} className="self-start bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-lg py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-sm disabled:opacity-50">
-            <MS name="send" className="text-[16px]" /> {sending ? 'Enviando…' : 'Enviar'}
+            <MS name="send" className="text-[16px]" /> {sending ? t('screens.feedback.sending') : t('screens.feedback.send')}
           </button>
         </form>
         </Stagger.Item>
@@ -88,11 +90,11 @@ export default function StitchFeedback() {
         <aside className="bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-md h-fit">
           <div className="flex items-center gap-sm">
             <MS name="info" className="text-secondary text-[20px]" />
-            <h2 className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface">Canal directo</h2>
+            <h2 className="font-label-sm text-label-sm uppercase tracking-widest text-on-surface">{t('screens.feedback.directChannel')}</h2>
           </div>
-          <p className="font-body-md text-body-md text-on-surface-variant">Tu mensaje llega directo al desarrollador. Sin tickets, sin cola.</p>
+          <p className="font-body-md text-body-md text-on-surface-variant">{t('screens.feedback.directNote')}</p>
           <div className="border-t border-border-subtle pt-md flex flex-col gap-sm">
-            <span className="font-mono-data text-mono-data text-text-muted">RESPUESTA TÍPICA</span>
+            <span className="font-mono-data text-mono-data text-text-muted">{t('screens.feedback.typicalResponse').toUpperCase()}</span>
             <span className="font-headline-md text-[22px] text-tertiary tracking-tight">&lt; 24h</span>
           </div>
         </aside>

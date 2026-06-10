@@ -7,12 +7,15 @@ import { Stagger } from '../StitchMotion';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import { isDemoActive, demoDeleteCard, demoRestoreCard } from '../demoMode';
+import { useI18n } from '../../contexts/I18nContext';
+import { tr } from '../../i18n/runtime';
 import CardItem from './cards/CardItem';
 import CardForm from './cards/CardForm';
 import PaymentModal from './cards/PaymentModal';
 import HistoryModal from './cards/HistoryModal';
 
 export default function StitchCards() {
+  const { t } = useI18n();
   const { cards, addCard, deleteCard } = useCreditCardStore();
   const { transactions } = useTransactionStore();
 
@@ -26,15 +29,15 @@ export default function StitchCards() {
 
   const onDelete = (card) => {
     if (isDemoActive()) demoDeleteCard(card.id); else deleteCard(card.id);
-    toast((t) => (
-      <span className="flex items-center gap-sm">Tarjeta eliminada
+    toast((tt) => (
+      <span className="flex items-center gap-sm">{tr('screens.cards.cardDeleted')}
         <button
           onClick={() => {
             if (isDemoActive()) demoRestoreCard(card); else addCard(card);
-            toast.dismiss(t.id);
+            toast.dismiss(tt.id);
           }}
           className="text-primary font-bold underline"
-        >Deshacer</button>
+        >{tr('common.undo')}</button>
       </span>
     ), { duration: 6000 });
   };
@@ -45,13 +48,13 @@ export default function StitchCards() {
         <div>
           <div className="flex items-center gap-sm mb-xs">
             <span className="w-2 h-2 rounded-full bg-secondary live-dot" />
-            <span className="font-mono-data text-mono-data text-secondary uppercase tracking-wider">Tarjetas activas</span>
+            <span className="font-mono-data text-mono-data text-secondary uppercase tracking-wider">{t('pages.activeCards')}</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">Tarjetas de crédito</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-sm">Saldo por pagar, ciclo abierto, fechas de corte y pago, cashback.</p>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">{t('pages.creditCards')}</h1>
+          <p className="font-body-md text-body-md text-text-muted mt-sm">{t('screens.cards.subtitle')}</p>
         </div>
         <button data-tour="cards-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs">
-          <MS name="add" className="text-[16px]" /> Nueva tarjeta
+          <MS name="add" className="text-[16px]" /> {t('common.newCard')}
         </button>
       </div>
 
@@ -81,11 +84,12 @@ export default function StitchCards() {
 }
 
 function Empty({ onAdd }) {
+  const { t } = useI18n();
   return (
     <div className="bg-surface-card border border-border-subtle rounded-lg inner-glow py-[60px] flex flex-col items-center gap-sm text-center">
       <MS name="credit_card" className="text-[36px] text-text-muted" />
-      <p className="font-body-md text-body-md text-on-surface-variant">Aún no tienes tarjetas.</p>
-      <button onClick={onAdd} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">Agregar tarjeta</button>
+      <p className="font-body-md text-body-md text-on-surface-variant">{t('screens.cards.noCardsYet')}</p>
+      <button onClick={onAdd} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">{t('creditCards.addCard')}</button>
     </div>
   );
 }

@@ -13,7 +13,8 @@ import useCreditCardStore from '../../stores/useCreditCardStore';
 import useSavingsStore from '../../stores/useSavingsStore';
 import useRecurringStore from '../../stores/useRecurringStore';
 import { formatCurrency } from '../../utils/formatters';
-import { MONTHS_ES, DAYS_SHORT_ES } from '../../utils/constants';
+import { monthName, dayShort } from '../../i18n/runtime';
+import { useI18n } from '../../contexts/I18nContext';
 import { getDayMovements, getDueEvents, getMonthSummary, getUpcoming } from './calendar/selectors';
 import DayCell from './calendar/DayCell';
 import DayDetail from './calendar/DayDetail';
@@ -21,13 +22,15 @@ import UpcomingRail from './calendar/UpcomingRail';
 import { CHART } from '../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
-const LEGEND = [
-  { c: CHART.error, l: 'Deuda' }, { c: CHART.warning, l: 'Tarjeta' },
-  { c: CHART.tertiary, l: 'Meta' }, { c: CHART.secondary, l: 'Recurrente' },
-];
 
 export default function StitchCalendar() {
+  const { t, language } = useI18n();
   const navigate = useNavigate();
+
+  const LEGEND = [
+    { c: CHART.error, l: t('debts.debt') }, { c: CHART.warning, l: t('creditCards.card') },
+    { c: CHART.tertiary, l: t('savings.goal') }, { c: CHART.secondary, l: t('screens.calendar.recurring') },
+  ];
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
   const debts = useDebtStore((s) => s.debts);
@@ -61,7 +64,10 @@ export default function StitchCalendar() {
   const todayDay = now.getDate();
   const selectedISO = selected ? `${year}-${String(month + 1).padStart(2, '0')}-${String(selected).padStart(2, '0')}` : null;
 
-  const monthOptions = MONTHS_ES.map((label, i) => ({ value: String(i), label }));
+  const monthOptions = useMemo(
+    () => Array.from({ length: 12 }, (_, i) => ({ value: String(i), label: monthName(i) })),
+    [language],
+  );
   const yearOptions = [];
   for (let yy = now.getFullYear() + 1; yy >= now.getFullYear() - 5; yy--) yearOptions.push({ value: String(yy), label: String(yy) });
 
@@ -71,9 +77,9 @@ export default function StitchCalendar() {
         <div>
           <div className="flex items-center gap-sm mb-xs">
             <span className="w-2 h-2 rounded-full bg-secondary live-dot" />
-            <span className="font-mono-data text-mono-data text-secondary uppercase tracking-wider">Vista mensual</span>
+            <span className="font-mono-data text-mono-data text-secondary uppercase tracking-wider">{t('screens.calendar.monthlyView')}</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">{MONTHS_ES[month]} {year}</h1>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">{monthName(month)} {year}</h1>
         </div>
         <div className="flex items-center gap-sm self-start">
           <div className="w-[140px]"><StitchSelect value={String(month)} onChange={(v) => { setMonth(Number(v)); setSelected(null); }} options={monthOptions} compact /></div>
@@ -87,15 +93,15 @@ export default function StitchCalendar() {
         {/* Resumen del mes */}
         <Stagger.Item className="grid grid-cols-3 gap-md shrink-0">
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">Ingresos</span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.income')}</span>
             <span className="font-headline-md text-[20px] tracking-tight text-tertiary whitespace-nowrap"><CountUp value={summary.income} format={(n) => `+${fmt(n)}`} /></span>
           </div>
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">Gastos</span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.expenses')}</span>
             <span className="font-headline-md text-[20px] tracking-tight text-accent-error whitespace-nowrap"><CountUp value={summary.expense} format={(n) => `−${fmt(n)}`} /></span>
           </div>
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">Balance</span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.balance')}</span>
             <span className={`font-headline-md text-[20px] tracking-tight whitespace-nowrap ${summary.balance >= 0 ? 'text-on-surface' : 'text-accent-error'}`}><CountUp value={summary.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} /></span>
           </div>
         </Stagger.Item>
@@ -104,7 +110,7 @@ export default function StitchCalendar() {
         <Stagger.Item data-tour="calendar-grid" className="grid grid-cols-1 lg:grid-cols-3 gap-gutter flex-1 min-h-0">
           <div className="lg:col-span-2 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md overflow-y-auto stitch-scroll">
             <div className="grid grid-cols-7 gap-px mb-sm">
-              {DAYS_SHORT_ES.map((d) => <div key={d} className="font-mono-data text-mono-data text-text-muted uppercase text-center py-sm">{d}</div>)}
+              {Array.from({ length: 7 }, (_, i) => dayShort(i)).map((d) => <div key={d} className="font-mono-data text-mono-data text-text-muted uppercase text-center py-sm">{d}</div>)}
             </div>
             <div className="grid grid-cols-7 gap-px">
               {cells.map((d, i) => d === null

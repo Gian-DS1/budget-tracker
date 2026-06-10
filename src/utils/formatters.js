@@ -1,6 +1,7 @@
 // FinTrack — Formatters
 
 import { CURRENCIES } from './constants';
+import { currentLocale, tr } from '../i18n/runtime';
 
 /**
  * Format a number as currency
@@ -9,7 +10,7 @@ export function formatCurrency(amount, currencyCode = 'DOP') {
   const currency = CURRENCIES[currencyCode] || CURRENCIES.DOP;
   const absAmount = Math.abs(amount);
 
-  const formatted = new Intl.NumberFormat('es-DO', {
+  const formatted = new Intl.NumberFormat(currentLocale(), {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(absAmount);
@@ -51,7 +52,7 @@ export function formatPercent(value, decimals = 1) {
 export function formatDate(dateStr) {
   if (!dateStr) return '';
   const date = new Date(dateStr + 'T00:00:00');
-  return date.toLocaleDateString('es-DO', {
+  return date.toLocaleDateString(currentLocale(), {
     day: 'numeric',
     month: 'short',
     year: 'numeric',
@@ -99,18 +100,10 @@ export function titleCase(str) {
 }
 
 /**
- * Get transaction type label in Spanish
+ * Get transaction type label in the active language
  */
 export function getTypeLabel(type) {
-  const labels = {
-    income: 'Ingreso',
-    expense: 'Gasto',
-    savings: 'Ahorro',
-    debt_payment: 'Pago Deuda',
-    fixed_expense: 'Gasto Fijo',
-    variable_expense: 'Gasto Variable',
-  };
-  return labels[type] || type;
+  return tr(`types.${type}`, type);
 }
 
 /**

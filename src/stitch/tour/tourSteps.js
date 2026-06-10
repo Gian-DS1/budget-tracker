@@ -16,75 +16,42 @@
 // usuario los descubre solo. Lenguaje: español sencillo, sentence-case, sin em
 // dashes. Qué es · para qué sirve · cómo.
 
+import { tr } from '../../i18n/runtime';
+
+// title/body son GETTERS: se traducen con el idioma activo en el momento en que
+// el Spotlight los lee (cambiar el idioma a mitad de tour también funciona).
+const step = (def, titleKey, bodyKey) => ({
+  ...def,
+  get title() { return tr(titleKey); },
+  get body() { return tr(bodyKey); },
+});
+
 export const TOUR_STEPS = [
   // ── 1. Bienvenida ────────────────────────────────────────────────────────────
-  {
-    id: 'welcome',
-    route: '/',
-    anchor: null,
-    placement: 'center',
-    title: '¡Bienvenido a FinTrack! 👋',
-    body: 'Te muestro lo esencial en un minuto: cómo registrar tu dinero y cómo organizarlo con un presupuesto. Puedes salir cuando quieras con “Saltar”.',
-  },
+  step({ id: 'welcome', route: '/', anchor: null, placement: 'center' },
+    'tour.welcomeTitle', 'tour.welcomeBody'),
 
   // ── 2. Navegación ──────────────────────────────────────────────────────────────
-  {
-    id: 'nav',
-    route: '/',
-    anchor: '[data-tour="nav"]',
-    placement: 'right',
-    padding: 10,
-    title: 'Tu menú',
-    body: 'Desde aquí llegas a todo, en tres bloques: Principal (tu día a día), Patrimonio (lo que tienes y lo que debes) y Herramientas (calendario, reportes y categorías).',
-  },
+  step({ id: 'nav', route: '/', anchor: '[data-tour="nav"]', placement: 'right', padding: 10 },
+    'tour.navTitle', 'tour.navBody'),
 
   // ── 3. Transacciones: el corazón (flujo del dinero) ──────────────────────────
-  {
-    id: 'ledger',
-    route: '/transacciones',
-    anchor: '[data-tour="ledger-new"]',
-    placement: 'left',
-    title: 'Registra tu dinero',
-    body: 'Este es el corazón de la app. Con “Nueva transacción” anotas cada ingreso o gasto. No eliges si es ingreso o gasto: lo define la categoría que escojas. Y al escribir la descripción, la app sugiere la categoría sola.',
-  },
+  step({ id: 'ledger', route: '/transacciones', anchor: '[data-tour="ledger-new"]', placement: 'left' },
+    'tour.ledgerTitle', 'tour.ledgerBody'),
 
   // ── 4. Presupuesto por niveles ───────────────────────────────────────────────
-  {
-    id: 'budget-levels',
-    route: '/presupuesto',
-    anchor: '[data-tour="budget-mode"]',
-    placement: 'bottom',
-    title: 'Tu presupuesto, por niveles',
-    body: 'Tu presupuesto crece contigo. “Seguimiento” solo observa tus gastos; “50/30/20” reparte tu dinero en necesidades, gustos y ahorro; “Base cero” asigna cada peso a un sobre. Empieza simple y sube de nivel cuando quieras.',
-  },
+  step({ id: 'budget-levels', route: '/presupuesto', anchor: '[data-tour="budget-mode"]', placement: 'bottom' },
+    'tour.budgetLevelsTitle', 'tour.budgetLevelsBody'),
 
   // ── 5. Cuánto puedes gastar (integración sin duplicar) ───────────────────────
-  {
-    id: 'budget-spend',
-    route: '/presupuesto',
-    anchor: '[data-tour="budget-summary"]',
-    placement: 'bottom',
-    title: 'Cuánto puedes gastar',
-    body: 'Aquí ves cuánto tienes comprometido (gastos fijos, ahorro y deudas) y cuánto te queda libre. Lo mejor: tus deudas, tarjetas y metas de ahorro se descuentan solas desde sus módulos, sin que las cuentes dos veces.',
-  },
+  step({ id: 'budget-spend', route: '/presupuesto', anchor: '[data-tour="budget-summary"]', placement: 'bottom' },
+    'tour.budgetSpendTitle', 'tour.budgetSpendBody'),
 
   // ── 6. Todo conectado (cierre conceptual) ────────────────────────────────────
-  {
-    id: 'connected',
-    route: '/',
-    anchor: '[data-tour="dashboard-grid"]',
-    placement: 'center',
-    title: 'Todo conectado',
-    body: 'Todo lo que registras se conecta solo. Este resumen, el calendario de vencimientos y los reportes se llenan a partir de tus transacciones. No hay nada más que configurar: explora a tu ritmo.',
-  },
+  step({ id: 'connected', route: '/', anchor: '[data-tour="dashboard-grid"]', placement: 'center' },
+    'tour.connectedTitle', 'tour.connectedBody'),
 
   // ── 7. Cierre ────────────────────────────────────────────────────────────────
-  {
-    id: 'done',
-    route: '/',
-    anchor: null,
-    placement: 'center',
-    title: '¡Listo! 🎉',
-    body: 'Ya conoces lo esencial. Empieza registrando tus primeros movimientos y arma tu presupuesto. ¿Quieres repetir el tutorial? Está en tu menú de cuenta, arriba a la derecha.',
-  },
+  step({ id: 'done', route: '/', anchor: null, placement: 'center' },
+    'tour.doneTitle', 'tour.doneBody'),
 ];

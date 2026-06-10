@@ -26,7 +26,7 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
   const payAll = async () => {
     const amt = Math.round(bal.pendingBilled * 100) / 100;
     if (amt <= 0) return;
-    const payload = { amount: amt, date: todayISO(), note: t('common.save') };
+    const payload = { amount: amt, date: todayISO(), note: t('screens.cards.fullPaymentNote') };
     if (isDemoActive()) { demoAddCardPayment(card.id, payload); toastCelebrate(t('creditCards.amountPaid')); }
     else await addCardPayment(card.id, payload);
   };
@@ -45,9 +45,9 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
           </div>
         </div>
         <div className="flex gap-xs shrink-0">
-          <button onClick={() => onHistory(card)} className="text-text-muted hover:text-primary p-xs" aria-label="Historial de abonos"><MS name="history" className="!text-[16px]" /></button>
-          <button onClick={() => onEdit(card)} className="text-text-muted hover:text-primary p-xs" aria-label="Editar"><MS name="edit" className="!text-[16px]" /></button>
-          <button onClick={() => onDelete(card)} className="text-text-muted hover:text-accent-error p-xs" aria-label="Eliminar"><MS name="delete" className="!text-[16px]" /></button>
+          <button onClick={() => onHistory(card)} className="text-text-muted hover:text-primary p-xs" aria-label={t('common.paymentHistory')}><MS name="history" className="!text-[16px]" /></button>
+          <button onClick={() => onEdit(card)} className="text-text-muted hover:text-primary p-xs" aria-label={t('common.edit')}><MS name="edit" className="!text-[16px]" /></button>
+          <button onClick={() => onDelete(card)} className="text-text-muted hover:text-accent-error p-xs" aria-label={t('common.delete')}><MS name="delete" className="!text-[16px]" /></button>
         </div>
       </div>
 
@@ -80,10 +80,10 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
               <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal block mt-xs">{t('creditCards.multipleMonths')}</span>
             )}
             <div className="flex items-center justify-between mt-md gap-sm">
-              <span className="font-mono-data text-mono-data text-text-muted">Abonado: {fmt(bal.paid)}</span>
+              <span className="font-mono-data text-mono-data text-text-muted">{t('screens.cards.paidSoFar')} {fmt(bal.paid)}</span>
               <div className="flex gap-sm">
-                <button onClick={() => onPay(card)} className="border border-border-subtle text-primary font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-primary/10 transition-colors">Abonar</button>
-                <button onClick={payAll} className="bg-primary text-on-primary font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-primary-container transition-colors">Pagar todo</button>
+                <button onClick={() => onPay(card)} className="border border-border-subtle text-primary font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-primary/10 transition-colors">{t('screens.vaults.contribute')}</button>
+                <button onClick={payAll} className="bg-primary text-on-primary font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-primary-container transition-colors">{t('creditCards.payAll')}</button>
               </div>
             </div>
           </>
@@ -94,15 +94,15 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
       <div className="px-lg py-md relative z-10 border-t border-border-subtle flex justify-between items-center">
         <div className="flex flex-col">
           <span className="font-mono-data text-mono-data text-text-muted flex items-center gap-xs">
-            SALDO TOTAL
-            <span title="Incluye el consumo nuevo aún sin cortar."><MS name="info" className="!text-[12px] text-text-muted/60" /></span>
+            {t('creditCards.totalBalance').toUpperCase()}
+            <span title={t('screens.cards.includesNewSpend')}><MS name="info" className="!text-[12px] text-text-muted/60" /></span>
           </span>
-          {bal.overpay > 0 && <span className="font-mono-data text-mono-data text-tertiary mt-0.5">Prepago {fmt(bal.overpay)}</span>}
+          {bal.overpay > 0 && <span className="font-mono-data text-mono-data text-tertiary mt-0.5">{t('screens.cards.prepaid')} {fmt(bal.overpay)}</span>}
         </div>
         <div className="flex flex-col text-right">
           <span className="font-mono-data text-[15px] text-on-surface-variant">{fmt(bal.totalBalance)}</span>
           <span className="font-mono-data text-mono-data text-tertiary mt-0.5">
-            cashback +{fmt(cashback)}{tiered && <span className="text-text-muted"> · estimado del ciclo</span>}
+            cashback +{fmt(cashback)}{tiered && <span className="text-text-muted"> · {t('screens.cards.cycleEstimate')}</span>}
           </span>
         </div>
       </div>

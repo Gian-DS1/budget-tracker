@@ -1,5 +1,6 @@
 import MS from './MS';
 import ModalShell from './ModalShell';
+import { tr } from '../i18n/runtime';
 
 export const inputCls =
   'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
@@ -12,7 +13,7 @@ export function Field({ label, children, hint, error, extra }) {
       </label>
       {children}
       {hint && <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">{hint}</span>}
-      {error && <span className="font-label-sm text-label-sm text-accent-error">Requerido</span>}
+      {error && <span className="font-label-sm text-label-sm text-accent-error">{tr('common.required')}</span>}
     </div>
   );
 }
@@ -20,7 +21,7 @@ export function Field({ label, children, hint, error, extra }) {
 export function FormActions({ onCancel, label, disabled }) {
   return (
     <div className="flex gap-sm justify-end mt-sm">
-      <button type="button" onClick={onCancel} className="px-md py-sm border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high">Cancelar</button>
+      <button type="button" onClick={onCancel} className="px-md py-sm border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high">{tr('common.cancel')}</button>
       <button type="submit" disabled={disabled} className="px-md py-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold rounded hover:bg-primary-container inner-glow disabled:opacity-40">{label}</button>
     </div>
   );

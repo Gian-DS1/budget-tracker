@@ -7,6 +7,8 @@ import { Stagger } from '../StitchMotion';
 import CountUp from '../CountUp';
 import useDebtStore from '../../stores/useDebtStore';
 import { isDemoActive, demoDeleteDebt, demoRestoreDebt } from '../demoMode';
+import { useI18n } from '../../contexts/I18nContext';
+import { tr } from '../../i18n/runtime';
 import { formatCurrency } from '../../utils/formatters';
 import DebtItem from './debts/DebtItem';
 import DebtForm from './debts/DebtForm';
@@ -16,6 +18,7 @@ import HistoryModal from './debts/HistoryModal';
 const fmt = (n) => formatCurrency(n);
 
 export default function StitchDebts() {
+  const { t } = useI18n();
   const { debts, payments, addDebt, deleteDebt, restorePayment } = useDebtStore();
   const getTotalDebt = useDebtStore((s) => s.getTotalDebt);
 
@@ -38,8 +41,8 @@ export default function StitchDebts() {
     // Capturar los pagos antes de borrar para poder restaurar todo en Deshacer.
     const debtPayments = payments.filter((p) => p.debtId === debt.id);
     if (isDemoActive()) demoDeleteDebt(debt.id); else await deleteDebt(debt.id);
-    toast((t) => (
-      <span className="flex items-center gap-sm">Deuda eliminada
+    toast((tt) => (
+      <span className="flex items-center gap-sm">{tr('screens.debts.debtDeleted')}
         <button
           onClick={async () => {
             if (isDemoActive()) {
@@ -49,10 +52,10 @@ export default function StitchDebts() {
               // Re-aplica los pagos (recrea sus transacciones enlazadas).
               for (const p of debtPayments) await restorePayment(p);
             }
-            toast.dismiss(t.id);
+            toast.dismiss(tt.id);
           }}
           className="text-primary font-bold underline"
-        >Deshacer</button>
+        >{tr('common.undo')}</button>
       </span>
     ), { duration: 6000 });
   };
@@ -63,21 +66,21 @@ export default function StitchDebts() {
         <div>
           <div className="flex items-center gap-sm mb-xs">
             <span className="w-2 h-2 rounded-full bg-accent-error error-dot" />
-            <span className="font-mono-data text-mono-data text-accent-error uppercase tracking-wider">Pasivos · estrategia avalancha</span>
+            <span className="font-mono-data text-mono-data text-accent-error uppercase tracking-wider">{t('screens.debts.liabilitiesAvalanche')}</span>
           </div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">Control de deudas</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-sm">Deuda total activa: <span className="text-accent-error font-mono-data"><CountUp value={totalDebt} format={fmt} /></span></p>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">{t('screens.debts.debtControl')}</h1>
+          <p className="font-body-md text-body-md text-text-muted mt-sm">{t('screens.debts.totalActiveDebt')} <span className="text-accent-error font-mono-data"><CountUp value={totalDebt} format={fmt} /></span></p>
         </div>
         <button data-tour="debts-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start">
-          <MS name="add" className="text-[16px]" /> Nueva deuda
+          <MS name="add" className="text-[16px]" /> {t('common.newDebt')}
         </button>
       </div>
 
       {ordered.length === 0 ? (
         <div className="bg-surface-card border border-border-subtle rounded-lg inner-glow py-[60px] flex flex-col items-center gap-sm text-center">
           <MS name="celebration" className="text-[36px] text-tertiary" />
-          <p className="font-body-md text-body-md text-on-surface-variant">Sin deudas activas. ¡Felicidades!</p>
-          <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">Registrar una deuda</button>
+          <p className="font-body-md text-body-md text-on-surface-variant">{t('screens.debts.noActiveDebts')}</p>
+          <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">{t('screens.debts.registerDebt')}</button>
         </div>
       ) : (
         <Stagger className="grid grid-cols-1 lg:grid-cols-3 gap-md">

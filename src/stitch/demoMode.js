@@ -323,22 +323,34 @@ export function demoSetBudget(categoryId, year, month, amount) {
   });
 }
 
-// Copia los sobres del mes anterior a (year, month), sin pisar los existentes.
+// Copia los sobres del mes anterior a (year, month), PISANDO los montos de las
+// filas existentes (al tocar un sobre se crea una fila con 0 que antes impedía
+// copiar). "Copiar" debe dejar el mes igual al anterior; las categorías del mes
+// destino sin sobre en el anterior se conservan tal cual.
 // Devuelve true/false como el store (para que el toast del componente funcione).
 export function demoCopyBudgetFromPreviousMonth(year, month) {
   let pm = month - 1, py = year;
   if (pm < 0) { pm = 11; py -= 1; }
-  const { budgets } = useBudgetStore.getState();
-  const prev = budgets.filter((b) => b.year === py && b.month === pm);
+  const prev = useBudgetStore.getState().budgets.filter((b) => b.year === py && b.month === pm);
   if (prev.length === 0) return false;
-  const current = budgets.filter((b) => b.year === year && b.month === month);
-  const toCopy = prev.filter((pb) => !current.some((cb) => cb.categoryId === pb.categoryId));
-  if (toCopy.length === 0) return true;
-  const rows = toCopy.map((pb) => ({
-    id: demoId(), categoryId: pb.categoryId, year, month,
-    estimatedAmount: pb.estimatedAmount, currency: 'DOP', createdAt: new Date().toISOString(),
-  }));
-  useBudgetStore.setState((s) => ({ budgets: [...s.budgets, ...rows] }));
+  const amounts = new Map(prev.map((pb) => [pb.categoryId, pb.estimatedAmount]));
+  useBudgetStore.setState((s) => {
+    const next = s.budgets.map((b) =>
+      b.year === year && b.month === month && amounts.has(b.categoryId)
+        ? { ...b, estimatedAmount: amounts.get(b.categoryId) }
+        : b
+    );
+    const have = new Set(
+      next.filter((b) => b.year === year && b.month === month).map((b) => b.categoryId)
+    );
+    const rows = prev
+      .filter((pb) => !have.has(pb.categoryId))
+      .map((pb) => ({
+        id: demoId(), categoryId: pb.categoryId, year, month,
+        estimatedAmount: pb.estimatedAmount, currency: 'DOP', createdAt: new Date().toISOString(),
+      }));
+    return { budgets: [...next, ...rows] };
+  });
   return true;
 }
 

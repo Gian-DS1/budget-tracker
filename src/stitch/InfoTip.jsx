@@ -2,8 +2,10 @@
 // Tooltip glass del tema; accesible por teclado. Compartido por Dashboard y
 // Reportes (sin dependencia de Recharts).
 import MS from './MS';
+import { tr } from '../i18n/runtime';
 
-export function InfoTip({ text, label = 'Cómo se calcula' }) {
+export function InfoTip({ text, label }) {
+  if (label == null) label = tr('common.howCalculated');
   return (
     <span className="relative inline-flex group/info align-middle">
       <button

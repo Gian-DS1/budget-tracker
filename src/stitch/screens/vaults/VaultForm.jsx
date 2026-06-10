@@ -8,12 +8,14 @@ import StitchSelect from '../../StitchSelect';
 import StitchDatePicker from '../../StitchDatePicker';
 import useSavingsStore from '../../../stores/useSavingsStore';
 import { isDemoActive, demoAddGoal, demoUpdateGoal } from '../../demoMode';
+import { useI18n } from '../../../contexts/I18nContext';
 import { Modal, Field, FormActions, inputCls } from './vaultsUi';
-import { HORIZON_FORM_OPTIONS } from './horizons';
+import { getHorizonFormOptions } from './horizons';
 
 const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP', horizon: '' };
 
 export default function VaultForm({ editing, onClose }) {
+  const { t } = useI18n();
   const { addGoal, updateGoal } = useSavingsStore();
   const demo = isDemoActive();
 
@@ -33,7 +35,7 @@ export default function VaultForm({ editing, onClose }) {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.title.trim() || !Number(form.targetAmount)) {
-      toast.error('Completa el nombre y el monto de la meta');
+      toast.error(t('screens.vaults.completeNameAmount'));
       return;
     }
     // Base común. El saldo inicial solo se envía al crear.
@@ -44,42 +46,42 @@ export default function VaultForm({ editing, onClose }) {
       horizon: form.horizon || null,
     };
     if (editing) {
-      if (demo) { demoUpdateGoal(editing.id, data); toast.success('Meta actualizada'); }
-      else { await updateGoal(editing.id, data); toast.success('Meta actualizada'); }
+      if (demo) { demoUpdateGoal(editing.id, data); toast.success(t('screens.vaults.goalUpdated')); }
+      else { await updateGoal(editing.id, data); toast.success(t('screens.vaults.goalUpdated')); }
     } else {
       const createData = { ...data, currentAmount: Number(form.currentAmount) || 0 };
-      if (demo) { demoAddGoal(createData); toast.success('Meta creada'); }
-      else { await addGoal(createData); toast.success('Meta creada'); }
+      if (demo) { demoAddGoal(createData); toast.success(t('screens.vaults.goalCreated')); }
+      else { await addGoal(createData); toast.success(t('screens.vaults.goalCreated')); }
     }
     onClose();
   };
 
   return (
-    <Modal title={editing ? 'Editar meta' : 'Nueva meta'} onClose={onClose}>
+    <Modal title={editing ? t('screens.vaults.editGoal') : t('common.newGoal')} onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-md">
-        <Field label="Nombre"><input value={form.title} onChange={(e) => set({ title: e.target.value })} className={inputCls} placeholder="Ej. Fondo de emergencia" autoFocus /></Field>
+        <Field label={t('common.name')}><input value={form.title} onChange={(e) => set({ title: e.target.value })} className={inputCls} placeholder={t('screens.vaults.exampleGoal')} autoFocus /></Field>
         <div className="grid grid-cols-2 gap-md">
-          <Field label="Meta"><StitchCurrencyInput value={form.targetAmount} onChange={(v) => set({ targetAmount: v })} className={inputCls} /></Field>
+          <Field label={t('savings.goal')}><StitchCurrencyInput value={form.targetAmount} onChange={(v) => set({ targetAmount: v })} className={inputCls} /></Field>
           {editing
-            ? <Field label="Aporte mensual" hint="Para la proyección"><StitchCurrencyInput value={form.monthlyContribution} onChange={(v) => set({ monthlyContribution: v })} className={inputCls} /></Field>
-            : <Field label="Saldo inicial" hint="Lo que ya tienes"><StitchCurrencyInput value={form.currentAmount} onChange={(v) => set({ currentAmount: v })} className={inputCls} /></Field>}
+            ? <Field label={t('screens.vaults.monthlyContribution')} hint={t('screens.vaults.forProjection')}><StitchCurrencyInput value={form.monthlyContribution} onChange={(v) => set({ monthlyContribution: v })} className={inputCls} /></Field>
+            : <Field label={t('screens.vaults.initialBalance')} hint={t('screens.vaults.whatYouHave')}><StitchCurrencyInput value={form.currentAmount} onChange={(v) => set({ currentAmount: v })} className={inputCls} /></Field>}
         </div>
         {!editing && (
-          <Field label="Aporte mensual" hint="Para la proyección"><StitchCurrencyInput value={form.monthlyContribution} onChange={(v) => set({ monthlyContribution: v })} className={inputCls} /></Field>
+          <Field label={t('screens.vaults.monthlyContribution')} hint={t('screens.vaults.forProjection')}><StitchCurrencyInput value={form.monthlyContribution} onChange={(v) => set({ monthlyContribution: v })} className={inputCls} /></Field>
         )}
         <div className="grid grid-cols-2 gap-md">
-          <Field label="Fecha límite"><StitchDatePicker value={form.deadline} onChange={(v) => set({ deadline: v })} /></Field>
-          <Field label="Moneda">
+          <Field label={t('screens.vaults.deadline')}><StitchDatePicker value={form.deadline} onChange={(v) => set({ deadline: v })} /></Field>
+          <Field label={t('common.currency')}>
             <StitchSelect value={form.currency} onChange={(v) => set({ currency: v })} options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]} />
           </Field>
         </div>
-        <Field label="Horizonte" hint="Opcional, para agrupar tus metas">
-          <StitchSelect value={form.horizon} onChange={(v) => set({ horizon: v })} options={HORIZON_FORM_OPTIONS} placeholder="Sin horizonte" />
+        <Field label={t('screens.vaults.horizon')} hint={t('screens.vaults.horizonHint')}>
+          <StitchSelect value={form.horizon} onChange={(v) => set({ horizon: v })} options={getHorizonFormOptions()} placeholder={t('screens.vaults.noHorizon')} />
         </Field>
-        <Field label="Ícono">
+        <Field label={t('categories.icon')}>
           <EmojiPicker value={form.icon} onChange={(char) => set({ icon: char })} />
         </Field>
-        <FormActions onCancel={onClose} label={editing ? 'Guardar' : 'Crear'} />
+        <FormActions onCancel={onClose} label={editing ? t('common.save') : t('common.create')} />
       </form>
     </Modal>
   );

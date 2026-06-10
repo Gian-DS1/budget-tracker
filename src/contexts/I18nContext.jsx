@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import translations from '../i18n/translations';
+import { setRuntimeLanguage } from '../i18n/runtime';
 
 const I18nContext = createContext();
 
@@ -30,12 +31,14 @@ export function I18nProvider({ children }) {
   // Inicializar desde localStorage al montar
   useEffect(() => {
     const stored = getStoredLanguage();
+    setRuntimeLanguage(stored);
     setLanguage(stored);
     setIsInitialized(true);
   }, []);
 
   const changeLanguage = (lang) => {
     if (lang === 'es' || lang === 'en') {
+      setRuntimeLanguage(lang);
       setLanguage(lang);
       setStoredLanguage(lang);
       // Actualizar documento para que herramientas como Google Translate lo detecten

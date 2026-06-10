@@ -1,13 +1,15 @@
 // Comparativa mes actual vs anterior por categoría: barra divergente + delta %.
 import { formatCurrency } from '../../../utils/formatters';
+import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
 
 export default function MonthComparison({ data }) {
+  const { t } = useI18n();
   const rows = (data || []).filter((d) => d.current > 0 || d.previous > 0).slice(0, 8);
   if (rows.length === 0) {
-    return <p className="font-body-md text-body-md text-text-muted py-xl text-center">Necesita dos meses de datos para comparar.</p>;
+    return <p className="font-body-md text-body-md text-text-muted py-xl text-center">{t('screens.reports.needTwoMonths')}</p>;
   }
   // Escala: mayor cambio absoluto define el 100% de la mitad de la barra.
   const maxDelta = Math.max(1, ...rows.map((d) => Math.abs(d.current - d.previous)));
@@ -35,7 +37,7 @@ export default function MonthComparison({ data }) {
               />
             </div>
             <span className={`font-mono-data text-mono-data shrink-0 w-[56px] text-right whitespace-nowrap ${up ? 'text-accent-error' : 'text-tertiary'}`}>
-              {isNew ? 'nuevo' : `${up ? '+' : ''}${d.deltaPct.toFixed(0)}%`}
+              {isNew ? t('screens.reports.newLabel') : `${up ? '+' : ''}${d.deltaPct.toFixed(0)}%`}
             </span>
             <span className="font-mono-data text-mono-data text-text-muted shrink-0 w-[120px] text-right whitespace-nowrap tabular-nums hidden sm:inline">{fmt(d.current)}</span>
           </div>

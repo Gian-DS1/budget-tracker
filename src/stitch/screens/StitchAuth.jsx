@@ -4,6 +4,7 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
+import { useI18n } from '../../contexts/I18nContext';
 import { friendlyAuthError } from '../../utils/authErrors';
 import { isLocalhost, enterDemo } from '../demoMode';
 import MS from '../MS';
@@ -12,6 +13,7 @@ import Logo from '../Logo';
 const MODES = { login: 'login', signup: 'signup', reset: 'reset' };
 
 export default function StitchAuth() {
+  const { t } = useI18n();
   const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecoveringPassword } = useAuth();
   const [mode, setMode] = useState(MODES.login);
   const [email, setEmail] = useState('');
@@ -27,7 +29,7 @@ export default function StitchAuth() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (mode === MODES.signup && password.length < 8) {
-      toast.error('La contraseña debe tener al menos 8 caracteres');
+      toast.error(t('auth.passwordMin'));
       return;
     }
     setBusy(true);
@@ -36,7 +38,7 @@ export default function StitchAuth() {
         await signIn(email, password);
       } else if (mode === MODES.signup) {
         await signUp(email, password);
-        toast.success('Cuenta creada. Revisa tu correo para confirmar.');
+        toast.success(t('auth.accountCreated'));
       } else {
         await resetPassword(email);
         setResetSent(true); // muestra confirmación en pantalla (no solo toast)
@@ -63,7 +65,7 @@ export default function StitchAuth() {
           <Logo size={48} className="mb-md" />
           <h1 className="font-headline-md text-headline-md font-bold text-on-surface">FinTrack</h1>
           <p className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mt-xs">
-            {mode === MODES.login ? 'Acceso al sistema' : mode === MODES.signup ? 'Crear cuenta' : 'Recuperar acceso'}
+            {mode === MODES.login ? t('auth.systemAccess') : mode === MODES.signup ? t('auth.signUp') : t('auth.recoverAccess')}
           </p>
         </div>
 
@@ -73,9 +75,9 @@ export default function StitchAuth() {
             <span className="w-12 h-12 rounded-full bg-tertiary/10 border border-tertiary/30 flex items-center justify-center">
               <MS name="mark_email_read" className="text-[24px] text-tertiary" />
             </span>
-            <p className="font-body-md text-body-md text-on-surface">Revisa tu correo</p>
-            <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">Te enviamos un enlace a <span className="text-on-surface-variant">{email}</span> para restablecer tu contraseña. Si no lo ves, revisa el spam.</p>
-            <button onClick={() => { setResetSent(false); setMode(MODES.login); }} className="mt-sm font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors">Volver al acceso</button>
+            <p className="font-body-md text-body-md text-on-surface">{t('auth.checkEmail')}</p>
+            <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">{t('auth.resetLinkSent').split('{email}')[0]}<span className="text-on-surface-variant">{email}</span>{t('auth.resetLinkSent').split('{email}')[1]}</p>
+            <button onClick={() => { setResetSent(false); setMode(MODES.login); }} className="mt-sm font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors">{t('auth.backToLogin')}</button>
           </div>
         ) : (
         <>
@@ -87,11 +89,11 @@ export default function StitchAuth() {
               disabled={busy}
               className="w-full flex items-center justify-center gap-sm bg-surface-container-lowest border border-border-subtle text-on-surface font-label-sm text-label-sm py-sm rounded hover:bg-surface-container-high transition-colors inner-glow disabled:opacity-50"
             >
-              <GoogleG /> Continuar con Google
+              <GoogleG /> {t('auth.continueWithGoogle')}
             </button>
             <div className="flex items-center gap-sm my-md">
               <div className="flex-1 h-px bg-border-subtle" />
-              <span className="font-mono-data text-mono-data text-text-muted uppercase">o con correo</span>
+              <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('auth.orWithEmail')}</span>
               <div className="flex-1 h-px bg-border-subtle" />
             </div>
           </>
@@ -100,7 +102,7 @@ export default function StitchAuth() {
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-md">
           <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="email">Correo electrónico</label>
+            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="email">{t('auth.email')}</label>
             <input
               id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
               placeholder="tu@correo.com"
@@ -111,7 +113,7 @@ export default function StitchAuth() {
 
           {mode !== MODES.reset && (
             <div className="flex flex-col gap-xs">
-              <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="password">Contraseña</label>
+              <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="password">{t('auth.password')}</label>
               <input
                 id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
@@ -123,7 +125,7 @@ export default function StitchAuth() {
 
           {mode === MODES.login && (
             <button type="button" onClick={() => setMode(MODES.reset)} className="self-end font-label-sm text-label-sm text-primary hover:text-primary-container transition-colors">
-              ¿Olvidaste tu contraseña?
+              {t('auth.forgotPassword')}
             </button>
           )}
 
@@ -131,19 +133,19 @@ export default function StitchAuth() {
             type="submit" disabled={busy}
             className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs"
           >
-            {busy ? 'Procesando…' : mode === MODES.login ? 'Iniciar sesión' : mode === MODES.signup ? 'Crear cuenta' : 'Enviar enlace'}
+            {busy ? t('auth.processing') : mode === MODES.login ? t('auth.signIn') : mode === MODES.signup ? t('auth.signUp') : t('auth.sendLink')}
           </button>
         </form>
 
         {/* Switch */}
         <div className="text-center mt-lg font-body-md text-body-md text-text-muted">
           {mode === MODES.login ? (
-            <>¿No tienes cuenta?{' '}
-              <button onClick={() => setMode(MODES.signup)} className="text-primary font-bold hover:text-primary-container transition-colors">Regístrate</button>
+            <>{t('auth.noAccount')}{' '}
+              <button onClick={() => setMode(MODES.signup)} className="text-primary font-bold hover:text-primary-container transition-colors">{t('auth.register')}</button>
             </>
           ) : (
-            <>¿Ya tienes cuenta?{' '}
-              <button onClick={() => setMode(MODES.login)} className="text-primary font-bold hover:text-primary-container transition-colors">Inicia sesión</button>
+            <>{t('auth.haveAccount')}{' '}
+              <button onClick={() => setMode(MODES.login)} className="text-primary font-bold hover:text-primary-container transition-colors">{t('auth.loginAction')}</button>
             </>
           )}
         </div>
@@ -157,9 +159,9 @@ export default function StitchAuth() {
               onClick={() => { enterDemo(); window.location.reload(); }}
               className="w-full flex items-center justify-center gap-sm border border-dashed border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase tracking-widest py-sm rounded hover:bg-surface-container-high hover:text-on-surface transition-colors"
             >
-              <MS name="science" className="text-[16px]" /> Entrar como demo (QA local)
+              <MS name="science" className="text-[16px]" /> {t('auth.enterDemo')}
             </button>
-            <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">Datos de ejemplo · no toca el backend</p>
+            <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">{t('auth.demoNote')}</p>
           </div>
         )}
       </div>
@@ -169,18 +171,19 @@ export default function StitchAuth() {
 
 // Pantalla de nueva contraseña (tras llegar del email de recuperación).
 function NewPasswordScreen({ updatePassword }) {
+  const { t } = useI18n();
   const [pwd, setPwd] = useState('');
   const [pwd2, setPwd2] = useState('');
   const [busy, setBusy] = useState(false);
 
   const submit = async (e) => {
     e.preventDefault();
-    if (pwd.length < 8) { toast.error('La contraseña debe tener al menos 8 caracteres'); return; }
-    if (pwd !== pwd2) { toast.error('Las contraseñas no coinciden'); return; }
+    if (pwd.length < 8) { toast.error(t('auth.passwordMin')); return; }
+    if (pwd !== pwd2) { toast.error(t('auth.passwordsDontMatch')); return; }
     setBusy(true);
     try {
       await updatePassword(pwd);
-      toast.success('Contraseña actualizada. Ya puedes entrar.');
+      toast.success(t('auth.passwordUpdated'));
     } catch (err) {
       toast.error(friendlyAuthError(err));
     } finally { setBusy(false); }
@@ -194,20 +197,20 @@ function NewPasswordScreen({ updatePassword }) {
           <div className="w-12 h-12 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
             <MS name="lock_reset" className="text-[24px] text-primary" />
           </div>
-          <h1 className="font-headline-md text-headline-md font-bold text-on-surface">Nueva contraseña</h1>
-          <p className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mt-xs">Restablecer acceso</p>
+          <h1 className="font-headline-md text-headline-md font-bold text-on-surface">{t('auth.newPassword')}</h1>
+          <p className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mt-xs">{t('auth.resetAccess')}</p>
         </div>
         <form onSubmit={submit} className="flex flex-col gap-md">
           <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np1">Nueva contraseña</label>
+            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np1">{t('auth.newPassword')}</label>
             <input id="np1" type="password" required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" autoComplete="new-password" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
           </div>
           <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np2">Confirmar contraseña</label>
+            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np2">{t('auth.confirmPassword')}</label>
             <input id="np2" type="password" required value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="••••••••" autoComplete="new-password" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
           </div>
           <button type="submit" disabled={busy} className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs">
-            {busy ? 'Guardando…' : 'Guardar contraseña'}
+            {busy ? t('auth.saving') : t('auth.savePassword')}
           </button>
         </form>
       </div>

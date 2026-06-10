@@ -5,6 +5,7 @@ import { useMemo } from 'react';
 import MS from '../../MS';
 import Emoji from '../../Emoji';
 import { Stagger } from '../../StitchMotion';
+import { useI18n } from '../../../contexts/I18nContext';
 import { groupByCategory } from '../../../utils/calculations';
 import { formatCurrency } from '../../../utils/formatters';
 
@@ -13,6 +14,7 @@ const fmt = (n) => formatCurrency(n);
 const EXPENSE_TYPES = new Set(['expense', 'fixed_expense', 'variable_expense']);
 
 export default function BudgetTracking({ monthTx, categories, summary }) {
+  const { t } = useI18n();
   const ingreso = summary.ingresoRecibido;
   // Gastos del mes = fijos reales + variables (los buckets ya netos de cashback).
   const gastos = summary.gastosFijosReal + summary.variableGastado;
@@ -35,22 +37,22 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
     <>
       {/* Resumen del mes */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-gutter mb-gutter">
-        <Stat label="Ingreso del mes" value={fmt(ingreso)} icon="south_west" tone="text-tertiary" />
-        <Stat label="Gastos del mes" value={fmt(gastos)} icon="north_east" tone="text-accent-error" />
-        <Stat label="Balance" value={fmt(balance)} icon="account_balance" tone={balance < 0 ? 'text-accent-error' : 'text-on-background'} />
+        <Stat label={t('screens.budget.incomeOfMonth')} value={fmt(ingreso)} icon="south_west" tone="text-tertiary" />
+        <Stat label={t('screens.budget.expensesOfMonth')} value={fmt(gastos)} icon="north_east" tone="text-accent-error" />
+        <Stat label={t('common.balance')} value={fmt(balance)} icon="account_balance" tone={balance < 0 ? 'text-accent-error' : 'text-on-background'} />
       </div>
 
       {/* A dónde se fue el dinero */}
       <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
         <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-          <h2 className="font-mono-data text-mono-data text-on-surface-variant">A DÓNDE SE FUE TU DINERO</h2>
+          <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.budget.whereMoneyWent').toUpperCase()}</h2>
           <MS name="insights" className="text-text-muted text-[16px]" />
         </div>
 
         {byCat.length === 0 ? (
           <div className="py-[48px] flex flex-col items-center text-center gap-sm">
             <MS name="receipt_long" className="text-[32px] text-text-muted" />
-            <p className="font-body-md text-body-md text-on-surface-variant">Aún no hay gastos este mes.</p>
+            <p className="font-body-md text-body-md text-on-surface-variant">{t('screens.budget.noExpensesYet')}</p>
           </div>
         ) : (
           <Stagger className="flex flex-col gap-sm">

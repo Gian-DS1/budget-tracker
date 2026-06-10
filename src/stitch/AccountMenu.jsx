@@ -8,9 +8,11 @@ import MS from './MS';
 import DropdownPanel from './DropdownPanel';
 import { useTour } from './tour/useTour';
 import { useAuth } from '../contexts/AuthContext';
+import { useI18n } from '../contexts/I18nContext';
 import { isDemoActive, exitDemo } from './demoMode';
 
 export default function AccountMenu() {
+  const { t } = useI18n();
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const reduce = useReducedMotion();
@@ -44,7 +46,7 @@ export default function AccountMenu() {
     signOut();
   };
 
-  const label = demo ? 'Modo demo' : (user?.email || 'Mi cuenta');
+  const label = demo ? t('common.demoMode') : (user?.email || t('common.myAccount'));
 
   return (
     <>
@@ -52,7 +54,7 @@ export default function AccountMenu() {
         ref={triggerRef}
         data-tour="account"
         onClick={() => setOpen((o) => !o)}
-        aria-label="Cuenta"
+        aria-label={t('common.account')}
         aria-haspopup="menu"
         aria-expanded={open}
         className={`w-8 h-8 rounded-full overflow-hidden border flex items-center justify-center inner-glow transition-colors ${open ? 'border-primary' : 'border-border-subtle'} bg-surface-container-lowest`}
@@ -68,13 +70,13 @@ export default function AccountMenu() {
             </div>
             <div className="flex flex-col min-w-0">
               <span className="font-body-md text-body-md text-on-surface truncate">{label}</span>
-              <span className="font-mono-data text-mono-data text-text-muted uppercase">{demo ? 'Sesión de prueba' : 'Sesión activa'}</span>
+              <span className="font-mono-data text-mono-data text-text-muted uppercase">{demo ? t('common.trialSession') : t('common.activeSession')}</span>
             </div>
           </div>
 
           <button role="menuitem" onClick={() => go('/ajustes')} className="w-full flex items-center gap-sm px-md py-sm text-left text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
             <MS name="settings" className="!text-[18px]" />
-            <span className="font-body-md text-body-md">Ajustes</span>
+            <span className="font-body-md text-body-md">{t('nav.settings')}</span>
           </button>
           <button role="menuitem" onClick={() => go('/feedback')} className="w-full flex items-center gap-sm px-md py-sm text-left text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
             <MS name="forum" className="!text-[18px]" />
@@ -82,13 +84,13 @@ export default function AccountMenu() {
           </button>
           <button role="menuitem" onClick={() => { setOpen(false); startTour(); }} className="w-full flex items-center gap-sm px-md py-sm text-left text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
             <MS name="school" className="!text-[18px]" />
-            <span className="font-body-md text-body-md">Ver tutorial</span>
+            <span className="font-body-md text-body-md">{t('common.viewTutorial')}</span>
           </button>
 
           <div className="border-t border-border-subtle mt-xs pt-xs">
             <button role="menuitem" onClick={handleSignOut} className="w-full flex items-center gap-sm px-md py-sm text-left text-accent-error hover:bg-accent-error/10 transition-colors">
               <MS name="logout" className="!text-[18px]" />
-              <span className="font-body-md text-body-md">{demo ? 'Salir del demo' : 'Cerrar sesión'}</span>
+              <span className="font-body-md text-body-md">{demo ? t('common.exitDemo') : t('auth.signOut')}</span>
             </button>
           </div>
         </div>

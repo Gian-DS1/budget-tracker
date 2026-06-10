@@ -11,12 +11,13 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from './MS';
-import { MONTHS_ES, MONTHS_SHORT_ES } from '../utils/constants';
+import { monthName, monthShort, getRuntimeLanguage, tr } from '../i18n/runtime';
 import { TRIGGER_BASE, TRIGGER_COMPACT } from './dropdownShared';
 import DropdownPanel from './DropdownPanel';
 
 // Lunes primero (convención local).
-const WEEK = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+const WEEK = { es: ['L', 'M', 'M', 'J', 'V', 'S', 'D'], en: ['M', 'T', 'W', 'T', 'F', 'S', 'S'] };
+const week = () => WEEK[getRuntimeLanguage()];
 
 const pad = (n) => String(n).padStart(2, '0');
 const toISO = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
@@ -30,7 +31,7 @@ function parseISO(iso) {
 function labelOf(iso) {
   const p = parseISO(iso);
   if (!p) return '';
-  return `${p.d} ${MONTHS_SHORT_ES[p.m].toLowerCase()} ${p.y}`;
+  return `${p.d} ${monthShort(p.m).toLowerCase()} ${p.y}`;
 }
 // Índice de columna (0=Lunes) del primer día del mes.
 function firstWeekday(y, m) {
@@ -135,7 +136,7 @@ export default function StitchDatePicker({
             name="close"
             role="button"
             tabIndex={0}
-            aria-label="Limpiar fecha"
+            aria-label={tr('common.clearDate')}
             onClick={(e) => { e.stopPropagation(); onChange(''); }}
             className="!text-[13px] text-text-muted hover:text-on-surface"
           />
@@ -159,20 +160,20 @@ export default function StitchDatePicker({
           >
             {/* Cabecera: mes/año + navegación */}
             <div className="flex items-center justify-between mb-sm px-xs">
-              <button type="button" onClick={prevMonth} aria-label="Mes anterior" className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-on-surface hover:bg-surface-container-high transition-colors">
+              <button type="button" onClick={prevMonth} aria-label={tr('common.prevMonth')} className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-on-surface hover:bg-surface-container-high transition-colors">
                 <MS name="chevron_left" className="text-[18px]" />
               </button>
               <span className="font-label-sm text-label-sm text-on-surface font-medium">
-                {MONTHS_ES[viewM]} {viewY}
+                {monthName(viewM)} {viewY}
               </span>
-              <button type="button" onClick={nextMonth} aria-label="Mes siguiente" className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-on-surface hover:bg-surface-container-high transition-colors">
+              <button type="button" onClick={nextMonth} aria-label={tr('common.nextMonth')} className="w-7 h-7 flex items-center justify-center rounded text-text-muted hover:text-on-surface hover:bg-surface-container-high transition-colors">
                 <MS name="chevron_right" className="text-[18px]" />
               </button>
             </div>
 
             {/* Encabezado de días */}
             <div className="grid grid-cols-7 gap-0.5 mb-0.5">
-              {WEEK.map((d, i) => (
+              {week().map((d, i) => (
                 <div key={i} className="h-7 flex items-center justify-center font-mono-data text-[9px] text-text-muted uppercase">{d}</div>
               ))}
             </div>

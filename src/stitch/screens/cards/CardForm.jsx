@@ -8,6 +8,7 @@ import MS from '../../MS';
 import StitchSelect from '../../StitchSelect';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
 import { isDemoActive, demoAddCard, demoUpdateCard } from '../../demoMode';
+import { useI18n } from '../../../contexts/I18nContext';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
 import useCategoryStore from '../../../stores/useCategoryStore';
 import { getCatalogBanks, getCatalogCardsByBank, getCatalogCard, resolveCardCashback } from '../../../data/creditCardCatalog';
@@ -21,6 +22,7 @@ const blank = { name: '', bank: '', cutoffDay: '', dueDay: '', color: '#bec2ff',
 const dayCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
 
 export default function CardForm({ editing, onClose }) {
+  const { t } = useI18n();
   const { addCard, updateCard } = useCreditCardStore();
   const categories = useCategoryStore((s) => s.categories);
   const demo = isDemoActive();
@@ -55,7 +57,7 @@ export default function CardForm({ editing, onClose }) {
     const rules = await resolveCardCashback(tpl, categories, ensureCat);
     set({ cashbackRules: rules });
     setResolving(false);
-    toast.success('Cashback restaurado a los valores del banco');
+    toast.success(t('screens.cards.cashbackRestored'));
   };
 
   const switchMode = (m) => {
@@ -67,7 +69,7 @@ export default function CardForm({ editing, onClose }) {
     e.preventDefault();
     const cutoffDay = parseInt(form.cutoffDay, 10), dueDay = parseInt(form.dueDay, 10);
     if (!form.name || !(cutoffDay >= 1 && cutoffDay <= 31) || !(dueDay >= 1 && dueDay <= 31)) {
-      toast.error('Completa nombre y días de corte/pago (1-31)');
+      toast.error(t('screens.cards.completeNameDays'));
       return;
     }
     // Preserva reglas escalonadas (tiers) y planas (percentage); descarta vacías.
@@ -75,10 +77,10 @@ export default function CardForm({ editing, onClose }) {
     const payload = { name: form.name, bank: form.bank, cutoffDay, dueDay, color: form.color, openingBalance: Number(form.openingBalance) || 0, cashbackRules, catalogId: form.catalogId || null };
 
     if (editing) {
-      if (demo) { demoUpdateCard(editing.id, payload); toast.success('Tarjeta actualizada'); }
+      if (demo) { demoUpdateCard(editing.id, payload); toast.success(t('screens.cards.cardUpdated')); }
       else await updateCard(editing.id, payload);
     } else {
-      if (demo) { demoAddCard(payload); toast.success('Tarjeta guardada'); }
+      if (demo) { demoAddCard(payload); toast.success(t('screens.cards.cardSaved')); }
       else await addCard(payload);
     }
     onClose();
@@ -86,15 +88,15 @@ export default function CardForm({ editing, onClose }) {
 
   const banks = getCatalogBanks();
   const catalogCards = bank ? getCatalogCardsByBank(bank) : [];
-  const demoNote = demo ? 'Algunas reglas de ecosistema (Bravo, Sirena…) requieren iniciar sesión.' : null;
+  const demoNote = demo ? t('screens.cards.ecosystemNote') : null;
 
   return (
-    <Modal title={editing ? 'Editar tarjeta' : 'Nueva tarjeta'} onClose={onClose} width="520px">
+    <Modal title={editing ? t('screens.cards.editCard') : t('common.newCard')} onClose={onClose} width="520px">
       {/* Tabs de modo (solo al crear; al editar el modo queda fijo) */}
       {!editing && (
         <div className="flex gap-xs mb-lg p-xs bg-surface-container-lowest border border-border-subtle rounded inner-glow">
-          {[{ v: 'catalog', l: 'Predefinida' }, { v: 'custom', l: 'Personalizada' }].map((t) => (
-            <button key={t.v} type="button" onClick={() => switchMode(t.v)} className={`flex-1 py-xs rounded font-mono-data text-mono-data uppercase transition-colors ${mode === t.v ? 'bg-primary text-on-primary' : 'text-text-muted hover:text-on-surface'}`}>{t.l}</button>
+          {[{ v: 'catalog', l: t('screens.cards.predefined') }, { v: 'custom', l: t('screens.cards.custom') }].map((tab) => (
+            <button key={tab.v} type="button" onClick={() => switchMode(tab.v)} className={`flex-1 py-xs rounded font-mono-data text-mono-data uppercase transition-colors ${mode === tab.v ? 'bg-primary text-on-primary' : 'text-text-muted hover:text-on-surface'}`}>{tab.l}</button>
           ))}
         </div>
       )}
@@ -104,11 +106,11 @@ export default function CardForm({ editing, onClose }) {
           <>
             {!editing && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-md">
-                <Field label="Banco">
-                  <StitchSelect value={bank} onChange={(b) => { setBank(b); set({ catalogId: null, name: '' }); }} options={banks.map((b) => ({ value: b, label: b }))} placeholder="Elige banco…" />
+                <Field label={t('screens.cards.bank')}>
+                  <StitchSelect value={bank} onChange={(b) => { setBank(b); set({ catalogId: null, name: '' }); }} options={banks.map((b) => ({ value: b, label: b }))} placeholder={t('screens.cards.chooseBank')} />
                 </Field>
-                <Field label="Tarjeta">
-                  <StitchSelect value={form.catalogId || ''} onChange={loadCatalogCard} options={catalogCards.map((c) => ({ value: c.id, label: c.name }))} placeholder={bank ? 'Elige tarjeta…' : 'Primero el banco'} />
+                <Field label={t('creditCards.card')}>
+                  <StitchSelect value={form.catalogId || ''} onChange={loadCatalogCard} options={catalogCards.map((c) => ({ value: c.id, label: c.name }))} placeholder={bank ? t('screens.cards.chooseCard') : t('screens.cards.bankFirst')} />
                 </Field>
               </div>
             )}
@@ -122,9 +124,9 @@ export default function CardForm({ editing, onClose }) {
           </>
         ) : (
           <>
-            <Field label="Nombre"><input value={form.name} onChange={(e) => set({ name: e.target.value })} className={inputCls} placeholder="Ej. Visa Popular" /></Field>
-            <Field label="Banco"><input value={form.bank} onChange={(e) => set({ bank: e.target.value })} className={inputCls} placeholder="Ej. Banco Popular" /></Field>
-            <Field label="Color">
+            <Field label={t('common.name')}><input value={form.name} onChange={(e) => set({ name: e.target.value })} className={inputCls} placeholder={t('screens.cards.exampleCardName')} /></Field>
+            <Field label={t('screens.cards.bank')}><input value={form.bank} onChange={(e) => set({ bank: e.target.value })} className={inputCls} placeholder={t('screens.debts.exampleCreditor')} /></Field>
+            <Field label={t('categories.color')}>
               <div className="flex gap-sm">{COLORS.map((c) => <button type="button" key={c} onClick={() => set({ color: c })} className={`w-7 h-7 rounded-full border-2 ${form.color === c ? 'border-on-surface' : 'border-transparent'}`} style={{ background: c }} />)}</div>
             </Field>
           </>
@@ -132,15 +134,15 @@ export default function CardForm({ editing, onClose }) {
 
         {/* Corte / pago: siempre editables */}
         <div className="grid grid-cols-2 gap-md">
-          <Field label="Día de corte"><input inputMode="numeric" value={form.cutoffDay} onChange={(e) => set({ cutoffDay: e.target.value.replace(/\D/g, '').slice(0, 2) })} className={dayCls} placeholder="1-31" /></Field>
-          <Field label="Día de pago"><input inputMode="numeric" value={form.dueDay} onChange={(e) => set({ dueDay: e.target.value.replace(/\D/g, '').slice(0, 2) })} className={dayCls} placeholder="1-31" /></Field>
+          <Field label={t('screens.cards.cutoffDay')}><input inputMode="numeric" value={form.cutoffDay} onChange={(e) => set({ cutoffDay: e.target.value.replace(/\D/g, '').slice(0, 2) })} className={dayCls} placeholder="1-31" /></Field>
+          <Field label={t('screens.cards.dueDay')}><input inputMode="numeric" value={form.dueDay} onChange={(e) => set({ dueDay: e.target.value.replace(/\D/g, '').slice(0, 2) })} className={dayCls} placeholder="1-31" /></Field>
         </div>
 
         {/* Saldo inicial: deuda que YA tenías antes de usar la app. */}
-        <Field label="Saldo actual que ya debes (opcional)">
+        <Field label={t('screens.cards.openingBalanceLabel')}>
           <StitchCurrencyInput value={form.openingBalance} onChange={(v) => set({ openingBalance: v })} placeholder="0" className={inputCls} />
           <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mt-xs block">
-            Lo que ya debías a esta tarjeta al empezar. Suma a “por pagar”; no cuenta como gasto del mes.
+            {t('screens.cards.openingBalanceHint')}
           </span>
         </Field>
 
@@ -148,7 +150,7 @@ export default function CardForm({ editing, onClose }) {
         <div className="border border-border-subtle rounded inner-glow">
           <button type="button" onClick={() => setShowCashback((s) => !s)} className="w-full flex items-center justify-between px-md py-sm">
             <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs">
-              <MS name="paid" className="!text-[14px] text-tertiary" /> Cashback {resolving && '· cargando…'}
+              <MS name="paid" className="!text-[14px] text-tertiary" /> Cashback {resolving && `· ${t('screens.cards.loading')}`}
             </span>
             <MS name="expand_more" className={`!text-[18px] text-text-muted transition-transform ${showCashback ? 'rotate-180' : ''}`} />
           </button>
@@ -164,7 +166,7 @@ export default function CardForm({ editing, onClose }) {
           )}
         </div>
 
-        <FormActions onCancel={onClose} label={editing ? 'Guardar' : 'Crear'} disabled={resolving} />
+        <FormActions onCancel={onClose} label={editing ? t('common.save') : t('common.create')} disabled={resolving} />
       </form>
     </Modal>
   );

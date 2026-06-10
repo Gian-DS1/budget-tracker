@@ -1,6 +1,7 @@
 // Panel "Análisis inteligente": recomendaciones priorizadas del motor getAnalysis.
 // Cada tarjeta lleva color e ícono según severidad. Hover sutil.
 import MS from '../../MS';
+import { useI18n } from '../../../contexts/I18nContext';
 
 const STYLE = {
   alert: { ring: 'border-accent-error/40', bar: 'bg-accent-error', icon: 'text-accent-error' },
@@ -10,14 +11,15 @@ const STYLE = {
 };
 
 export default function AnalysisPanel({ insights }) {
+  const { t } = useI18n();
   if (!insights || insights.length === 0) return null;
   return (
     <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
       <div className="flex justify-between items-center mb-md border-b border-border-subtle pb-sm">
         <h2 className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs">
-          <MS name="neurology" className="!text-[16px] text-primary" /> Análisis inteligente
+          <MS name="neurology" className="!text-[16px] text-primary" /> {t('screens.reports.smartAnalysis')}
         </h2>
-        <span className="font-mono-data text-mono-data text-text-muted">{insights.length} {insights.length === 1 ? 'hallazgo' : 'hallazgos'}</span>
+        <span className="font-mono-data text-mono-data text-text-muted">{insights.length} {insights.length === 1 ? t('screens.reports.findingOne') : t('screens.reports.findingMany')}</span>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-md">
         {insights.map((it, i) => {

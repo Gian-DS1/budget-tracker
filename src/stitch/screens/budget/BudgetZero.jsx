@@ -17,10 +17,10 @@ const fmt = (n) => formatCurrency(n);
 // Agrupación de sobres por tipo, en el orden del flujo base cero. Cada grupo
 // tiene su color de acento (coherente con el resto del tema) e icono.
 const GROUP_ORDER = [
-  { key: 'income', label: 'Ingresos', icon: 'trending_up', cls: 'text-tertiary' },
-  { key: 'fixed_expense', label: 'Gastos fijos', icon: 'event_repeat', cls: 'text-accent-warning' },
-  { key: 'variable_expense', label: 'Gastos variables', icon: 'shopping_cart', cls: 'text-primary' },
-  { key: 'savings', label: 'Ahorro', icon: 'savings', cls: 'text-secondary' },
+  { key: 'income', labelKey: 'common.income', icon: 'trending_up', cls: 'text-tertiary' },
+  { key: 'fixed_expense', labelKey: 'screens.categories.fixedExpensesSection', icon: 'event_repeat', cls: 'text-accent-warning' },
+  { key: 'variable_expense', labelKey: 'screens.categories.variableExpensesSection', icon: 'shopping_cart', cls: 'text-primary' },
+  { key: 'savings', labelKey: 'types.savings', icon: 'savings', cls: 'text-secondary' },
 ];
 // Mapea cualquier tipo de categoría a una de las 4 cubetas (el genérico
 // 'expense' se trata como gasto variable).
@@ -92,7 +92,7 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
 
   const handleCopy = async () => {
     const ok = demo ? demoCopyBudgetFromPreviousMonth(year, month) : await copyBudgetFromPreviousMonth(year, month);
-    toast[ok ? 'success' : 'error'](ok ? t('dashboard.budgetCopy') : t('dashboard.noPreviousBudget'));
+    toast[ok ? 'success' : 'error'](ok ? t('pages.budgetCopy') : t('pages.noPreviousBudget'));
   };
 
   return (
@@ -105,17 +105,17 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       <div data-tour="budget-summary" className="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
         <div className="md:col-span-8 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">DISPONIBLE PARA GASTAR</h2>
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.budget.available').toUpperCase()}</h2>
             <MS name="timeline" className="text-text-muted text-[16px]" />
           </div>
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex justify-between items-end mb-xs">
               <div className="flex flex-col">
-                <span className="font-mono-data text-mono-data text-text-muted">PUEDES GASTAR</span>
+                <span className="font-mono-data text-mono-data text-text-muted">{t('dashboard.canSpend').toUpperCase()}</span>
                 <span className={`font-headline-md text-[36px] tracking-tighter ${summary.disponible < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(summary.puedesGastar)}</span>
               </div>
               <div className="flex flex-col text-right">
-                <span className="font-mono-data text-mono-data text-text-muted">COMPROMETIDO</span>
+                <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.committed').toUpperCase()}</span>
                 <span className="font-headline-md text-[24px] text-on-background tracking-tighter">{fmt(summary.comprometido)}</span>
               </div>
             </div>
@@ -123,22 +123,22 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
               <div className="absolute top-0 left-0 h-full bg-primary" style={{ width: `${consumedPct}%` }} />
             </div>
             <div className="flex justify-between mt-sm">
-              <span className="font-mono-data text-mono-data text-text-muted">Ingreso {fmt(summary.ingresoRecibido)}</span>
-              <span className="font-mono-data text-mono-data text-primary">{consumedPct.toFixed(0)}% comprometido</span>
-              <span className="font-mono-data text-mono-data text-text-muted">Por asignar {fmt(summary.porAsignar)}</span>
+              <span className="font-mono-data text-mono-data text-text-muted">{t('transactions.income')} {fmt(summary.ingresoRecibido)}</span>
+              <span className="font-mono-data text-mono-data text-primary">{consumedPct.toFixed(0)}% {t('screens.budget.committed').toLowerCase()}</span>
+              <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.toAllocate')} {fmt(summary.porAsignar)}</span>
             </div>
           </div>
         </div>
 
         <div className="md:col-span-4 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">GASTO VARIABLE / DÍA</h2>
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.budget.variablePerDay').toUpperCase()}</h2>
             <MS name="local_fire_department" className="text-accent-warning text-[16px]" />
           </div>
           <div className="flex-1 flex flex-col justify-center items-center text-center">
             <span className="font-hero-headline text-[48px] text-on-background tracking-tighter leading-none">{fmt(dailyBurn)}</span>
-            <span className="font-mono-data text-mono-data text-text-muted mt-sm">PROMEDIO · {daysElapsed} DÍAS</span>
-            <span className="font-label-sm text-label-sm text-on-surface-variant mt-md">Variable gastado: {fmt(summary.variableGastado)}</span>
+            <span className="font-mono-data text-mono-data text-text-muted mt-sm">{t('screens.budget.average').toUpperCase()} · {daysElapsed} {t('screens.budget.days').toUpperCase()}</span>
+            <span className="font-label-sm text-label-sm text-on-surface-variant mt-md">{t('screens.budget.variableSpent')} {fmt(summary.variableGastado)}</span>
           </div>
         </div>
       </div>
@@ -146,14 +146,14 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       {/* Sobres */}
       <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
         <div className="flex flex-wrap justify-between items-center gap-md mb-lg border-b border-border-subtle pb-sm">
-          <h2 className="font-mono-data text-mono-data text-on-surface-variant">SOBRES POR CATEGORÍA · {fmt(totalEstimated)} ASIGNADO</h2>
+          <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(totalEstimated)} {t('screens.budget.assigned').toUpperCase()}</h2>
           <button onClick={handleCopy} className="flex items-center gap-xs bg-transparent border border-border-subtle text-on-surface font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high transition-colors">
-            <MS name="content_copy" className="text-[14px]" /> Copiar mes ant.
+            <MS name="content_copy" className="text-[14px]" /> {t('screens.budget.copyPrevMonth')}
           </button>
         </div>
 
         {rows.length === 0 ? (
-          <p className="font-body-md text-body-md text-text-muted py-lg text-center">No hay categorías activas.</p>
+          <p className="font-body-md text-body-md text-text-muted py-lg text-center">{t('screens.budget.noActiveCategories')}</p>
         ) : (
           <div className="flex flex-col gap-lg">
             {groups.map((g) => (
@@ -162,10 +162,10 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
                 <div className="flex items-center justify-between gap-sm mb-md">
                   <div className="flex items-center gap-sm min-w-0">
                     <MS name={g.icon} className={`!text-[16px] ${g.cls}`} />
-                    <span className={`font-mono-data text-mono-data uppercase tracking-widest ${g.cls}`}>{g.label}</span>
+                    <span className={`font-mono-data text-mono-data uppercase tracking-widest ${g.cls}`}>{t(g.labelKey)}</span>
                     <span className="font-mono-data text-mono-data text-text-muted">· {g.items.length}</span>
                   </div>
-                  <span className="font-mono-data text-mono-data text-text-muted whitespace-nowrap">{fmt(g.subtotal)} asignado</span>
+                  <span className="font-mono-data text-mono-data text-text-muted whitespace-nowrap">{fmt(g.subtotal)} {t('screens.budget.assigned').toLowerCase()}</span>
                 </div>
                 <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
                   {g.items.map((r) => (

@@ -13,12 +13,13 @@ import { AnimatePresence, useReducedMotion } from 'framer-motion';
 import MS from './MS';
 import { TRIGGER_BASE, TRIGGER_COMPACT } from './dropdownShared';
 import DropdownPanel from './DropdownPanel';
+import { tr } from '../i18n/runtime';
 
 export default function StitchSelect({
   value = '',
   onChange,
   options = [],
-  placeholder = 'Selecciona…',
+  placeholder = tr('common.select'),
   compact = false,
   className = '',
   id,

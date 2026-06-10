@@ -7,6 +7,7 @@ import MS from '../../MS';
 import Emoji from '../../Emoji';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
 import { Stagger } from '../../StitchMotion';
+import { useI18n } from '../../../contexts/I18nContext';
 import { formatCurrency } from '../../../utils/formatters';
 
 const fmt = (n) => formatCurrency(n);
@@ -15,6 +16,7 @@ const typeColor = (t) =>
   ({ income: 'bg-tertiary', fixed_expense: 'bg-primary', variable_expense: 'bg-accent-warning', savings: 'bg-secondary' }[t] || 'bg-primary');
 
 export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, managed = false }) {
+  const { t } = useI18n();
   // El input es controlado (onChange por tecla); persistimos solo al perder foco.
   const [v, setV] = useState(estimated ? String(estimated) : '');
   const focused = useRef(false);
@@ -38,9 +40,9 @@ export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, manag
         {managed ? (
           <span
             className="shrink-0 inline-flex items-center gap-[3px] font-mono-data text-mono-data text-secondary uppercase tracking-wider border border-secondary/40 rounded-full px-[6px] py-[2px] leading-none"
-            title="La cuota se gestiona desde el módulo Deudas"
+            title={t('pages.manageFromDebtsModule')}
           >
-            <MS name="link" className="!text-[11px] leading-none" /> Deudas
+            <MS name="link" className="!text-[11px] leading-none" /> {t('debts.title')}
           </span>
         ) : (
           <StitchCurrencyInput
@@ -55,7 +57,7 @@ export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, manag
       </div>
       <div className="flex justify-between items-baseline">
         <span className="font-mono-data text-[15px] text-on-background tracking-tight">{fmt(actual)}</span>
-        <span className="font-mono-data text-mono-data text-text-muted">de {fmt(estimated)}</span>
+        <span className="font-mono-data text-mono-data text-text-muted">{t('screens.charts.of')} {fmt(estimated)}</span>
       </div>
       <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
         <div className={`h-full ${over ? 'bg-accent-error' : typeColor(cat.type)}`} style={{ width: `${Math.min(pct, 100)}%` }} />

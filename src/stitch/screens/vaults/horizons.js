@@ -1,22 +1,32 @@
 // Etiquetas de horizonte temporal de una meta (etiqueta opcional, no cambia la
 // lógica). Fuente única para el formulario, el filtro y el chip de la tarjeta.
+// Son FUNCIONES (no constantes) para que las etiquetas se traduzcan con el
+// idioma activo en el momento del render.
+import { tr } from '../../../i18n/runtime';
 
 // Opciones para el selector del formulario (incluye "Sin horizonte" = '').
-export const HORIZON_FORM_OPTIONS = [
-  { value: '', label: 'Sin horizonte' },
-  { value: 'short', label: 'Corto plazo (< 1 año)' },
-  { value: 'medium', label: 'Mediano plazo (1–5 años)' },
-  { value: 'long', label: 'Largo plazo (5+ años)' },
-];
+export function getHorizonFormOptions() {
+  return [
+    { value: '', label: tr('screens.vaults.noHorizon') },
+    { value: 'short', label: tr('screens.vaults.shortTermLong') },
+    { value: 'medium', label: tr('screens.vaults.mediumTermLong') },
+    { value: 'long', label: tr('screens.vaults.longTermLong') },
+  ];
+}
 
 // Opciones para el filtro de la barra (incluye "Todas" = '').
-export const HORIZON_FILTER_OPTIONS = [
-  { value: '', label: 'Todos los horizontes' },
-  { value: 'short', label: 'Corto plazo' },
-  { value: 'medium', label: 'Mediano plazo' },
-  { value: 'long', label: 'Largo plazo' },
-  { value: 'none', label: 'Sin horizonte' },
-];
+export function getHorizonFilterOptions() {
+  return [
+    { value: '', label: tr('common.allHorizons') },
+    { value: 'short', label: tr('screens.vaults.shortTerm') },
+    { value: 'medium', label: tr('screens.vaults.mediumTerm') },
+    { value: 'long', label: tr('screens.vaults.longTerm') },
+    { value: 'none', label: tr('screens.vaults.noHorizon') },
+  ];
+}
 
 // Etiqueta corta para el chip de la tarjeta.
-export const HORIZON_CHIP = { short: 'CORTO', medium: 'MEDIANO', long: 'LARGO' };
+export function getHorizonChip(horizon) {
+  const keys = { short: 'screens.vaults.chipShort', medium: 'screens.vaults.chipMedium', long: 'screens.vaults.chipLong' };
+  return keys[horizon] ? tr(keys[horizon]) : null;
+}

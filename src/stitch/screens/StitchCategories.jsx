@@ -10,16 +10,19 @@ import { Stagger } from '../StitchMotion';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import { isDemoActive, demoDeleteCategory, demoRestoreCategory } from '../demoMode';
+import { useI18n } from '../../contexts/I18nContext';
+import { tr } from '../../i18n/runtime';
 import CategoryForm from './categories/CategoryForm';
 
 const TYPE_SECTIONS = [
-  { type: 'income', label: 'Ingresos' },
-  { type: 'fixed_expense', label: 'Gastos fijos' },
-  { type: 'variable_expense', label: 'Gastos variables' },
-  { type: 'savings', label: 'Ahorro' },
+  { type: 'income', labelKey: 'common.income' },
+  { type: 'fixed_expense', labelKey: 'screens.categories.fixedExpensesSection' },
+  { type: 'variable_expense', labelKey: 'screens.categories.variableExpensesSection' },
+  { type: 'savings', labelKey: 'types.savings' },
 ];
 
 export default function StitchCategories() {
+  const { t } = useI18n();
   const categories = useCategoryStore((s) => s.categories);
   const deleteCategory = useCategoryStore((s) => s.deleteCategory);
   const restoreCategory = useCategoryStore((s) => s.restoreCategory);
@@ -35,11 +38,13 @@ export default function StitchCategories() {
     const used = transactions.filter((t) => t.categoryId === cat.id).length;
     if (isDemoActive()) demoDeleteCategory(cat.id);
     else await deleteCategory(cat.id);
-    toast((t) => (
+    toast((tt) => (
       <span className="flex items-center gap-sm">
         {used > 0
-          ? `Categoría eliminada · ${used} transacción${used === 1 ? '' : 'es'} sin categoría`
-          : 'Categoría eliminada'}
+          ? tr('screens.categories.deletedWithOrphans')
+              .replace('{n}', used)
+              .replace('{txWord}', used === 1 ? tr('screens.categories.txOne') : tr('screens.categories.txMany'))
+          : tr('screens.categories.deletedToast')}
         <button
           onClick={async () => {
             if (isDemoActive()) {
@@ -47,10 +52,10 @@ export default function StitchCategories() {
             } else {
               await restoreCategory(cat);
             }
-            toast.dismiss(t.id);
+            toast.dismiss(tt.id);
           }}
           className="text-primary font-bold underline"
-        >Deshacer</button>
+        >{tr('common.undo')}</button>
       </span>
     ), { duration: 6000 });
   };
@@ -59,20 +64,20 @@ export default function StitchCategories() {
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
         <div>
-          <h1 className="font-headline-lg text-headline-lg text-on-surface">Categorías</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-2">Crea, edita o elimina las categorías de tus transacciones.</p>
+          <h1 className="font-headline-lg text-headline-lg text-on-surface">{t('categories.title')}</h1>
+          <p className="font-body-md text-body-md text-text-muted mt-2">{t('screens.categories.description')}</p>
         </div>
         <button
           onClick={openCreate}
           className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start"
         >
-          <MS name="add" className="text-[16px]" /> Nueva categoría
+          <MS name="add" className="text-[16px]" /> {t('common.newCategory')}
         </button>
       </div>
 
       {categories.length === 0 && (
         <div className="text-center py-xl font-body-md text-text-muted">
-          Aún no tienes categorías. Crea la primera con &quot;Nueva&quot;.
+          {t('screens.categories.noCategoriesYet')}
         </div>
       )}
 
@@ -82,7 +87,7 @@ export default function StitchCategories() {
           if (items.length === 0) return null;
           return (
             <div key={section.type} className="flex flex-col gap-sm">
-              <h2 className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{section.label}</h2>
+              <h2 className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{t(section.labelKey)}</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-sm">
                 {items.map((c) => (
                   <div key={c.id} data-testid="category-row" data-category-name={c.name} className="flex items-center gap-sm bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md">
@@ -90,10 +95,10 @@ export default function StitchCategories() {
                       <Emoji e={c.icon} size={18} />
                     </span>
                     <span className="font-body-md text-body-md text-on-surface truncate flex-1">{c.name}</span>
-                    <button onClick={() => openEdit(c)} className="text-text-muted hover:text-on-surface p-xs" aria-label="Editar">
+                    <button onClick={() => openEdit(c)} className="text-text-muted hover:text-on-surface p-xs" aria-label={t('common.edit')}>
                       <MS name="edit" className="text-[16px]" />
                     </button>
-                    <button onClick={() => onDelete(c)} className="text-text-muted hover:text-accent-error p-xs" aria-label="Eliminar">
+                    <button onClick={() => onDelete(c)} className="text-text-muted hover:text-accent-error p-xs" aria-label={t('common.delete')}>
                       <MS name="delete" className="text-[16px]" />
                     </button>
                   </div>

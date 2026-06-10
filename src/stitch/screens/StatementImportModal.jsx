@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import toast from 'react-hot-toast';
+import { useI18n } from '../../contexts/I18nContext';
 import ModalShell from '../ModalShell';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
@@ -8,6 +9,7 @@ import { autoCategorize } from '../../data/defaultCategories';
 import { matchTransactions } from '../../utils/statementMatcher';
 
 export default function StatementImportModal({ onClose, pdfData }) {
+  const { t } = useI18n();
   const existingTxs = useTransactionStore((s) => s.transactions);
   const bulkAddTransactions = useTransactionStore((s) => s.bulkAddTransactions);
   const bulkAssignCard = useTransactionStore((s) => s.bulkAssignCard);
@@ -52,7 +54,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
 
   const handleImport = async (requestClose) => {
     if (!targetCardId) {
-      toast.error('Selecciona una tarjeta destino');
+      toast.error(t('screens.settings.selectTargetCard'));
       return;
     }
 
@@ -67,7 +69,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
         categoryId: pdfTx.suggestedCategoryId || '',
         cardId: targetCardId,
         currency: 'DOP', // Asumimos DOP por ahora
-        notes: `Importado desde estado de cuenta ${pdfData.bank}`
+        notes: t('screens.settings.importedFromStatement').replace('{bank}', pdfData.bank)
       }));
 
       // Para las ambiguas, por ahora las importamos como nuevas (o el usuario podría resolverlas en una v2)
@@ -83,7 +85,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
           categoryId,
           cardId: targetCardId,
           currency: 'DOP',
-          notes: `Importado (Ambigüedad detectada en el estado de cuenta)`
+          notes: t('screens.settings.importedAmbiguous')
         };
       });
 
@@ -99,11 +101,11 @@ export default function StatementImportModal({ onClose, pdfData }) {
         await bulkAssignCard(matchedIds, targetCardId);
       }
 
-      toast.success(`Importadas: ${addedCount}. Vinculadas/Actualizadas: ${matchedIds.length}`);
+      toast.success(t('screens.settings.importResult').replace('{a}', addedCount).replace('{b}', matchedIds.length));
       requestClose();
     } catch (e) {
       console.error(e);
-      toast.error('Error al importar: ' + e.message);
+      toast.error(t('screens.settings.importError') + e.message);
     } finally {
       setImporting(false);
     }
@@ -118,21 +120,21 @@ export default function StatementImportModal({ onClose, pdfData }) {
       {(requestClose) => (
         <>
           <div className="p-md sm:p-lg border-b border-border-subtle shrink-0">
-            <h2 className="font-headline-sm text-on-surface mb-xs">Importar Estado de Cuenta</h2>
+            <h2 className="font-headline-sm text-on-surface mb-xs">{t('screens.settings.importStatementTitle')}</h2>
             <p className="font-body-md text-on-surface-variant">
-              Banco detectado: <strong className="uppercase">{pdfData.bank}</strong>. Se encontraron {pdfData.transactions.length} consumos.
+              {t('screens.settings.bankDetected')} <strong className="uppercase">{pdfData.bank}</strong>. {t('screens.settings.foundN').replace('{n}', pdfData.transactions.length)}
             </p>
           </div>
 
           <div className="p-md sm:p-lg flex-1 overflow-y-auto min-h-0 flex flex-col gap-md">
             <div>
-              <label className="block font-label-sm text-text-muted mb-xs">Tarjeta de Destino</label>
+              <label className="block font-label-sm text-text-muted mb-xs">{t('screens.settings.targetCard')}</label>
               <select
                 value={targetCardId}
                 onChange={(e) => setPickedCardId(e.target.value)}
                 className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-on-surface focus:outline-none focus:border-primary inner-glow"
               >
-                <option value="" disabled>Selecciona la tarjeta...</option>
+                <option value="" disabled>{t('screens.settings.selectCardPlaceholder')}</option>
                 {cards.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -141,32 +143,32 @@ export default function StatementImportModal({ onClose, pdfData }) {
 
             <div className="bg-surface-container-high rounded p-md flex flex-col gap-sm">
               <div className="flex justify-between items-center">
-                <span className="font-label-sm text-on-surface">Coinciden con gastos ya registrados</span>
+                <span className="font-label-sm text-on-surface">{t('screens.settings.matchedExisting')}</span>
                 <span className="font-mono-data text-primary font-bold">{matchResult.matched.length}</span>
               </div>
               <p className="text-text-muted font-body-sm">
-                Se les asignará la tarjeta seleccionada automáticamente para evitar duplicados.
+                {t('screens.settings.matchedNote')}
               </p>
             </div>
 
             <div className="bg-surface-container-high rounded p-md flex flex-col gap-sm">
               <div className="flex justify-between items-center">
-                <span className="font-label-sm text-on-surface">Transacciones Nuevas</span>
+                <span className="font-label-sm text-on-surface">{t('screens.settings.newTransactions')}</span>
                 <span className="font-mono-data text-secondary font-bold">{matchResult.toImport.length}</span>
               </div>
               <p className="text-text-muted font-body-sm">
-                Se agregarán como nuevos gastos.
+                {t('screens.settings.newNote')}
               </p>
             </div>
 
             {matchResult.ambiguous.length > 0 && (
               <div className="bg-error/10 border border-error/30 rounded p-md flex flex-col gap-sm">
                 <div className="flex justify-between items-center">
-                  <span className="font-label-sm text-error">Posibles duplicados (Ambiguas)</span>
+                  <span className="font-label-sm text-error">{t('screens.settings.ambiguousTitle')}</span>
                   <span className="font-mono-data text-error font-bold">{matchResult.ambiguous.length}</span>
                 </div>
                 <p className="text-error/80 font-body-sm">
-                  Existen gastos parecidos pero no hay seguridad total. Se importarán como nuevas por precaución.
+                  {t('screens.settings.ambiguousNote')}
                 </p>
               </div>
             )}
@@ -174,7 +176,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
             {/* Pequeña vista previa de las transacciones a importar */}
             {matchResult.toImport.length > 0 && (
                <div className="mt-sm">
-                 <h4 className="font-label-sm text-text-muted mb-sm">Vista previa de nuevas:</h4>
+                 <h4 className="font-label-sm text-text-muted mb-sm">{t('screens.settings.previewNew')}</h4>
                  <div className="flex flex-col gap-xs max-h-[150px] overflow-y-auto">
                     {matchResult.toImport.slice(0, 5).map((t, i) => (
                       <div key={i} className="flex justify-between border-b border-border-subtle pb-xs last:border-0 font-mono-data text-[12px] text-on-surface-variant">
@@ -184,7 +186,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
                     ))}
                     {matchResult.toImport.length > 5 && (
                       <div className="text-center font-label-sm text-text-muted mt-xs">
-                        + {matchResult.toImport.length - 5} más...
+                        + {matchResult.toImport.length - 5} {t('screens.settings.more')}
                       </div>
                     )}
                  </div>
@@ -198,14 +200,14 @@ export default function StatementImportModal({ onClose, pdfData }) {
               disabled={importing}
               className="px-lg py-sm rounded border border-border-subtle text-on-surface hover:bg-surface-container transition-colors font-label-sm uppercase tracking-widest disabled:opacity-50"
             >
-              Cancelar
+              {t('common.cancel')}
             </button>
             <button
               onClick={() => handleImport(requestClose)}
               disabled={importing || !targetCardId}
               className="px-lg py-sm rounded bg-primary text-on-primary hover:bg-primary-container transition-colors font-label-sm uppercase tracking-widest disabled:opacity-50 flex items-center gap-sm"
             >
-              {importing ? 'Importando...' : 'Confirmar Importación'}
+              {importing ? t('screens.settings.importing') : t('screens.settings.confirmImport')}
             </button>
           </div>
         </>

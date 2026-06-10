@@ -398,13 +398,14 @@ export function getFinancialHealthScore({ avgIncome = 0, avgExpense = 0, monthly
   const debtPts = Math.max(0, Math.min(1, 1 - dti / 0.36)) * 25;
 
   const score = Math.round(savingsPts + expensePts + debtPts);
-  let label;
-  if (score >= 80) label = 'Excelente';
-  else if (score >= 60) label = 'Buena';
-  else if (score >= 40) label = 'Regular';
-  else label = 'Necesita atención';
+  // label queda en español (compat/tests); labelKey permite traducir en la UI.
+  let label, labelKey;
+  if (score >= 80) { label = 'Excelente'; labelKey = 'health.excellent'; }
+  else if (score >= 60) { label = 'Buena'; labelKey = 'health.good'; }
+  else if (score >= 40) { label = 'Regular'; labelKey = 'health.fair'; }
+  else { label = 'Necesita atención'; labelKey = 'health.needsAttention'; }
 
-  return { score, label, savingsRate };
+  return { score, label, labelKey, savingsRate };
 }
 
 /**

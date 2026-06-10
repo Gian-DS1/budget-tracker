@@ -8,7 +8,7 @@ const fmt = (n) => formatCurrency(n);
 
 export default function NetWorthBar({ split }) {
   const strings = useScreenStrings();
-  if (!split.hasData) return <EmptyCell icon="account_balance" message={strings.charts.noMovements || 'Aún sin ahorros ni deudas registrados.'} />;
+  if (!split.hasData) return <EmptyCell icon="account_balance" message={strings.charts.noSavingsOrDebts} />;
   return (
     <div className="flex-grow flex flex-col justify-center gap-sm min-h-[80px]">
       <div className="flex justify-between items-baseline">

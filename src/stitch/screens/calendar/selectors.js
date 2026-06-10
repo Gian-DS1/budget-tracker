@@ -2,6 +2,7 @@
 // devuelven mapas/listas por día. ISO local (sin toISOString).
 import { getEffectiveAmount } from '../../../utils/calculations';
 import { getCardBalances } from '../../../utils/creditCards';
+import { tr } from '../../../i18n/runtime';
 
 const EXPENSE_TYPES = ['expense', 'fixed_expense', 'variable_expense'];
 const isExpense = (t) => EXPENSE_TYPES.includes(t.type);
@@ -56,7 +57,7 @@ export function getDueEvents({ debts = [], cards = [], goals = [], recurring = [
 
   recurring.forEach((r) => {
     if (!r.active || !r.nextDate || !inMonth(r.nextDate, year, month)) return;
-    push(dayOf(r.nextDate), { type: 'recurrente', label: r.description || 'Recurrente', amount: Number(r.amount) || 0, color: COLOR.recurrente, to: TO.recurrente });
+    push(dayOf(r.nextDate), { type: 'recurrente', label: r.description || tr('screens.calendar.recurring'), amount: Number(r.amount) || 0, color: COLOR.recurrente, to: TO.recurrente });
   });
 
   return map;
@@ -92,7 +93,7 @@ export function getUpcoming({ debts = [], cards = [], goals = [], recurring = []
     if (bal && !bal.isPaid && (bal.pendingBilled || 0) > 0) add(bal.cycles?.dueDateISO, 'tarjeta', c.name, bal.pendingBilled);
   });
   goals.forEach((g) => { if (g.status !== 'completed') add(g.deadline, 'meta', g.title, Number(g.targetAmount) || 0); });
-  recurring.forEach((r) => { if (r.active) add(r.nextDate, 'recurrente', r.description || 'Recurrente', Number(r.amount) || 0); });
+  recurring.forEach((r) => { if (r.active) add(r.nextDate, 'recurrente', r.description || tr('screens.calendar.recurring'), Number(r.amount) || 0); });
 
   return out.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
 }

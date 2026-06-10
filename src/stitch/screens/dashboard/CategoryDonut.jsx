@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
+import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { EmptyCell } from './dashboardUi';
 
 const fmt = (n) => formatCurrency(n);
@@ -27,8 +28,9 @@ function ActiveSector(props) {
 }
 
 export default function CategoryDonut({ data }) {
+  const strings = useScreenStrings();
   const [active, setActive] = useState(-1);
-  if (!data || data.length === 0) return <EmptyCell icon="donut_small" message="Sin gastos registrados este mes." />;
+  if (!data || data.length === 0) return <EmptyCell icon="donut_small" message={strings.charts.noExpensesThisMonth} />;
 
   const total = data.reduce((s, d) => s + d.value, 0);
   const withPct = data.map((d) => ({ ...d, pct: total > 0 ? (d.value / total) * 100 : 0 }));

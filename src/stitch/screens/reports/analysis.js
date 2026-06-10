@@ -11,6 +11,7 @@
 // }
 // Salida: [{ severity:'alert'|'warn'|'good'|'info', icon, title, body }] ordenada.
 import { formatCurrency } from '../../../utils/formatters';
+import { tr } from '../../../i18n/runtime';
 
 const fmt = (n) => formatCurrency(n);
 const ORDER = { alert: 0, warn: 1, good: 2, info: 3 };
@@ -19,8 +20,8 @@ export function getAnalysis(input) {
   if (!input || !input.hasData) {
     return [{
       severity: 'info', icon: 'analytics',
-      title: 'Aún no hay suficiente información',
-      body: 'Registra más movimientos para que el análisis sea preciso.',
+      title: tr('screens.analysis.notEnoughTitle'),
+      body: tr('screens.analysis.notEnoughBody'),
     }];
   }
 
@@ -31,20 +32,20 @@ export function getAnalysis(input) {
   if (savingsRate < 0) {
     out.push({
       severity: 'alert', icon: 'trending_down',
-      title: 'Gastas más de lo que ingresas',
-      body: 'Este periodo tu gasto superó tus ingresos. Revisa tus gastos variables y recorta lo que puedas.',
+      title: tr('screens.analysis.overspendTitle'),
+      body: tr('screens.analysis.overspendBody'),
     });
   } else if (savingsRate >= 0.2) {
     out.push({
       severity: 'good', icon: 'savings',
-      title: `Ahorras ${(savingsRate * 100).toFixed(0)}%, vas muy bien`,
-      body: 'Mantienes una tasa de ahorro saludable. Considera destinar el excedente a una meta o a reducir deuda.',
+      title: tr('screens.analysis.goodSavingsTitle').replace('{pct}', (savingsRate * 100).toFixed(0)),
+      body: tr('screens.analysis.goodSavingsBody'),
     });
   } else {
     out.push({
       severity: 'warn', icon: 'savings',
-      title: `Tu ahorro es bajo (${(savingsRate * 100).toFixed(0)}%)`,
-      body: 'Apunta a ahorrar al menos el 20% de tus ingresos. Identifica una categoría para recortar.',
+      title: tr('screens.analysis.lowSavingsTitle').replace('{pct}', (savingsRate * 100).toFixed(0)),
+      body: tr('screens.analysis.lowSavingsBody'),
     });
   }
 
@@ -52,8 +53,8 @@ export function getAnalysis(input) {
   if (topRising && topRising.deltaPct >= 15) {
     out.push({
       severity: 'warn', icon: 'arrow_upward',
-      title: `Tu gasto en ${topRising.name} subió`,
-      body: `Aumentó ${topRising.deltaPct.toFixed(0)}% (${fmt(topRising.deltaAbs)} más que el mes pasado). Revisa si fue puntual o una nueva tendencia.`,
+      title: tr('screens.analysis.risingTitle').replace('{name}', topRising.name),
+      body: tr('screens.analysis.risingBody').replace('{pct}', topRising.deltaPct.toFixed(0)).replace('{amt}', fmt(topRising.deltaAbs)),
     });
   }
 
@@ -61,8 +62,8 @@ export function getAnalysis(input) {
   if (concentration && concentration.pct >= 50) {
     out.push({
       severity: 'info', icon: 'pie_chart',
-      title: 'Tu gasto está concentrado',
-      body: `El ${concentration.pct.toFixed(0)}% de tu gasto se va en ${concentration.name}. Tener una sola categoría tan dominante te deja poco margen.`,
+      title: tr('screens.analysis.concentrationTitle'),
+      body: tr('screens.analysis.concentrationBody').replace('{pct}', concentration.pct.toFixed(0)).replace('{name}', concentration.name),
     });
   }
 
@@ -70,21 +71,21 @@ export function getAnalysis(input) {
   if (dti >= 0.36) {
     out.push({
       severity: 'warn', icon: 'account_balance',
-      title: 'Tu carga de deuda es alta',
-      body: `Tus cuotas de deuda equivalen al ${(dti * 100).toFixed(0)}% de tu ingreso. Por encima del 36% conviene priorizar pagarla.`,
+      title: tr('screens.analysis.dtiTitle'),
+      body: tr('screens.analysis.dtiBody').replace('{pct}', (dti * 100).toFixed(0)),
     });
   }
   if (trendDirection === 'up') {
     out.push({
       severity: 'info', icon: 'show_chart',
-      title: 'Tu gasto viene subiendo',
-      body: 'En los últimos meses tu gasto muestra tendencia al alza. Vigila que no supere tus ingresos.',
+      title: tr('screens.analysis.trendUpTitle'),
+      body: tr('screens.analysis.trendUpBody'),
     });
   } else if (trendDirection === 'down') {
     out.push({
       severity: 'good', icon: 'show_chart',
-      title: 'Tu gasto viene bajando',
-      body: 'Buen control: tu gasto muestra tendencia a la baja en los últimos meses.',
+      title: tr('screens.analysis.trendDownTitle'),
+      body: tr('screens.analysis.trendDownBody'),
     });
   }
 
@@ -92,8 +93,8 @@ export function getAnalysis(input) {
   if (out.length === 0) {
     out.push({
       severity: 'info', icon: 'check_circle',
-      title: 'Todo en orden',
-      body: 'No detectamos focos de atención este periodo. Sigue así.',
+      title: tr('screens.analysis.allGoodTitle'),
+      body: tr('screens.analysis.allGoodBody'),
     });
   }
 

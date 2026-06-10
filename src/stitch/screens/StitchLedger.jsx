@@ -5,6 +5,8 @@ import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
 import { useScreenStrings } from '../../i18n/useScreenStrings';
+import { useI18n } from '../../contexts/I18nContext';
+import { tr } from '../../i18n/runtime';
 import StitchCategorySelect from '../StitchCategorySelect';
 import StitchSelect from '../StitchSelect';
 import StitchDatePicker from '../StitchDatePicker';
@@ -33,13 +35,14 @@ const blank = { date: todayISO(), amount: '', type: 'variable_expense', category
 
 export default function StitchLedger() {
   const strings = useScreenStrings();
+  const { t } = useI18n();
 
   // TYPES construido dinámicamente
   const TYPES = [
     { v: 'income', l: strings.ledger.income },
     { v: 'fixed_expense', l: strings.ledger.fixedExpense },
     { v: 'variable_expense', l: strings.ledger.variableExpense },
-    { v: 'savings', l: 'Ahorro' }, // TODO: agregar a strings
+    { v: 'savings', l: t('types.savings') },
   ];
 
   // `transactions` se suscribe con selector (es el dato que muta y dispara
@@ -121,7 +124,10 @@ export default function StitchLedger() {
     return card ? card.id : '';
   };
 
-  const onDescription = (description) => {
+  const onDescription = (raw) => {
+    // Auto-capitaliza la primera letra mientras se escribe; al guardar,
+    // titleCase completa el resto de las palabras.
+    const description = raw.charAt(0).toLocaleUpperCase() + raw.slice(1);
     setForm((prev) => {
       const u = { ...prev, description };
       // Matcheo inteligente: solo auto-asigna si el usuario no eligió categoría
@@ -179,7 +185,7 @@ export default function StitchLedger() {
       if (demo) demoUpdateTransaction(editing, data); else await updateTransaction(editing, data);
       // El store ya muestra "Transacción actualizada" en login real; en demo no
       // hay backend que avise, así que lo emitimos aquí. (Evita el doble toast.)
-      if (demo) toast.success('Transacción actualizada');
+      if (demo) toast.success(t('screens.ledger.updatedToast'));
     } else {
       if (demo) demoAddTransaction(data); else await addTransaction(data);
       if (form.isRecurring && !demo) {
@@ -191,7 +197,7 @@ export default function StitchLedger() {
       }
       // El store ya muestra "Transacción guardada exitosamente" con login real;
       // en demo lo mostramos aquí (no hay backend que avise).
-      if (demo) toast.success('Transacción guardada');
+      if (demo) toast.success(t('screens.ledger.savedToast'));
     }
     setShowForm(false); setForm(blank); setEditing(null); setAutoCat(false);
   };
@@ -200,16 +206,16 @@ export default function StitchLedger() {
     if (demo) {
       demoDeleteTransaction(t.id);
       toast((tt) => (
-        <span className="flex items-center gap-sm">Transacción eliminada
-          <button onClick={() => { demoRestoreTransaction(t); toast.dismiss(tt.id); }} className="text-primary font-bold underline">Deshacer</button>
+        <span className="flex items-center gap-sm">{tr('screens.ledger.deletedToast')}
+          <button onClick={() => { demoRestoreTransaction(t); toast.dismiss(tt.id); }} className="text-primary font-bold underline">{tr('common.undo')}</button>
         </span>
       ), { duration: 6000 });
       return;
     }
     const ok = await deleteTransaction(t.id);
     if (ok) toast((tt) => (
-      <span className="flex items-center gap-sm">Transacción eliminada
-        <button onClick={() => { restoreTransaction(t); toast.dismiss(tt.id); }} className="text-primary font-bold underline">Deshacer</button>
+      <span className="flex items-center gap-sm">{tr('screens.ledger.deletedToast')}
+        <button onClick={() => { restoreTransaction(t); toast.dismiss(tt.id); }} className="text-primary font-bold underline">{tr('common.undo')}</button>
       </span>
     ), { duration: 6000 });
   };
@@ -295,14 +301,14 @@ export default function StitchLedger() {
     const ids = selectedIds();
     if (demo) demoBulkAssignCategory(ids, categoryId);
     else await bulkAssignCategory(ids, categoryId);
-    if (demo) toast.success('Categorías actualizadas');
+    if (demo) toast.success(t('screens.ledger.categoriesUpdated'));
     clearSelection();
   };
   const onBulkCard = async (cardId) => {
     const ids = selectedIds();
     if (demo) demoBulkAssignCard(ids, cardId);
     else await bulkAssignCard(ids, cardId);
-    if (demo) toast.success(strings.ledger.transactionsUpdated || 'Transacciones actualizadas');
+    if (demo) toast.success(strings.ledger.transactionsUpdated);
     clearSelection();
   };
   const onBulkDelete = async () => {
@@ -312,11 +318,11 @@ export default function StitchLedger() {
     if (removed && removed.length > 0) {
       const n = removed.length;
       toast((tt) => (
-        <span className="flex items-center gap-sm">{n} transacción{n === 1 ? '' : 'es'} eliminada{n === 1 ? '' : 's'}
+        <span className="flex items-center gap-sm">{n === 1 ? tr('screens.ledger.deletedOne') : tr('screens.ledger.deletedMany').replace('{n}', n)}
           <button
             onClick={() => { if (demo) demoRestoreManyTransactions(removed); else restoreManyTransactions(removed); toast.dismiss(tt.id); }}
             className="text-primary font-bold underline"
-          >Deshacer</button>
+          >{tr('common.undo')}</button>
         </span>
       ), { duration: 6000 });
     }
@@ -363,14 +369,14 @@ export default function StitchLedger() {
         />
         {/* Rango de fechas */}
         <div className="flex items-center gap-xs">
-          <span className="font-mono-data text-mono-data text-text-muted uppercase">Desde</span>
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.ledger.from}</span>
           <StitchDatePicker value={dateFrom} max={dateTo || undefined} onChange={setDateFrom} compact className="w-[150px]" />
-          <span className="font-mono-data text-mono-data text-text-muted uppercase">Hasta</span>
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.ledger.to}</span>
           <StitchDatePicker value={dateTo} min={dateFrom || undefined} onChange={setDateTo} compact className="w-[150px]" />
         </div>
         {hasFilters && (
           <button onClick={clearFilters} className="flex items-center gap-xs font-mono-data text-mono-data uppercase text-text-muted hover:text-on-surface border border-border-subtle rounded px-sm py-xs hover:bg-surface-container-high transition-colors">
-            <MS name="close" className="text-[14px]" /> Limpiar
+            <MS name="close" className="text-[14px]" /> {t('common.clear')}
           </button>
         )}
       </div>
@@ -381,8 +387,8 @@ export default function StitchLedger() {
         {filtered.length === 0 ? (
           <div className="relative z-10 py-[80px] flex flex-col items-center gap-sm text-center">
             <MS name="receipt_long" className="text-[36px] text-text-muted" />
-            <p className="font-body-md text-body-md text-on-surface-variant">{transactions.length === 0 ? 'Aún no tienes transacciones.' : 'Sin resultados con esos filtros.'}</p>
-            {transactions.length === 0 && <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">Registrar la primera</button>}
+            <p className="font-body-md text-body-md text-on-surface-variant">{transactions.length === 0 ? t('screens.ledger.noTransactionsYet') : t('screens.ledger.noResults')}</p>
+            {transactions.length === 0 && <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">{t('screens.ledger.registerFirst')}</button>}
           </div>
         ) : (
           <table className="w-full text-left border-collapse relative z-10">
@@ -395,17 +401,17 @@ export default function StitchLedger() {
                     checked={allVisibleSelected}
                     ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
                     onChange={toggleAll}
-                    aria-label="Seleccionar todas las transacciones visibles"
+                    aria-label={t('screens.ledger.selectAllVisible')}
                   />
                 </th>
                 <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">
-                  <SortHeader label="Fecha" active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
+                  <SortHeader label={t('transactions.date')} active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
                 </th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">Descripción</th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">Categoría</th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">Tipo</th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.description')}</th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.category')}</th>
+                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.type')}</th>
                 <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal text-right">
-                  <SortHeader label="Monto" active={sortKey === 'amount'} dir={sortDir} onClick={() => toggleSort('amount')} alignRight />
+                  <SortHeader label={t('common.amount')} active={sortKey === 'amount'} dir={sortDir} onClick={() => toggleSort('amount')} alignRight />
                 </th>
                 <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal" />
               </tr>
@@ -422,7 +428,7 @@ export default function StitchLedger() {
                         className={`stitch-check align-middle transition-opacity ${isSel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
                         checked={isSel}
                         onChange={() => toggleOne(t.id)}
-                        aria-label={`Seleccionar transacción ${t.description || formatDate(t.date)}`}
+                        aria-label={`${tr('screens.ledger.selectTx')} ${t.description || formatDate(t.date)}`}
                       />
                     </td>
                     <td className="py-sm px-md text-on-surface-variant whitespace-nowrap font-mono-data text-mono-data">{formatDate(t.date)}</td>
@@ -441,8 +447,8 @@ export default function StitchLedger() {
                       )}
                     </td>
                     <td className="py-sm px-md text-right whitespace-nowrap">
-                      <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Editar"><MS name="edit" className="text-[16px]" /></button>
-                      <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label="Eliminar"><MS name="delete" className="text-[16px]" /></button>
+                      <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={tr('common.edit')}><MS name="edit" className="text-[16px]" /></button>
+                      <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={tr('common.delete')}><MS name="delete" className="text-[16px]" /></button>
                     </td>
                   </tr>
                 );
@@ -457,26 +463,26 @@ export default function StitchLedger() {
           {(requestClose) => (
             <form onSubmit={submit} className="flex flex-col gap-md">
               <div className="grid grid-cols-2 gap-md">
-                <Field label="Fecha" error={errors.date}>
+                <Field label={t('transactions.date')} error={errors.date}>
                   <StitchDatePicker value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
                 </Field>
-                <Field label="Monto" error={errors.amount}>
+                <Field label={t('common.amount')} error={errors.amount}>
                   <StitchCurrencyInput value={form.amount} onChange={(v) => setForm({ ...form, amount: v })} className={inputCls} />
                 </Field>
               </div>
-              <Field label="Descripción">
-                <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder="Ej. Supermercado Nacional" className={inputCls} />
+              <Field label={t('common.description')}>
+                <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder={t('screens.ledger.examplePlaceholder')} className={inputCls} />
               </Field>
               <div className="grid grid-cols-2 gap-md">
-                <Field label="Categoría" error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
+                <Field label={t('common.category')} error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
                   <StitchCategorySelect
                     value={form.categoryId}
                     onChange={onCategoryManual}
                     options={categories}
-                    placeholder="Elige una categoría…"
+                    placeholder={t('screens.ledger.chooseCategoryPlaceholder')}
                   />
                 </Field>
-                <Field label="Moneda">
+                <Field label={t('common.currency')}>
                   <StitchSelect
                     value={form.currency}
                     onChange={(v) => setForm({ ...form, currency: v })}
@@ -487,27 +493,27 @@ export default function StitchLedger() {
               {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
                   es ingreso, gasto fijo, gasto variable o ahorro; clasificar a mano
                   era redundante. Se muestra como badge para dar claridad. */}
-              <Field label="Tipo (según la categoría)">
+              <Field label={t('screens.ledger.typeByCategory')}>
                 <TypeBadge type={form.type} hasCategory={!!form.categoryId} />
               </Field>
               {isExpenseType(form.type) && cards.length > 0 && (
-                <Field label="Tarjeta (opcional)">
+                <Field label={t('screens.ledger.cardOptional')}>
                   <StitchSelect
                     value={form.cardId}
                     onChange={(v) => setForm({ ...form, cardId: v })}
-                    options={[{ value: '', label: 'Sin tarjeta' }, ...cards.map((c) => ({ value: c.id, label: c.name }))]}
-                    placeholder="Sin tarjeta"
+                    options={[{ value: '', label: t('screens.ledger.noCard') }, ...cards.map((c) => ({ value: c.id, label: c.name }))]}
+                    placeholder={t('screens.ledger.noCard')}
                   />
                 </Field>
               )}
-              {cashbackPreview > 0 && <p className="font-mono-data text-mono-data text-tertiary">Cashback estimado: +{fmt(cashbackPreview)}</p>}
+              {cashbackPreview > 0 && <p className="font-mono-data text-mono-data text-tertiary">{t('screens.ledger.estimatedCashback')} +{fmt(cashbackPreview)}</p>}
               {!editing && (
                 <label className="flex items-center gap-sm cursor-pointer">
                   <input type="checkbox" checked={form.isRecurring} onChange={(e) => setForm({ ...form, isRecurring: e.target.checked })} className="stitch-check" />
-                  <span className="font-label-sm text-label-sm text-on-surface-variant">Repetir automáticamente ({form.recurrencePattern === 'monthly' ? 'mensual' : form.recurrencePattern})</span>
+                  <span className="font-label-sm text-label-sm text-on-surface-variant">{t('screens.ledger.repeatAutomatically')} ({form.recurrencePattern === 'monthly' ? t('screens.ledger.monthly') : form.recurrencePattern})</span>
                 </label>
               )}
-              <FormActions onCancel={requestClose} label={editing ? 'Guardar' : 'Registrar'} />
+              <FormActions onCancel={requestClose} label={editing ? t('common.save') : t('screens.ledger.register')} />
             </form>
           )}
         </Modal>
@@ -532,6 +538,7 @@ export default function StitchLedger() {
 // sale más rápido. Respeta reduced-motion. Categoría/Tarjeta abren un popover
 // inline para elegir destino; al confirmar disparan la acción y se cierran.
 function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onClear }) {
+  const { t } = useI18n();
   const reduce = useReducedMotion();
   const [menu, setMenu] = useState(null); // 'category' | 'card' | null
   const open = count > 0;
@@ -562,7 +569,7 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
           <div className="glass-panel rounded-lg inner-glow shadow-2xl px-md py-sm flex items-center gap-sm relative">
             {/* Conteo */}
             <span className="font-mono-data text-mono-data text-on-surface uppercase tracking-widest whitespace-nowrap">
-              {count} seleccionada{count === 1 ? '' : 's'}
+              {count === 1 ? t('screens.ledger.selectedOne') : t('screens.ledger.selectedMany').replace('{n}', count)}
             </span>
             <span className="w-px h-5 bg-border-subtle mx-xs" />
 
@@ -571,23 +578,23 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
               onClick={() => setMenu((m) => (m === 'category' ? null : 'category'))}
               className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs transition-colors ${activeMenu === 'category' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
             >
-              <MS name="sell" className="!text-[16px]" /> Categoría
+              <MS name="sell" className="!text-[16px]" /> {t('common.category')}
             </button>
             <button
               onClick={() => setMenu((m) => (m === 'card' ? null : 'card'))}
               className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs transition-colors ${activeMenu === 'card' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
             >
-              <MS name="credit_card" className="!text-[16px]" /> Tarjeta
+              <MS name="credit_card" className="!text-[16px]" /> {t('creditCards.card')}
             </button>
             <button
               onClick={onDelete}
               className="flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs text-accent-error hover:bg-accent-error/10 transition-colors"
             >
-              <MS name="delete" className="!text-[16px]" /> Eliminar
+              <MS name="delete" className="!text-[16px]" /> {t('common.delete')}
             </button>
 
             <span className="flex-1" />
-            <button onClick={onClear} aria-label="Limpiar selección" className="text-text-muted hover:text-on-surface p-xs rounded hover:bg-surface-container-high transition-colors">
+            <button onClick={onClear} aria-label={t('screens.ledger.clearSelection')} className="text-text-muted hover:text-on-surface p-xs rounded hover:bg-surface-container-high transition-colors">
               <MS name="close" className="!text-[18px]" />
             </button>
 
@@ -602,14 +609,14 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
                   className="absolute bottom-full left-0 mb-sm w-[280px] bg-surface-card border border-border-subtle rounded-lg inner-glow shadow-xl p-sm max-h-[300px] overflow-y-auto stitch-scroll"
                 >
                   <div className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest px-sm py-xs">
-                    {activeMenu === 'category' ? 'Mover a categoría' : 'Asignar tarjeta'}
+                    {activeMenu === 'category' ? t('screens.ledger.moveToCategory') : t('screens.ledger.assignCard')}
                   </div>
                   {activeMenu === 'card' && (
                     <button
                       onClick={() => { onCard(''); setMenu(null); }}
                       className="w-full text-left flex items-center gap-sm px-sm py-sm rounded font-body-md text-body-md text-on-surface-variant hover:bg-surface-container-high transition-colors"
                     >
-                      <MS name="block" className="!text-[16px] text-text-muted" /> Sin tarjeta
+                      <MS name="block" className="!text-[16px] text-text-muted" /> {t('screens.ledger.noCard')}
                     </button>
                   )}
                   {activeMenu === 'category'
@@ -633,7 +640,7 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
                         </button>
                       ))}
                   {activeMenu === 'card' && cards.length === 0 && (
-                    <div className="px-sm py-sm font-label-sm text-label-sm text-text-muted">No tienes tarjetas registradas.</div>
+                    <div className="px-sm py-sm font-label-sm text-label-sm text-text-muted">{t('screens.ledger.noCardsRegistered')}</div>
                   )}
                 </motion.div>
               )}
@@ -650,21 +657,22 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
 // alineado con los tokens del tema (lima=ingreso, durazno=fijo, periwinkle=
 // variable, cian=ahorro).
 const TYPE_META = {
-  income: { label: 'Ingreso', icon: 'trending_up', cls: 'text-tertiary border-tertiary/40' },
-  fixed_expense: { label: 'Gasto fijo', icon: 'event_repeat', cls: 'text-accent-warning border-accent-warning/40' },
-  variable_expense: { label: 'Gasto variable', icon: 'shopping_cart', cls: 'text-primary border-primary/40' },
-  expense: { label: 'Gasto', icon: 'payments', cls: 'text-on-surface-variant border-border-subtle' },
-  savings: { label: 'Ahorro', icon: 'savings', cls: 'text-secondary border-secondary/40' },
+  income: { icon: 'trending_up', cls: 'text-tertiary border-tertiary/40' },
+  fixed_expense: { icon: 'event_repeat', cls: 'text-accent-warning border-accent-warning/40' },
+  variable_expense: { icon: 'shopping_cart', cls: 'text-primary border-primary/40' },
+  expense: { icon: 'payments', cls: 'text-on-surface-variant border-border-subtle' },
+  savings: { icon: 'savings', cls: 'text-secondary border-secondary/40' },
 };
 function TypeBadge({ type, hasCategory }) {
+  const { t } = useI18n();
   if (!hasCategory) {
-    return <span className="font-label-sm text-label-sm text-text-muted italic">Elige una categoría primero</span>;
+    return <span className="font-label-sm text-label-sm text-text-muted italic">{t('screens.ledger.chooseCategoryFirst')}</span>;
   }
   const m = TYPE_META[type] || TYPE_META.variable_expense;
   return (
     <span className={`inline-flex items-center gap-[3px] self-start font-mono-data text-[9px] uppercase tracking-wider font-medium border rounded-full px-[6px] py-[2px] leading-none ${m.cls}`}>
       <MS name={m.icon} className="!text-[11px] leading-none" />
-      {m.label}
+      {getTypeLabel(type === 'expense' ? 'expense' : type)}
     </span>
   );
 }
@@ -673,11 +681,12 @@ function TypeBadge({ type, hasCategory }) {
 // columna está activa; inactiva muestra un ícono tenue de "ordenable". Colores
 // del tema (primary cuando activo). Estilo Stitch.
 function SortHeader({ label, active, dir, onClick, alignRight = false }) {
+  const { t } = useI18n();
   return (
     <button
       type="button"
       onClick={onClick}
-      title={`Ordenar por ${label.toLowerCase()}`}
+      title={`${t('screens.ledger.sortBy')} ${label.toLowerCase()}`}
       className={`inline-flex items-center gap-[3px] font-mono-data text-mono-data uppercase tracking-wider transition-colors ${
         alignRight ? 'flex-row-reverse' : ''
       } ${active ? 'text-primary' : 'text-text-muted hover:text-on-surface-variant'}`}
