@@ -13,6 +13,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, getCurrentUser } from '../lib/supabase';
 import { isDemoActive } from '../stitch/demoMode';
+import { setRuntimeCurrency } from '../utils/currencyRuntime';
 
 export const BUDGET_LEVELS = ['tracking', '503020', 'zero'];
 const DEFAULT_LEVEL = 'tracking';
@@ -24,6 +25,7 @@ const usePrefsStore = create(
       // ¿El usuario ya vio el tutorial guiado? Controla el auto-arranque (solo la
       // 1ª vez). En demo vive solo en caché local; con sesión, en profiles.
       tutorialSeen: false,
+      currency: null,
       loading: false,
       // ¿Ya resolvió fetchPrefs al menos una vez? El auto-arranque del tutorial
       // espera a esto para no decidir con el caché provisional (evita disparar el
@@ -39,13 +41,14 @@ const usePrefsStore = create(
         set({ loading: true });
         const { data, error } = await supabase
           .from('profiles')
-          .select('budget_level, tutorial_seen')
+          .select('budget_level, tutorial_seen, currency')
           .eq('user_id', user.id)
           .maybeSingle();
         if (!error && data) {
           const next = { loading: false, prefsLoaded: true };
           if (data.budget_level && BUDGET_LEVELS.includes(data.budget_level)) next.budgetLevel = data.budget_level;
           if (typeof data.tutorial_seen === 'boolean') next.tutorialSeen = data.tutorial_seen;
+          if (data.currency) { next.currency = data.currency; setRuntimeCurrency(data.currency); }
           set(next);
         } else {
           // Usuario nuevo sin fila en profiles (data null): tutorialSeen queda
@@ -86,11 +89,32 @@ const usePrefsStore = create(
           set({ budgetLevel: prev }); // rollback
         }
       },
+
+      /** Fija la moneda del usuario (optimista). En demo solo caché. */
+      setCurrency: async (code) => {
+        const c = typeof code === 'string' ? code.trim().toUpperCase() : '';
+        if (!/^[A-Z]{3}$/.test(c)) return;
+        const prev = get().currency;
+        set({ currency: c });
+        setRuntimeCurrency(c);
+        if (isDemoActive()) return;
+        const user = await getCurrentUser();
+        if (!user) return;
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ user_id: user.id, currency: c, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        if (error) {
+          if (import.meta.env.DEV) console.error('Error guardando moneda:', error);
+          set({ currency: prev });
+          setRuntimeCurrency(prev);
+        }
+      },
     }),
     {
       name: 'fintrack-prefs-cache',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen }),
+      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen, currency: state.currency }),
+      onRehydrateStorage: () => (state) => { if (state?.currency) setRuntimeCurrency(state.currency); },
     },
   ),
 );

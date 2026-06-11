@@ -11,8 +11,10 @@ import useBudgetStore from '../stores/useBudgetStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
+import usePrefsStore from '../stores/usePrefsStore';
 import { defaultCategories } from '../data/defaultCategories';
 import { computeCashback } from '../utils/creditCards';
+import { setRuntimeCurrency } from '../utils/currencyRuntime';
 
 const FLAG = 'fintrack-demo-mode';
 
@@ -217,6 +219,8 @@ export function seedDemoStores() {
   useSavingsStore.setState({ goals, contributions: [], loading: false });
   useDebtStore.setState({ debts, payments: [], loading: false });
   useCreditCardStore.setState({ cards, loading: false });
+  usePrefsStore.setState({ currency: 'DOP' });
+  setRuntimeCurrency('DOP');
 }
 
 // Activa el modo demo: marca el flag y siembra los datos.
