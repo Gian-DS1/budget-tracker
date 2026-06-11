@@ -6,6 +6,7 @@ import useTransactionStore from '../../stores/useTransactionStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import { autoCategorize } from '../../data/defaultCategories';
+import { suggestFromHistory } from '../../data/transactionMemory';
 import { matchTransactions } from '../../utils/statementMatcher';
 
 export default function StatementImportModal({ onClose, pdfData }) {
@@ -39,8 +40,11 @@ export default function StatementImportModal({ onClose, pdfData }) {
     if (!pdfData || !pdfData.transactions) return { matched: [], ambiguous: [], toImport: [] };
     const result = matchTransactions(pdfData.transactions, existingTxs);
     result.toImport = result.toImport.map((tx) => {
-      const cat = autoCategorize(tx.description, categories);
-      return { ...tx, suggestedCategoryId: cat ? cat.id : null };
+      // Historial del usuario primero (comercios ya corregidos a mano llegan
+      // bien clasificados); keywords de fábrica como fallback.
+      const fromHistory = suggestFromHistory(tx.description, existingTxs)?.categoryId;
+      const categoryId = fromHistory || autoCategorize(tx.description, categories)?.id || null;
+      return { ...tx, suggestedCategoryId: categoryId };
     });
     return result;
   }, [pdfData, existingTxs, categories]);
@@ -76,7 +80,8 @@ export default function StatementImportModal({ onClose, pdfData }) {
       // Agregaremos las ambiguas a newTxs también, a menos que el usuario las ignore.
       // Para esta versión, las agregamos con una nota especial.
       const ambiguousTxs = matchResult.ambiguous.map(item => {
-        const categoryId = autoCategorize(item.pdfTx.description, categories)?.id || '';
+        const categoryId = suggestFromHistory(item.pdfTx.description, existingTxs)?.categoryId
+          || autoCategorize(item.pdfTx.description, categories)?.id || '';
         return {
           date: item.pdfTx.txDate,
           amount: item.pdfTx.amount,
