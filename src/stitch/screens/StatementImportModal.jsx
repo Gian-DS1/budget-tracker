@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useI18n } from '../../contexts/I18nContext';
 import ModalShell from '../ModalShell';
@@ -33,21 +33,27 @@ export default function StatementImportModal({ onClose, pdfData }) {
 
   const [importing, setImporting] = useState(false);
 
+  // Categoría sugerida para una descripción: historial del usuario primero
+  // (comercios ya corregidos a mano llegan bien clasificados); keywords de
+  // fábrica como fallback. O(filas × historial): ok para estados de cuenta.
+  const suggestCategoryId = useCallback(
+    (description) =>
+      suggestFromHistory(description, existingTxs)?.categoryId
+        || autoCategorize(description, categories)?.id || '',
+    [existingTxs, categories],
+  );
+
   // Cruce de datos: derivado puro de (pdfData, existingTxs, categories). Antes
   // era un useEffect + setState; como solo depende de props/estado de stores, un
   // useMemo es el patrón correcto (https://react.dev/learn/you-might-not-need-an-effect).
   const matchResult = useMemo(() => {
     if (!pdfData || !pdfData.transactions) return { matched: [], ambiguous: [], toImport: [] };
     const result = matchTransactions(pdfData.transactions, existingTxs);
-    result.toImport = result.toImport.map((tx) => {
-      // Historial del usuario primero (comercios ya corregidos a mano llegan
-      // bien clasificados); keywords de fábrica como fallback.
-      const fromHistory = suggestFromHistory(tx.description, existingTxs)?.categoryId;
-      const categoryId = fromHistory || autoCategorize(tx.description, categories)?.id || null;
-      return { ...tx, suggestedCategoryId: categoryId };
-    });
+    result.toImport = result.toImport.map((tx) => (
+      { ...tx, suggestedCategoryId: suggestCategoryId(tx.description) || null }
+    ));
     return result;
-  }, [pdfData, existingTxs, categories]);
+  }, [pdfData, existingTxs, suggestCategoryId]);
 
   // Tipo derivado de la categoría (la categoría manda). Sin categoría o sin tipo
   // de gasto válido, cae a 'variable_expense' (ya no usamos el genérico 'expense').
@@ -80,8 +86,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
       // Agregaremos las ambiguas a newTxs también, a menos que el usuario las ignore.
       // Para esta versión, las agregamos con una nota especial.
       const ambiguousTxs = matchResult.ambiguous.map(item => {
-        const categoryId = suggestFromHistory(item.pdfTx.description, existingTxs)?.categoryId
-          || autoCategorize(item.pdfTx.description, categories)?.id || '';
+        const categoryId = suggestCategoryId(item.pdfTx.description);
         return {
           date: item.pdfTx.txDate,
           amount: item.pdfTx.amount,
