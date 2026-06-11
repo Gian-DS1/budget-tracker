@@ -9,6 +9,7 @@ import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
+import { getCurrency } from '../../utils/currencyRuntime';
 import StatementImportModal from './StatementImportModal';
 import { supabase } from '../../lib/supabase';
 
@@ -74,7 +75,7 @@ export default function StitchSettings() {
           else { const d = new Date(date); if (!isNaN(d.getTime())) fdate = d.toISOString().split('T')[0]; }
         } catch { /* ignore */ }
         const match = autoCategorize(String(desc), categories);
-        return { date: fdate, amount, type, description: String(desc).slice(0, 500).replace(/[<>]/g, '') || t('screens.settings.imported'), categoryId: match ? match.id : '', currency: 'DOP', notes: null };
+        return { date: fdate, amount, type, description: String(desc).slice(0, 500).replace(/[<>]/g, '') || t('screens.settings.imported'), categoryId: match ? match.id : '', currency: getCurrency(), notes: null };
       }).filter(Boolean);
       if (txs.length === 0) { toast.error(t('screens.settings.noValidRows')); return; }
       const n = await bulkAddTransactions(txs);

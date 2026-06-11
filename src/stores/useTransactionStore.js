@@ -170,7 +170,7 @@ const useTransactionStore = create(
       description: tx.description,
       date: tx.date,
       notes: tx.notes || null,
-      currency: getCurrency(),
+      currency: tx.currency || getCurrency(),
       cashback_earned: Number(tx.cashbackEarned) || 0,
     };
 
@@ -224,7 +224,7 @@ const useTransactionStore = create(
       description: tx.description,
       date: tx.date,
       notes: tx.notes || null,
-      currency: getCurrency(),
+      currency: tx.currency || getCurrency(),
       cashback_earned: Number(tx.cashbackEarned) || 0,
     }));
 
