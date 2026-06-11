@@ -2,7 +2,7 @@
 // mediano con el score + label + barra de progreso con su umbral. Recibe el
 // resultado de getFinancialHealthScore (calculado en el shell). Color por rango.
 import { ResponsiveContainer, RadialBarChart, RadialBar, PolarAngleAxis } from 'recharts';
-import { EmptyCell } from './dashboardUi';
+import { EmptyCell, InfoTip } from './dashboardUi';
 import CountUp from '../../CountUp';
 import { useI18n } from '../../../contexts/I18nContext';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
@@ -21,6 +21,11 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
   if (!hasData) return <EmptyCell icon="favorite" message={t('dashboard.registerIncome') || 'Registra ingresos para evaluar tu salud financiera.'} />;
   const color = ringColor(health.score);
   const basis = monthsCounted <= 1 ? strings.charts.estimationWithMonth : `${strings.charts.basedOn} ${monthsCounted} ${strings.charts.months}`;
+  // Desglose del score por factor (de getFinancialHealthScore): explica el
+  // número sin recalcular nada. Visible a un tap/hover vía InfoTip.
+  const breakdown = health.parts
+    ? `${strings.charts.healthFactorSavings} ${health.parts.savings}/45 · ${strings.charts.healthFactorSpending} ${health.parts.spending}/30 · ${strings.charts.healthFactorDebt} ${health.parts.debt}/25`
+    : null;
 
   // Un solo CountUp provee el score animado; el anillo, el número y la barra
   // inferior lo consumen para subir en sincronía. Recharts anima por dataKey al
@@ -46,7 +51,10 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
                 </div>
               </div>
               <div className="flex flex-col gap-xs min-w-0">
-                <span className="font-headline-md text-[18px] tracking-tight" style={{ color }}>{health.labelKey ? t(health.labelKey) : health.label}</span>
+                <span className="font-headline-md text-[18px] tracking-tight flex items-center gap-xs" style={{ color }}>
+                  {health.labelKey ? t(health.labelKey) : health.label}
+                  {breakdown && <InfoTip text={breakdown} />}
+                </span>
                 <span className="font-mono-data text-mono-data text-text-muted">{basis}</span>
               </div>
             </div>

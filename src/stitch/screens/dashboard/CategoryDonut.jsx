@@ -1,12 +1,15 @@
-// Donut de gastos del mes por categoría (top 5 + Otros). El gráfico ocupa el alto
-// de la celda (ResponsiveContainer) y la leyenda se reparte al lado. Al pasar el
-// mouse por un segmento O por su fila de leyenda, ese segmento crece y proyecta
-// una sombra suave de su color (resaltado moderno, glow del tema).
+// Donut de gastos del mes por categoría (top 5 + Otros). La dona ancla el
+// "parte del todo" (total al centro); la comparación fina vive en la leyenda:
+// cada fila es una mini barra horizontal (longitudes comparables a simple
+// vista) con el emoji de la categoría. Hover/click/focus sincronizados entre
+// leyenda y dona: el segmento activo crece y proyecta una sombra de su color.
 import { useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { EmptyCell } from './dashboardUi';
+import Emoji from '../../Emoji';
 
 const fmt = (n) => formatCurrency(n);
 
@@ -29,12 +32,16 @@ function ActiveSector(props) {
 
 export default function CategoryDonut({ data }) {
   const strings = useScreenStrings();
+  const reduced = useReducedMotion();
   const [active, setActive] = useState(-1);
   if (!data || data.length === 0) return <EmptyCell icon="donut_small" message={strings.charts.noExpensesThisMonth} />;
 
   const total = data.reduce((s, d) => s + d.value, 0);
   const withPct = data.map((d) => ({ ...d, pct: total > 0 ? (d.value / total) * 100 : 0 }));
   const activeName = active >= 0 ? withPct[active]?.name : null;
+  // Las barras de la leyenda escalan contra la categoría mayor (no contra el
+  // total): la más grande llena el riel y el resto se compara contra ella.
+  const maxValue = Math.max(...withPct.map((d) => d.value));
 
   return (
     <div className="flex-grow flex flex-col sm:flex-row items-center gap-xl min-h-[260px]">
@@ -54,7 +61,8 @@ export default function CategoryDonut({ data }) {
               activeShape={ActiveSector}
               onMouseEnter={(_, i) => setActive(i)}
               onMouseLeave={() => setActive(-1)}
-              isAnimationActive
+              onClick={(_, i) => setActive((prev) => (prev === i ? -1 : i))}
+              isAnimationActive={!reduced}
               animationDuration={600}
               animationEasing="ease-out"
             >
@@ -80,20 +88,35 @@ export default function CategoryDonut({ data }) {
         </div>
       </div>
 
-      {/* Leyenda: hover sincronizado con la dona; llena el ancho restante (tope para no estirar de más) */}
-      <div className="flex flex-col gap-sm w-full flex-grow max-w-[640px]">
+      {/* Leyenda-barra: emoji + nombre + riel proporcional + monto + %. Hover,
+          click (touch) y focus (teclado) sincronizados con la dona. */}
+      <div className="flex flex-col gap-xs w-full flex-grow max-w-[640px]">
         {withPct.map((d, i) => (
           <button
             type="button"
             key={i}
             onMouseEnter={() => setActive(i)}
             onMouseLeave={() => setActive(-1)}
+            onFocus={() => setActive(i)}
+            onBlur={() => setActive(-1)}
+            onClick={() => setActive((prev) => (prev === i ? -1 : i))}
+            aria-pressed={active === i}
             className={`flex items-center gap-sm font-mono-data text-mono-data rounded px-sm py-xs transition-colors text-left ${active === i ? 'bg-surface-container-high' : ''}`}
           >
-            <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: d.color, boxShadow: active === i ? `0 0 6px ${d.color}aa` : 'none' }} />
-            <span className="text-on-surface-variant truncate flex-grow">{d.name}</span>
-            <span className="text-on-surface shrink-0">{fmt(d.value)}</span>
-            <span className="text-text-muted shrink-0 w-[34px] text-right">{d.pct.toFixed(0)}%</span>
+            {d.icon && <span className="shrink-0 flex items-center"><Emoji e={d.icon} size={16} /></span>}
+            <span className="text-on-surface-variant truncate w-[110px] sm:w-[150px] shrink-0">{d.name}</span>
+            <span className="relative flex-grow h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+              <span
+                className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out motion-reduce:transition-none"
+                style={{
+                  width: `${maxValue > 0 ? (d.value / maxValue) * 100 : 0}%`,
+                  background: d.color,
+                  boxShadow: active === i ? `0 0 6px ${d.color}aa` : 'none',
+                }}
+              />
+            </span>
+            <span className="text-on-surface shrink-0 text-right tabular-nums">{fmt(d.value)}</span>
+            <span className="text-text-muted shrink-0 w-[34px] text-right tabular-nums">{d.pct.toFixed(0)}%</span>
           </button>
         ))}
       </div>

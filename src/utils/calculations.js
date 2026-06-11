@@ -381,11 +381,12 @@ export function getBudgetSuggestions(transactions = [], categories = [], year, m
  *   - Tasa de ahorro (45 pts): (ingreso − gasto) / ingreso; 20%+ = máximo.
  *   - Ratio de gasto (30 pts): gasto / ingreso; ≤50% = máximo, ≥100% = 0.
  *   - Carga de deuda / DTI (25 pts): pago mensual de deuda / ingreso; 0 = máximo, ≥36% = 0.
- * Devuelve { score, label, savingsRate }.
+ * Devuelve { score, label, savingsRate, parts } donde parts desglosa los puntos
+ * por factor (savings/45, spending/30, debt/25) para explicar el score en la UI.
  */
 export function getFinancialHealthScore({ avgIncome = 0, avgExpense = 0, monthlyDebt = 0 }) {
   if (!avgIncome || avgIncome <= 0) {
-    return { score: 0, label: 'Sin datos', savingsRate: 0 };
+    return { score: 0, label: 'Sin datos', savingsRate: 0, parts: null };
   }
 
   const savingsRate = (avgIncome - avgExpense) / avgIncome;
@@ -405,7 +406,14 @@ export function getFinancialHealthScore({ avgIncome = 0, avgExpense = 0, monthly
   else if (score >= 40) { label = 'Regular'; labelKey = 'health.fair'; }
   else { label = 'Necesita atención'; labelKey = 'health.needsAttention'; }
 
-  return { score, label, labelKey, savingsRate };
+  return {
+    score, label, labelKey, savingsRate,
+    parts: {
+      savings: Math.round(savingsPts),
+      spending: Math.round(expensePts),
+      debt: Math.round(debtPts),
+    },
+  };
 }
 
 /**

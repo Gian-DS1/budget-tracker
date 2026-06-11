@@ -28,7 +28,7 @@ export default function MonthComparison({ data }) {
             <div className="relative flex-grow h-3 bg-surface-container-highest rounded-full overflow-hidden">
               <div className="absolute top-0 bottom-0 left-1/2 w-px bg-border-subtle" />
               <div
-                className="absolute top-0 bottom-0 rounded-full transition-all duration-500 ease-out"
+                className="absolute top-0 bottom-0 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
                 style={{
                   background: up ? CHART.error : CHART.tertiary,
                   width: `${widthPct}%`,
@@ -39,7 +39,10 @@ export default function MonthComparison({ data }) {
             <span className={`font-mono-data text-mono-data shrink-0 w-[56px] text-right whitespace-nowrap ${up ? 'text-accent-error' : 'text-tertiary'}`}>
               {isNew ? t('screens.reports.newLabel') : `${up ? '+' : ''}${d.deltaPct.toFixed(0)}%`}
             </span>
-            <span className="font-mono-data text-mono-data text-text-muted shrink-0 w-[120px] text-right whitespace-nowrap tabular-nums hidden sm:inline">{fmt(d.current)}</span>
+            {/* Antes → ahora: el dato que permite verificar el % de un vistazo */}
+            <span className="font-mono-data text-mono-data text-text-muted shrink-0 text-right whitespace-nowrap tabular-nums hidden sm:inline">
+              {isNew ? fmt(d.current) : <>{fmt(d.previous)} <span className="text-text-muted/60">→</span> <span className="text-on-surface-variant">{fmt(d.current)}</span></>}
+            </span>
           </div>
         );
       })}

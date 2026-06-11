@@ -1,11 +1,14 @@
-// Flujo 6 meses — dos líneas (ingresos vs gastos) en el tiempo, con eje Y de
-// escala, leyenda, y el mes seleccionado RESALTADO (línea de referencia + punto
-// grande) para conectar con los KPIs de arriba. Gradiente sutil bajo cada línea.
-// Mismo lenguaje visual del tema; tooltip con ingresos/gastos/neto.
-import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
+// Flujo 6 meses — dos líneas (ingresos vs gastos) en el tiempo, con la BRECHA
+// entre ambas sombreada: lima cuando sobró (inc > exp), rojo cuando faltó.
+// Eje Y de escala, rejilla horizontal sutil, leyenda compartida y el mes
+// seleccionado RESALTADO (línea de referencia + punto grande) para conectar con
+// los KPIs de arriba. Tooltip con ingresos/gastos/neto.
+import { useReducedMotion } from 'framer-motion';
+import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
 import { formatCurrency, formatCurrencyCompact } from '../../../utils/formatters';
 import { EmptyCell } from './dashboardUi';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
+import ChartLegend from '../../ChartLegend';
 import { CHART } from '../../chartTokens';
 
 const fmt = (n) => formatCurrency(n);
@@ -49,6 +52,7 @@ function makeSelDot(selY, selM, color) {
 
 export default function FlowChart({ series, selY, selM }) {
   const strings = useScreenStrings();
+  const reduced = useReducedMotion();
   const hasData = series.some((s) => s.inc !== 0 || s.exp !== 0);
   if (!hasData) return <EmptyCell icon="show_chart" message={strings.charts.noMovements} />;
 
@@ -56,30 +60,29 @@ export default function FlowChart({ series, selY, selM }) {
   const selEmpty = selPoint && selPoint.inc === 0 && selPoint.exp === 0;
   const selLabel = selPoint ? `${selPoint.label} ${selPoint.y}` : '';
 
+  // Bandas de brecha como áreas de rango [low, high]: gapPos cubre los meses con
+  // sobrante (inc ≥ exp) y gapNeg los meses con déficit. Donde no aplica, la
+  // banda colapsa a altura cero para que el cruce de líneas se lea continuo.
+  const data = series.map((s) => ({
+    ...s,
+    gapPos: s.inc >= s.exp ? [s.exp, s.inc] : [s.inc, s.inc],
+    gapNeg: s.exp > s.inc ? [s.inc, s.exp] : [s.exp, s.exp],
+  }));
+
   return (
     <div className="flex-grow flex flex-col min-h-[240px]">
-      {/* Leyenda + contexto */}
-      <div className="flex items-center justify-between gap-sm mb-sm">
-        <div className="flex items-center gap-md">
-          <span className="flex items-center gap-xs font-mono-data text-mono-data text-text-muted uppercase">
-            <span className="w-2.5 h-0.5 rounded-full" style={{ background: INC }} /> {strings.charts.income}
-          </span>
-          <span className="flex items-center gap-xs font-mono-data text-mono-data text-text-muted uppercase">
-            <span className="w-2.5 h-0.5 rounded-full" style={{ background: EXP }} /> {strings.charts.expenses}
-          </span>
-        </div>
-        <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.charts.last6Months}</span>
-      </div>
+      <ChartLegend
+        items={[
+          { label: strings.charts.income, color: INC },
+          { label: strings.charts.expenses, color: EXP },
+        ]}
+        right={strings.charts.last6Months}
+      />
 
       <div className="flex-grow min-h-[190px]">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <defs>
-              <linearGradient id="flowInc" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={INC} stopOpacity={0.18} />
-                <stop offset="100%" stopColor={INC} stopOpacity={0} />
-              </linearGradient>
-            </defs>
+          <ComposedChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+            <CartesianGrid vertical={false} stroke={CHART.border} />
             <XAxis dataKey="label" tick={{ fill: CHART.muted, fontSize: 10 }} axisLine={{ stroke: CHART.border }} tickLine={false} />
             <YAxis
               tick={{ fill: CHART.muted, fontSize: 10 }}
@@ -93,11 +96,12 @@ export default function FlowChart({ series, selY, selM }) {
               <ReferenceLine x={selPoint.label} stroke={CHART.outline} strokeDasharray="3 3" />
             )}
             <Tooltip content={<FlowTip />} isAnimationActive={false} cursor={{ stroke: CHART.outline, strokeWidth: 1 }} />
-            {/* Área sutil bajo ingresos para dar cuerpo */}
-            <Area type="monotone" dataKey="inc" stroke="none" fill="url(#flowInc)" isAnimationActive={false} />
+            {/* Brecha entre líneas: verde-lima = sobró, rojo = faltó */}
+            <Area type="monotone" dataKey="gapPos" stroke="none" fill={INC} fillOpacity={0.1} activeDot={false} isAnimationActive={false} />
+            <Area type="monotone" dataKey="gapNeg" stroke="none" fill={EXP} fillOpacity={0.16} activeDot={false} isAnimationActive={false} />
             {/* Líneas: ingresos (lima) y gastos (rojo) */}
-            <Line type="monotone" dataKey="inc" stroke={INC} strokeWidth={2} dot={makeSelDot(selY, selM, INC)} activeDot={{ r: 4, fill: INC, stroke: CHART.surface, strokeWidth: 1.5 }} isAnimationActive animationDuration={600} animationEasing="ease-out" />
-            <Line type="monotone" dataKey="exp" stroke={EXP} strokeWidth={2} dot={makeSelDot(selY, selM, EXP)} activeDot={{ r: 4, fill: EXP, stroke: CHART.surface, strokeWidth: 1.5 }} isAnimationActive animationDuration={600} animationEasing="ease-out" />
+            <Line type="monotone" dataKey="inc" stroke={INC} strokeWidth={2} dot={makeSelDot(selY, selM, INC)} activeDot={{ r: 4, fill: INC, stroke: CHART.surface, strokeWidth: 1.5 }} isAnimationActive={!reduced} animationDuration={600} animationEasing="ease-out" />
+            <Line type="monotone" dataKey="exp" stroke={EXP} strokeWidth={2} dot={makeSelDot(selY, selM, EXP)} activeDot={{ r: 4, fill: EXP, stroke: CHART.surface, strokeWidth: 1.5 }} isAnimationActive={!reduced} animationDuration={600} animationEasing="ease-out" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

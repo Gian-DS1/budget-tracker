@@ -150,6 +150,18 @@ export const SCREEN_STRINGS = {
     debt: 'debts.debt',
     others: 'screens.charts.others',
     noExpensesThisMonth: 'screens.charts.noExpensesThisMonth',
+    noMovementsIn: 'screens.charts.noMovementsIn',
+    defineBudget: 'screens.charts.defineBudget',
+    of: 'screens.charts.of',
+    overBudgetMonth: 'screens.charts.overBudgetMonth',
+    noSavingsOrDebts: 'screens.charts.noSavingsOrDebts',
+    paceOnTrack: 'screens.charts.paceOnTrack',
+    paceFast: 'screens.charts.paceFast',
+    paceTick: 'screens.charts.paceTick',
+    debtFree: 'screens.charts.debtFree',
+    healthFactorSavings: 'screens.charts.healthFactorSavings',
+    healthFactorSpending: 'screens.charts.healthFactorSpending',
+    healthFactorDebt: 'screens.charts.healthFactorDebt',
   },
 
   // Categories

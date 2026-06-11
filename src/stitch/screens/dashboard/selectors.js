@@ -6,16 +6,17 @@ import { groupByCategory } from '../../../utils/calculations';
 import { tr } from '../../../i18n/runtime';
 
 const OTROS_COLOR = '#6b7280';
+const OTROS_ICON = '📦';
 
 // Top 5 categorías de gasto del mes + "Otros". Reusa groupByCategory (que ya
-// resta cashback vía getEffectiveAmount). Devuelve [{ name, value, color }].
+// resta cashback vía getEffectiveAmount). Devuelve [{ name, value, color, icon }].
 export function getCategoryBreakdown(monthTransactions, categories) {
   const expenses = monthTransactions.filter((t) =>
     ['expense', 'fixed_expense', 'variable_expense'].includes(t.type));
   if (expenses.length === 0) return [];
 
   const grouped = groupByCategory(expenses, categories)
-    .map((g) => ({ name: g.category.name, value: g.total, color: g.category.color }))
+    .map((g) => ({ name: g.category.name, value: g.total, color: g.category.color, icon: g.category.icon }))
     .filter((g) => g.value > 0)
     .sort((a, b) => b.value - a.value);
   if (grouped.length === 0) return [];
@@ -23,7 +24,7 @@ export function getCategoryBreakdown(monthTransactions, categories) {
   if (grouped.length <= 5) return grouped;
   const top = grouped.slice(0, 5);
   const rest = grouped.slice(5).reduce((s, g) => s + g.value, 0);
-  return [...top, { name: tr('screens.charts.others'), value: rest, color: OTROS_COLOR }];
+  return [...top, { name: tr('screens.charts.others'), value: rest, color: OTROS_COLOR, icon: OTROS_ICON }];
 }
 
 // Uso del presupuesto del mes a partir del summary de getBudgetSummary.
@@ -45,6 +46,35 @@ export function getBudgetUsage(summary) {
     overBudget: spent > budgeted,
     estado: summary.estado,
   };
+}
+
+// Ritmo del presupuesto del mes EN CURSO: compara el avance del gasto contra el
+// avance del calendario y proyecta el cierre a ritmo constante. Para meses
+// pasados (o sin presupuesto) devuelve null y la barra se muestra sin marcador.
+// Devuelve { monthPct, projected, leftover, runOutDay, verdict } con verdict:
+//   'over'    — ya se superó lo presupuestado
+//   'fast'    — aún no, pero la proyección lo supera (runOutDay = día estimado)
+//   'ontrack' — la proyección cierra dentro del presupuesto (leftover = sobrante)
+export function getBudgetPace(usage, { isCurrentMonth, dayOfMonth, daysInMonth }) {
+  if (!usage || !isCurrentMonth || !daysInMonth || daysInMonth <= 0) return null;
+  const day = Math.max(1, Math.min(dayOfMonth, daysInMonth));
+  const monthPct = (day / daysInMonth) * 100;
+
+  const dailyRate = usage.spent / day;
+  const projected = dailyRate * daysInMonth;
+  const leftover = usage.budgeted - projected;
+
+  let verdict, runOutDay = null;
+  if (usage.overBudget) {
+    verdict = 'over';
+  } else if (projected > usage.budgeted) {
+    verdict = 'fast';
+    runOutDay = Math.min(daysInMonth, Math.ceil(usage.budgeted / dailyRate));
+  } else {
+    verdict = 'ontrack';
+  }
+
+  return { monthPct, projected, leftover, runOutDay, verdict };
 }
 
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.

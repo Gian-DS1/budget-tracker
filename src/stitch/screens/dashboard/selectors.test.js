@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getNetWorthSplit } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -66,6 +66,44 @@ describe('getBudgetUsage', () => {
     const r = getBudgetUsage({ estado: 'danger', gastosFijosPlan: 10000, gastosVariablesPlan: 0, ahorroPlan: 0, gastosFijosReal: 12000, variableGastado: 0, ahorroReal: 0 });
     expect(r.overBudget).toBe(true);
     expect(r.pct).toBe(100); // tope visual
+  });
+});
+
+describe('getBudgetPace', () => {
+  const usage = (spent, budgeted, overBudget = spent > budgeted) => ({ spent, budgeted, overBudget, pct: Math.min(100, (spent / budgeted) * 100), estado: 'good' });
+
+  it('mes pasado o sin presupuesto → null', () => {
+    expect(getBudgetPace(usage(100, 1000), { isCurrentMonth: false, dayOfMonth: 10, daysInMonth: 30 })).toBeNull();
+    expect(getBudgetPace(null, { isCurrentMonth: true, dayOfMonth: 10, daysInMonth: 30 })).toBeNull();
+  });
+
+  it('gasto por debajo del ritmo → ontrack con sobrante proyectado', () => {
+    // Día 15 de 30 (50% del mes), gastado 40% del presupuesto.
+    const r = getBudgetPace(usage(4000, 10000), { isCurrentMonth: true, dayOfMonth: 15, daysInMonth: 30 });
+    expect(r.verdict).toBe('ontrack');
+    expect(r.monthPct).toBeCloseTo(50);
+    expect(r.projected).toBeCloseTo(8000); // 4000/15*30
+    expect(r.leftover).toBeCloseTo(2000);
+    expect(r.runOutDay).toBeNull();
+  });
+
+  it('gasto acelerado → fast con día estimado de agotamiento', () => {
+    // Día 10 de 30, gastado 50%: proyección 15000 sobre 10000.
+    const r = getBudgetPace(usage(5000, 10000), { isCurrentMonth: true, dayOfMonth: 10, daysInMonth: 30 });
+    expect(r.verdict).toBe('fast');
+    expect(r.projected).toBeCloseTo(15000);
+    expect(r.runOutDay).toBe(20); // 10000 / (5000/10)
+  });
+
+  it('ya sobregirado → over', () => {
+    const r = getBudgetPace(usage(12000, 10000), { isCurrentMonth: true, dayOfMonth: 20, daysInMonth: 30 });
+    expect(r.verdict).toBe('over');
+  });
+
+  it('día 1 no divide por cero y clampa al rango del mes', () => {
+    const r = getBudgetPace(usage(500, 10000), { isCurrentMonth: true, dayOfMonth: 0, daysInMonth: 30 });
+    expect(r.verdict).toBe('fast'); // 500/1*30 = 15000 > 10000
+    expect(r.runOutDay).toBe(20);
   });
 });
 

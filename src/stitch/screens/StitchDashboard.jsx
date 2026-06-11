@@ -20,7 +20,7 @@ import {
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getNetWorthSplit } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
 import FlowChart from './dashboard/FlowChart';
 import CategoryDonut from './dashboard/CategoryDonut';
@@ -132,8 +132,13 @@ export default function StitchDashboard() {
   // Donut de gastos
   const breakdown = useMemo(() => getCategoryBreakdown(monthTx, categories), [monthTx, categories]);
 
-  // Presupuesto usado
+  // Presupuesto usado + ritmo del mes en curso (tick y veredicto de BudgetBar)
   const budgetUsage = useMemo(() => getBudgetUsage(summary), [summary]);
+  const budgetPace = useMemo(() => getBudgetPace(budgetUsage, {
+    isCurrentMonth,
+    dayOfMonth: now.getDate(),
+    daysInMonth: new Date(y, m + 1, 0).getDate(),
+  }), [budgetUsage, isCurrentMonth, now, y, m]);
 
   // Salud (reusa utils probadas). includeCurrent=true: cuenta el mes en curso +
   // los anteriores, para que reaccione en vivo a lo registrado hoy sin mentir
@@ -217,7 +222,7 @@ export default function StitchDashboard() {
               <Stat label={t('dashboard.expenses')} value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} cls="text-accent-error" />
               <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
-            <BudgetBar usage={budgetUsage} />
+            <BudgetBar usage={budgetUsage} pace={budgetPace} />
             <FlowChart series={series} selY={sel.y} selM={sel.m} />
           </BentoCell>
         </Stagger.Item>
