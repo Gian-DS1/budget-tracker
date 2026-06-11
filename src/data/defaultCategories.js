@@ -363,7 +363,7 @@ export const defaultCategories = [
 
 // Quita acentos y normaliza a minúsculas para un matcheo robusto e insensible a
 // tildes ("educacion" matchea "Educación", "telefono" matchea "Teléfono").
-function normalize(str) {
+export function normalize(str) {
   return (str || '')
     .toLowerCase()
     .normalize('NFD')
