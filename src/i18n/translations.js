@@ -23,6 +23,8 @@ const translations = {
         screens: 'Pantallas de control',
         cashback: 'Cashback rastreado',
         dominican: 'Pensada para RD',
+        free: 'Gratis, para siempre',
+        languages: 'Idiomas · ES y EN',
       },
       mockup: {
         assigned: 'Asignado',
@@ -36,6 +38,14 @@ const translations = {
         groceryStore: 'Supermercado Nacional',
         biweeklySalary: 'Salario quincenal',
         gas: 'Gasolina',
+        carLoan: 'Préstamo vehículo',
+        personalLoan: 'Préstamo personal',
+        paid: 'pagado',
+        avalanche: 'Avalancha',
+        debtFreeIn: 'Libre de deudas en {n} meses',
+        emergencyFund: 'Fondo de emergencia',
+        goal: 'Meta',
+        onTrack: 'En camino',
       },
     },
     // Auth
@@ -322,7 +332,6 @@ const translations = {
       next: 'Siguiente',
       prev: 'Anterior',
       skip: 'Saltar',
-      finish: 'Terminar',
     },
     // Página específicas - Textos comunes
     pages: {
@@ -856,8 +865,6 @@ const translations = {
       paymentHistory: 'Historial de abonos',
       payDebt: 'Pagar deuda',
       pay: 'Pagar',
-      edit: 'Editar',
-      delete: 'Eliminar',
     },
   },
   en: {
@@ -880,6 +887,8 @@ const translations = {
         screens: 'Control screens',
         cashback: 'Cashback tracked',
         dominican: 'Built for DR',
+        free: 'Free, forever',
+        languages: 'Languages · ES & EN',
       },
       mockup: {
         assigned: 'Assigned',
@@ -893,6 +902,14 @@ const translations = {
         groceryStore: 'Grocery Store',
         biweeklySalary: 'Biweekly Salary',
         gas: 'Gas',
+        carLoan: 'Car loan',
+        personalLoan: 'Personal loan',
+        paid: 'paid',
+        avalanche: 'Avalanche',
+        debtFreeIn: 'Debt-free in {n} months',
+        emergencyFund: 'Emergency fund',
+        goal: 'Goal',
+        onTrack: 'On track',
       },
     },
     // Auth
@@ -1179,7 +1196,6 @@ const translations = {
       next: 'Next',
       prev: 'Previous',
       skip: 'Skip',
-      finish: 'Finish',
     },
     // Common actions
     // Screen-specific strings (used via screenStrings.js)
@@ -1686,8 +1702,6 @@ const translations = {
       paymentHistory: 'Payment history',
       payDebt: 'Pay debt',
       pay: 'Pay',
-      edit: 'Edit',
-      delete: 'Delete',
     },
     // Page-specific - Common texts
     pages: {

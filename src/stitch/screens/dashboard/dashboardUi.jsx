@@ -31,12 +31,17 @@ export function EmptyCell({ icon = 'inbox', message }) {
   );
 }
 
-// Métrica KPI compacta.
-export function Stat({ label, value, cls = 'text-on-surface', sub, warn }) {
+// Métrica KPI compacta. `mobileValue` (opcional): versión corta del monto que
+// se muestra bajo `sm` en lugar de `value`, para que nunca se trunque.
+export function Stat({ label, value, mobileValue, cls = 'text-on-surface', sub, warn }) {
   return (
     <div className="flex flex-col gap-xs">
       {label && <span className="font-mono-data text-mono-data text-text-muted uppercase">{label}</span>}
-      <span className={`font-headline-md text-[20px] tracking-tight whitespace-nowrap overflow-hidden text-ellipsis ${cls}`}>{value}</span>
+      <span className={`font-headline-md text-[20px] tracking-tight whitespace-nowrap overflow-hidden text-ellipsis ${cls}`}>
+        {mobileValue != null
+          ? (<><span className="sm:hidden">{mobileValue}</span><span className="hidden sm:inline">{value}</span></>)
+          : value}
+      </span>
       {sub && <span className={`font-label-sm text-label-sm flex items-center gap-xs ${cls}`}>{warn && <MS name="warning" className="!text-[13px]" />}{sub}</span>}
     </div>
   );

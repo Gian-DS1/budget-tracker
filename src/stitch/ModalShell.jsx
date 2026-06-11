@@ -26,9 +26,13 @@
 //     escala a 0 (nada aparece/desaparece de la nada).
 //   - reduced-motion: solo opacidad, sin movimiento.
 
-import { createContext, useCallback, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { EASE_OUT } from './motionTokens';
+
+// Selector de elementos enfocables para el focus trap del modal.
+const FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // Contexto: expone la función de cierre-con-animación a los hijos del modal.
 // Cualquier formulario/botón dentro puede consumirla para que su cierre anime la
@@ -42,17 +46,48 @@ export function useModalClose() {
   return useContext(ModalCloseContext);
 }
 
-export default function ModalShell({ onClose, children, className = '', style }) {
+export default function ModalShell({ onClose, children, className = '', style, labelledBy, ariaLabel }) {
   const reduce = useReducedMotion();
   const [open, setOpen] = useState(true);
+  const panelRef = useRef(null);
+  const prevFocusRef = useRef(null);
 
   // Pide cierre: anima la salida. onClose() del padre se llama en onExitComplete,
   // desmontando el modal recién cuando la animación termina.
   const requestClose = useCallback(() => setOpen(false), []);
 
-  // Cerrar con Escape (un modal que se siente bien responde al teclado).
+  // Gestión de foco (WCAG 2.4.3): al abrir, recuerda quién tenía el foco y
+  // muévelo al panel; al desmontar, devuélvelo al disparador.
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') requestClose(); };
+    prevFocusRef.current = document.activeElement;
+    panelRef.current?.focus({ preventScroll: true });
+    return () => {
+      if (prevFocusRef.current instanceof HTMLElement) prevFocusRef.current.focus({ preventScroll: true });
+    };
+  }, []);
+
+  // Teclado: Escape cierra; Tab queda atrapado dentro del panel (focus trap).
+  useEffect(() => {
+    const onKey = (e) => {
+      if (e.key === 'Escape') { requestClose(); return; }
+      if (e.key !== 'Tab') return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const focusables = panel.querySelectorAll(FOCUSABLE);
+      if (!focusables.length) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+      // Si el foco vive fuera del panel (ej. dropdown en portal), no interferir.
+      if (!panel.contains(active) && active !== panel) return;
+      if (e.shiftKey && (active === first || active === panel)) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && active === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [requestClose]);
@@ -82,7 +117,13 @@ export default function ModalShell({ onClose, children, className = '', style })
           transition={{ duration: 0.16, ease: EASE_OUT }}
         >
           <motion.div
-            className={className}
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={labelledBy}
+            aria-label={ariaLabel}
+            tabIndex={-1}
+            className={`outline-none ${className}`}
             style={{ ...style, transformOrigin: 'center' }}
             onClick={(e) => e.stopPropagation()}
             {...panel}

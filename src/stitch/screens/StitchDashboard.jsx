@@ -18,7 +18,7 @@ import {
   getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
 } from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
-import { formatCurrency, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatCurrencyCompact, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
 import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
@@ -30,6 +30,8 @@ import HealthRing from './dashboard/HealthRing';
 import SignalsRail from './dashboard/SignalsRail';
 
 const fmt = (n) => formatCurrency(n);
+// Compacto para móvil, sin prefijo de moneda: "170.0K".
+const fmtMob = (n) => formatCurrencyCompact(n).replace('RD$', '').trim();
 
 export default function StitchDashboard() {
   const { t, language } = useI18n();
@@ -184,6 +186,8 @@ export default function StitchDashboard() {
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
+      {/* Título de página para lectores de pantalla (el bento no tiene header visible). */}
+      <h1 className="sr-only">{t('nav.dashboard')}</h1>
       {/* Banner: solo cuando se revisa un mes pasado. Aclara qué refleja el pasado. */}
       {!isCurrentMonth && (
         <div className="flex items-center gap-sm mb-md px-md py-sm rounded bg-secondary/10 border border-secondary/30">
@@ -217,10 +221,13 @@ export default function StitchDashboard() {
                 <StitchSelect value={`${sel.y}-${sel.m}`} onChange={(v) => { const [yy, mm] = v.split('-').map(Number); setSel({ y: yy, m: mm }); }} options={monthOptions} compact />
               </div>
             </div>
+            {/* En móvil el monto completo no cabe en 3 columnas y se truncaba
+                ("+RD$ 170,…"); ahí se usa formato compacto sin prefijo (+170.0K),
+                como el mockup de la landing: la moneda ya es contexto. */}
             <div className="grid grid-cols-3 gap-sm mb-md">
-              <Stat label={t('dashboard.income')} value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} cls="text-tertiary" />
-              <Stat label={t('dashboard.expenses')} value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} cls="text-accent-error" />
-              <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
+              <Stat label={t('dashboard.income')} value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} mobileValue={`+${fmtMob(totals.income)}`} cls="text-tertiary" />
+              <Stat label={t('dashboard.expenses')} value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} mobileValue={`−${fmtMob(totals.expense)}`} cls="text-accent-error" />
+              <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} mobileValue={`${totals.balance >= 0 ? '+' : '−'}${fmtMob(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
             <FlowChart series={series} selY={sel.y} selM={sel.m} />

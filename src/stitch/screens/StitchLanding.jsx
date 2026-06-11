@@ -6,7 +6,7 @@
 // crujiente sin bounce; aquí la personalidad es más viva pero contenida.
 // Todo respeta prefers-reduced-motion.
 
-import { useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   motion,
   useReducedMotion,
@@ -21,6 +21,7 @@ import CountUp from '../CountUp';
 import LanguageSelector from '../LanguageSelector';
 import { isLocalhost, enterDemo } from '../demoMode';
 import { useI18n } from '../../contexts/I18nContext';
+import { monthShort } from '../../i18n/runtime';
 import {
   SPRING_SOFT,
   SPRING_SNAP,
@@ -178,6 +179,74 @@ function BudgetMockup({ t }) {
   );
 }
 
+// Mockup pequeño: deudas con estrategia avalancha (progreso de pago).
+function DebtsMockup({ t }) {
+  const rows = [
+    [t('landing.mockup.carLoan'), 68, 'bg-tertiary'],
+    [t('landing.mockup.personalLoan'), 41, 'bg-secondary'],
+  ];
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-md">
+        <span className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{t('landing.features.debts')}</span>
+        <span className="font-mono-data text-mono-data text-secondary uppercase">{t('landing.mockup.avalanche')}</span>
+      </div>
+      <div className="space-y-md flex-grow flex flex-col justify-center">
+        {rows.map(([l, w, bg]) => (
+          <div key={l}>
+            <div className="flex items-center justify-between mb-xs">
+              <span className="font-body-md text-body-md text-on-surface-variant">{l}</span>
+              <span className="font-mono-data text-mono-data text-text-muted">{w}% {t('landing.mockup.paid')}</span>
+            </div>
+            <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
+              <motion.div
+                className={`h-full rounded-full ${bg}`}
+                initial={{ width: 0 }}
+                whileInView={{ width: `${w}%` }}
+                viewport={inViewport}
+                transition={SPRING_SCROLL}
+              />
+            </div>
+          </div>
+        ))}
+        <p className="font-mono-data text-mono-data text-tertiary uppercase">{t('landing.mockup.debtFreeIn').replace('{n}', '14')}</p>
+      </div>
+    </div>
+  );
+}
+
+// Mockup pequeño: meta de ahorro con progreso.
+function SavingsMockup({ t }) {
+  const pct = 72;
+  return (
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-md">
+        <span className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest">{t('landing.features.savings')}</span>
+        <span className="font-mono-data text-mono-data text-tertiary uppercase">{t('landing.mockup.onTrack')}</span>
+      </div>
+      <div className="flex-grow flex flex-col justify-center gap-sm">
+        <div className="flex items-baseline justify-between gap-sm">
+          <span className="font-body-md text-body-md text-on-surface-variant truncate">{t('landing.mockup.emergencyFund')}</span>
+          <span className="font-headline-md text-[15px] tracking-tight text-on-surface shrink-0">RD$ 36,000 <span className="text-text-muted font-mono-data text-mono-data">/ 50K</span></span>
+        </div>
+        <div className="h-2 rounded-full bg-surface-container-high overflow-hidden">
+          <motion.div
+            className="h-full rounded-full bg-primary"
+            initial={{ width: 0 }}
+            whileInView={{ width: `${pct}%` }}
+            viewport={inViewport}
+            transition={SPRING_SCROLL}
+          />
+        </div>
+        <div className="flex justify-between font-mono-data text-mono-data text-text-muted uppercase">
+          <span>{pct}%</span>
+          <span>{t('landing.mockup.goal')}: {monthShort(11)} 2026</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Mockup mediano: lista de transacciones recientes.
 function LedgerMockup({ t }) {
   const rows = [
@@ -221,18 +290,27 @@ export default function StitchLanding({ onAccess }) {
   const rawY = useTransform(scrollYProgress, [0, 1], [0, v.reduce ? 0 : -48]);
   const mockY = useSpring(rawY, SPRING_SCROLL);
 
-  // Features y stats dinámicos según idioma
+  // Failsafe de revelado: las secciones bajo el fold entran con whileInView,
+  // pero si el IntersectionObserver no dispara (prerender, capturas full-page),
+  // a los 2.5s se fuerza "show" para que el contenido NUNCA quede invisible.
+  const [revealAll, setRevealAll] = useState(false);
+  useEffect(() => {
+    const id = setTimeout(() => setRevealAll(true), 2500);
+    return () => clearTimeout(id);
+  }, []);
+  const failsafe = revealAll ? 'show' : undefined;
+
+  // Features de texto (deudas y ahorro tienen mini-mockup propio en el bento).
   const features = [
     { icon: 'list_alt', title: t('landing.features.transactions'), desc: t('landing.features.transactionsDesc') },
     { icon: 'credit_card', title: t('landing.features.creditCards'), desc: t('landing.features.creditCardsDesc') },
-    { icon: 'trending_down', title: t('landing.features.debts'), desc: t('landing.features.debtsDesc') },
-    { icon: 'account_balance_wallet', title: t('landing.features.savings'), desc: t('landing.features.savingsDesc') },
   ];
 
+  // Stats con valor para el visitante (nada de métricas internas).
   const stats = [
-    { value: 37, suffix: '', label: t('landing.stats.categories') },
-    { value: 11, suffix: '', label: t('landing.stats.screens') },
-    { value: 1, prefix: '', suffix: '%', label: t('landing.stats.cashback') },
+    { value: 0, prefix: 'RD$ ', label: t('landing.stats.free') },
+    { value: 37, label: t('landing.stats.categories') },
+    { value: 2, label: t('landing.stats.languages') },
     { value: 100, suffix: '%', label: t('landing.stats.dominican') },
   ];
 
@@ -299,9 +377,10 @@ export default function StitchLanding({ onAccess }) {
             </motion.div>
           </motion.div>
 
-          {/* Mockup hero con parallax */}
+          {/* Mockup hero con parallax. También visible en móvil (debajo del
+              CTA): la landing debe mostrar el producto en todos los tamaños. */}
           <motion.div
-            className="hidden lg:block"
+            className="mt-lg lg:mt-0"
             style={{ y: mockY }}
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -319,6 +398,7 @@ export default function StitchLanding({ onAccess }) {
           variants={v.container}
           initial="hidden"
           whileInView="show"
+          animate={failsafe}
           viewport={inViewport}
         >
           {stats.map((s) => (
@@ -337,11 +417,14 @@ export default function StitchLanding({ onAccess }) {
       {/* Bento de features con mockups en vivo */}
       <section className="border-t border-border-subtle">
         <div className="max-w-[1100px] mx-auto px-md sm:px-margin-safe py-xl">
+          {/* Titular real de sección (Manrope), no un label de 10px: la sección
+              más rica de la página merece un encabezado visible. */}
           <motion.h2
-            className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mb-lg"
+            className="font-headline-md text-[clamp(24px,3.5vw,32px)] text-on-surface tracking-tight mb-lg"
             variants={v.inItem}
             initial="hidden"
             whileInView="show"
+            animate={failsafe}
             viewport={inViewport}
           >
             {language === 'es' ? 'Todo tu dinero, en una vista' : 'All your money, in one place'}
@@ -353,6 +436,7 @@ export default function StitchLanding({ onAccess }) {
             variants={v.container}
             initial="hidden"
             whileInView="show"
+            animate={failsafe}
             viewport={inViewport}
           >
             {/* Celda grande: salud financiera (4 cols × 2 filas) */}
@@ -376,10 +460,10 @@ export default function StitchLanding({ onAccess }) {
               variants={v.inItem}
               className="sm:col-span-2 lg:col-span-3 bg-surface-card border border-border-subtle rounded-lg p-lg inner-glow hover:border-primary transition-colors flex flex-col justify-center"
             >
-              <div className="w-10 h-10 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
-                <MS name="account_balance" className="text-[20px] text-primary" />
-              </div>
-              <h3 className="font-headline-md text-[18px] text-on-surface tracking-tight mb-xs">{language === 'es' ? 'Presupuesto base cero' : 'Zero-based Budget'}</h3>
+              <h3 className="font-headline-md text-[18px] text-on-surface tracking-tight mb-xs flex items-center gap-sm">
+                <MS name="account_balance" className="text-[18px] text-primary" />
+                {language === 'es' ? 'Presupuesto base cero' : 'Zero-based Budget'}
+              </h3>
               <p className="font-body-md text-body-md text-on-surface-variant">
                 {language === 'es'
                   ? 'Asigna cada peso hasta llegar a cero y sabe exactamente cuánto puedes gastar.'
@@ -395,17 +479,32 @@ export default function StitchLanding({ onAccess }) {
               <LedgerMockup t={t} />
             </motion.div>
 
-            {/* Features restantes: celdas pequeñas (cada una 3 cols) */}
+            {/* Mini-mockups en vivo: deudas (avalancha) y meta de ahorro.
+                Muestran el producto en vez de describirlo con otra card. */}
+            <motion.div
+              variants={v.inItem}
+              className="sm:col-span-1 lg:col-span-3 bg-surface-card border border-border-subtle rounded-lg p-lg inner-glow hover:border-primary transition-colors"
+            >
+              <DebtsMockup t={t} />
+            </motion.div>
+            <motion.div
+              variants={v.inItem}
+              className="sm:col-span-1 lg:col-span-3 bg-surface-card border border-border-subtle rounded-lg p-lg inner-glow hover:border-primary transition-colors"
+            >
+              <SavingsMockup t={t} />
+            </motion.div>
+
+            {/* Features de texto: transacciones y tarjetas */}
             {features.map((f) => (
               <motion.div
                 key={f.title}
                 variants={v.inItem}
                 className="sm:col-span-1 lg:col-span-3 bg-surface-card border border-border-subtle rounded-lg p-lg inner-glow hover:border-primary transition-colors flex flex-col justify-center"
               >
-                <div className="w-10 h-10 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
-                  <MS name={f.icon} className="text-[20px] text-primary" />
-                </div>
-                <h3 className="font-headline-md text-[18px] text-on-surface tracking-tight mb-xs">{f.title}</h3>
+                <h3 className="font-headline-md text-[18px] text-on-surface tracking-tight mb-xs flex items-center gap-sm">
+                  <MS name={f.icon} className="text-[18px] text-primary" />
+                  {f.title}
+                </h3>
                 <p className="font-body-md text-body-md text-on-surface-variant">{f.desc}</p>
               </motion.div>
             ))}
@@ -420,6 +519,7 @@ export default function StitchLanding({ onAccess }) {
           variants={v.container}
           initial="hidden"
           whileInView="show"
+          animate={failsafe}
           viewport={inViewport}
         >
           <motion.span variants={v.inItem} className="font-mono-data text-mono-data text-tertiary uppercase tracking-widest">
@@ -429,7 +529,9 @@ export default function StitchLanding({ onAccess }) {
             variants={v.inItem}
             className="font-hero-headline text-[clamp(28px,5vw,48px)] text-on-surface tracking-tighter leading-[1.05] max-w-[20ch]"
           >
-            {language === 'es' ? 'Toma el control de tu dinero' : 'Take control of your money'}
+            {/* En EN el hero ya dice "Take control of your money": aquí se usa
+                el espejo del hero ES para no repetir titular. */}
+            {language === 'es' ? 'Toma el control de tu dinero' : 'Every peso, under control'}
           </motion.h2>
           <motion.p variants={v.inItem} className="font-body-lg text-body-lg text-on-surface-variant max-w-[36rem]">
             {language === 'es'

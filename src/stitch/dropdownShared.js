@@ -11,7 +11,8 @@ export const TRIGGER_BASE =
   'inner-glow flex items-center justify-between gap-sm text-left';
 
 // Variante compacta = combina con la barra de filtros (h-[34px] como sus vecinos).
+// En táctil (max-sm) sube a 44px: mínimo de touch target (WCAG 2.5.8).
 export const TRIGGER_COMPACT =
-  'w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 px-sm ' +
+  'w-full h-[34px] max-sm:h-11 bg-surface-container border border-border-subtle rounded py-0 px-sm ' +
   'font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary ' +
   'hover:border-outline-variant inner-glow flex items-center justify-between gap-xs text-left cursor-pointer';

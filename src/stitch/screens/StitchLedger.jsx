@@ -333,7 +333,7 @@ export default function StitchLedger() {
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-xl gap-md">
         <div>
-          <h2 className="font-headline-lg text-headline-lg font-bold text-on-surface">{strings.ledger.title}</h2>
+          <h1 className="font-headline-lg text-headline-lg font-bold text-on-surface">{strings.ledger.title}</h1>
           <p className="font-mono-data text-mono-data text-text-muted mt-sm uppercase">
             {transactions.length} {strings.ledger.records} · {strings.ledger.synchronized}
             <span className="inline-block w-1.5 h-1.5 rounded-full bg-primary ml-xs status-glow-live align-middle" />
@@ -348,7 +348,7 @@ export default function StitchLedger() {
       <div data-tour="ledger-filters" className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg flex flex-wrap gap-sm items-center inner-glow">
         <div className="relative flex-1 min-w-[200px]">
           <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
-          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={strings.ledger.searchPlaceholder} className="w-full h-[34px] bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
+          <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={strings.ledger.searchPlaceholder} aria-label={strings.ledger.searchPlaceholder} className="w-full h-[34px] max-sm:h-11 bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
         </div>
         <StitchSelect
           value={filterType}
