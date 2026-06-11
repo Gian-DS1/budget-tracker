@@ -6,7 +6,7 @@ const tx = (description, categoryId, cardId, currency, date) =>
   ({ description, categoryId, cardId, currency, date });
 
 describe('suggestFromHistory', () => {
-  it('match exacto devuelve categoría, tarjeta y moneda del historial', () => {
+  it('match exacto devuelve categoría y tarjeta del historial', () => {
     const hist = [tx('Jumbo', 'super', 'cc1', 'DOP', '2026-05-01')];
     expect(suggestFromHistory('Jumbo', hist)).toEqual(
       { categoryId: 'super', cardId: 'cc1', source: 'exact' });

@@ -4,6 +4,7 @@ import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
+import { getCurrency } from '../utils/currencyRuntime';
 
 const useDebtStore = create(
   persist(
@@ -74,7 +75,7 @@ const useDebtStore = create(
 
     const currentBal = Number(debt.currentBalance !== undefined ? debt.currentBalance : debt.originalAmount);
     const initialStatus = currentBal <= 0 ? 'paid_off' : 'active';
-    const currency = debt.currency || 'DOP';
+    const currency = debt.currency || getCurrency();
 
     const dbPayload = {
       user_id: user.id,

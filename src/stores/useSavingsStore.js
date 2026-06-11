@@ -4,6 +4,7 @@ import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
+import { getCurrency } from '../utils/currencyRuntime';
 
 // Resuelve una categoría de tipo ahorro para enlazar la transacción del aporte.
 // Cae a '' si la cuenta no tiene una categoría savings (la tx sigue type:savings).
@@ -80,7 +81,7 @@ const useSavingsStore = create(
       deadline: goal.deadline || null,
       icon: goal.icon || null,
       color: goal.color || null,
-      currency: goal.currency || 'DOP',
+      currency: goal.currency || getCurrency(),
       horizon: goal.horizon || null,
       status: (Number(goal.currentAmount) || 0) >= Number(goal.targetAmount) ? 'completed' : 'active',
     };
