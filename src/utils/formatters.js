@@ -3,22 +3,47 @@
 import { currentLocale, tr } from '../i18n/runtime';
 import { getCurrency } from './currencyRuntime';
 
+// Cachés módulo-level: Intl.NumberFormat es caro de construir (~25µs) y estas
+// funciones corren por cada celda del Ledger y punto de chart en cada render.
+const symbolCache = new Map();    // `${code}|${locale}` → símbolo
+const amountFmtCache = new Map(); // locale → Intl.NumberFormat (2 decimales)
+
+function amountFormatter(locale) {
+  let fmt = amountFmtCache.get(locale);
+  if (!fmt) {
+    fmt = new Intl.NumberFormat(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    amountFmtCache.set(locale, fmt);
+  }
+  return fmt;
+}
+
 // Símbolo de una moneda en el locale actual (RD$, US$, €, £, MX$…).
 // Estrategia: 'symbol' primero (da RD$, US$); si devuelve el mismo código ISO
 // (p. ej. EUR→EUR en es-DO), intenta 'narrowSymbol' (EUR→€). Fallback: código.
+// Nota: para códigos ISO reservados (XXX) Intl devuelve '¤'; para códigos
+// malformados el constructor lanza y caemos al código vía catch.
 function currencySymbol(code, locale) {
+  const key = `${code}|${locale}`;
+  const cached = symbolCache.get(key);
+  if (cached !== undefined) return cached;
+  let result;
   try {
     const fmt = (display) =>
       new Intl.NumberFormat(locale, {
         style: 'currency', currency: code, currencyDisplay: display,
       }).formatToParts(0).find((p) => p.type === 'currency')?.value;
     const sym = fmt('symbol');
-    if (sym && sym !== code) return sym;
-    const narrow = fmt('narrowSymbol');
-    return narrow || code;
+    if (sym && sym !== code) {
+      result = sym;
+    } else {
+      const narrow = fmt('narrowSymbol');
+      result = narrow || code;
+    }
   } catch {
-    return code;
+    result = code;
   }
+  symbolCache.set(key, result);
+  return result;
 }
 
 /**
@@ -28,10 +53,7 @@ export function formatCurrency(amount, currencyCode) {
   const code = currencyCode || getCurrency();
   const locale = currentLocale();
   const absAmount = Math.abs(amount);
-  const formatted = new Intl.NumberFormat(locale, {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(absAmount);
+  const formatted = amountFormatter(locale).format(absAmount);
   const sign = amount < 0 ? '-' : '';
   return `${sign}${currencySymbol(code, locale)} ${formatted}`;
 }
