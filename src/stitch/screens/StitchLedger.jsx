@@ -25,6 +25,7 @@ import useRecurringStore, { advanceDate } from '../../stores/useRecurringStore';
 import useRateStore from '../../stores/useRateStore';
 import { computeCashback, getTransactionCashback, hasTieredRule } from '../../utils/creditCards';
 import { autoCategorize } from '../../data/defaultCategories';
+import { suggestFromHistory } from '../../data/transactionMemory';
 import { formatCurrency, formatDate, todayISO, titleCase, getTypeLabel } from '../../utils/formatters';
 
 const fmt = (n, c) => formatCurrency(n, c);
@@ -62,7 +63,13 @@ export default function StitchLedger() {
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(blank);
   const [errors, setErrors] = useState({});
-  const [autoCat, setAutoCat] = useState(false); // ¿la categoría se asignó automáticamente?
+  // Autollenado inteligente: `autoSet` = campos llenados por la memoria/keywords
+  // (muestran chip AUTO); `touched` = campos que el usuario tocó a mano en este
+  // form (quedan excluidos del autollenado hasta cerrarlo).
+  const blankSmart = { category: false, card: false, currency: false };
+  const [autoSet, setAutoSet] = useState(blankSmart);
+  const [touched, setTouched] = useState(blankSmart);
+  const resetSmart = () => { setAutoSet(blankSmart); setTouched(blankSmart); };
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterCat, setFilterCat] = useState('');
@@ -128,33 +135,48 @@ export default function StitchLedger() {
     // Auto-capitaliza la primera letra mientras se escribe; al guardar,
     // titleCase completa el resto de las palabras.
     const description = raw.charAt(0).toLocaleUpperCase() + raw.slice(1);
-    setForm((prev) => {
-      const u = { ...prev, description };
-      // Matcheo inteligente: solo auto-asigna si el usuario no eligió categoría
-      // manualmente (o si la actual ya era automática). No pisa una elección manual.
-      if (!editing && (autoCat || !prev.categoryId)) {
-        const sug = autoCategorize(description, categories);
-        if (sug) {
-          u.categoryId = sug.id;
-          u.type = sug.type; // el tipo lo manda la categoría
-          // Sugiere también la tarjeta de cashback de esa categoría (p. ej. CCN),
-          // sin pisar una tarjeta ya elegida manualmente.
-          if (!prev.cardId) {
-            const suggested = cardForCategory(sug.id);
-            if (suggested) u.cardId = suggested;
-          }
-          setAutoCat(true);
-        }
+    if (editing) { setForm((prev) => ({ ...prev, description })); return; }
+
+    // Memoria por historial primero (lo que el usuario hizo otras veces con esta
+    // descripción); keywords de fábrica como fallback. Nunca pisa campos tocados.
+    const sug = suggestFromHistory(description, transactions);
+    const next = { ...form, description };
+    const applied = { ...autoSet };
+
+    if (!touched.category) {
+      const categoryId = sug?.categoryId || autoCategorize(description, categories)?.id || '';
+      if (categoryId) {
+        next.categoryId = categoryId;
+        next.type = typeOfCategory(categoryId); // el tipo lo manda la categoría
+        applied.category = true;
       }
-      return u;
-    });
+    }
+    if (!touched.card) {
+      if (sug) {
+        // '' también es respuesta: si el patrón es "sin tarjeta", no se rellena.
+        next.cardId = sug.cardId;
+        applied.card = !!sug.cardId;
+      } else if (!form.cardId && next.categoryId) {
+        // Sin historial: sugiere la tarjeta de cashback de la categoría (como hoy).
+        const suggested = cardForCategory(next.categoryId);
+        if (suggested) { next.cardId = suggested; applied.card = true; }
+      }
+    }
+    if (!touched.currency && sug?.currency) {
+      next.currency = sug.currency;
+      applied.currency = true;
+    }
+
+    setForm(next);
+    setAutoSet(applied);
   };
 
-  // Cambio manual de categoría: apaga "auto" y deriva el tipo de la categoría.
-  // Si la categoría tiene una tarjeta de cashback asociada (p. ej. Grupo CCN → la
-  // tarjeta CCN) y aún no hay tarjeta elegida, la sugiere sin pisar una manual.
+  // Cambio manual de categoría: ese campo deja de autollenarse y pierde el chip.
+  // Si la categoría tiene tarjeta de cashback asociada y aún no hay tarjeta, la
+  // sugiere sin pisar una manual (comportamiento de siempre).
   const onCategoryManual = (id) => {
-    setAutoCat(false);
+    setTouched((tt) => ({ ...tt, category: true }));
+    setAutoSet((a) => ({ ...a, category: false }));
     setForm((f) => {
       const next = { ...f, categoryId: id, type: id ? typeOfCategory(id) : f.type };
       if (id && !f.cardId) {
@@ -165,8 +187,8 @@ export default function StitchLedger() {
     });
   };
 
-  const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); setAutoCat(false); setShowForm(true); };
-  const openEdit = (t) => { setForm({ ...blank, ...t, amount: String(t.amount) }); setEditing(t.id); setErrors({}); setAutoCat(false); setShowForm(true); };
+  const openCreate = () => { setForm(blank); setEditing(null); setErrors({}); resetSmart(); setShowForm(true); };
+  const openEdit = (t) => { setForm({ ...blank, ...t, amount: String(t.amount) }); setEditing(t.id); setErrors({}); resetSmart(); setShowForm(true); };
 
   const demo = isDemoActive();
 
@@ -199,7 +221,7 @@ export default function StitchLedger() {
       // en demo lo mostramos aquí (no hay backend que avise).
       if (demo) toast.success(t('screens.ledger.savedToast'));
     }
-    setShowForm(false); setForm(blank); setEditing(null); setAutoCat(false);
+    setShowForm(false); setForm(blank); setEditing(null); resetSmart();
   };
 
   const onDelete = async (t) => {
@@ -474,7 +496,7 @@ export default function StitchLedger() {
                 <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder={t('screens.ledger.examplePlaceholder')} className={inputCls} />
               </Field>
               <div className="grid grid-cols-2 gap-md">
-                <Field label={t('common.category')} error={errors.categoryId} extra={<AutoCatChip show={autoCat && !!form.categoryId} />}>
+                <Field label={t('common.category')} error={errors.categoryId} extra={<AutoCatChip show={autoSet.category && !touched.category && !!form.categoryId} />}>
                   <StitchCategorySelect
                     value={form.categoryId}
                     onChange={onCategoryManual}
@@ -482,10 +504,10 @@ export default function StitchLedger() {
                     placeholder={t('screens.ledger.chooseCategoryPlaceholder')}
                   />
                 </Field>
-                <Field label={t('common.currency')}>
+                <Field label={t('common.currency')} extra={<AutoCatChip show={autoSet.currency && !touched.currency} />}>
                   <StitchSelect
                     value={form.currency}
-                    onChange={(v) => setForm({ ...form, currency: v })}
+                    onChange={(v) => { setTouched((tt) => ({ ...tt, currency: true })); setAutoSet((a) => ({ ...a, currency: false })); setForm({ ...form, currency: v }); }}
                     options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]}
                   />
                 </Field>
@@ -497,10 +519,10 @@ export default function StitchLedger() {
                 <TypeBadge type={form.type} hasCategory={!!form.categoryId} />
               </Field>
               {isExpenseType(form.type) && cards.length > 0 && (
-                <Field label={t('screens.ledger.cardOptional')}>
+                <Field label={t('screens.ledger.cardOptional')} extra={<AutoCatChip show={autoSet.card && !touched.card && !!form.cardId} />}>
                   <StitchSelect
                     value={form.cardId}
-                    onChange={(v) => setForm({ ...form, cardId: v })}
+                    onChange={(v) => { setTouched((tt) => ({ ...tt, card: true })); setAutoSet((a) => ({ ...a, card: false })); setForm({ ...form, cardId: v }); }}
                     options={[{ value: '', label: t('screens.ledger.noCard') }, ...cards.map((c) => ({ value: c.id, label: c.name }))]}
                     placeholder={t('screens.ledger.noCard')}
                   />
