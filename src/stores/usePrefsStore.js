@@ -48,7 +48,15 @@ const usePrefsStore = create(
           const next = { loading: false, prefsLoaded: true };
           if (data.budget_level && BUDGET_LEVELS.includes(data.budget_level)) next.budgetLevel = data.budget_level;
           if (typeof data.tutorial_seen === 'boolean') next.tutorialSeen = data.tutorial_seen;
-          if (data.currency) { next.currency = data.currency; setRuntimeCurrency(data.currency); }
+          if (data.currency) {
+            next.currency = data.currency;
+            setRuntimeCurrency(data.currency);
+          } else {
+            // Perfil sin moneda elegida: resetea (un usuario nuevo no debe
+            // heredar el runtime del usuario/caché anterior).
+            next.currency = null;
+            setRuntimeCurrency(null);
+          }
           set(next);
         } else {
           // Usuario nuevo sin fila en profiles (data null): tutorialSeen queda

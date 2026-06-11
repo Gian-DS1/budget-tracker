@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { setRuntimeCurrency } from '../utils/currencyRuntime';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -84,6 +85,8 @@ export const AuthProvider = ({ children }) => {
     // caches live in sessionStorage (see the stores' persist config), so we must
     // clear them there — not localStorage. The theme preference is kept (not
     // sensitive) and lives elsewhere.
+    // El siguiente usuario no debe heredar moneda/prefs del anterior.
+    setRuntimeCurrency(null);
     [
       'fintrack-transactions-cache',
       'fintrack-budgets-cache',
@@ -93,6 +96,7 @@ export const AuthProvider = ({ children }) => {
       'fintrack-plans-cache',
       'fintrack-cards-cache',
       'fintrack-recurring-cache',
+      'fintrack-prefs-cache',
     ].forEach((key) => sessionStorage.removeItem(key));
     toast.success('Sesión cerrada');
   };
