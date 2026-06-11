@@ -22,7 +22,6 @@ import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useRecurringStore, { advanceDate } from '../../stores/useRecurringStore';
-import useRateStore from '../../stores/useRateStore';
 import { computeCashback, getTransactionCashback, hasTieredRule } from '../../utils/creditCards';
 import { autoCategorize } from '../../data/defaultCategories';
 import { suggestFromHistory } from '../../data/transactionMemory';
@@ -57,7 +56,6 @@ export default function StitchLedger() {
   const categories = useCategoryStore((s) => s.categories);
   const cards = useCreditCardStore((s) => s.cards);
   const addRecurring = useRecurringStore((s) => s.addRecurring);
-  const fxRate = useRateStore((s) => s.getRate());
 
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -97,9 +95,9 @@ export default function StitchLedger() {
   const cashbackToFreeze = useMemo(() => {
     if (!form.cardId || !isExpenseType(form.type)) return 0;
     const card = cards.find((c) => c.id === form.cardId);
-    const base = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
+    const base = Number(form.amount);
     return computeCashback(card, form.categoryId, base);
-  }, [form, cards, fxRate]);
+  }, [form, cards]);
 
   // Cashback ESTIMADO que se muestra al usuario en el form. Incluye el escalonado
   // (proporcional al nivel del ciclo) para que las tarjetas CCN no muestren 0.
@@ -107,13 +105,13 @@ export default function StitchLedger() {
     if (!form.cardId || !isExpenseType(form.type)) return 0;
     const card = cards.find((c) => c.id === form.cardId);
     if (!card) return 0;
-    const base = form.currency === 'USD' ? Number(form.amount) * fxRate : Number(form.amount);
+    const base = Number(form.amount);
     if (!hasTieredRule(card)) return computeCashback(card, form.categoryId, base);
     // Para escalonadas, estima incluyendo esta transacción en el acumulado del ciclo.
     const txDraft = { cardId: form.cardId, categoryId: form.categoryId, amount: base, date: form.date };
     const others = transactions.filter((t) => t.id !== editing);
     return getTransactionCashback(card, txDraft, [...others, txDraft]);
-  }, [form, cards, fxRate, transactions, editing]);
+  }, [form, cards, transactions, editing]);
 
   // El tipo de una transacción se DERIVA de su categoría: la categoría ya sabe
   // si es ingreso, gasto fijo, gasto variable o ahorro (eso es lo que el motor

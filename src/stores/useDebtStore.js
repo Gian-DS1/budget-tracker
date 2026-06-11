@@ -2,7 +2,6 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
-import useRateStore from './useRateStore';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
 
@@ -311,23 +310,15 @@ const useDebtStore = create(
   },
 
   getTotalDebt: () => {
-    const rate = useRateStore.getState().getRate();
     return get()
       .debts.filter((d) => d.status === 'active')
-      .reduce((sum, d) => {
-        const val = Number(d.currentBalance);
-        return sum + (d.currency === 'USD' ? val * rate : val);
-      }, 0);
+      .reduce((sum, d) => sum + Number(d.currentBalance), 0);
   },
 
   getTotalMonthlyPayment: () => {
-    const rate = useRateStore.getState().getRate();
     return get()
       .debts.filter((d) => d.status === 'active')
-      .reduce((sum, d) => {
-        const val = Number(d.monthlyPayment);
-        return sum + (d.currency === 'USD' ? val * rate : val);
-      }, 0);
+      .reduce((sum, d) => sum + Number(d.monthlyPayment), 0);
   },
 
   getActiveDebts: () => get().debts.filter((d) => d.status === 'active'),

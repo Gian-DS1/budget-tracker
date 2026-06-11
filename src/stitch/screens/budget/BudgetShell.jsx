@@ -9,7 +9,6 @@ import useBudgetStore from '../../../stores/useBudgetStore';
 import useTransactionStore from '../../../stores/useTransactionStore';
 import useCategoryStore from '../../../stores/useCategoryStore';
 import useDebtStore from '../../../stores/useDebtStore';
-import useRateStore from '../../../stores/useRateStore';
 import { getBudgetSummary } from '../../../utils/calculations';
 import { monthName } from '../../../i18n/runtime';
 import { useI18n } from '../../../contexts/I18nContext';
@@ -51,10 +50,8 @@ export default function BudgetShell({ level = 'zero' }) {
   const budgets = useBudgetStore((s) => s.budgets);
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
-  const debts = useDebtStore((s) => s.debts);
   const payments = useDebtStore((s) => s.payments);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
-  const fxRate = useRateStore((s) => s.getRate());
 
   const isCurrentMonth = year === now.getFullYear() && month === now.getMonth();
   const navMonth = (dir) => {
@@ -73,16 +70,14 @@ export default function BudgetShell({ level = 'zero' }) {
     [transactions, year, month],
   );
 
-  // Pago de deuda real del mes, convertido a DOP.
+  // Pago de deuda real del mes.
   const debtPaid = useMemo(
     () => payments.reduce((sum, p) => {
       const d = new Date(p.date + 'T00:00:00');
       if (d.getFullYear() !== year || d.getMonth() !== month) return sum;
-      const debt = debts.find((dd) => dd.id === p.debtId);
-      const val = Number(p.amount) || 0;
-      return sum + (debt && debt.currency === 'USD' ? val * fxRate : val);
+      return sum + (Number(p.amount) || 0);
     }, 0),
-    [payments, debts, year, month, fxRate],
+    [payments, year, month],
   );
 
   // Categoría de deuda (slug estable; respaldo por nombre para cuentas previas a

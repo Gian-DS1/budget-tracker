@@ -13,7 +13,6 @@ import useDebtStore from '../../stores/useDebtStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useBudgetStore from '../../stores/useBudgetStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
-import useRateStore from '../../stores/useRateStore';
 import {
   getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
 } from '../../utils/calculations';
@@ -46,7 +45,6 @@ export default function StitchDashboard() {
   const debts = useDebtStore((s) => s.debts);
   const cards = useCreditCardStore((s) => s.cards);
   const goals = useSavingsStore((s) => s.goals);
-  const fxRate = useRateStore((s) => s.getRate());
 
   const now = useMemo(() => new Date(), []);
 
@@ -82,10 +80,8 @@ export default function StitchDashboard() {
   const debtPaidThisMonth = useMemo(() => payments.reduce((sum, p) => {
     const d = new Date(p.date + 'T00:00:00');
     if (d.getFullYear() !== y || d.getMonth() !== m) return sum;
-    const debt = debts.find((dd) => dd.id === p.debtId);
-    const val = Number(p.amount) || 0;
-    return sum + (debt && debt.currency === 'USD' ? val * fxRate : val);
-  }, 0), [payments, debts, y, m, fxRate]);
+    return sum + (Number(p.amount) || 0);
+  }, 0), [payments, y, m]);
 
   const summary = useMemo(() => getBudgetSummary({
     monthTransactions: monthTx, monthBudgets, categories,
@@ -165,7 +161,7 @@ export default function StitchDashboard() {
       const due = new Date(String(d.due_date).slice(0, 10) + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({ tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment) * (d.currency === 'USD' ? fxRate : 1))}.`, to: '/deudas' });
+      out.push({ tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment))}.`, to: '/deudas' });
     });
     goals.filter((g) => g.status !== 'completed' && g.deadline).forEach((g) => {
       const due = new Date(g.deadline + 'T00:00:00');
@@ -174,7 +170,7 @@ export default function StitchDashboard() {
       out.push({ tag: t('dashboard.goalUpcoming'), tc: 'text-secondary', t: t('dashboard.inDays').replace('{d}', days), body: `"${g.title}" ${t('dashboard.dueOn')} ${formatDate(g.deadline)}.`, to: '/ahorros' });
     });
     return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
-  }, [cards, debts, goals, transactions, fxRate, now, t]);
+  }, [cards, debts, goals, transactions, now, t]);
 
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
   // Patrimonio neto NO va aquí: tiene su propia celda abajo (evita redundancia).

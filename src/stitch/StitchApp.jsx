@@ -33,7 +33,6 @@ import useBudgetStore from '../stores/useBudgetStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
-import useRateStore from '../stores/useRateStore';
 import useRecurringStore from '../stores/useRecurringStore';
 import usePrefsStore from '../stores/usePrefsStore';
 
@@ -81,7 +80,6 @@ function AuthGate() {
   const fetchPrefs = usePrefsStore((s) => s.fetchPrefs);
   const fetchRecurring = useRecurringStore((s) => s.fetchRecurring);
   const materializeDue = useRecurringStore((s) => s.materializeDue);
-  const fetchRate = useRateStore((s) => s.fetchRate);
 
   useEffect(() => {
     if (demo) {
@@ -91,8 +89,6 @@ function AuthGate() {
       fetchPrefs();
     }
   }, [demo, fetchPrefs]);
-
-  useEffect(() => { fetchRate(); }, [fetchRate]);
 
   useEffect(() => {
     if (!user) return;

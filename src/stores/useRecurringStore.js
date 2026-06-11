@@ -11,7 +11,7 @@ import toast from 'react-hot-toast';
 import { todayISO } from '../utils/formatters';
 import { advanceDate } from '../utils/recurrence';
 import useTransactionStore from './useTransactionStore';
-import useRateStore from './useRateStore';
+import { getCurrency } from '../utils/currencyRuntime';
 
 // Re-export para que los consumidores que ya lo importan desde aquí sigan funcionando.
 export { advanceDate };
@@ -126,7 +126,6 @@ const useRecurringStore = create(
 
       _materializeDue: async () => {
         const today = todayISO();
-        const rate = useRateStore.getState().getRate();
         const due = get().recurring.filter((r) => r.active && r.nextDate <= today);
         if (due.length === 0) return { count: 0, created: [] };
 
@@ -137,18 +136,15 @@ const useRecurringStore = create(
           let next = t.nextDate;
           let guard = 0;
           while (next <= today && guard < 120) {
-            const amountDOP =
-              t.currency === 'USD'
-                ? Math.round(Number(t.amount) * rate * 100) / 100
-                : Number(t.amount);
             toCreate.push({
               categoryId: t.categoryId,
               cardId: t.cardId || null,
-              amount: amountDOP,
+              amount: Number(t.amount),
               type: t.type,
               description: t.description,
               date: next,
               notes: t.notes || 'Generado automáticamente (recurrente)',
+              currency: getCurrency(),
             });
             next = advanceDate(next, t.frequency);
             guard++;

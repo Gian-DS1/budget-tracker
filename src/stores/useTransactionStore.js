@@ -3,44 +3,12 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCreditCardStore from './useCreditCardStore';
-import useRateStore from './useRateStore';
 import { computeCashback } from '../utils/creditCards';
+import { getCurrency } from '../utils/currencyRuntime';
 
 // El cashback aplica a CUALQUIER tipo de gasto (fijo o variable), no solo al
 // tipo genérico 'expense'. Misma regla que el formulario de transacciones.
 const earnsCashback = (type) => type === 'expense' || type === 'fixed_expense' || type === 'variable_expense';
-
-// Pide la tasa USD→DOP a la CDN de currency-api con timeout (AbortSignal). Sin
-// timeout, un fetch colgado dejaría el await pendiente y bloquearía el guardado
-// de una transacción en USD. Devuelve la tasa numérica o null si falla/expira.
-const RATE_FETCH_TIMEOUT_MS = 6000;
-async function fetchRateFromCdn(version) {
-  try {
-    const response = await fetch(
-      `https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@${version}/v1/currencies/usd.json`,
-      { signal: AbortSignal.timeout(RATE_FETCH_TIMEOUT_MS) }
-    );
-    if (!response.ok) return null;
-    const data = await response.json();
-    return (data && typeof data.usd?.dop === 'number') ? data.usd.dop : null;
-  } catch (e) {
-    console.warn(`Error fetching USD rate (@${version}):`, e);
-    return null;
-  }
-}
-
-// Conversión histórica por fecha (para guardar la transacción al valor del día).
-// Intenta la tasa del día; si falla, la más reciente; si ambas fallan, cae a la
-// tasa efectiva del rate store (que respeta el override manual del usuario), no
-// a un número fijo. Ningún fetch puede colgar el guardado: ambos tienen timeout.
-export async function fetchUSDRate(dateStr) {
-  const fetched = (await fetchRateFromCdn(dateStr)) ?? (await fetchRateFromCdn('latest'));
-  const rate = fetched ?? useRateStore.getState().getRate();
-
-  // Dominican bank selling rate has a standard spread (aprox +1.2%)
-  const bankSellingRate = Math.round(rate * 1.012 * 100) / 100;
-  return bankSellingRate;
-}
 
 const useTransactionStore = create(
   persist(
@@ -83,25 +51,10 @@ const useTransactionStore = create(
     const user = await getCurrentUser();
     if (!user) return;
 
-    // Convert USD to DOP if needed
-    const currency = transaction.currency || 'DOP';
     let amount = Number(transaction.amount);
     let notes = transaction.notes || null;
-    if (currency === 'USD') {
-      const rate = await fetchUSDRate(transaction.date);
-      const originalAmount = amount;
-      amount = Math.round(amount * rate * 100) / 100;
 
-      const formattedOriginal = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(originalAmount);
-      const formattedConverted = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(amount);
-      const formattedRate = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(rate);
-
-      const conversionNote = `US$ ${formattedOriginal} → RD$ ${formattedConverted} - Tasa del día: ${formattedRate}`;
-      notes = notes ? `${notes} (${conversionNote})` : conversionNote;
-    }
-
-    // Cashback se calcula sobre el monto YA convertido a DOP (no sobre el monto
-    // ingresado, que puede estar en USD) y solo para gastos.
+    // Cashback se calcula sobre el monto ya en la moneda base y solo para gastos.
     let cashbackEarned = 0;
     if (transaction.cardId && earnsCashback(transaction.type)) {
       const card = useCreditCardStore.getState().cards.find((c) => c.id === transaction.cardId);
@@ -117,7 +70,7 @@ const useTransactionStore = create(
       description: transaction.description,
       date: transaction.date,
       notes: notes,
-      currency: 'DOP',
+      currency: getCurrency(),
       cashback_earned: cashbackEarned
     };
 
@@ -217,7 +170,7 @@ const useTransactionStore = create(
       description: tx.description,
       date: tx.date,
       notes: tx.notes || null,
-      currency: 'DOP',
+      currency: getCurrency(),
       cashback_earned: Number(tx.cashbackEarned) || 0,
     };
 
@@ -271,7 +224,7 @@ const useTransactionStore = create(
       description: tx.description,
       date: tx.date,
       notes: tx.notes || null,
-      currency: 'DOP',
+      currency: getCurrency(),
       cashback_earned: Number(tx.cashbackEarned) || 0,
     }));
 
@@ -377,7 +330,7 @@ const useTransactionStore = create(
     if (!user) return 0;
 
     // Las filas pueden traer cardId (p. ej. recurrentes pagadas con tarjeta).
-    // El monto ya viene en DOP; el cashback solo aplica a gastos con tarjeta.
+    // El monto ya viene en la moneda base; el cashback solo aplica a gastos con tarjeta.
     const cards = useCreditCardStore.getState().cards;
     const dbTxs = transactions.map(t => {
       const cardId = t.cardId || null;
@@ -394,7 +347,7 @@ const useTransactionStore = create(
         description: t.description,
         date: t.date,
         notes: t.notes || null,
-        currency: 'DOP',
+        currency: getCurrency(),
         cashback_earned: cashback,
       };
     });

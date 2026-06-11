@@ -1,12 +1,10 @@
 // Ajustes — tasa USD real, export/import, categorías, tema. Estilo Stitch.
-import { useState, useEffect, useRef } from 'react';
+import { useState, useRef } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
-import StitchCurrencyInput from '../StitchCurrencyInput';
 import { isDemoActive } from '../demoMode';
 import { useI18n } from '../../contexts/I18nContext';
-import useRateStore from '../../stores/useRateStore';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
@@ -24,25 +22,13 @@ export default function StitchSettings() {
     { value: 'zero', icon: 'account_balance_wallet', title: t('screens.budget.zeroMode'), desc: t('screens.settings.levelZeroDesc') },
   ];
 
-  const { manualRate, source, getRate, fetchRate, setManualRate } = useRateStore();
   const { transactions, bulkAddTransactions } = useTransactionStore();
   const { categories } = useCategoryStore();
   const fileRef = useRef(null);
   const pdfRef = useRef(null);
-  const [rateInput, setRateInput] = useState('');
   const [pdfData, setPdfData] = useState(null);
   const [parsingPdf, setParsingPdf] = useState(false);
   const demo = isDemoActive();
-
-  useEffect(() => { fetchRate(); }, [fetchRate]);
-
-  const saveRate = () => {
-    if (!rateInput) { setManualRate(null); toast.success(t('screens.settings.usingAutoRate')); return; }
-    const v = Number(rateInput);
-    if (isNaN(v) || v <= 0) { toast.error(t('screens.settings.invalidRate')); return; }
-    setManualRate(v); toast.success(t('screens.settings.rateFixed').replace('{v}', v)); setRateInput('');
-  };
-  const autoRate = async () => { setManualRate(null); await fetchRate(); toast.success(t('screens.settings.rateUpdated')); };
 
   const doExport = async (format) => {
     if (transactions.length === 0) { toast.error(t('screens.settings.nothingToExport')); return; }
@@ -195,26 +181,6 @@ export default function StitchSettings() {
                 </button>
               );
             })}
-          </div>
-        </Stagger.Item>
-
-        {/* Tasa */}
-        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
-          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.exchangeRate').toUpperCase()}</h2>
-            <MS name="currency_exchange" className="text-text-muted text-[16px]" />
-          </div>
-          <div className="flex items-end gap-md mb-md">
-            <span className="font-headline-md text-[40px] text-on-surface tracking-tighter">{getRate().toFixed(2)}</span>
-            <span className="font-mono-data text-mono-data text-tertiary mb-sm flex items-center gap-xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-tertiary live-dot" />
-              {manualRate ? t('screens.settings.manual') : source === 'popular' ? 'BANCO POPULAR' : t('screens.settings.market')}
-            </span>
-          </div>
-          <div className="flex gap-sm">
-            <div className="flex-1"><StitchCurrencyInput value={rateInput} onChange={setRateInput} placeholder={t('screens.settings.fixRatePlaceholder')} className="w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-mono-data text-mono-data text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" /></div>
-            <button onClick={saveRate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md rounded hover:bg-primary-container transition-colors">{t('screens.settings.fix')}</button>
-            <button onClick={autoRate} className="border border-border-subtle text-on-surface-variant px-md rounded hover:bg-surface-container-high" title={t('screens.settings.autoRateTitle')}><MS name="autorenew" className="text-[18px]" /></button>
           </div>
         </Stagger.Item>
 
