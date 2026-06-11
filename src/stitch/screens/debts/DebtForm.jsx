@@ -2,14 +2,13 @@
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
-import StitchSelect from '../../StitchSelect';
 import StitchDatePicker from '../../StitchDatePicker';
 import useDebtStore from '../../../stores/useDebtStore';
 import { isDemoActive, demoAddDebt, demoUpdateDebt } from '../../demoMode';
 import { useI18n } from '../../../contexts/I18nContext';
 import { Modal, Field, FormActions, inputCls } from './debtsUi';
 
-const blank = { creditorName: '', originalAmount: '', currentBalance: '', interestRate: '', monthlyPayment: '', dueDate: '', currency: 'DOP' };
+const blank = { creditorName: '', originalAmount: '', currentBalance: '', interestRate: '', monthlyPayment: '', dueDate: '' };
 
 const pctCls = 'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm pl-md pr-[26px] font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
 
@@ -22,7 +21,7 @@ export default function DebtForm({ editing, onClose }) {
     ? {
         creditorName: editing.creditorName, originalAmount: String(editing.originalAmount),
         currentBalance: String(editing.currentBalance), interestRate: String(editing.interestRate),
-        monthlyPayment: String(editing.monthlyPayment), dueDate: editing.due_date || '', currency: editing.currency || 'DOP',
+        monthlyPayment: String(editing.monthlyPayment), dueDate: editing.due_date || '',
       }
     : blank);
 
@@ -37,7 +36,7 @@ export default function DebtForm({ editing, onClose }) {
     const data = {
       creditorName: form.creditorName.trim(), originalAmount: Number(form.originalAmount),
       currentBalance: Number(form.currentBalance || form.originalAmount), interestRate: Number(form.interestRate) || 0,
-      monthlyPayment: Number(form.monthlyPayment) || 0, dueDate: form.dueDate || null, currency: form.currency,
+      monthlyPayment: Number(form.monthlyPayment) || 0, dueDate: form.dueDate || null,
     };
     if (editing) {
       if (demo) { demoUpdateDebt(editing.id, data); toast.success(t('screens.debts.debtUpdated')); }
@@ -66,12 +65,7 @@ export default function DebtForm({ editing, onClose }) {
           </Field>
           <Field label={t('screens.debts.monthlyQuota')}><StitchCurrencyInput value={form.monthlyPayment} onChange={(v) => set({ monthlyPayment: v })} className={inputCls} /></Field>
         </div>
-        <div className="grid grid-cols-2 gap-md">
-          <Field label={t('screens.debts.nextPayment')}><StitchDatePicker value={form.dueDate} onChange={(v) => set({ dueDate: v })} /></Field>
-          <Field label={t('common.currency')}>
-            <StitchSelect value={form.currency} onChange={(v) => set({ currency: v })} options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]} />
-          </Field>
-        </div>
+        <Field label={t('screens.debts.nextPayment')}><StitchDatePicker value={form.dueDate} onChange={(v) => set({ dueDate: v })} /></Field>
         <FormActions onCancel={onClose} label={editing ? t('common.save') : t('screens.debts.register')} />
       </form>
     </Modal>

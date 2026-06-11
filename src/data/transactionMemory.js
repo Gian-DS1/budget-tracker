@@ -1,7 +1,8 @@
 // Memoria de transacciones — la app "aprende" del usuario sin guardar nada
 // nuevo: su historial YA es la memoria. Dada la descripción que teclea, busca
 // transacciones pasadas iguales (o similares, por contención) y deduce
-// categoría, tarjeta y moneda según lo que eligió las veces anteriores.
+// categoría y tarjeta según lo que eligió las veces anteriores.
+// La moneda es única por perfil (currencyRuntime) y no se sugiere desde aquí.
 // Funciones puras, sin React ni stores (misma convención que autoCategorize).
 import { normalize } from './defaultCategories';
 
@@ -33,7 +34,7 @@ function pickField(candidates, field, allowEmpty = false) {
   return best; // null si ninguna candidata aportó valor
 }
 
-// → { categoryId, cardId, currency, source: 'exact'|'partial' } | null
+// → { categoryId, cardId, source: 'exact'|'partial' } | null
 export function suggestFromHistory(description, transactions) {
   const q = normalize(description);
   if (q.length < MIN_LEN) return null;
@@ -53,7 +54,6 @@ export function suggestFromHistory(description, transactions) {
   return {
     categoryId: pickField(candidates, 'categoryId') ?? '',
     cardId: pickField(candidates, 'cardId', true) ?? '',
-    currency: pickField(candidates, 'currency') ?? '',
     source,
   };
 }

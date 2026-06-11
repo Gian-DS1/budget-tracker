@@ -9,7 +9,7 @@ describe('suggestFromHistory', () => {
   it('match exacto devuelve categoría, tarjeta y moneda del historial', () => {
     const hist = [tx('Jumbo', 'super', 'cc1', 'DOP', '2026-05-01')];
     expect(suggestFromHistory('Jumbo', hist)).toEqual(
-      { categoryId: 'super', cardId: 'cc1', currency: 'DOP', source: 'exact' });
+      { categoryId: 'super', cardId: 'cc1', source: 'exact' });
   });
 
   it('normaliza acentos y mayúsculas', () => {
@@ -23,13 +23,13 @@ describe('suggestFromHistory', () => {
       tx('Uber Eats', 'resto', 'cc1', 'DOP', '2026-05-02'),
     ];
     const s = suggestFromHistory('Uber', hist);
-    expect(s).toEqual({ categoryId: 'taxi', cardId: '', currency: 'DOP', source: 'exact' });
+    expect(s).toEqual({ categoryId: 'taxi', cardId: '', source: 'exact' });
   });
 
   it('contención: lo tecleado contiene a lo guardado', () => {
     const hist = [tx('Supermercado Nacional', 'super', 'cc1', 'DOP', '2026-05-01')];
     const s = suggestFromHistory('Supermercado Nacional Av. Lope', hist);
-    expect(s).toEqual({ categoryId: 'super', cardId: 'cc1', currency: 'DOP', source: 'partial' });
+    expect(s).toEqual({ categoryId: 'super', cardId: 'cc1', source: 'partial' });
   });
 
   it('contención: lo guardado contiene a lo tecleado', () => {
@@ -63,7 +63,6 @@ describe('suggestFromHistory', () => {
     const s = suggestFromHistory('Amazon', hist);
     expect(s.categoryId).toBe('ropa');   // 2 vs 1
     expect(s.cardId).toBe('cc2');        // 2 vs 1
-    expect(s.currency).toBe('USD');
   });
 
   it('"sin tarjeta" es un patrón: no rellena tarjeta', () => {

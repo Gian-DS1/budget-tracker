@@ -8,6 +8,7 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import { autoCategorize } from '../../data/defaultCategories';
 import { suggestFromHistory } from '../../data/transactionMemory';
 import { matchTransactions } from '../../utils/statementMatcher';
+import { getCurrency } from '../../utils/currencyRuntime';
 
 export default function StatementImportModal({ onClose, pdfData }) {
   const { t } = useI18n();
@@ -78,7 +79,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
         description: pdfTx.description,
         categoryId: pdfTx.suggestedCategoryId || '',
         cardId: targetCardId,
-        currency: 'DOP', // Asumimos DOP por ahora
+        currency: getCurrency(),
         notes: t('screens.settings.importedFromStatement').replace('{bank}', pdfData.bank)
       }));
 
@@ -94,7 +95,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
           description: item.pdfTx.description,
           categoryId,
           cardId: targetCardId,
-          currency: 'DOP',
+          currency: getCurrency(),
           notes: t('screens.settings.importedAmbiguous')
         };
       });

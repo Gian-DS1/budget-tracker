@@ -12,7 +12,7 @@ import { useI18n } from '../../../contexts/I18nContext';
 import { Modal, Field, FormActions, inputCls } from './vaultsUi';
 import { getHorizonFormOptions } from './horizons';
 
-const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', currency: 'DOP', horizon: '' };
+const blank = { title: '', targetAmount: '', currentAmount: '', monthlyContribution: '', deadline: '', icon: '🎯', color: '#bec2ff', horizon: '' };
 
 export default function VaultForm({ editing, onClose }) {
   const { t } = useI18n();
@@ -25,7 +25,7 @@ export default function VaultForm({ editing, onClose }) {
         currentAmount: String(editing.currentAmount),
         monthlyContribution: editing.monthlyContribution ? String(editing.monthlyContribution) : '',
         deadline: editing.deadline || '', icon: editing.icon || '🎯',
-        color: editing.color || '#bec2ff', currency: editing.currency || 'DOP',
+        color: editing.color || '#bec2ff',
         horizon: editing.horizon || '',
       }
     : blank);
@@ -42,7 +42,7 @@ export default function VaultForm({ editing, onClose }) {
     const data = {
       title: form.title.trim(), targetAmount: Number(form.targetAmount),
       monthlyContribution: Number(form.monthlyContribution) || 0,
-      deadline: form.deadline || null, icon: form.icon, color: form.color, currency: form.currency,
+      deadline: form.deadline || null, icon: form.icon, color: form.color,
       horizon: form.horizon || null,
     };
     if (editing) {
@@ -69,12 +69,7 @@ export default function VaultForm({ editing, onClose }) {
         {!editing && (
           <Field label={t('screens.vaults.monthlyContribution')} hint={t('screens.vaults.forProjection')}><StitchCurrencyInput value={form.monthlyContribution} onChange={(v) => set({ monthlyContribution: v })} className={inputCls} /></Field>
         )}
-        <div className="grid grid-cols-2 gap-md">
-          <Field label={t('screens.vaults.deadline')}><StitchDatePicker value={form.deadline} onChange={(v) => set({ deadline: v })} /></Field>
-          <Field label={t('common.currency')}>
-            <StitchSelect value={form.currency} onChange={(v) => set({ currency: v })} options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]} />
-          </Field>
-        </div>
+        <Field label={t('screens.vaults.deadline')}><StitchDatePicker value={form.deadline} onChange={(v) => set({ deadline: v })} /></Field>
         <Field label={t('screens.vaults.horizon')} hint={t('screens.vaults.horizonHint')}>
           <StitchSelect value={form.horizon} onChange={(v) => set({ horizon: v })} options={getHorizonFormOptions()} placeholder={t('screens.vaults.noHorizon')} />
         </Field>

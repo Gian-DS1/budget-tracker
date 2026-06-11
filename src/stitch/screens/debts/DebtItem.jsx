@@ -7,7 +7,7 @@ import { formatCurrency, formatDate, toISODate } from '../../../utils/formatters
 import { useI18n } from '../../../contexts/I18nContext';
 import { getPayoff } from './payoff';
 
-const fmt = (n, c) => formatCurrency(n, c);
+const fmt = (n) => formatCurrency(n);
 
 export default function DebtItem({ debt, index, onPay, onHistory, onEdit, onDelete }) {
   const { t } = useI18n();
@@ -23,19 +23,18 @@ export default function DebtItem({ debt, index, onPay, onHistory, onEdit, onDele
         <span className="font-label-sm text-label-sm uppercase text-on-surface flex items-center gap-xs min-w-0">
           {index === 0 && <span className="font-mono-data text-[8px] text-accent-error border border-accent-error/40 rounded px-1 shrink-0">{t('screens.debts.payFirst')}</span>}
           <span className="truncate">{debt.creditorName}</span>
-          {debt.currency === 'USD' && <span className="font-mono-data text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">USD</span>}
         </span>
         <span className={`font-mono-data text-mono-data shrink-0 ${high ? 'text-accent-warning' : 'text-text-muted'}`}>{Number(debt.interestRate).toFixed(1)}% TNA</span>
       </div>
 
-      <div className={`font-headline-md text-headline-md ${high ? 'text-accent-warning' : 'text-on-surface'}`}>{fmt(debt.currentBalance, debt.currency)}</div>
+      <div className={`font-headline-md text-headline-md ${high ? 'text-accent-warning' : 'text-on-surface'}`}>{fmt(debt.currentBalance)}</div>
 
       <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
         <div className="h-full rounded-full bg-primary" style={{ width: `${Math.min(100, Math.max(0, paidPct))}%` }} />
       </div>
       <div className="flex justify-between font-mono-data text-mono-data text-text-muted">
         <span>{t('screens.debts.paid')} {paidPct.toFixed(0)}%</span>
-        <span>{t('screens.debts.quota')} {fmt(debt.monthlyPayment, debt.currency)}</span>
+        <span>{t('screens.debts.quota')} {fmt(debt.monthlyPayment)}</span>
       </div>
 
       {/* Proyección de liquidación */}
@@ -45,7 +44,7 @@ export default function DebtItem({ debt, index, onPay, onHistory, onEdit, onDele
             <MS name="event_available" className="!text-[13px] text-tertiary" /> {t('screens.debts.freeIn')} {payoff.months} {payoff.months === 1 ? t('screens.vaults.month') : t('dashboard.months')}
           </span>
           <span className="font-mono-data text-mono-data text-text-muted">{formatDate(toISODate(payoff.payoffDate))}</span>
-          <span className="font-mono-data text-mono-data text-text-muted w-full">{t('screens.debts.totalInterests')} {fmt(payoff.totalInterest, debt.currency)}</span>
+          <span className="font-mono-data text-mono-data text-text-muted w-full">{t('screens.debts.totalInterests')} {fmt(payoff.totalInterest)}</span>
         </div>
       ) : (
         <div className="flex items-center gap-xs bg-accent-warning/10 border border-accent-warning/30 rounded px-sm py-xs">

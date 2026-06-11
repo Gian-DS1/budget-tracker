@@ -27,11 +27,11 @@ import { autoCategorize } from '../../data/defaultCategories';
 import { suggestFromHistory } from '../../data/transactionMemory';
 import { formatCurrency, formatDate, todayISO, titleCase, getTypeLabel } from '../../utils/formatters';
 
-const fmt = (n, c) => formatCurrency(n, c);
+const fmt = (n) => formatCurrency(n);
 // Tipos visibles en filtros. El tipo genérico 'expense' es legado (migrado a
 // 'variable_expense'); ya no se ofrece. La categoría deriva el tipo real.
 // TYPES se construye dinámicamente en el componente usando strings del hook
-const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', currency: 'DOP', isRecurring: false, recurrencePattern: 'monthly' };
+const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', isRecurring: false, recurrencePattern: 'monthly' };
 
 export default function StitchLedger() {
   const strings = useScreenStrings();
@@ -64,7 +64,7 @@ export default function StitchLedger() {
   // Autollenado inteligente: `autoSet` = campos llenados por la memoria/keywords
   // (muestran chip AUTO); `touched` = campos que el usuario tocó a mano en este
   // form (quedan excluidos del autollenado hasta cerrarlo).
-  const blankSmart = { category: false, card: false, currency: false };
+  const blankSmart = { category: false, card: false };
   const [autoSet, setAutoSet] = useState(blankSmart);
   const [touched, setTouched] = useState(blankSmart);
   const resetSmart = () => { setAutoSet(blankSmart); setTouched(blankSmart); };
@@ -160,10 +160,6 @@ export default function StitchLedger() {
           if (suggested) { next.cardId = suggested; applied.card = true; }
         }
       }
-      if (!touched.currency && sug?.currency) {
-        next.currency = sug.currency;
-        applied.currency = true;
-      }
       return next;
     });
     setAutoSet(applied);
@@ -211,7 +207,7 @@ export default function StitchLedger() {
       if (form.isRecurring && !demo) {
         addRecurring({
           categoryId: form.categoryId, cardId: form.cardId, amount: Number(form.amount), type: form.type,
-          description, notes: form.notes, currency: form.currency, frequency: form.recurrencePattern,
+          description, notes: form.notes, frequency: form.recurrencePattern,
           nextDate: advanceDate(form.date, form.recurrencePattern),
         });
       }
@@ -461,7 +457,7 @@ export default function StitchLedger() {
                       <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-surface-container-high border border-border-subtle font-mono-data text-[9px] text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{getTypeLabel(t.type)}</span>
                     </td>
                     <td className={`py-sm px-md text-right font-mono-data tabular-nums whitespace-nowrap ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
-                      {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)), t.currency)}
+                      {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}
                       {(cashbackById.get(t.id) || 0) > 0 && (
                         <span className="block font-mono-data text-[9px] text-tertiary">cashback +{fmt(cashbackById.get(t.id))}</span>
                       )}
@@ -493,23 +489,14 @@ export default function StitchLedger() {
               <Field label={t('common.description')}>
                 <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder={t('screens.ledger.examplePlaceholder')} className={inputCls} />
               </Field>
-              <div className="grid grid-cols-2 gap-md">
-                <Field label={t('common.category')} error={errors.categoryId} extra={<AutoCatChip show={autoSet.category && !touched.category && !!form.categoryId} />}>
-                  <StitchCategorySelect
-                    value={form.categoryId}
-                    onChange={onCategoryManual}
-                    options={categories}
-                    placeholder={t('screens.ledger.chooseCategoryPlaceholder')}
-                  />
-                </Field>
-                <Field label={t('common.currency')} extra={<AutoCatChip show={autoSet.currency && !touched.currency} />}>
-                  <StitchSelect
-                    value={form.currency}
-                    onChange={(v) => { setTouched((tt) => ({ ...tt, currency: true })); setAutoSet((a) => ({ ...a, currency: false })); setForm({ ...form, currency: v }); }}
-                    options={[{ value: 'DOP', label: 'RD$ (DOP)' }, { value: 'USD', label: 'US$ (USD)' }]}
-                  />
-                </Field>
-              </div>
+              <Field label={t('common.category')} error={errors.categoryId} extra={<AutoCatChip show={autoSet.category && !touched.category && !!form.categoryId} />}>
+                <StitchCategorySelect
+                  value={form.categoryId}
+                  onChange={onCategoryManual}
+                  options={categories}
+                  placeholder={t('screens.ledger.chooseCategoryPlaceholder')}
+                />
+              </Field>
               {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
                   es ingreso, gasto fijo, gasto variable o ahorro; clasificar a mano
                   era redundante. Se muestra como badge para dar claridad. */}

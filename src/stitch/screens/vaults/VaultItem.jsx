@@ -10,7 +10,7 @@ import { getProjection } from './projection';
 import { getHorizonChip } from './horizons';
 import { CHART } from '../../chartTokens';
 
-const fmt = (n, c) => formatCurrency(n, c);
+const fmt = (n) => formatCurrency(n);
 
 export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDelete }) {
   const { t } = useI18n();
@@ -23,17 +23,16 @@ export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDel
       <div className="flex items-center gap-sm">
         <div className="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center border border-border-subtle shrink-0"><Emoji e={goal.icon || '🎯'} size={18} /></div>
         <span className="font-label-sm text-label-sm uppercase text-on-surface truncate min-w-0">{goal.title}</span>
-        {goal.currency === 'USD' && <span className="font-mono-data text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">USD</span>}
         {horizonChip && <span className="font-mono-data text-[8px] text-text-muted border border-border-subtle rounded px-1 shrink-0">{horizonChip}</span>}
       </div>
 
-      <div className={`font-headline-md text-headline-md tracking-tight ${proj.done ? 'text-tertiary' : 'text-on-surface'}`} style={proj.done ? { color: CHART.tertiary } : undefined}>{fmt(goal.currentAmount, goal.currency)}</div>
+      <div className={`font-headline-md text-headline-md tracking-tight ${proj.done ? 'text-tertiary' : 'text-on-surface'}`} style={proj.done ? { color: CHART.tertiary } : undefined}>{fmt(goal.currentAmount)}</div>
 
       <div className="w-full bg-surface-container-highest h-1 rounded-full overflow-hidden">
         <div className="h-full rounded-full" style={{ width: `${Math.min(100, Math.max(0, proj.pct))}%`, background: proj.done ? CHART.tertiary : (goal.color || '#bec2ff') }} />
       </div>
       <div className="flex justify-between font-mono-data text-mono-data text-text-muted">
-        <span>{t('savings.goal')} {fmt(goal.targetAmount, goal.currency)}</span>
+        <span>{t('savings.goal')} {fmt(goal.targetAmount)}</span>
         <span>{proj.pct.toFixed(0)}%</span>
       </div>
 
@@ -49,7 +48,7 @@ export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDel
             <MS name="event_available" className="!text-[13px] text-tertiary" /> {t('screens.vaults.listInMonths')} {proj.months} {proj.months === 1 ? t('screens.vaults.month') : t('dashboard.months')}
           </span>
           {proj.projectedDate && <span className="font-mono-data text-mono-data text-text-muted">{formatDate(toISODate(proj.projectedDate))}</span>}
-          <span className="font-mono-data text-mono-data text-text-muted w-full">{t('screens.vaults.monthlyContribution')}: {fmt(goal.monthlyContribution, goal.currency)}</span>
+          <span className="font-mono-data text-mono-data text-text-muted w-full">{t('screens.vaults.monthlyContribution')}: {fmt(goal.monthlyContribution)}</span>
         </div>
       ) : (
         <div className="flex items-center gap-xs bg-surface-container-lowest border border-border-subtle rounded px-sm py-xs">
