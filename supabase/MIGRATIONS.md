@@ -60,6 +60,12 @@ al empezar a usar la app, sin crear transacciones ni afectar el presupuesto.
   columna hasta correr la migración. El resto (corte/pago/cashback) no se ve
   afectado. Correr la migración habilita el campo.
 
+## globalize_single_currency.sql (2026-06-11)
+Globalización: añade `profiles.currency` (default DOP), crea perfiles faltantes
+y convierte TODO lo guardado en USD a DOP con la tasa editada en el script
+(el monto original queda anotado en notes en transactions). Correr ANTES de
+desplegar el código de moneda única. Irreversible.
+
 ## Migraciones previas (ya aplicadas en producción histórica)
 
 `schema.sql` es la fuente de verdad canónica (idempotente; ya incluye las columnas
