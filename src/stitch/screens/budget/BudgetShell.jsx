@@ -2,6 +2,7 @@
 // contexto común (transacciones del mes, pago de deuda real, summary), y delega
 // el render a la sub-vista según el nivel elegido (tracking / 503020 / zero).
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import MS from '../../MS';
 import StitchSelect from '../../StitchSelect';
 import usePrefsStore from '../../../stores/usePrefsStore';
@@ -20,6 +21,7 @@ const ESTADO_COLOR = { good: 'text-tertiary', warning: 'text-accent-warning', da
 
 export default function BudgetShell({ level = 'zero' }) {
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   const ESTADO_LABEL = {
     good: t('screens.budget.stateOptimal'),
@@ -127,10 +129,25 @@ export default function BudgetShell({ level = 'zero' }) {
         </div>
       </div>
 
-      {/* Sub-vista según el nivel */}
-      {level === 'tracking' && <BudgetTracking {...viewProps} />}
-      {level === '503020' && <Budget503020 {...viewProps} />}
-      {level === 'zero' && <BudgetZero {...viewProps} />}
+      {/* Sub-vista según el nivel.
+          Para 503020 y zero se necesitan categorías; si no hay, mostramos el
+          empty state. Tracking funciona sin categorías (solo muestra totales). */}
+      {(level === '503020' || level === 'zero') && categories.length === 0 ? (
+        <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-[80px] flex flex-col items-center text-center gap-sm">
+          <MS name="sell" className="text-[40px] text-text-muted" />
+          <p className="font-body-md text-body-md text-on-surface-variant">{t('screens.budget.noCategoriesYet')}</p>
+          <button
+            onClick={() => navigate('/categorias')}
+            className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded hover:bg-primary-container transition-colors"
+          >{t('screens.budget.createFirstCategory')}</button>
+        </div>
+      ) : (
+        <>
+          {level === 'tracking' && <BudgetTracking {...viewProps} />}
+          {level === '503020' && <Budget503020 {...viewProps} />}
+          {level === 'zero' && <BudgetZero {...viewProps} />}
+        </>
+      )}
     </div>
   );
 }

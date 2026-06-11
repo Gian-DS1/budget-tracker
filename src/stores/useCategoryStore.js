@@ -1,11 +1,10 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, getCurrentUser } from '../lib/supabase';
-import { defaultCategories, findDuplicateCategories } from '../data/defaultCategories';
-import toast from 'react-hot-toast';
+import { findDuplicateCategories } from '../data/defaultCategories';
 
 // Shared across all calls: dedupes concurrent fetchCategories invocations so the
-// seeding logic can never run twice in parallel and double-seed categories.
+// seeding logic can never run twice in parallel.
 let fetchInFlight = null;
 
 const useCategoryStore = create(
@@ -34,52 +33,18 @@ const useCategoryStore = create(
 
     if (error) {
       if (import.meta.env.DEV) console.error("Error fetching categories:", error);
-      set({ categories: defaultCategories, loading: false });
+      // Los usuarios construyen sus propias categorías; el demo es la vitrina
+      // con las 37 default. Sin seed aquí: si falla el fetch, array vacío.
+      set({ categories: [], loading: false });
       return;
     }
 
-    // Seed default categories if user has none
+    // Sin datos → el usuario aún no tiene categorías (estado inicial legítimo).
     if (!data || data.length === 0) {
-      try {
-        const seedData = defaultCategories.map((c, index) => ({
-          user_id: user.id,
-          name: c.name,
-          type: c.type,
-          icon: c.icon,
-          color: c.color,
-          slug: c.slug || null,
-          keywords: c.keywords || [],
-          is_active: true,
-          sort_order: index
-        }));
-
-        const { data: insertedData, error: insertError } = await supabase
-          .from('categories')
-          .insert(seedData)
-          .select();
-
-        if (insertError) {
-          if (import.meta.env.DEV) console.error("Supabase insert error:", insertError);
-          toast.error("Error cargando categorías iniciales");
-          set({ categories: defaultCategories, loading: false });
-          return;
-        }
-
-        if (insertedData) {
-          const formattedData = insertedData.map(c => ({
-            ...c,
-            isActive: c.is_active,
-            sortOrder: c.sort_order
-          }));
-          set({ categories: formattedData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })), loading: false });
-          return;
-        }
-      } catch (err) {
-        if (import.meta.env.DEV) console.error("Failed to seed categories", err);
-        set({ categories: defaultCategories, loading: false });
-        return;
-      }
+      set({ categories: [], loading: false });
+      return;
     }
+
     // ── Auto-clean duplicates already in the database ───────────
     const { remap, deleteIds } = findDuplicateCategories(data);
     if (deleteIds.length > 0) {
@@ -97,58 +62,9 @@ const useCategoryStore = create(
     // After cleaning, work only with the de-duplicated list.
     const cleanData = data.filter((c) => !deleteIds.includes(c.id));
 
-    // Build a set of (normalised name|type) keys from existing DB categories so
-    // the missing-check is resilient to duplicates already in the database.
-    const existingKeys = new Set(
-      cleanData.map((c) => `${(c.name || '').trim().toLowerCase()}|${c.type}`)
-    );
-
-    const missingCategories = defaultCategories.filter(
-      (dc) => !existingKeys.has(`${dc.name.trim().toLowerCase()}|${dc.type}`)
-    );
-
-    let finalCategories = [...cleanData];
-
-    if (missingCategories.length > 0) {
-      try {
-        // Dedupe the insert payload itself so we never send two rows with
-        // the same name|type in a single batch.
-        const seen = new Set();
-        const uniqueMissing = missingCategories.filter((c) => {
-          const k = `${c.name.trim().toLowerCase()}|${c.type}`;
-          if (seen.has(k)) return false;
-          seen.add(k);
-          return true;
-        });
-
-        const seedMissing = uniqueMissing.map((c, index) => ({
-          user_id: user.id,
-          name: c.name,
-          type: c.type,
-          icon: c.icon,
-          color: c.color,
-          slug: c.slug || null,
-          keywords: c.keywords || [],
-          is_active: true,
-          sort_order: cleanData.length + index
-        }));
-
-        const { data: insertedMissing, error: insertError } = await supabase
-          .from('categories')
-          .insert(seedMissing)
-          .select();
-
-        if (!insertError && insertedMissing) {
-          finalCategories = [...finalCategories, ...insertedMissing];
-        } else if (insertError) {
-          if (import.meta.env.DEV) console.error("Failed to auto-insert missing categories:", insertError);
-        }
-      } catch (err) {
-        if (import.meta.env.DEV) console.error("Error auto-inserting missing categories:", err);
-      }
-    }
-
-    const formattedData = finalCategories.map(c => ({
+    // Los usuarios construyen sus propias categorías; ya no se re-siembran las
+    // "faltantes" del set por defecto. cleanData es la lista final.
+    const formattedData = cleanData.map(c => ({
       ...c,
       isActive: c.is_active,
       sortOrder: c.sort_order,
@@ -162,71 +78,6 @@ const useCategoryStore = create(
       await fetchInFlight;
     } finally {
       fetchInFlight = null;
-    }
-  },
-
-  resetCategoriesToDefault: async () => {
-    set({ loading: true, error: null });
-    const user = await getCurrentUser();
-    if (!user) {
-      set({ loading: false });
-      return false;
-    }
-
-    try {
-      // 1. Delete all existing categories for this user
-      const { error: deleteError } = await supabase
-        .from('categories')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteError) {
-        if (import.meta.env.DEV) console.error("Error deleting categories:", deleteError);
-        toast.error("Error al borrar categorías existentes");
-        set({ loading: false });
-        return false;
-      }
-
-      // 2. Insert new default categories
-      const seedData = defaultCategories.map((c, index) => ({
-        user_id: user.id,
-        name: c.name,
-        type: c.type,
-        icon: c.icon,
-        color: c.color,
-        slug: c.slug || null,
-        keywords: c.keywords || [],
-        is_active: true,
-        sort_order: index
-      }));
-
-      const { data: insertedData, error: insertError } = await supabase
-        .from('categories')
-        .insert(seedData)
-        .select();
-
-      if (insertError) {
-        if (import.meta.env.DEV) console.error("Error seeding default categories:", insertError);
-        toast.error("Error insertando nuevas categorías por defecto");
-        set({ loading: false });
-        return false;
-      }
-
-      if (insertedData) {
-        const formattedData = insertedData.map(c => ({
-          ...c,
-          isActive: c.is_active,
-          sortOrder: c.sort_order
-        }));
-        set({ categories: formattedData.sort((a, b) => (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })), loading: false });
-        toast.success("Categorías restablecidas con éxito");
-        return true;
-      }
-    } catch (err) {
-      if (import.meta.env.DEV) console.error("Failed to reset categories", err);
-      toast.error("Error al restablecer categorías");
-      set({ loading: false });
-      return false;
     }
   },
 

@@ -1,5 +1,6 @@
 // Transacciones (Ledger) — layout Stitch con DATOS REALES + alta/edición/borrado.
 import { useState, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import MS from '../MS';
@@ -36,6 +37,7 @@ const blank = { date: todayISO(), amount: '', type: 'variable_expense', category
 export default function StitchLedger() {
   const strings = useScreenStrings();
   const { t } = useI18n();
+  const navigate = useNavigate();
 
   // TYPES construido dinámicamente
   const TYPES = [
@@ -490,12 +492,23 @@ export default function StitchLedger() {
                 <input value={form.description} onChange={(e) => onDescription(e.target.value)} placeholder={t('screens.ledger.examplePlaceholder')} className={inputCls} />
               </Field>
               <Field label={t('common.category')} error={errors.categoryId} extra={<AutoCatChip show={autoSet.category && !touched.category && !!form.categoryId} />}>
-                <StitchCategorySelect
-                  value={form.categoryId}
-                  onChange={onCategoryManual}
-                  options={categories}
-                  placeholder={t('screens.ledger.chooseCategoryPlaceholder')}
-                />
+                {categories.filter((c) => c.isActive !== false).length === 0 ? (
+                  <div className="flex flex-col gap-xs">
+                    <p className="font-label-sm text-label-sm text-text-muted">{t('screens.ledger.noCategoriesYet')}</p>
+                    <button
+                      type="button"
+                      onClick={() => { setShowForm(false); navigate('/categorias'); }}
+                      className="text-primary font-label-sm text-label-sm underline text-left"
+                    >{t('screens.ledger.createFirstCategory')}</button>
+                  </div>
+                ) : (
+                  <StitchCategorySelect
+                    value={form.categoryId}
+                    onChange={onCategoryManual}
+                    options={categories}
+                    placeholder={t('screens.ledger.chooseCategoryPlaceholder')}
+                  />
+                )}
               </Field>
               {/* Tipo: derivado de la categoría (no editable). La categoría ya sabe si
                   es ingreso, gasto fijo, gasto variable o ahorro; clasificar a mano
