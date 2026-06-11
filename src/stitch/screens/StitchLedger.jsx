@@ -140,34 +140,34 @@ export default function StitchLedger() {
     // Memoria por historial primero (lo que el usuario hizo otras veces con esta
     // descripción); keywords de fábrica como fallback. Nunca pisa campos tocados.
     const sug = suggestFromHistory(description, transactions);
-    const next = { ...form, description };
     const applied = { ...autoSet };
-
-    if (!touched.category) {
-      const categoryId = sug?.categoryId || autoCategorize(description, categories)?.id || '';
-      if (categoryId) {
-        next.categoryId = categoryId;
-        next.type = typeOfCategory(categoryId); // el tipo lo manda la categoría
-        applied.category = true;
+    setForm((prev) => {
+      const next = { ...prev, description };
+      if (!touched.category) {
+        const categoryId = sug?.categoryId || autoCategorize(description, categories)?.id || '';
+        if (categoryId) {
+          next.categoryId = categoryId;
+          next.type = typeOfCategory(categoryId); // el tipo lo manda la categoría
+          applied.category = true;
+        }
       }
-    }
-    if (!touched.card) {
-      if (sug) {
-        // '' también es respuesta: si el patrón es "sin tarjeta", no se rellena.
-        next.cardId = sug.cardId;
-        applied.card = !!sug.cardId;
-      } else if (!form.cardId && next.categoryId) {
-        // Sin historial: sugiere la tarjeta de cashback de la categoría (como hoy).
-        const suggested = cardForCategory(next.categoryId);
-        if (suggested) { next.cardId = suggested; applied.card = true; }
+      if (!touched.card) {
+        if (sug) {
+          // '' también es respuesta: si el patrón es "sin tarjeta", no se rellena.
+          next.cardId = sug.cardId;
+          applied.card = !!sug.cardId;
+        } else if (!next.cardId && next.categoryId) {
+          // Sin historial: sugiere la tarjeta de cashback de la categoría (como hoy).
+          const suggested = cardForCategory(next.categoryId);
+          if (suggested) { next.cardId = suggested; applied.card = true; }
+        }
       }
-    }
-    if (!touched.currency && sug?.currency) {
-      next.currency = sug.currency;
-      applied.currency = true;
-    }
-
-    setForm(next);
+      if (!touched.currency && sug?.currency) {
+        next.currency = sug.currency;
+        applied.currency = true;
+      }
+      return next;
+    });
     setAutoSet(applied);
   };
 
