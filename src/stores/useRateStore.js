@@ -10,7 +10,8 @@
 
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { USD_TO_DOP_RATE } from '../utils/constants';
+// transitorio: este store se elimina en la tarea siguiente
+const USD_TO_DOP_RATE = 60;
 
 // Spread estándar de venta de la banca dominicana (~+1.2%).
 const BANK_SPREAD = 1.012;

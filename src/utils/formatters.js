@@ -1,31 +1,48 @@
 // FinTrack — Formatters
 
-import { CURRENCIES } from './constants';
 import { currentLocale, tr } from '../i18n/runtime';
+import { getCurrency } from './currencyRuntime';
+
+// Símbolo de una moneda en el locale actual (RD$, US$, €, £, MX$…).
+// Estrategia: 'symbol' primero (da RD$, US$); si devuelve el mismo código ISO
+// (p. ej. EUR→EUR en es-DO), intenta 'narrowSymbol' (EUR→€). Fallback: código.
+function currencySymbol(code, locale) {
+  try {
+    const fmt = (display) =>
+      new Intl.NumberFormat(locale, {
+        style: 'currency', currency: code, currencyDisplay: display,
+      }).formatToParts(0).find((p) => p.type === 'currency')?.value;
+    const sym = fmt('symbol');
+    if (sym && sym !== code) return sym;
+    const narrow = fmt('narrowSymbol');
+    return narrow || code;
+  } catch {
+    return code;
+  }
+}
 
 /**
- * Format a number as currency
+ * Format a number as currency. Sin `currencyCode` usa la moneda del usuario.
  */
-export function formatCurrency(amount, currencyCode = 'DOP') {
-  const currency = CURRENCIES[currencyCode] || CURRENCIES.DOP;
+export function formatCurrency(amount, currencyCode) {
+  const code = currencyCode || getCurrency();
+  const locale = currentLocale();
   const absAmount = Math.abs(amount);
-
-  const formatted = new Intl.NumberFormat(currentLocale(), {
+  const formatted = new Intl.NumberFormat(locale, {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(absAmount);
-
   const sign = amount < 0 ? '-' : '';
-  return `${sign}${currency.symbol} ${formatted}`;
+  return `${sign}${currencySymbol(code, locale)} ${formatted}`;
 }
 
 /**
  * Format a number as compact currency (e.g., RD$ 1.5K)
  */
-export function formatCurrencyCompact(amount, currencyCode = 'DOP') {
-  const currency = CURRENCIES[currencyCode] || CURRENCIES.DOP;
+export function formatCurrencyCompact(amount, currencyCode) {
+  const code = currencyCode || getCurrency();
+  const locale = currentLocale();
   const absAmount = Math.abs(amount);
-
   let formatted;
   if (absAmount >= 1_000_000) {
     formatted = (absAmount / 1_000_000).toFixed(1) + 'M';
@@ -34,9 +51,8 @@ export function formatCurrencyCompact(amount, currencyCode = 'DOP') {
   } else {
     formatted = absAmount.toFixed(2);
   }
-
   const sign = amount < 0 ? '-' : '';
-  return `${sign}${currency.symbol} ${formatted}`;
+  return `${sign}${currencySymbol(code, locale)} ${formatted}`;
 }
 
 /**

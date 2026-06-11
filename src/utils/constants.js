@@ -1,15 +1,5 @@
 // FinTrack — Constants
 
-export const CURRENCIES = {
-  DOP: { code: 'DOP', symbol: 'RD$', name: 'Peso Dominicano' },
-  USD: { code: 'USD', symbol: 'US$', name: 'Dólar Estadounidense' },
-};
-
-export const DEFAULT_CURRENCY = 'DOP';
-
-// Tasa de cambio USD → DOP (ajustar según tasa actual)
-export const USD_TO_DOP_RATE = 60;
-
 export const TRANSACTION_TYPES = {
   INCOME: 'income',
   EXPENSE: 'expense',
