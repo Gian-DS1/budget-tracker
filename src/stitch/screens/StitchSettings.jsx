@@ -10,6 +10,9 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
 import { getCurrency } from '../../utils/currencyRuntime';
+import { currencyOptions } from '../../utils/currencyOptions';
+import { currentLocale } from '../../i18n/runtime';
+import StitchSelect from '../StitchSelect';
 import StatementImportModal from './StatementImportModal';
 import { supabase } from '../../lib/supabase';
 
@@ -142,6 +145,8 @@ export default function StitchSettings() {
 
   const budgetLevel = usePrefsStore((s) => s.budgetLevel);
   const setBudgetLevel = usePrefsStore((s) => s.setBudgetLevel);
+  const currency = usePrefsStore((s) => s.currency);
+  const setCurrency = usePrefsStore((s) => s.setCurrency);
 
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
@@ -183,6 +188,23 @@ export default function StitchSettings() {
               );
             })}
           </div>
+        </Stagger.Item>
+
+        {/* Moneda */}
+        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
+          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
+            <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.currencyLabel').toUpperCase()}</h2>
+            <MS name="currency_exchange" className="text-text-muted text-[16px]" />
+          </div>
+          <StitchSelect
+            value={currency || ''}
+            onChange={setCurrency}
+            options={currencyOptions(currentLocale())}
+            placeholder={t('screens.settings.currencyLabel')}
+          />
+          <p className="mt-sm font-mono-data text-mono-data text-text-muted normal-case tracking-normal">
+            {t('screens.settings.currencyWarning')}
+          </p>
         </Stagger.Item>
 
         {/* Datos */}

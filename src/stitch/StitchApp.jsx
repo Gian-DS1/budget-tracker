@@ -21,6 +21,7 @@ import StitchCalendar from './screens/StitchCalendar';
 import StitchSettings from './screens/StitchSettings';
 import StitchFeedback from './screens/StitchFeedback';
 import StitchCategories from './screens/StitchCategories';
+import CurrencyOnboarding from './screens/CurrencyOnboarding';
 import { DEFAULT_TITLE } from './usePageTitle';
 import './stitch.css';
 
@@ -78,6 +79,8 @@ function AuthGate() {
   const fetchDebtsAndPayments = useDebtStore((s) => s.fetchDebtsAndPayments);
   const fetchCards = useCreditCardStore((s) => s.fetchCards);
   const fetchPrefs = usePrefsStore((s) => s.fetchPrefs);
+  const currency = usePrefsStore((s) => s.currency);
+  const prefsLoaded = usePrefsStore((s) => s.prefsLoaded);
   const fetchRecurring = useRecurringStore((s) => s.fetchRecurring);
   const materializeDue = useRecurringStore((s) => s.materializeDue);
 
@@ -147,24 +150,30 @@ function AuthGate() {
       : <StitchAuth />;
   }
 
+  // Gate de moneda: usuario real sin moneda elegida ve el onboarding bloqueante.
+  const showCurrencyOnboarding = !demo && prefsLoaded && !currency;
+
   // App autenticada: renderizar las rutas protegidas.
   return (
-    <Routes>
-      <Route element={<StitchShell />}>
-        <Route index element={<StitchDashboard />} />
-        <Route path="transacciones" element={<StitchLedger />} />
-        <Route path="presupuesto" element={<StitchBudget />} />
-        <Route path="tarjetas" element={<StitchCards />} />
-        <Route path="deudas" element={<StitchDebts />} />
-        <Route path="ahorros" element={<StitchVaults />} />
-        <Route path="reportes" element={<StitchReports />} />
-        <Route path="calendario" element={<StitchCalendar />} />
-        <Route path="categorias" element={<StitchCategories />} />
-        <Route path="ajustes" element={<StitchSettings />} />
-        <Route path="feedback" element={<StitchFeedback />} />
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Route>
-    </Routes>
+    <>
+      <Routes>
+        <Route element={<StitchShell />}>
+          <Route index element={<StitchDashboard />} />
+          <Route path="transacciones" element={<StitchLedger />} />
+          <Route path="presupuesto" element={<StitchBudget />} />
+          <Route path="tarjetas" element={<StitchCards />} />
+          <Route path="deudas" element={<StitchDebts />} />
+          <Route path="ahorros" element={<StitchVaults />} />
+          <Route path="reportes" element={<StitchReports />} />
+          <Route path="calendario" element={<StitchCalendar />} />
+          <Route path="categorias" element={<StitchCategories />} />
+          <Route path="ajustes" element={<StitchSettings />} />
+          <Route path="feedback" element={<StitchFeedback />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Route>
+      </Routes>
+      {showCurrencyOnboarding && <CurrencyOnboarding />}
+    </>
   );
 }
 
