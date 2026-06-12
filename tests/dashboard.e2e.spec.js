@@ -14,7 +14,7 @@ test.describe('Flujo principal: acceso → dashboard', () => {
     await expect(page).toHaveTitle(/FinTrack/i);
 
     // El CTA principal de empezar siempre está presente en la landing.
-    await expect(page.getByRole('button', { name: /Empezar gratis/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Probar la beta/i }).first()).toBeVisible();
 
     // 2 · Entrar como demo. El botón "Ver demo" solo aparece en localhost, que es
     // donde corre este test (vite preview). Llama a enterDemo() + reload.

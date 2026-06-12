@@ -280,6 +280,65 @@
   transform: scale(0.97);
 }
 
+/* ── Landing pública: atmósfera y marquee ─────────────────────────────
+   Solo la usa StitchLanding. Aurora: dos manchas de color difuminadas que
+   derivan lentamente detrás del hero (GPU: transform + filter, sin repaint).
+   Marquee: cinta infinita de monedas; el track duplica su contenido y se
+   desplaza -50% en loop. El kill-switch global de reduced-motion (abajo)
+   congela ambas animaciones. */
+.landing-aurora {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+.landing-aurora::before,
+.landing-aurora::after {
+  content: '';
+  position: absolute;
+  width: 560px;
+  height: 560px;
+  border-radius: 50%;
+  filter: blur(120px);
+  will-change: transform;
+}
+.landing-aurora::before {
+  background: #7a85ff; /* primary-container */
+  opacity: 0.14;
+  top: -180px;
+  left: -120px;
+  animation: landing-drift-a 26s ease-in-out infinite alternate;
+}
+.landing-aurora::after {
+  background: #00b1c1; /* secondary-container */
+  opacity: 0.09;
+  bottom: -220px;
+  right: -140px;
+  animation: landing-drift-b 32s ease-in-out infinite alternate;
+}
+@keyframes landing-drift-a {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(120px, 80px, 0) scale(1.15); }
+}
+@keyframes landing-drift-b {
+  from { transform: translate3d(0, 0, 0) scale(1.1); }
+  to { transform: translate3d(-100px, -60px, 0) scale(0.95); }
+}
+.landing-marquee {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+  mask-image: linear-gradient(to right, transparent, black 12%, black 88%, transparent);
+}
+.landing-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: landing-marquee 48s linear infinite;
+}
+@keyframes landing-marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .stitch-root *,
   .stitch-root *::before,
