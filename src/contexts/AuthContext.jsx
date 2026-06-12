@@ -1,6 +1,8 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { setRuntimeCurrency } from '../utils/currencyRuntime';
+import { clearUserData } from '../stores/clearUserData';
+import { tr } from '../i18n/runtime';
 import toast from 'react-hot-toast';
 
 const AuthContext = createContext();
@@ -15,6 +17,20 @@ export const AuthProvider = ({ children }) => {
   const [isRecoveringPassword, setIsRecoveringPassword] = useState(false);
 
   useEffect(() => {
+    // Enlace de recuperación vencido o ya usado: Supabase redirige con el error
+    // en el hash (#error=access_denied&error_code=otp_expired&...). Sin esto el
+    // usuario aterriza en la landing sin ninguna explicación.
+    const hash = window.location.hash;
+    if (hash.includes('error_code=')) {
+      const params = new URLSearchParams(hash.slice(1));
+      const code = params.get('error_code') || '';
+      const msg = code === 'otp_expired'
+        ? tr('auth.resetLinkExpired', 'El enlace ya venció o fue usado. Pide uno nuevo desde "¿Olvidaste tu contraseña?".')
+        : params.get('error_description') || code;
+      toast.error(msg, { duration: 8000 });
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+
     // Get initial session
     const initializeAuth = async () => {
       try {
@@ -40,7 +56,16 @@ export const AuthProvider = ({ children }) => {
         if (event === 'PASSWORD_RECOVERY') {
           setIsRecoveringPassword(true);
         }
-        
+
+        // Limpiar datos del usuario en CUALQUIER fin de sesión (signOut manual,
+        // token expirado, cierre desde otra pestaña). Si quedara estado en
+        // memoria o caché, otra persona que inicie sesión en esta misma pestaña
+        // vería las finanzas del usuario anterior.
+        if (event === 'SIGNED_OUT') {
+          setRuntimeCurrency(null);
+          clearUserData();
+        }
+
         setLoading(false);
       }
     );
@@ -80,24 +105,9 @@ export const AuthProvider = ({ children }) => {
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
     setIsRecoveringPassword(false);
-    // Clear cached financial data so another person on this same device/browser
-    // can't see the previous user's transactions, budgets, debts, etc. These
-    // caches live in sessionStorage (see the stores' persist config), so we must
-    // clear them there — not localStorage. The theme preference is kept (not
-    // sensitive) and lives elsewhere.
-    // El siguiente usuario no debe heredar moneda/prefs del anterior.
-    setRuntimeCurrency(null);
-    [
-      'fintrack-transactions-cache',
-      'fintrack-budgets-cache',
-      'fintrack-categories-cache',
-      'fintrack-savings-cache',
-      'fintrack-debts-cache',
-      'fintrack-plans-cache',
-      'fintrack-cards-cache',
-      'fintrack-recurring-cache',
-      'fintrack-prefs-cache',
-    ].forEach((key) => sessionStorage.removeItem(key));
+    // La limpieza de datos (stores en memoria + caché de sessionStorage +
+    // moneda runtime) corre en el handler del evento SIGNED_OUT, que también
+    // cubre expiración de token y cierre desde otra pestaña.
     toast.success('Sesión cerrada');
   };
 

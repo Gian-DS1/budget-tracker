@@ -34,12 +34,15 @@ export default function StitchSettings() {
   const [parsingPdf, setParsingPdf] = useState(false);
   const demo = isDemoActive();
 
+  // Anti CSV/XLSX formula injection: Excel ejecuta celdas que empiezan con = + - @.
+  const safeCell = (v) => (/^[=+\-@]/.test(String(v ?? '')) ? `'${v}` : v);
+
   const doExport = async (format) => {
     if (transactions.length === 0) { toast.error(t('screens.settings.nothingToExport')); return; }
     if (!window.confirm(t('screens.settings.confirmExport'))) return;
     const data = transactions.map((t) => {
       const cat = categories.find((c) => c.id === t.categoryId);
-      return { Fecha: t.date, Descripción: t.description, Categoría: cat ? cat.name : '', Monto: t.amount, Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto', Moneda: t.currency, Notas: t.notes || '' };
+      return { Fecha: t.date, Descripción: safeCell(t.description), Categoría: safeCell(cat ? cat.name : ''), Monto: t.amount, Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto', Moneda: t.currency, Notas: safeCell(t.notes || '') };
     });
     const stamp = todayISO();
     if (format === 'csv') {
