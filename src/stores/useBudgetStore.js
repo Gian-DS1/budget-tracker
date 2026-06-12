@@ -24,7 +24,6 @@ const useBudgetStore = create(
           year: parseInt(y, 10),
           month: parseInt(m, 10) - 1,
           estimatedAmount: Number(b.amount),
-          currency: 'DOP',
           createdAt: b.created_at
         };
       });
@@ -47,7 +46,6 @@ const useBudgetStore = create(
       year: year,
       month: month,
       estimatedAmount: Number(estimatedAmount),
-      currency: 'DOP',
       createdAt: new Date().toISOString()
     };
 
@@ -115,7 +113,6 @@ const useBudgetStore = create(
           year: year,
           month: month,
           estimatedAmount: Number(data.amount),
-          currency: 'DOP',
           createdAt: data.created_at
         };
         
@@ -200,7 +197,6 @@ const useBudgetStore = create(
             year: parseInt(y, 10),
             month: parseInt(m, 10) - 1,
             estimatedAmount: Number(b.amount),
-            currency: 'DOP',
             createdAt: b.created_at,
           };
         });

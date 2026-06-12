@@ -35,6 +35,8 @@ function TourAutoStart() {
   const { start } = useTour();
   const tutorialSeen = usePrefsStore((s) => s.tutorialSeen);
   const prefsLoaded = usePrefsStore((s) => s.prefsLoaded);
+  // El onboarding de moneda va primero; el tour espera a que currency esté elegida.
+  const currency = usePrefsStore((s) => s.currency);
   const fired = useRef(false);
   const timerRef = useRef(null);
 
@@ -44,12 +46,16 @@ function TourAutoStart() {
     // real de Supabase, no con el caché provisional. Así no parpadea para quien ya
     // lo vio en otro dispositivo ni se pierde el arranque por la carrera con OAuth.
     if (!prefsLoaded) return;
+    // No arrancar el tour si el usuario aún no ha elegido moneda: el gate
+    // CurrencyOnboarding (z-50) debe resolverse primero. En demo, seedDemoStores
+    // fija currency='DOP', así que el tour demo sigue funcionando con este guard.
+    if (!currency) return;
     if (!tutorialSeen) {
       fired.current = true;
       // Pequeño delay para que el shell pinte antes de medir anclas.
       timerRef.current = setTimeout(() => start(), 700);
     }
-  }, [tutorialSeen, prefsLoaded, start]);
+  }, [tutorialSeen, prefsLoaded, currency, start]);
 
   // Limpia el timeout solo al desmontar (no en cada cambio de loading/seen), para
   // que un re-render intermedio no cancele un arranque ya programado.
