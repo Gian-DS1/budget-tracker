@@ -44,7 +44,7 @@ export default function CategoryDonut({ data }) {
   const maxValue = Math.max(...withPct.map((d) => d.value));
 
   return (
-    <div className="flex-grow flex flex-col sm:flex-row items-center gap-xl min-h-[260px]">
+    <div className="flex-grow flex flex-col sm:flex-row items-center gap-xl min-h-[240px]">
       {/* Dona: ancho acotado (no gigante en celdas anchas); la leyenda llena el resto */}
       <div className="relative w-full sm:w-[280px] h-[240px] shrink-0">
         <ResponsiveContainer width="100%" height="100%">

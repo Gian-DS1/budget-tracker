@@ -32,7 +32,7 @@ export default function BudgetBar({ usage, pace }) {
   }
 
   return (
-    <div className="flex-grow flex flex-col justify-center gap-sm min-h-[120px]">
+    <div className="flex-grow flex flex-col justify-center gap-sm">
       <div className="flex justify-between items-baseline">
         <span className={`font-headline-md text-[22px] tracking-tight ${txt}`}>{usage.pct.toFixed(0)}%</span>
         <span className="font-mono-data text-mono-data text-text-muted">{fmt(usage.spent)} {strings.charts.of} {fmt(usage.budgeted)}</span>

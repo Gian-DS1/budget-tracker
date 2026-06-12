@@ -13,7 +13,9 @@ export default function SignalsRail({ signals, onNavigate }) {
     );
   }
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-sm">
+    // En lg+ la celda es la columna angosta junto al donut: lista vertical.
+    // En sm/md la celda ocupa el ancho completo y caben dos columnas.
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-sm">
       {signals.map((s, i) => (
         <button key={i} onClick={() => s.to && onNavigate(s.to)} className="text-left group p-sm border border-border-subtle hover:bg-surface-container-high transition-all rounded flex flex-col gap-xs">
           <div className="flex justify-between items-center">

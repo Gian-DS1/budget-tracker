@@ -241,16 +241,17 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 4 · ¿En qué gasto? Donut a ancho completo */}
-        <Stagger.Item className="md:col-span-12">
+        {/* 4 · ¿En qué gasto? + ¿Qué viene? Comparten fila en pantallas anchas
+            (donut 8 / recordatorios 4) para que el dashboard quepa sin scroll;
+            en md (tablet) se apilan porque la leyenda del donut necesita ancho. */}
+        <Stagger.Item className="md:col-span-12 lg:col-span-8">
           <BentoCell title={t('dashboard.expenses') + ' ' + t('pages.analysis')} icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 5 · ¿Qué viene? Recordatorios (de hoy) */}
-        <Stagger.Item className="md:col-span-12">
-          <BentoCell title={t('dashboard.monthReminder')} icon="radar">
+        <Stagger.Item className="md:col-span-12 lg:col-span-4">
+          <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
         </Stagger.Item>
