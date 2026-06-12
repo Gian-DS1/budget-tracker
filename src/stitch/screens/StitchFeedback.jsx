@@ -1,12 +1,15 @@
-// Feedback — formulario funcional (Web3Forms, igual que la app real), estilo Stitch.
+// Feedback — el formulario envía a /api/feedback (endpoint propio, autenticado
+// y con rate limit), que reenvía por correo vía Web3Forms desde el servidor.
+// No se llama a Web3Forms desde el navegador: la CSP lo bloquea y expondría
+// el envío sin sesión ni límites.
 import { useState } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import Emoji from '../Emoji';
 import { useI18n } from '../../contexts/I18nContext';
 import { Stagger } from '../StitchMotion';
-
-const WEB3FORMS_ACCESS_KEY = '446c31a3-399d-4d75-81e9-5e6344334122';
+import { isDemoActive } from '../demoMode';
+import { supabase } from '../../lib/supabase';
 
 export default function StitchFeedback() {
   const { t } = useI18n();
@@ -21,25 +24,20 @@ export default function StitchFeedback() {
   const submit = async (e) => {
     e.preventDefault();
     if (!form.subject || !form.description) { toast.error(t('screens.feedback.completeFields')); return; }
+    if (isDemoActive()) { toast(t('screens.feedback.notInDemo'), { icon: 'ℹ️' }); return; }
     setSending(true);
-    const tl = form.type === 'bug' ? '🔴 [ERROR]' : form.type === 'improvement' ? '💡 [MEJORA]' : '💬 [COMENTARIO]';
     try {
-      const res = await fetch('https://api.web3forms.com/submit', {
+      const { data: { session } } = await supabase.auth.getSession();
+      const token = session?.access_token;
+      const res = await fetch('/api/feedback', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-          access_key: WEB3FORMS_ACCESS_KEY,
-          subject: `${tl} Feedback Beta - ${form.subject}`,
-          from_name: 'FinTrack — Feedback Beta',
-          'Tipo de Feedback': TYPES.find((t) => t.v === form.type)?.l,
-          Asunto: form.subject,
-          Descripción: form.description,
-          Entorno: 'FinTrack Portal Beta',
-        }),
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ type: form.type, subject: form.subject, description: form.description }),
       });
       const result = await res.json();
       if (res.ok && result.success) { toast.success(t('screens.feedback.sent')); setForm({ type: 'bug', subject: '', description: '' }); }
-      else throw new Error(result.message);
+      else if (res.status === 429) toast.error(t('screens.feedback.tooMany'));
+      else throw new Error(result.error);
     } catch (err) {
       console.error('Feedback error:', err);
       toast.error(t('screens.feedback.sendError'));

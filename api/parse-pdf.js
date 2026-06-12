@@ -202,15 +202,29 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: 'Unauthorized: Missing or invalid token' });
     }
     const token = authHeader.split(' ')[1];
-    
+
+    // El JWT del usuario viaja en los headers globales para que las llamadas
+    // RPC (rate limit) corran como el usuario real (auth.uid() en Postgres).
     const supabase = createClient(
       process.env.VITE_SUPABASE_URL,
-      process.env.VITE_SUPABASE_ANON_KEY
+      process.env.VITE_SUPABASE_ANON_KEY,
+      { global: { headers: { Authorization: `Bearer ${token}` } } }
     );
-    
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     if (authError || !user) {
       return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+    }
+
+    // Rate limit por usuario: 15 PDFs por hora (ver supabase/rate_limits.sql).
+    // Si la función aún no existe (migración sin correr), se permite el paso
+    // con un warning: el rate limit es mitigación de abuso, no autorización.
+    const { data: allowed, error: rlError } = await supabase
+      .rpc('check_rate_limit', { p_action: 'parse_pdf', p_max: 15, p_window_seconds: 3600 });
+    if (rlError) {
+      console.warn('check_rate_limit no disponible (¿migración sin correr?):', rlError.message);
+    } else if (!allowed) {
+      return res.status(429).json({ error: 'Demasiadas solicitudes. Intenta de nuevo en una hora.' });
     }
 
     const { pdfBase64 } = req.body;
