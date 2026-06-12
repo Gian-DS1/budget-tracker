@@ -1,5 +1,5 @@
 // Ajustes — tasa USD real, export/import, categorías, tema. Estilo Stitch.
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
@@ -11,13 +11,12 @@ import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
 import { getCurrency } from '../../utils/currencyRuntime';
 import { currencyOptions } from '../../utils/currencyOptions';
-import { currentLocale } from '../../i18n/runtime';
 import StitchSelect from '../StitchSelect';
 import StatementImportModal from './StatementImportModal';
 import { supabase } from '../../lib/supabase';
 
 export default function StitchSettings() {
-  const { t } = useI18n();
+  const { t, language } = useI18n();
 
   // Niveles de presupuesto (de más simple a más avanzado).
   const BUDGET_LEVEL_CARDS = [
@@ -148,6 +147,12 @@ export default function StitchSettings() {
   const currency = usePrefsStore((s) => s.currency);
   const setCurrency = usePrefsStore((s) => s.setCurrency);
 
+  // Fix 2: memoizar opciones de moneda; se recalcula sólo si cambia el idioma.
+  // Derivamos el locale a partir de `language` (misma lógica que currentLocale())
+  // para que ESLint pueda verificar la dep sin falsos warnings.
+  const locale = language === 'es' ? 'es-DO' : 'en-US';
+  const currencyOpts = useMemo(() => currencyOptions(locale), [locale]);
+
   return (
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="mb-xl">
@@ -199,7 +204,7 @@ export default function StitchSettings() {
           <StitchSelect
             value={currency || ''}
             onChange={setCurrency}
-            options={currencyOptions(currentLocale())}
+            options={currencyOpts}
             placeholder={t('screens.settings.currencyLabel')}
           />
           <p className="mt-sm font-mono-data text-mono-data text-text-muted normal-case tracking-normal">
