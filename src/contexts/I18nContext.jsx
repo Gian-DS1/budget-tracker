@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useState } from 'react';
 import translations from '../i18n/translations';
 import { setRuntimeLanguage } from '../i18n/runtime';
 
@@ -25,31 +25,26 @@ function setStoredLanguage(lang) {
 }
 
 export function I18nProvider({ children }) {
-  const [language, setLanguage] = useState(DEFAULT_LANGUAGE);
-  const [isInitialized, setIsInitialized] = useState(false);
-
-  // Inicializar desde localStorage al montar
-  useEffect(() => {
+  // Init perezoso: lee localStorage y sincroniza el runtime (tr/monthShort
+  // fuera de React) ANTES del primer render de los hijos — sin el re-render
+  // extra de un setState dentro de un efecto. setRuntimeLanguage es idempotente.
+  const [language, setLanguage] = useState(() => {
     const stored = getStoredLanguage();
     setRuntimeLanguage(stored);
-    setLanguage(stored);
-    setIsInitialized(true);
-  }, []);
+    return stored;
+  });
 
   const changeLanguage = (lang) => {
     if (lang === 'es' || lang === 'en') {
       setRuntimeLanguage(lang);
       setLanguage(lang);
       setStoredLanguage(lang);
-      // Actualizar documento para que herramientas como Google Translate lo detecten
-      document.documentElement.lang = lang === 'es' ? 'es-DO' : 'en';
+      // document.documentElement.lang lo sincroniza StitchHead al cambiar.
     }
   };
 
   // Obtener traducción con soporte para claves anidadas
   const t = (key, defaultValue = key) => {
-    if (!isInitialized) return defaultValue;
-
     const keys = key.split('.');
     let value = translations[language];
 
@@ -65,12 +60,13 @@ export function I18nProvider({ children }) {
   };
 
   return (
-    <I18nContext.Provider value={{ language, changeLanguage, t, isInitialized }}>
+    <I18nContext.Provider value={{ language, changeLanguage, t }}>
       {children}
     </I18nContext.Provider>
   );
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useI18n() {
   const context = useContext(I18nContext);
   if (!context) {

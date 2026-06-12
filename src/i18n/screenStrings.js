@@ -209,18 +209,3 @@ export const SCREEN_STRINGS = {
     allSet: 'screens.status.allSet',
   },
 };
-
-// Helper para traducir automáticamente
-export function getTranslationKey(key, fallback = key) {
-  // Navega por el objeto SCREEN_STRINGS para encontrar la clave
-  const parts = key.split('.');
-  let current = SCREEN_STRINGS;
-  for (const part of parts) {
-    if (current[part]) {
-      current = current[part];
-    } else {
-      return fallback;
-    }
-  }
-  return typeof current === 'string' ? current : fallback;
-}

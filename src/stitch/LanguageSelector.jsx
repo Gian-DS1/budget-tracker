@@ -26,8 +26,6 @@ export default function LanguageSelector() {
     { code: 'en', label: t('settings.english'), flag: '🇺🇸' },
   ];
 
-  const currentLang = languages.find((l) => l.code === language);
-
   const handleChangeLanguage = (code) => {
     changeLanguage(code);
     setIsOpen(false);

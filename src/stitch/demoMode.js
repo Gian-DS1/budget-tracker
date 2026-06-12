@@ -70,11 +70,6 @@ const txWithDate = (id, catName, amount, type, description, dateStr, cashback = 
   notes: null, currency: 'DOP', cashbackEarned: cashback, createdAt: new Date().toISOString(),
 });
 
-const tx = (id, catName, amount, type, description, day, cashback = 0, cardId = null) => ({
-  id, categoryId: catId(catName), cardId, amount, type, description, date: dayOf(day),
-  notes: null, currency: 'DOP', cashbackEarned: cashback, createdAt: new Date().toISOString(),
-});
-
 // Genera transacciones sintéticas para un mes específico (year, month: 0-11)
 // Cada mes tiene variaciones realistas en gastos variables, compras, etc.
 function generateMonthlyTransactions(year, month, baseId) {

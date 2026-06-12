@@ -9,15 +9,15 @@ Aplicación web de finanzas personales pensada para República Dominicana. Reemp
 ## ✨ Características
 
 - **Presupuesto** — niveles progresivos: Seguimiento (solo registrar), Regla 50/30/20, y **base cero** (asigna cada peso por categoría hasta que "Por Asignar" llegue a 0). Incluye **auto-sugerencia** con el promedio de tus últimos 3 meses y copiar el del mes anterior.
-- **Transacciones** — registro rápido con auto-categorización, soporte multimoneda (USD→DOP a la tasa del día) y **transacciones recurrentes** que se crean solas.
+- **Transacciones** — registro rápido con auto-categorización (aprende de tu historial) y **transacciones recurrentes** que se crean solas.
 - **Tarjetas de crédito** — ciclos de corte/pago automáticos, cashback por reglas, abonos parciales, **historial de estados de cuenta** y catálogo de tarjetas con cashback predefinido.
 - **Deudas** — saldos, intereses, historial de pagos con transacción enlazada, estrategia avalancha y estimación de meses para liquidar.
 - **Ahorros y metas** — metas con aportes registrados (cada aporte crea su transacción enlazada), proyección de fecha de cumplimiento, horizonte temporal opcional (corto/mediano/largo) e historial con deshacer.
 - **Dashboard** — bento grid con KPIs, flujo del mes, anillo de salud financiera, donut de gastos, patrimonio neto y recordatorios. Selector de mes para revisar el pasado.
 - **Reportes** — centro de análisis: ingresos vs gastos por mes, comparativa contra el mes anterior, insights (promedios y récords) y un **análisis inteligente** que recomienda acciones según tus datos.
 - **Calendario** — vista mensual con movimientos pasados y **vencimientos futuros** (cuotas de deuda, pago de tarjetas, metas y recurrentes) + panel de próximos vencimientos.
-- **Tasa USD→DOP** — automática (Banco Popular vía función serverless) con opción de fijarla manualmente.
-- **Ajustes** — nivel de presupuesto, tasa de cambio, import/export CSV/Excel, gestión de categorías.
+- **Moneda del perfil** — cada usuario elige su moneda al entrar por primera vez (onboarding) y toda la app formatea montos con ella (`Intl`).
+- **Ajustes** — nivel de presupuesto, moneda, idioma (es/en), import/export CSV/Excel, gestión de categorías.
 
 ---
 
@@ -33,7 +33,7 @@ Aplicación web de finanzas personales pensada para República Dominicana. Reemp
 | Gráficos | Recharts |
 | Iconos | Material Symbols (UI) + JoyPixels v10 vía emoji-toolkit (emojis de categoría) |
 | Animación | Framer Motion |
-| Serverless | Funciones de Vercel (`/api/rate`) |
+| Serverless | Funciones de Vercel (`/api/parse-pdf`, importador de estados de cuenta) |
 | Tests | Vitest |
 
 ---
@@ -69,7 +69,7 @@ VITE_SUPABASE_ANON_KEY=tu_anon_key
 ```bash
 npm run dev      # http://localhost:5173
 ```
-Al registrarte por primera vez, la app **siembra automáticamente** las categorías por defecto adaptadas a RD.
+Al registrarte por primera vez, la app pide tu **moneda** (onboarding) y arrancas **sin categorías**: las creas tú o las sugiere el autocategorizador al importar/registrar movimientos.
 
 ### 5. Scripts disponibles
 ```bash
@@ -86,15 +86,14 @@ npm run test       # tests (Vitest)
 
 1. Importa el repo en Vercel.
 2. Agrega las variables `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (Production + Preview).
-3. *(Opcional)* Para la tasa del dólar del Banco Popular, agrega `TASAREAL_API_KEY` (variable **del servidor**, no `VITE_`). Sin ella, la app usa la tasa de mercado global como respaldo. Ver [`api/rate.js`](api/rate.js).
-4. El archivo [`vercel.json`](vercel.json) ya configura el rewrite SPA (excluyendo `/api`).
+3. El archivo [`vercel.json`](vercel.json) ya configura el rewrite SPA (excluyendo `/api`).
 
 ---
 
 ## 🔒 Seguridad y privacidad
 
 - **Aislamiento de datos por RLS.** Toda consulta filtra por `user_id` y la base lo refuerza con Row Level Security (`auth.uid() = user_id`). Ejecutar `supabase/schema.sql` deja esto configurado.
-- **Secretos.** El archivo `.env` está en `.gitignore` y nunca se commitea. La `anon key` es pública por diseño (segura gracias a RLS). La `TASAREAL_API_KEY` vive solo como variable de entorno del servidor en Vercel — jamás en el bundle del cliente.
+- **Secretos.** El archivo `.env` está en `.gitignore` y nunca se commitea. La `anon key` es pública por diseño (segura gracias a RLS).
 - **Caché local.** Para velocidad, los datos se cachean en `localStorage`. Al **cerrar sesión** se limpian las cachés sensibles.
 - **Feedback.** La página de Feedback envía mensajes al correo del desarrollador vía el servicio externo **Web3Forms** (no almacena datos en tu base).
 
@@ -104,7 +103,7 @@ npm run test       # tests (Vitest)
 
 ```
 budget-tracker/
-├── api/                  # Funciones serverless de Vercel (tasa USD→DOP)
+├── api/                  # Funciones serverless de Vercel (parse-pdf: importador de estados)
 ├── supabase/
 │   ├── schema.sql        # Esquema completo (fuente de verdad, idempotente)
 │   ├── MIGRATIONS.md     # Orden de migraciones para bases existentes
@@ -115,7 +114,7 @@ budget-tracker/
 │   ├── data/             # Categorías por defecto (RD) + autocategorización
 │   ├── lib/              # Cliente de Supabase
 │   ├── stores/           # Estado global Zustand (uno por dominio)
-│   └── utils/            # Cálculos financieros, formato, ciclos de tarjeta, constantes
+│   └── utils/            # Cálculos financieros, formato, ciclos de tarjeta
 ├── docs/                 # Specs y planes de diseño/implementación
 ├── .env.example
 └── vercel.json

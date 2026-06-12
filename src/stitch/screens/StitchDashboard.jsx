@@ -17,7 +17,7 @@ import {
   getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
 } from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
-import { formatCurrency, formatCurrencyCompact, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatAmountCompact, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
 import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
@@ -30,7 +30,7 @@ import SignalsRail from './dashboard/SignalsRail';
 
 const fmt = (n) => formatCurrency(n);
 // Compacto para móvil, sin prefijo de moneda: "170.0K".
-const fmtMob = (n) => formatCurrencyCompact(n).replace('RD$', '').trim();
+const fmtMob = (n) => formatAmountCompact(n);
 
 export default function StitchDashboard() {
   const { t, language } = useI18n();
@@ -65,6 +65,8 @@ export default function StitchDashboard() {
       opts.push({ value: `${yy}-${mm}`, label: `${monthShort(mm)} ${yy}` });
     }
     return opts;
+    // `language` es dependencia real: monthShort() lee el idioma del runtime, fuera de React.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [now, language]);
 
   const monthTx = useMemo(
@@ -125,6 +127,8 @@ export default function StitchDashboard() {
       arr.push({ label: monthShort(mm), y: yy, m: mm, inc, exp, net: inc - exp });
     }
     return arr;
+    // `language` es dependencia real: monthShort() lee el idioma del runtime, fuera de React.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactions, y, m, language]);
 
   // Donut de gastos

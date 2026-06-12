@@ -66,6 +66,8 @@ export default function StitchCalendar() {
 
   const monthOptions = useMemo(
     () => Array.from({ length: 12 }, (_, i) => ({ value: String(i), label: monthName(i) })),
+    // `language` es dependencia real: monthName() lee el idioma del runtime, fuera de React.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [language],
   );
   const yearOptions = [];

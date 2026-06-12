@@ -4,7 +4,7 @@
 // depender del tooltip. Leyenda compartida (mismo lenguaje que el Dashboard).
 import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, ComposedChart, Bar, Line, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
-import { formatCurrency, formatCurrencyCompact } from '../../../utils/formatters';
+import { formatCurrency, formatAmountCompact } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
 import ChartLegend from '../../ChartLegend';
 import { CHART } from '../../chartTokens';
@@ -56,7 +56,7 @@ export default function IncomeExpenseBars({ data }) {
               axisLine={false}
               tickLine={false}
               width={48}
-              tickFormatter={(v) => formatCurrencyCompact(v).replace('RD$', '').trim()}
+              tickFormatter={formatAmountCompact}
             />
             <Tooltip content={<Tip />} isAnimationActive={false} cursor={{ fill: 'rgba(255,255,255,0.04)' }} />
             <Bar dataKey="income" fill={CHART.tertiary} radius={[3, 3, 0, 0]} isAnimationActive={!reduced} animationDuration={600} animationEasing="ease-out" />

@@ -9,6 +9,7 @@ import { autoCategorize } from '../../data/defaultCategories';
 import { suggestFromHistory } from '../../data/transactionMemory';
 import { matchTransactions } from '../../utils/statementMatcher';
 import { getCurrency } from '../../utils/currencyRuntime';
+import { formatCurrency } from '../../utils/formatters';
 
 export default function StatementImportModal({ onClose, pdfData }) {
   const { t } = useI18n();
@@ -192,7 +193,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
                     {matchResult.toImport.slice(0, 5).map((t, i) => (
                       <div key={i} className="flex justify-between border-b border-border-subtle pb-xs last:border-0 font-mono-data text-[12px] text-on-surface-variant">
                          <span className="truncate flex-1">{t.description}</span>
-                         <span className="shrink-0 ml-md">RD$ {t.amount.toFixed(2)}</span>
+                         <span className="shrink-0 ml-md">{formatCurrency(t.amount)}</span>
                       </div>
                     ))}
                     {matchResult.toImport.length > 5 && (

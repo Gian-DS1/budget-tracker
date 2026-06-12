@@ -5,7 +5,7 @@
 // los KPIs de arriba. Tooltip con ingresos/gastos/neto.
 import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, ComposedChart, Area, Line, XAxis, YAxis, Tooltip, ReferenceLine, CartesianGrid } from 'recharts';
-import { formatCurrency, formatCurrencyCompact } from '../../../utils/formatters';
+import { formatCurrency, formatAmountCompact } from '../../../utils/formatters';
 import { EmptyCell } from './dashboardUi';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import ChartLegend from '../../ChartLegend';
@@ -89,7 +89,7 @@ export default function FlowChart({ series, selY, selM }) {
               axisLine={false}
               tickLine={false}
               width={48}
-              tickFormatter={(v) => formatCurrencyCompact(v).replace('RD$', '').trim()}
+              tickFormatter={formatAmountCompact}
             />
             {/* Mes seleccionado: línea vertical de referencia */}
             {selPoint && (

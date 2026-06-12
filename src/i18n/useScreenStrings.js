@@ -1,6 +1,6 @@
 // Hook que simplifica el acceso a strings traducidos de pantalla
 import { useI18n } from '../contexts/I18nContext';
-import { SCREEN_STRINGS, getTranslationKey } from './screenStrings';
+import { SCREEN_STRINGS } from './screenStrings';
 
 export function useScreenStrings() {
   const { t } = useI18n();

@@ -32,4 +32,4 @@ Calmado, preciso, cercano. Tema oscuro "Stitch" con acento periwinkle; lenguaje 
 
 ## Accessibility & Inclusion
 
-Objetivo WCAG AA: contraste ≥4.5:1 sobre el tema oscuro, `prefers-reduced-motion` respetado en todas las animaciones (incluido el tour), navegación por teclado en tour y dropdowns. Montos siempre formateados con `formatCurrency` (DOP).
+Objetivo WCAG AA: contraste ≥4.5:1 sobre el tema oscuro, `prefers-reduced-motion` respetado en todas las animaciones (incluido el tour), navegación por teclado en tour y dropdowns. Montos siempre formateados con `formatCurrency` (la moneda del perfil del usuario, vía `Intl`).

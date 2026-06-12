@@ -50,8 +50,6 @@ a SSR o se elimina goober, se puede endurecer `style-src-elem`.
 - `api/parse-pdf.js`: requiere **Bearer token** válido (verificado contra Supabase),
   limita el tamaño del PDF (~6MB, anti-DoS), sanitiza el texto extraído y devuelve
   **errores genéricos** al cliente (el detalle solo va a los logs del servidor).
-- `api/rate.js`: solo `GET`; la API key de TasaReal es server-only (sin prefijo
-  `VITE_`), nunca llega al bundle.
 
 ## Secretos
 - `.env` está en `.gitignore`; solo se versiona `.env.example` (sin valores reales).

@@ -36,8 +36,10 @@ specs viejos dicen "Modo Simple/Avanzado", se reinterpreta como estos niveles.
 - **Anti-doble-conteo en tarjetas:** una compra con tarjeta es un gasto normal en su
   categoría, cuenta UNA vez. El pago/abono de la tarjeta NO crea gasto: solo liquida
   saldo. (Las deudas SÍ son base caja: cada abono crea un gasto `fixed_expense`.)
-- **Moneda base DOP:** todo se guarda y calcula en DOP (USD→DOP se convierte al
-  guardar, con la tasa de useRateStore).
+- **Moneda única del perfil** *(actualizado 2026-06-11, globalización del núcleo)*:
+  cada usuario elige UNA moneda en el onboarding y todo se guarda/calcula/formatea
+  en ella (`Intl`). Ya no existe conversión USD→DOP ni `useRateStore`; donde estos
+  specs digan "DOP" o "RD$", léase "la moneda del perfil".
 - **ISO local** en fechas (`YYYY-MM-DD`), nunca toISOString (corre el día en GMT-4).
 - **Tipo derivado de la categoría** (income/fixed_expense/variable_expense/savings).
 - Las migraciones SQL las corre el usuario a mano en Supabase (ver cada spec). Varias

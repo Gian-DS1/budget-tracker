@@ -58,23 +58,31 @@ export function formatCurrency(amount, currencyCode) {
   return `${sign}${currencySymbol(code, locale)} ${formatted}`;
 }
 
+// Número compacto sin símbolo (1.5K, 2.3M). Base de los dos formatos de abajo.
+function compactAmount(absAmount) {
+  if (absAmount >= 1_000_000) return (absAmount / 1_000_000).toFixed(1) + 'M';
+  if (absAmount >= 1_000) return (absAmount / 1_000).toFixed(1) + 'K';
+  return absAmount.toFixed(2);
+}
+
 /**
  * Format a number as compact currency (e.g., RD$ 1.5K)
  */
 export function formatCurrencyCompact(amount, currencyCode) {
   const code = currencyCode || getCurrency();
   const locale = currentLocale();
-  const absAmount = Math.abs(amount);
-  let formatted;
-  if (absAmount >= 1_000_000) {
-    formatted = (absAmount / 1_000_000).toFixed(1) + 'M';
-  } else if (absAmount >= 1_000) {
-    formatted = (absAmount / 1_000).toFixed(1) + 'K';
-  } else {
-    formatted = absAmount.toFixed(2);
-  }
   const sign = amount < 0 ? '-' : '';
-  return `${sign}${currencySymbol(code, locale)} ${formatted}`;
+  return `${sign}${currencySymbol(code, locale)} ${compactAmount(Math.abs(amount))}`;
+}
+
+/**
+ * Compacto SIN símbolo de moneda (170.0K) — para ejes de charts y montos en
+ * móvil donde la moneda ya es contexto. (Antes se hacía .replace('RD$', ''),
+ * que rompía con cualquier otra moneda del perfil.)
+ */
+export function formatAmountCompact(amount) {
+  const sign = amount < 0 ? '-' : '';
+  return `${sign}${compactAmount(Math.abs(amount))}`;
 }
 
 /**

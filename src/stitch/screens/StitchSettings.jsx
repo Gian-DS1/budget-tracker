@@ -1,4 +1,4 @@
-// Ajustes — tasa USD real, export/import, categorías, tema. Estilo Stitch.
+// Ajustes — nivel de presupuesto, moneda, idioma, export/import, categorías. Estilo Stitch.
 import { useState, useRef, useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../MS';
@@ -10,6 +10,7 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
 import { getCurrency } from '../../utils/currencyRuntime';
+import { todayISO, toISODate } from '../../utils/formatters';
 import { currencyOptions } from '../../utils/currencyOptions';
 import StitchSelect from '../StitchSelect';
 import StatementImportModal from './StatementImportModal';
@@ -40,7 +41,7 @@ export default function StitchSettings() {
       const cat = categories.find((c) => c.id === t.categoryId);
       return { Fecha: t.date, Descripción: t.description, Categoría: cat ? cat.name : '', Monto: t.amount, Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto', Moneda: t.currency, Notas: t.notes || '' };
     });
-    const stamp = new Date().toISOString().split('T')[0];
+    const stamp = todayISO();
     if (format === 'csv') {
       const { default: Papa } = await import('papaparse');
       const blob = new Blob([Papa.unparse(data)], { type: 'text/csv;charset=utf-8;' });
@@ -71,10 +72,20 @@ export default function StitchSettings() {
         if (isNaN(amount) || amount === 0) return null;
         let type = 'expense';
         if (String(typeStr).toLowerCase().includes('ingreso') || String(typeStr).toLowerCase().includes('income') || String(raw).trim().startsWith('+')) type = 'income';
-        let fdate = new Date().toISOString().split('T')[0];
+        // ISO local SIEMPRE (toISOString corre el día fuera de UTC, p. ej. GMT-4).
+        let fdate = todayISO();
         try {
-          if (typeof date === 'number') { const d = new Date(new Date(1899, 11, 30).getTime() + date * 86400000); fdate = d.toISOString().split('T')[0]; }
-          else { const d = new Date(date); if (!isNaN(d.getTime())) fdate = d.toISOString().split('T')[0]; }
+          if (typeof date === 'number') {
+            // Serial de Excel: días desde 1899-12-30, en calendario local.
+            const d = new Date(1899, 11, 30);
+            d.setDate(d.getDate() + Math.floor(date));
+            fdate = toISODate(d);
+          } else if (/^\d{4}-\d{2}-\d{2}/.test(String(date).trim())) {
+            fdate = String(date).trim().slice(0, 10);
+          } else {
+            const d = new Date(date);
+            if (!isNaN(d.getTime())) fdate = toISODate(d);
+          }
         } catch { /* ignore */ }
         const match = autoCategorize(String(desc), categories);
         return { date: fdate, amount, type, description: String(desc).slice(0, 500).replace(/[<>]/g, '') || t('screens.settings.imported'), categoryId: match ? match.id : '', currency: getCurrency(), notes: null };
