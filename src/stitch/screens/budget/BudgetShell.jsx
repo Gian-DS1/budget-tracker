@@ -4,7 +4,6 @@
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MS from '../../MS';
-import StitchSelect from '../../StitchSelect';
 import usePrefsStore from '../../../stores/usePrefsStore';
 import useBudgetStore from '../../../stores/useBudgetStore';
 import useTransactionStore from '../../../stores/useTransactionStore';
@@ -109,10 +108,23 @@ export default function BudgetShell({ level = 'zero' }) {
             <span className="font-mono-data text-mono-data text-on-surface-variant uppercase">{meta.tag}</span>
           </div>
           <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">{t('budget.title').toUpperCase()}</h1>
-          {/* Cambiador rápido de nivel */}
-          <div data-tour="budget-mode" className="flex items-center gap-sm mt-md">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.budget.mode')}</span>
-            <StitchSelect value={level} onChange={setBudgetLevel} options={LEVEL_OPTIONS} compact className="min-w-[150px]" />
+          {/* Cambiador de nivel: control segmentado. Los 3 modos quedan visibles
+              de un vistazo (un dropdown los escondía y costaba descubrirlos). */}
+          <div data-tour="budget-mode" className="inline-flex flex-wrap items-center gap-xs bg-surface-card border border-border-subtle rounded p-xs mt-md inner-glow">
+            {LEVEL_OPTIONS.map((o) => {
+              const active = level === o.value;
+              return (
+                <button
+                  key={o.value}
+                  onClick={() => setBudgetLevel(o.value)}
+                  aria-pressed={active}
+                  className={`flex items-center gap-xs px-md py-xs rounded font-label-sm text-label-sm transition-colors border ${active ? 'bg-primary/15 border-primary/40 text-on-surface' : 'border-transparent text-text-muted hover:text-on-surface hover:bg-surface-container-high'}`}
+                >
+                  <MS name={o.icon} className={`!text-[16px] ${active ? 'text-primary' : ''}`} />
+                  {o.label}
+                </button>
+              );
+            })}
           </div>
         </div>
         <div className="flex gap-md bg-surface-card p-sm rounded border border-border-subtle inner-glow items-center">

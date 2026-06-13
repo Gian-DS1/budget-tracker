@@ -71,7 +71,11 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
           (a.cat.name || '').localeCompare(b.cat.name || '', 'es', { sensitivity: 'base' })),
       }))
       .filter((g) => g.items.length > 0)
-      .map((g) => ({ ...g, subtotal: g.items.reduce((s, r) => s + r.estimated, 0) }));
+      .map((g) => ({
+        ...g,
+        subtotal: g.items.reduce((s, r) => s + r.estimated, 0),
+        spent: g.items.reduce((s, r) => s + r.actual, 0),
+      }));
   }, [rows]);
 
   // Gasto variable diario promedio.
@@ -101,7 +105,8 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
         {t('dashboard.assignBudget')}
       </p>
 
-      {/* Bento: disponible + daily burn */}
+      {/* Bento: disponible (con "por asignar" como métrica de primer nivel:
+          en base cero, dinero sin asignar es tarea pendiente) + daily burn */}
       <div data-tour="budget-summary" className="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
         <div className="md:col-span-8 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
@@ -109,14 +114,20 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
             <MS name="timeline" className="text-text-muted text-[16px]" />
           </div>
           <div className="flex-1 flex flex-col justify-center">
-            <div className="flex justify-between items-end mb-xs">
+            <div className="flex flex-wrap justify-between items-end gap-md mb-xs">
               <div className="flex flex-col">
                 <span className="font-mono-data text-mono-data text-text-muted">{t('dashboard.canSpend').toUpperCase()}</span>
                 <span className={`font-headline-md text-[36px] tracking-tighter ${summary.disponible < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(summary.puedesGastar)}</span>
               </div>
-              <div className="flex flex-col text-right">
-                <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.committed').toUpperCase()}</span>
-                <span className="font-headline-md text-[24px] text-on-background tracking-tighter">{fmt(summary.comprometido)}</span>
+              <div className="flex gap-xl text-right">
+                <div className="flex flex-col">
+                  <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.committed').toUpperCase()}</span>
+                  <span className="font-headline-md text-[24px] text-on-background tracking-tighter">{fmt(summary.comprometido)}</span>
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.toAllocate').toUpperCase()}</span>
+                  <span className={`font-headline-md text-[24px] tracking-tighter ${summary.porAsignar > 0 ? 'text-accent-warning' : 'text-on-background'}`}>{fmt(summary.porAsignar)}</span>
+                </div>
               </div>
             </div>
             <div className="w-full h-1 bg-surface-container-highest mt-md relative">
@@ -125,7 +136,6 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
             <div className="flex justify-between mt-sm">
               <span className="font-mono-data text-mono-data text-text-muted">{t('transactions.income')} {fmt(summary.ingresoRecibido)}</span>
               <span className="font-mono-data text-mono-data text-primary">{consumedPct.toFixed(0)}% {t('screens.budget.committed').toLowerCase()}</span>
-              <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.toAllocate')} {fmt(summary.porAsignar)}</span>
             </div>
           </div>
         </div>
@@ -158,14 +168,23 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
           <div className="flex flex-col gap-lg">
             {groups.map((g) => (
               <section key={g.key}>
-                {/* Encabezado de grupo: tipo + subtotal asignado */}
-                <div className="flex items-center justify-between gap-sm mb-md">
+                {/* Encabezado de grupo: tipo + real vs asignado, con mini barra
+                    de avance del grupo (lee el estado del bloque de un vistazo). */}
+                <div className="flex items-center justify-between gap-sm mb-xs">
                   <div className="flex items-center gap-sm min-w-0">
                     <MS name={g.icon} className={`!text-[16px] ${g.cls}`} />
                     <span className={`font-mono-data text-mono-data uppercase tracking-widest ${g.cls}`}>{t(g.labelKey)}</span>
                     <span className="font-mono-data text-mono-data text-text-muted">· {g.items.length}</span>
                   </div>
-                  <span className="font-mono-data text-mono-data text-text-muted whitespace-nowrap">{fmt(g.subtotal)} {t('screens.budget.assigned').toLowerCase()}</span>
+                  <span className="font-mono-data text-mono-data text-text-muted whitespace-nowrap">
+                    <span className="text-on-surface-variant">{fmt(g.spent)}</span> {t('screens.charts.of')} {fmt(g.subtotal)} {t('screens.budget.assigned').toLowerCase()}
+                  </span>
+                </div>
+                <div className="w-full h-0.5 bg-surface-container-highest rounded-full overflow-hidden mb-md">
+                  <div
+                    className={`h-full ${g.subtotal > 0 && g.spent > g.subtotal ? 'bg-accent-error' : 'bg-primary'}`}
+                    style={{ width: `${g.subtotal > 0 ? Math.min(100, (g.spent / g.subtotal) * 100) : 0}%` }}
+                  />
                 </div>
                 <Stagger className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-md">
                   {g.items.map((r) => (

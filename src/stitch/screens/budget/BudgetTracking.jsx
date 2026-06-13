@@ -32,14 +32,40 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
   }, [monthTx, categories]);
 
   const maxTotal = byCat.length > 0 ? byCat[0].total : 0;
+  // % del ingreso ya gastado (la pregunta del nivel Seguimiento: "¿cuánto me queda?").
+  const spentPct = ingreso > 0 ? Math.min(100, (gastos / ingreso) * 100) : 0;
 
   return (
     <>
-      {/* Resumen del mes */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-gutter mb-gutter">
-        <Stat label={t('screens.budget.incomeOfMonth')} value={fmt(ingreso)} icon="south_west" tone="text-tertiary" />
-        <Stat label={t('screens.budget.expensesOfMonth')} value={fmt(gastos)} icon="north_east" tone="text-accent-error" />
-        <Stat label={t('common.balance')} value={fmt(balance)} icon="account_balance" tone={balance < 0 ? 'text-accent-error' : 'text-on-background'} />
+      {/* Hero: el balance manda; ingreso y gastos lo acompañan, y la barra
+          cuenta la historia completa (cuánto del ingreso ya se fue). */}
+      <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg mb-gutter">
+        <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-md">
+          <div className="flex flex-col">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.balance')}</span>
+            <span className={`font-headline-md text-[40px] tracking-tighter ${balance < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(balance)}</span>
+          </div>
+          <div className="flex gap-xl sm:text-right">
+            <div className="flex flex-col">
+              <span className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-xs sm:justify-end"><MS name="south_west" className="!text-[13px] text-tertiary" /> {t('screens.budget.incomeOfMonth')}</span>
+              <span className="font-headline-md text-[22px] text-on-background tracking-tighter">{fmt(ingreso)}</span>
+            </div>
+            <div className="flex flex-col">
+              <span className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-xs sm:justify-end"><MS name="north_east" className="!text-[13px] text-accent-error" /> {t('screens.budget.expensesOfMonth')}</span>
+              <span className="font-headline-md text-[22px] text-on-background tracking-tighter">{fmt(gastos)}</span>
+            </div>
+          </div>
+        </div>
+        {ingreso > 0 && (
+          <div className="mt-md">
+            <div className="w-full h-2 bg-surface-container-highest rounded-full overflow-hidden">
+              <div className={`h-full rounded-full ${gastos > ingreso ? 'bg-accent-error' : 'bg-primary'}`} style={{ width: `${spentPct}%` }} />
+            </div>
+            <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal mt-xs block">
+              {t('screens.budget.spentOfIncome').replace('{pct}', (ingreso > 0 ? (gastos / ingreso) * 100 : 0).toFixed(0))}
+            </span>
+          </div>
+        )}
       </div>
 
       {/* A dónde se fue el dinero */}
@@ -56,21 +82,24 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
           </div>
         ) : (
           <Stagger className="flex flex-col gap-sm">
-            {byCat.map((g) => {
-              const share = ingreso > 0 ? (g.total / ingreso) * 100 : 0;
+            {byCat.map((g, i) => {
+              // % sobre el GASTO total (composición), no sobre el ingreso: en
+              // "a dónde se fue el dinero" la pregunta es qué parte del gasto es.
+              const share = gastos > 0 ? (g.total / gastos) * 100 : 0;
               const barW = maxTotal > 0 ? (g.total / maxTotal) * 100 : 0;
               return (
                 <Stagger.Item key={g.category.id} className="flex flex-col gap-xs">
                   <div className="flex items-center justify-between">
                     <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs min-w-0">
+                      <span className="font-mono-data text-mono-data text-text-muted w-[18px] shrink-0">{String(i + 1).padStart(2, '0')}</span>
                       <Emoji e={g.category.icon} size={16} /> <span className="truncate">{g.category.name}</span>
                     </span>
                     <div className="flex items-baseline gap-sm whitespace-nowrap">
                       <span className="font-mono-data text-[13px] text-on-background">{fmt(g.total)}</span>
-                      {ingreso > 0 && <span className="font-mono-data text-mono-data text-text-muted">{share.toFixed(0)}%</span>}
+                      <span className="font-mono-data text-mono-data text-text-muted w-[34px] text-right">{share.toFixed(0)}%</span>
                     </div>
                   </div>
-                  <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
+                  <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden ml-[26px] max-w-[calc(100%-26px)]">
                     <div className="h-full bg-primary" style={{ width: `${barW}%` }} />
                   </div>
                 </Stagger.Item>
@@ -80,17 +109,5 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
         )}
       </div>
     </>
-  );
-}
-
-function Stat({ label, value, icon, tone }) {
-  return (
-    <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-sm">
-      <div className="flex items-center justify-between">
-        <span className="font-mono-data text-mono-data text-text-muted uppercase">{label}</span>
-        <MS name={icon} className={`text-[16px] ${tone}`} />
-      </div>
-      <span className={`font-headline-md text-[32px] tracking-tighter ${tone}`}>{value}</span>
-    </div>
   );
 }

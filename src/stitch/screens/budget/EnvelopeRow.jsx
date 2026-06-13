@@ -62,6 +62,15 @@ export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, manag
       <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
         <div className={`h-full ${over ? 'bg-accent-error' : typeColor(cat.type)}`} style={{ width: `${Math.min(pct, 100)}%` }} />
       </div>
+      {/* Lo accionable del sobre: cuánto queda (o cuánto se pasó). Solo cuando
+          hay monto asignado; un sobre en 0 no tiene nada que reportar. */}
+      {estimated > 0 && (
+        <span className={`font-mono-data text-mono-data normal-case tracking-normal ${over ? 'text-accent-error' : 'text-text-muted'}`}>
+          {over
+            ? `${fmt(actual - estimated)} ${t('screens.budget.overAmount')}`
+            : `${fmt(estimated - actual)} ${t('screens.budget.freeAmount')}`}
+        </span>
+      )}
     </Stagger.Item>
   );
 }

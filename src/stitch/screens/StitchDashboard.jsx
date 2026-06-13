@@ -177,11 +177,11 @@ export default function StitchDashboard() {
   }, [cards, debts, goals, transactions, now, t]);
 
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
-  // Patrimonio neto NO va aquí: tiene su propia celda abajo (evita redundancia).
+  // El patrimonio neto es el 4º KPI (celda propia con mini barra ahorro/deuda).
   const metrics = [
-    { l: t('dashboard.canSpend').toUpperCase(), v: <CountUp value={summary.puedesGastar} format={fmt} />, d: summary.estado === 'danger' ? t('dashboard.tooMuchSpent') : summary.estado === 'warning' ? t('dashboard.justRight') : t('dashboard.leftover'), c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.incomeMinusExpenses') },
-    { l: t('dashboard.creditCardsPayable').toUpperCase(), v: <CountUp value={totalPendingCards} format={fmt} />, d: totalPendingCards > 0 ? t('dashboard.pending') : t('dashboard.upToDate'), warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.cardStatus'), live: true },
-    { l: t('dashboard.savingsRate').toUpperCase(), v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, d: t('dashboard.ofIncome'), c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: t('dashboard.savingsFormula') },
+    { l: t('dashboard.canSpend').toUpperCase(), v: <CountUp value={summary.puedesGastar} format={fmt} />, mv: fmtMob(summary.puedesGastar), d: summary.estado === 'danger' ? t('dashboard.tooMuchSpent') : summary.estado === 'warning' ? t('dashboard.justRight') : t('dashboard.leftover'), c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.incomeMinusExpenses') },
+    { l: t('dashboard.creditCardsPayable').toUpperCase(), v: <CountUp value={totalPendingCards} format={fmt} />, mv: fmtMob(totalPendingCards), d: totalPendingCards > 0 ? t('dashboard.pending') : t('dashboard.upToDate'), warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.cardStatus'), live: true },
+    { l: t('dashboard.savingsRate').toUpperCase(), v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, mv: `${savingsRate.toFixed(0)}%`, d: t('dashboard.ofIncome'), c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: t('dashboard.savingsFormula') },
   ];
 
   return (
@@ -198,22 +198,37 @@ export default function StitchDashboard() {
         </div>
       )}
 
-      <Stagger data-tour="dashboard-grid" className="grid grid-cols-1 md:grid-cols-12 gap-md auto-rows-min">
-        {/* 1 · Estado inmediato: 3 KPI accionables (patrimonio tiene su celda abajo) */}
+      <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-md auto-rows-min">
+        {/* 1 · Estado inmediato: 4 KPI accionables (2×2 en móvil, fila en md+).
+            El 4º es patrimonio neto con su mini barra ahorro/deuda: subirlo aquí
+            eliminó una fila completa del bento (menos scroll, más densidad). */}
         {metrics.map((mx) => (
-          <Stagger.Item key={mx.l} className="md:col-span-4">
+          <Stagger.Item key={mx.l} className="col-span-1 md:col-span-3">
             <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
               <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
-                <span className="flex items-center gap-xs">{mx.l}{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1">{t('calendar.today').toUpperCase()}</span>}</span>
+                <span className="flex items-center gap-xs min-w-0"><span className="truncate">{mx.l}</span>{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">{t('calendar.today').toUpperCase()}</span>}</span>
                 <InfoTip text={mx.info} />
               </div>
-              <Stat value={mx.v} cls={mx.c} sub={mx.d} warn={mx.warn} />
+              <Stat value={mx.v} mobileValue={mx.mv} cls={mx.c} sub={mx.d} warn={mx.warn} />
             </div>
           </Stagger.Item>
         ))}
 
+        <Stagger.Item className="col-span-1 md:col-span-3">
+          <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
+            <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
+              <span className="flex items-center gap-xs min-w-0"><span className="truncate">{t('dashboard.netWorth').toUpperCase()}</span>{!isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">{t('calendar.today').toUpperCase()}</span>}</span>
+              <InfoTip text={t('dashboard.netWorthInfo')} />
+            </div>
+            <Stat value={<CountUp value={split.netWorth} format={fmt} />} mobileValue={fmtMob(split.netWorth)} cls={split.netWorth >= 0 ? 'text-tertiary' : 'text-accent-error'} />
+            {split.hasData
+              ? <NetWorthBar split={split} />
+              : <span className="font-label-sm text-label-sm text-text-muted">{t('screens.charts.noSavingsOrDebts')}</span>}
+          </div>
+        </Stagger.Item>
+
         {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (HERO, dominante) */}
-        <Stagger.Item className="md:col-span-8">
+        <Stagger.Item className="col-span-2 md:col-span-8">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-md gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs"><MS name="show_chart" className="!text-[14px] text-text-muted" /> {t('dashboard.monthFlow')}</span>
@@ -234,27 +249,24 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Columna derecha del hero: Salud + Patrimonio apiladas (compactas,
-            estado de hoy). Juntas llenan el alto del hero sin espacio vacío. */}
-        <Stagger.Item className="md:col-span-4 flex flex-col gap-md">
-          <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="flex-grow">
+        {/* 3 · Columna derecha del hero: Salud financiera a toda altura (el
+            patrimonio subió a la fila de KPIs). */}
+        <Stagger.Item className="col-span-2 md:col-span-4">
+          <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="h-full">
             <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} />
-          </BentoCell>
-          <BentoCell title={`${t('dashboard.netWorth')} · ${t('calendar.today')}`} icon="account_balance" className="flex-grow">
-            <NetWorthBar split={split} />
           </BentoCell>
         </Stagger.Item>
 
         {/* 4 · ¿En qué gasto? + ¿Qué viene? Comparten fila en pantallas anchas
             (donut 8 / recordatorios 4) para que el dashboard quepa sin scroll;
             en md (tablet) se apilan porque la leyenda del donut necesita ancho. */}
-        <Stagger.Item className="md:col-span-12 lg:col-span-8">
+        <Stagger.Item className="col-span-2 md:col-span-12 lg:col-span-8">
           <BentoCell title={t('dashboard.expenses') + ' ' + t('pages.analysis')} icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} />
           </BentoCell>
         </Stagger.Item>
 
-        <Stagger.Item className="md:col-span-12 lg:col-span-4">
+        <Stagger.Item className="col-span-2 md:col-span-12 lg:col-span-4">
           <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>

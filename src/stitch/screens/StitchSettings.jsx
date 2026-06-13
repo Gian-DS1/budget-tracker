@@ -10,7 +10,7 @@ import useCategoryStore from '../../stores/useCategoryStore';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { autoCategorize } from '../../data/defaultCategories';
 import { getCurrency } from '../../utils/currencyRuntime';
-import { todayISO, toISODate } from '../../utils/formatters';
+import { todayISO, toISODate, formatCurrency } from '../../utils/formatters';
 import { currencyOptions } from '../../utils/currencyOptions';
 import StitchSelect from '../StitchSelect';
 import StatementImportModal from './StatementImportModal';
@@ -37,7 +37,9 @@ export default function StitchSettings() {
   // Anti CSV/XLSX formula injection: Excel ejecuta celdas que empiezan con = + - @.
   const safeCell = (v) => (/^[=+\-@]/.test(String(v ?? '')) ? `'${v}` : v);
 
-  const doExport = async (format) => {
+  // Export únicamente a Excel (.xlsx). El export CSV se retiró: duplicaba la
+  // acción y el .xlsx cubre el mismo caso con mejor compatibilidad.
+  const doExport = async () => {
     if (transactions.length === 0) { toast.error(t('screens.settings.nothingToExport')); return; }
     if (!window.confirm(t('screens.settings.confirmExport'))) return;
     const data = transactions.map((t) => {
@@ -45,18 +47,10 @@ export default function StitchSettings() {
       return { Fecha: t.date, Descripción: safeCell(t.description), Categoría: safeCell(cat ? cat.name : ''), Monto: t.amount, Tipo: t.type === 'income' ? 'Ingreso' : 'Gasto', Moneda: t.currency, Notas: safeCell(t.notes || '') };
     });
     const stamp = todayISO();
-    if (format === 'csv') {
-      const { default: Papa } = await import('papaparse');
-      const blob = new Blob([Papa.unparse(data)], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob); const a = document.createElement('a');
-      a.href = url; a.download = `FinTrack_Export_${stamp}.csv`; a.click(); URL.revokeObjectURL(url);
-      toast.success(t('screens.settings.csvExported'));
-    } else {
-      const XLSX = await import('xlsx');
-      const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, 'Transacciones'); XLSX.writeFile(wb, `FinTrack_Export_${stamp}.xlsx`);
-      toast.success(t('screens.settings.excelExported'));
-    }
+    const XLSX = await import('xlsx');
+    const ws = XLSX.utils.json_to_sheet(data); const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'Transacciones'); XLSX.writeFile(wb, `FinTrack_Export_${stamp}.xlsx`);
+    toast.success(t('screens.settings.excelExported'));
   };
 
   const onFile = (e) => {
@@ -171,47 +165,53 @@ export default function StitchSettings() {
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       <div className="mb-xl">
         <div className="flex items-center gap-sm mb-xs">
-          <span className="font-mono-data text-mono-data text-secondary">SYS.CFG</span>
-          <span className="w-1 h-1 rounded-full bg-border-subtle" />
           <span className="font-mono-data text-mono-data text-on-surface-variant uppercase">{t('screens.settings.configuration')}</span>
         </div>
         <h1 className="font-headline-lg text-headline-lg text-on-surface">{t('screens.settings.title')}</h1>
       </div>
 
-      <Stagger className="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
-        {/* Nivel de presupuesto */}
-        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg lg:col-span-2">
-          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
+      <Stagger className="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+        {/* Nivel de presupuesto — lista vertical seleccionable (más densa que 3
+            tarjetas cuadradas: cada fila usa todo el ancho y nada queda hueco). */}
+        <Stagger.Item className="lg:col-span-7 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
+          <div className="flex justify-between items-center mb-md border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.budgetLevel').toUpperCase()}</h2>
             <MS name="tune" className="text-text-muted text-[16px]" />
           </div>
           <p className="font-body-md text-body-md text-on-surface-variant mb-md">{t('screens.settings.budgetLevelDesc')}</p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
+          <div className="flex flex-col gap-sm flex-1">
             {BUDGET_LEVEL_CARDS.map((lv) => {
               const active = budgetLevel === lv.value;
               return (
                 <button
                   key={lv.value}
                   onClick={() => setBudgetLevel(lv.value)}
-                  className={`text-left flex flex-col gap-sm p-md rounded border transition-colors ${active ? 'border-primary bg-primary/10' : 'border-border-subtle hover:bg-surface-container-high'}`}
+                  aria-pressed={active}
+                  className={`flex items-center gap-md p-md rounded border text-left transition-colors flex-1 ${active ? 'border-primary bg-primary/10' : 'border-border-subtle hover:bg-surface-container-high'}`}
                 >
-                  <div className="flex items-center justify-between">
-                    <span className={`w-8 h-8 rounded flex items-center justify-center ${active ? 'text-primary' : 'text-text-muted'} bg-surface-container-high`}>
-                      <MS name={lv.icon} className="text-[18px]" />
-                    </span>
-                    {active && <MS name="check_circle" className="text-[18px] text-primary" />}
-                  </div>
-                  <span className="font-label-sm text-label-sm text-on-surface">{lv.title}</span>
-                  <span className="font-mono-data text-mono-data text-text-muted leading-relaxed normal-case tracking-normal">{lv.desc}</span>
+                  <span className={`w-9 h-9 rounded flex items-center justify-center shrink-0 ${active ? 'text-primary bg-primary/15' : 'text-text-muted bg-surface-container-high'}`}>
+                    <MS name={lv.icon} className="!text-[18px]" />
+                  </span>
+                  <span className="flex flex-col gap-xs min-w-0">
+                    <span className="font-label-sm text-label-sm text-on-surface">{lv.title}</span>
+                    <span className="font-mono-data text-mono-data text-text-muted leading-relaxed normal-case tracking-normal">{lv.desc}</span>
+                  </span>
+                  <span className="ml-auto shrink-0">
+                    {active
+                      ? <MS name="check_circle" className="!text-[20px] text-primary" />
+                      : <span className="block w-[18px] h-[18px] rounded-full border border-border-subtle" />}
+                  </span>
                 </button>
               );
             })}
           </div>
         </Stagger.Item>
 
-        {/* Moneda */}
-        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
-          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
+        {/* Moneda — el select + una vista previa real del formato. La vista previa
+            llena la tarjeta con información útil (cómo se verán los montos) en
+            lugar de dejar aire muerto junto a la columna de niveles. */}
+        <Stagger.Item className="lg:col-span-5 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
+          <div className="flex justify-between items-center mb-md border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.currencyLabel').toUpperCase()}</h2>
             <MS name="currency_exchange" className="text-text-muted text-[16px]" />
           </div>
@@ -221,30 +221,37 @@ export default function StitchSettings() {
             options={currencyOpts}
             placeholder={t('screens.settings.currencyLabel')}
           />
-          <p className="mt-sm font-mono-data text-mono-data text-text-muted normal-case tracking-normal">
+          <div className="flex-1 flex flex-col justify-center items-center text-center gap-xs my-md rounded border border-border-subtle bg-surface-card p-md min-h-[120px]">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.settings.currencyPreview')}</span>
+            <span className="font-headline-md text-[30px] text-on-background tracking-tighter">{formatCurrency(1250)}</span>
+            <div className="flex items-center gap-md font-mono-data text-[11px]">
+              <span className="text-tertiary">+{formatCurrency(45800)}</span>
+              <span className="text-accent-error">−{formatCurrency(12350)}</span>
+            </div>
+          </div>
+          <p className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">
             {t('screens.settings.currencyWarning')}
           </p>
         </Stagger.Item>
 
-        {/* Datos */}
-        <Stagger.Item className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
-          <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
+        {/* Datos — tiles de acción a lo ancho (PDF / CSV-Excel / Export). */}
+        <Stagger.Item className="lg:col-span-12 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
+          <div className="flex justify-between items-center mb-md border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.settings.data').toUpperCase()} · {transactions.length} {t('screens.settings.transactionsUpper').toUpperCase()}</h2>
             <MS name="database" className="text-text-muted text-[16px]" />
           </div>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls" onChange={onFile} className="hidden" />
           <input ref={pdfRef} type="file" accept="application/pdf" onChange={onPdfFile} className="hidden" />
           {demo && (
-            <div className="flex items-center gap-sm mb-sm px-md py-sm rounded bg-secondary/10 border border-secondary/30">
+            <div className="flex items-center gap-sm mb-md px-md py-sm rounded bg-secondary/10 border border-secondary/30">
               <MS name="info" className="!text-[16px] text-secondary shrink-0" />
               <span className="font-mono-data text-mono-data text-secondary normal-case tracking-normal">{t('screens.settings.demoImportNote')}</span>
             </div>
           )}
-          <div className="flex flex-col gap-sm">
-            <Row icon="picture_as_pdf" l={t('screens.settings.importPdf')} d={demo ? t('screens.settings.notAvailableDemo') : (parsingPdf ? t('screens.settings.processing') : t('screens.settings.banksSupported'))} onClick={() => pdfRef.current?.click()} disabled={demo || parsingPdf} />
-            <Row icon="upload_file" l={t('screens.settings.importCsv')} d={demo ? t('screens.settings.notAvailableDemo') : t('screens.settings.bulkLoad')} onClick={() => fileRef.current?.click()} disabled={demo} />
-            <Row icon="download" l={t('screens.settings.exportCsv')} d={t('screens.settings.downloadData')} onClick={() => doExport('csv')} />
-            <Row icon="grid_on" l={t('screens.settings.exportExcel')} d={t('screens.settings.xlsxFormat')} onClick={() => doExport('xlsx')} />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-md">
+            <Tile icon="picture_as_pdf" l={t('screens.settings.importPdf')} d={demo ? t('screens.settings.notAvailableDemo') : (parsingPdf ? t('screens.settings.processing') : t('screens.settings.banksSupported'))} onClick={() => pdfRef.current?.click()} disabled={demo || parsingPdf} />
+            <Tile icon="upload_file" l={t('screens.settings.importCsv')} d={demo ? t('screens.settings.notAvailableDemo') : t('screens.settings.bulkLoad')} onClick={() => fileRef.current?.click()} disabled={demo} />
+            <Tile icon="grid_on" l={t('screens.settings.exportExcel')} d={t('screens.settings.xlsxFormat')} onClick={doExport} />
           </div>
         </Stagger.Item>
 
@@ -257,15 +264,18 @@ export default function StitchSettings() {
   );
 }
 
-function Row({ icon, l, d, onClick, disabled = false }) {
+// Tile de acción de datos: icono + título + descripción, mismo alto en la fila.
+function Tile({ icon, l, d, onClick, disabled = false }) {
   return (
-    <button onClick={onClick} disabled={disabled} className={`flex items-center gap-md p-md rounded border border-border-subtle bg-surface-card transition-colors text-left ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-container-high'}`}>
-      <MS name={icon} className="text-[20px] text-primary" />
-      <div className="flex flex-col">
+    <button onClick={onClick} disabled={disabled} className={`group flex items-center gap-md p-md rounded border border-border-subtle bg-surface-card transition-colors text-left ${disabled ? 'opacity-50 cursor-not-allowed' : 'hover:bg-surface-container-high hover:border-primary/40'}`}>
+      <span className="w-9 h-9 rounded flex items-center justify-center shrink-0 bg-surface-container-high text-primary">
+        <MS name={icon} className="!text-[18px]" />
+      </span>
+      <span className="flex flex-col gap-xs min-w-0">
         <span className="font-label-sm text-label-sm text-on-surface">{l}</span>
-        <span className="font-mono-data text-mono-data text-text-muted">{d}</span>
-      </div>
-      <MS name="chevron_right" className="text-[18px] text-text-muted ml-auto" />
+        <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">{d}</span>
+      </span>
+      <MS name="arrow_outward" className={`!text-[16px] text-text-muted ml-auto shrink-0 transition-colors ${disabled ? '' : 'group-hover:text-primary'}`} />
     </button>
   );
 }
