@@ -2,6 +2,7 @@
 // Usa AuthContext real (Supabase). Estética: card glass periwinkle sobre canvas #070708.
 
 import { useState } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
@@ -12,8 +13,28 @@ import Logo from '../Logo';
 
 const MODES = { login: 'login', signup: 'signup', reset: 'reset' };
 
+// Input con icono a la izquierda + glow periwinkle al enfocar. El glow vive en
+// el wrapper (focus-within) para que el anillo envuelva al input completo, no
+// solo al borde. Mantiene los tokens del tema y el inner-glow del resto de la app.
+function AuthField({ id, icon, type, value, onChange, placeholder, autoComplete, label }) {
+  return (
+    <div className="flex flex-col gap-xs">
+      <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor={id}>{label}</label>
+      <div className="group relative flex items-center bg-surface-container-lowest border border-border-subtle rounded inner-glow transition-shadow duration-200 focus-within:border-primary focus-within:shadow-[0_0_0_3px_rgba(190,194,255,0.12)]">
+        <MS name={icon} className="!text-[18px] text-text-muted ml-md shrink-0 transition-colors group-focus-within:text-primary" />
+        <input
+          id={id} type={type} required value={value} onChange={onChange}
+          placeholder={placeholder} autoComplete={autoComplete}
+          className="w-full bg-transparent py-sm px-sm font-body-md text-body-md text-on-surface focus:outline-none placeholder:text-text-muted"
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function StitchAuth() {
   const { t } = useI18n();
+  const reduce = useReducedMotion();
   const { signIn, signUp, signInWithGoogle, resetPassword, updatePassword, isRecoveringPassword } = useAuth();
   const [mode, setMode] = useState(MODES.login);
   const [email, setEmail] = useState('');
@@ -56,8 +77,14 @@ export default function StitchAuth() {
   };
 
   return (
-    <div className="stitch-root grid-pattern min-h-screen flex items-center justify-center p-margin-safe">
-      <div className="w-full max-w-[420px] bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg relative overflow-hidden">
+    <div className="stitch-root grid-pattern min-h-screen flex items-center justify-center p-margin-safe relative overflow-hidden">
+      <div className="landing-aurora" aria-hidden />
+      <motion.div
+        className="w-full max-w-[420px] bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg relative overflow-hidden z-10"
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
+        animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+        transition={reduce ? { duration: 0.2 } : { type: 'spring', stiffness: 220, damping: 26, mass: 1 }}
+      >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary" style={{ boxShadow: '0 0 15px rgba(190,194,255,0.4)' }} />
 
         {/* Marca */}
@@ -84,13 +111,14 @@ export default function StitchAuth() {
         {/* Google */}
         {mode !== MODES.reset && (
           <>
-            <button
+            <motion.button
               onClick={handleGoogle}
               disabled={busy}
+              whileTap={reduce ? undefined : { scale: 0.98 }}
               className="w-full flex items-center justify-center gap-sm bg-surface-container-lowest border border-border-subtle text-on-surface font-label-sm text-label-sm py-sm rounded hover:bg-surface-container-high transition-colors inner-glow disabled:opacity-50"
             >
               <GoogleG /> {t('auth.continueWithGoogle')}
-            </button>
+            </motion.button>
             <div className="flex items-center gap-sm my-md">
               <div className="flex-1 h-px bg-border-subtle" />
               <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('auth.orWithEmail')}</span>
@@ -101,26 +129,21 @@ export default function StitchAuth() {
 
         {/* Form */}
         <form onSubmit={handleSubmit} className="flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="email">{t('auth.email')}</label>
-            <input
-              id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
-              placeholder="tu@correo.com"
-              autoComplete="username"
-              className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted"
-            />
-          </div>
+          <AuthField
+            id="email" icon="mail" type="email"
+            value={email} onChange={(e) => setEmail(e.target.value)}
+            placeholder="tu@correo.com" autoComplete="username"
+            label={t('auth.email')}
+          />
 
           {mode !== MODES.reset && (
-            <div className="flex flex-col gap-xs">
-              <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="password">{t('auth.password')}</label>
-              <input
-                id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                autoComplete={mode === MODES.signup ? "new-password" : "current-password"}
-                className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted"
-              />
-            </div>
+            <AuthField
+              id="password" icon="lock" type="password"
+              value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              autoComplete={mode === MODES.signup ? 'new-password' : 'current-password'}
+              label={t('auth.password')}
+            />
           )}
 
           {mode === MODES.login && (
@@ -129,12 +152,13 @@ export default function StitchAuth() {
             </button>
           )}
 
-          <button
+          <motion.button
             type="submit" disabled={busy}
+            whileTap={reduce ? undefined : { scale: 0.98 }}
             className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs"
           >
             {busy ? t('auth.processing') : mode === MODES.login ? t('auth.signIn') : mode === MODES.signup ? t('auth.signUp') : t('auth.sendLink')}
-          </button>
+          </motion.button>
         </form>
 
         {/* Switch */}
@@ -164,7 +188,7 @@ export default function StitchAuth() {
             <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">{t('auth.demoNote')}</p>
           </div>
         )}
-      </div>
+      </motion.div>
     </div>
   );
 }
@@ -172,6 +196,7 @@ export default function StitchAuth() {
 // Pantalla de nueva contraseña (tras llegar del email de recuperación).
 function NewPasswordScreen({ updatePassword }) {
   const { t } = useI18n();
+  const reduce = useReducedMotion();
   const [pwd, setPwd] = useState('');
   const [pwd2, setPwd2] = useState('');
   const [busy, setBusy] = useState(false);
@@ -190,8 +215,14 @@ function NewPasswordScreen({ updatePassword }) {
   };
 
   return (
-    <div className="stitch-root grid-pattern min-h-screen flex items-center justify-center p-margin-safe">
-      <div className="w-full max-w-[420px] bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg relative overflow-hidden">
+    <div className="stitch-root grid-pattern min-h-screen flex items-center justify-center p-margin-safe relative overflow-hidden">
+      <div className="landing-aurora" aria-hidden />
+      <motion.div
+        className="w-full max-w-[420px] bg-surface-card border border-border-subtle rounded-lg inner-glow p-lg relative overflow-hidden z-10"
+        initial={reduce ? { opacity: 0 } : { opacity: 0, y: 16, scale: 0.98 }}
+        animate={reduce ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+        transition={reduce ? { duration: 0.2 } : { type: 'spring', stiffness: 220, damping: 26, mass: 1 }}
+      >
         <div className="absolute top-0 left-0 right-0 h-[2px] bg-primary" style={{ boxShadow: '0 0 15px rgba(190,194,255,0.4)' }} />
         <div className="flex flex-col items-center text-center mb-lg pt-sm">
           <div className="w-12 h-12 rounded bg-surface-container-high border border-border-subtle flex items-center justify-center inner-glow mb-md">
@@ -201,19 +232,27 @@ function NewPasswordScreen({ updatePassword }) {
           <p className="font-mono-data text-mono-data text-text-muted uppercase tracking-widest mt-xs">{t('auth.resetAccess')}</p>
         </div>
         <form onSubmit={submit} className="flex flex-col gap-md">
-          <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np1">{t('auth.newPassword')}</label>
-            <input id="np1" type="password" required value={pwd} onChange={(e) => setPwd(e.target.value)} placeholder="••••••••" autoComplete="new-password" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
-          </div>
-          <div className="flex flex-col gap-xs">
-            <label className="font-mono-data text-mono-data text-text-muted uppercase" htmlFor="np2">{t('auth.confirmPassword')}</label>
-            <input id="np2" type="password" required value={pwd2} onChange={(e) => setPwd2(e.target.value)} placeholder="••••••••" autoComplete="new-password" className="bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
-          </div>
-          <button type="submit" disabled={busy} className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs">
+          <AuthField
+            id="np1" icon="lock" type="password"
+            value={pwd} onChange={(e) => setPwd(e.target.value)}
+            placeholder="••••••••" autoComplete="new-password"
+            label={t('auth.newPassword')}
+          />
+          <AuthField
+            id="np2" icon="lock" type="password"
+            value={pwd2} onChange={(e) => setPwd2(e.target.value)}
+            placeholder="••••••••" autoComplete="new-password"
+            label={t('auth.confirmPassword')}
+          />
+          <motion.button
+            type="submit" disabled={busy}
+            whileTap={reduce ? undefined : { scale: 0.98 }}
+            className="w-full bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold py-sm rounded hover:bg-primary-container transition-colors inner-glow disabled:opacity-50 mt-xs"
+          >
             {busy ? t('auth.saving') : t('auth.savePassword')}
-          </button>
+          </motion.button>
         </form>
-      </div>
+      </motion.div>
     </div>
   );
 }
