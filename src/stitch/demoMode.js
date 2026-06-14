@@ -226,7 +226,7 @@ export function seedDemoStores() {
   useSavingsStore.setState({ goals, contributions: [], loading: false });
   useDebtStore.setState({ debts, payments: [], loading: false });
   useCreditCardStore.setState({ cards, loading: false });
-  usePrefsStore.setState({ currency: 'DOP' });
+  usePrefsStore.setState({ currency: 'DOP', initialCashBalance: 75000 });
   setRuntimeCurrency('DOP');
 }
 
@@ -249,7 +249,7 @@ export function seedFreshStores() {
   useSavingsStore.setState({ goals: [], contributions: [], loading: false });
   useDebtStore.setState({ debts: [], payments: [], loading: false });
   useCreditCardStore.setState({ cards: [], loading: false });
-  usePrefsStore.setState({ currency: null, tutorialSeen: false, budgetLevel: 'tracking', prefsLoaded: false });
+  usePrefsStore.setState({ currency: null, tutorialSeen: false, budgetLevel: 'tracking', prefsLoaded: false, initialCashBalance: 0 });
   setRuntimeCurrency(null);
 }
 
@@ -676,4 +676,10 @@ export function demoRestoreCategory(category) {
     categories: [...s.categories, category].sort((a, b) =>
       (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' })),
   }));
+}
+
+// ── Efectivo inicial (demo) ───────────────────────────────────────────────────
+// Lo escribe el campo "Efectivo inicial" en Ajustes. Solo memoria; no persiste.
+export function demoSetInitialCashBalance(amount) {
+  usePrefsStore.setState({ initialCashBalance: Number(amount) || 0 });
 }
