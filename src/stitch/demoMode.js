@@ -16,7 +16,8 @@ import { defaultCategories } from '../data/defaultCategories';
 import { computeCashback } from '../utils/creditCards';
 import { setRuntimeCurrency } from '../utils/currencyRuntime';
 
-const FLAG = 'fintrack-demo-mode';
+const DEMO_FLAG = 'fintrack-demo-mode';
+const FRESH_FLAG = 'fintrack-fresh-mode';
 
 // El modo demo (QA) solo se habilita en localhost. NUNCA en producción: expone
 // la app con datos sembrados sin autenticación, así que debe quedar fuera del
@@ -28,11 +29,22 @@ export function isLocalhost() {
 }
 
 export function isDemoActive() {
-  return isLocalhost() && sessionStorage.getItem(FLAG) === '1';
+  return isLocalhost() && (
+    sessionStorage.getItem(DEMO_FLAG) === '1' ||
+    sessionStorage.getItem(FRESH_FLAG) === '1'
+  );
+}
+
+// Distingue el sub-modo "usuario nuevo" (cuenta vacía) del demo establecido.
+// Solo lo usan el seeding y el gate de onboarding; el resto del código trata
+// ambos modos igual vía isDemoActive().
+export function isFreshActive() {
+  return isLocalhost() && sessionStorage.getItem(FRESH_FLAG) === '1';
 }
 
 export function exitDemo() {
-  sessionStorage.removeItem(FLAG);
+  sessionStorage.removeItem(DEMO_FLAG);
+  sessionStorage.removeItem(FRESH_FLAG);
 }
 
 // ── Datos de ejemplo (en memoria) ───────────────────────────────────────────
@@ -221,8 +233,31 @@ export function seedDemoStores() {
 // Activa el modo demo: marca el flag y siembra los datos.
 export function enterDemo() {
   if (!isLocalhost()) return false;
-  sessionStorage.setItem(FLAG, '1');
+  sessionStorage.setItem(DEMO_FLAG, '1');
   seedDemoStores();
+  return true;
+}
+
+// Siembra TODOS los stores vacíos y resetea las prefs, simulando una cuenta
+// recién creada. currency=null dispara el onboarding; tutorialSeen=false hace
+// que el tour arranque solo tras elegir moneda. prefsLoaded=false porque el
+// effect de StitchApp llama fetchPrefs() que lo marca true.
+export function seedFreshStores() {
+  useCategoryStore.setState({ categories: [], loading: false });
+  useTransactionStore.setState({ transactions: [], loading: false });
+  useBudgetStore.setState({ budgets: [], loading: false });
+  useSavingsStore.setState({ goals: [], contributions: [], loading: false });
+  useDebtStore.setState({ debts: [], payments: [], loading: false });
+  useCreditCardStore.setState({ cards: [], loading: false });
+  usePrefsStore.setState({ currency: null, tutorialSeen: false, budgetLevel: 'tracking', prefsLoaded: false });
+  setRuntimeCurrency(null);
+}
+
+// Activa el modo "usuario nuevo": marca el flag y siembra los stores vacíos.
+export function enterFresh() {
+  if (!isLocalhost()) return false;
+  sessionStorage.setItem(FRESH_FLAG, '1');
+  seedFreshStores();
   return true;
 }
 
