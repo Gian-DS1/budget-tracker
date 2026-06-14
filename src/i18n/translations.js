@@ -150,6 +150,8 @@ const translations = {
       savePassword: 'Guardar contraseña',
       enterDemo: 'Entrar como demo (QA local)',
       demoNote: 'Datos de ejemplo · no toca el backend',
+      enterFresh: 'Entrar como usuario nuevo',
+      freshNote: 'Cuenta vacía local · onboarding y tour completos',
     },
     // Navegación
     nav: {
@@ -1087,6 +1089,8 @@ const translations = {
       savePassword: 'Save password',
       enterDemo: 'Enter as demo (local QA)',
       demoNote: 'Sample data · does not touch the backend',
+      enterFresh: 'Enter as new user',
+      freshNote: 'Empty local account · full onboarding and tour',
     },
     // Navigation
     nav: {

@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../../contexts/AuthContext';
 import { useI18n } from '../../contexts/I18nContext';
 import { friendlyAuthError } from '../../utils/authErrors';
-import { isLocalhost, enterDemo } from '../demoMode';
+import { isLocalhost, enterDemo, enterFresh } from '../demoMode';
 import MS from '../MS';
 import Logo from '../Logo';
 
@@ -186,6 +186,13 @@ export default function StitchAuth() {
               <MS name="science" className="text-[16px]" /> {t('auth.enterDemo')}
             </button>
             <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">{t('auth.demoNote')}</p>
+            <button
+              onClick={() => { enterFresh(); window.location.reload(); }}
+              className="w-full flex items-center justify-center gap-sm border border-dashed border-border-subtle text-on-surface-variant font-mono-data text-mono-data uppercase tracking-widest py-sm rounded hover:bg-surface-container-high hover:text-on-surface transition-colors mt-sm"
+            >
+              <MS name="person_add" className="text-[16px]" /> {t('auth.enterFresh')}
+            </button>
+            <p className="text-center font-mono-data text-[9px] text-text-muted mt-xs uppercase">{t('auth.freshNote')}</p>
           </div>
         )}
       </motion.div>
