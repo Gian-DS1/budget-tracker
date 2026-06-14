@@ -45,7 +45,7 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
   };
 
   return (
-    <div className="flex flex-col h-72">
+    <div className="flex flex-col h-56">
       <ChartLegend
         items={[
           { label: t('dashboard.wealthTrend'), color: CHART.secondary },

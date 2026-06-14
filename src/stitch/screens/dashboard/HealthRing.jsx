@@ -17,7 +17,7 @@ function ringColor(score) {
   return CHART.error;
 }
 
-export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
+export default function HealthRing({ health, hasData, monthsCounted = 0, compact = false }) {
   const { t } = useI18n();
   const strings = useScreenStrings();
   if (!hasData) return <EmptyCell icon="favorite" message={t('dashboard.registerIncome') || 'Registra ingresos para evaluar tu salud financiera.'} />;
@@ -37,10 +37,10 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
       {(animated) => {
         const data = [{ name: 'salud', value: animated, fill: color }];
         return (
-          <div className="flex-grow flex flex-col">
+          <div className={`flex-grow flex ${compact ? 'flex-row items-center gap-lg' : 'flex-col'}`}>
             {/* Gauge semicircular. Radios reducidos + padding lateral para que el
                 arco no toque los rótulos "EN RIESGO/EXCELENTE" de los extremos. */}
-            <div className="relative w-full h-[140px] sm:h-[155px] px-xl">
+            <div className={`relative px-xl shrink-0 ${compact ? 'w-[55%] h-[120px]' : 'w-full h-[140px] sm:h-[155px]'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   innerRadius="115%"
@@ -63,23 +63,25 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
               <span className="absolute right-0 bottom-0 font-mono-data text-[9px] text-text-muted uppercase">{strings.charts.excellent}</span>
             </div>
 
-            {/* Desglose por factor: barra de progreso contra su máximo + puntaje */}
-            <div className="flex flex-col gap-sm mt-md flex-grow justify-center">
-              {factors.map((f) => (
-                <div key={f.key} className="flex items-center gap-sm">
-                  <span className="font-mono-data text-mono-data text-text-muted uppercase w-[52px] shrink-0">{f.label}</span>
-                  <span className="relative flex-grow h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
-                    <span
-                      className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
-                      style={{ width: `${f.max > 0 ? (f.value / f.max) * 100 : 0}%`, background: f.color }}
-                    />
-                  </span>
-                  <span className="font-mono-data text-mono-data text-on-surface-variant shrink-0 w-[42px] text-right tabular-nums">{f.value}/{f.max}</span>
-                </div>
-              ))}
+            {/* Desglose por factor + nota de base. En compact van a la derecha del
+                gauge (columna flexible); en normal, debajo a todo el ancho. */}
+            <div className={`flex flex-col ${compact ? 'flex-grow justify-center gap-xs min-w-0' : ''}`}>
+              <div className={`flex flex-col gap-sm flex-grow justify-center ${compact ? '' : 'mt-md'}`}>
+                {factors.map((f) => (
+                  <div key={f.key} className="flex items-center gap-sm">
+                    <span className="font-mono-data text-mono-data text-text-muted uppercase w-[52px] shrink-0">{f.label}</span>
+                    <span className="relative flex-grow h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+                      <span
+                        className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"
+                        style={{ width: `${f.max > 0 ? (f.value / f.max) * 100 : 0}%`, background: f.color }}
+                      />
+                    </span>
+                    <span className="font-mono-data text-mono-data text-on-surface-variant shrink-0 w-[42px] text-right tabular-nums">{f.value}/{f.max}</span>
+                  </div>
+                ))}
+              </div>
+              <span className={`font-mono-data text-mono-data text-text-muted normal-case tracking-normal ${compact ? 'mt-sm' : 'mt-md'}`}>{basis}</span>
             </div>
-
-            <span className="font-mono-data text-mono-data text-text-muted mt-md normal-case tracking-normal">{basis}</span>
           </div>
         );
       }}

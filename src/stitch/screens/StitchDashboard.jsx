@@ -166,7 +166,7 @@ export default function StitchDashboard() {
   ];
 
   return (
-    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className="p-sm sm:p-md max-w-[1728px] mx-auto w-full">
       {/* Título de página para lectores de pantalla (el bento no tiene header visible). */}
       <h1 className="sr-only">{t('nav.dashboard')}</h1>
       {/* Banner: solo cuando se revisa un mes pasado. Aclara qué refleja el pasado. */}
@@ -188,11 +188,11 @@ export default function StitchDashboard() {
         </div>
       )}
 
-      <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-md auto-rows-min">
+      <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-sm auto-rows-min">
         {/* 0 · Efectivo disponible (solo demo): la estrella — el líquido que arrastra. */}
         {demo && (
-          <Stagger.Item className="col-span-2 md:col-span-6">
-            <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
+          <Stagger.Item className="col-span-2 md:col-span-4">
+            <div className="glass-card rounded-lg inner-glow p-sm px-md flex flex-col gap-xs h-full">
               <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
                 <span className="truncate">{t('dashboard.liquidCash').toUpperCase()}</span>
                 <InfoTip text={t('dashboard.liquidCashInfo')} />
@@ -206,7 +206,7 @@ export default function StitchDashboard() {
                 </div>
                 <button
                   onClick={() => setSaveOpen(true)}
-                  className="px-md py-sm rounded bg-primary text-on-primary font-label-sm text-label-sm active:scale-[0.97]"
+                  className="px-sm py-xs rounded bg-primary text-on-primary font-label-sm text-label-sm active:scale-[0.97] shrink-0"
                 >
                   {t('dashboard.saveToVault')}
                 </button>
@@ -215,12 +215,10 @@ export default function StitchDashboard() {
           </Stagger.Item>
         )}
 
-        {/* 1 · Estado inmediato: 4 KPI accionables (2×2 en móvil, fila en md+).
-            El 4º es patrimonio neto con su mini barra ahorro/deuda: subirlo aquí
-            eliminó una fila completa del bento (menos scroll, más densidad). */}
+        {/* 1 · Estado inmediato: 3 KPI accionables, compactos (col-4 c/u). */}
         {metrics.map((mx) => (
-          <Stagger.Item key={mx.l} className="col-span-1 md:col-span-3">
-            <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
+          <Stagger.Item key={mx.l} className="col-span-1 md:col-span-4">
+            <div className="glass-card rounded-lg inner-glow p-sm px-md flex flex-col gap-xs h-full">
               <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
                 <span className="flex items-center gap-xs min-w-0"><span className="truncate">{mx.l}</span>{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">{t('calendar.today').toUpperCase()}</span>}</span>
                 <InfoTip text={mx.info} />
@@ -230,10 +228,10 @@ export default function StitchDashboard() {
           </Stagger.Item>
         ))}
 
-        {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (HERO, dominante) */}
+        {/* 2 · Flujo del mes (HERO, col-8) + Donut (col-4) lado a lado. */}
         <Stagger.Item className="col-span-2 md:col-span-8">
           <BentoCell className="h-full">
-            <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-md gap-sm">
+            <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-sm gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs min-w-0">
                 <MS name="show_chart" className="!text-[14px] text-text-muted shrink-0" />
                 <span className="truncate">{t('dashboard.monthFlow')}</span>
@@ -247,13 +245,13 @@ export default function StitchDashboard() {
             {/* En móvil el monto completo no cabe en 3 columnas y se truncaba
                 ("+RD$ 170,…"); ahí se usa formato compacto sin prefijo (+170.0K),
                 como el mockup de la landing: la moneda ya es contexto. */}
-            <div className="grid grid-cols-3 gap-sm mb-md">
+            <div className="grid grid-cols-3 gap-sm mb-sm">
               <Stat label={t('dashboard.income')} value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} mobileValue={`+${fmtMob(totals.income)}`} cls="text-tertiary" />
               <Stat label={t('dashboard.expenses')} value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} mobileValue={`−${fmtMob(totals.expense)}`} cls="text-accent-error" />
               <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} mobileValue={`${totals.balance >= 0 ? '+' : '−'}${fmtMob(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
-            <div className="mt-md" />
+            <div className="mt-sm" />
             <WealthTrendChart
               data={wealthSeries}
               activeKey={`${y}-${m}`}
@@ -262,24 +260,21 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Columna derecha del hero: Salud financiera a toda altura (el
-            patrimonio subió a la fila de KPIs). */}
+        {/* Donut de gastos AL LADO del flujo (col-4, angosto → apila vertical). */}
         <Stagger.Item className="col-span-2 md:col-span-4">
-          <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="h-full">
-            <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} />
-          </BentoCell>
-        </Stagger.Item>
-
-        {/* 4 · ¿En qué gasto? + ¿Qué viene? Comparten fila en pantallas anchas
-            (donut 8 / recordatorios 4) para que el dashboard quepa sin scroll;
-            en md (tablet) se apilan porque la leyenda del donut necesita ancho. */}
-        <Stagger.Item className="col-span-2 md:col-span-12 lg:col-span-8">
           <BentoCell title={t('dashboard.expenses') + ' ' + t('pages.analysis')} icon="donut_small" className="h-full">
-            <CategoryDonut data={breakdown} />
+            <CategoryDonut data={breakdown} compact />
           </BentoCell>
         </Stagger.Item>
 
-        <Stagger.Item className="col-span-2 md:col-span-12 lg:col-span-4">
+        {/* 3 · Salud financiera (col-8, compacta horizontal) + Recordatorios (col-4). */}
+        <Stagger.Item className="col-span-2 md:col-span-8">
+          <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="h-full">
+            <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} compact />
+          </BentoCell>
+        </Stagger.Item>
+
+        <Stagger.Item className="col-span-2 md:col-span-4">
           <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
