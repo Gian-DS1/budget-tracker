@@ -150,6 +150,8 @@ const translations = {
       savePassword: 'Guardar contraseña',
       enterDemo: 'Entrar como demo (QA local)',
       demoNote: 'Datos de ejemplo · no toca el backend',
+      enterFresh: 'Entrar como usuario nuevo',
+      freshNote: 'Cuenta vacía local · onboarding y tour completos',
     },
     // Navegación
     nav: {
@@ -801,7 +803,8 @@ const translations = {
         importPdf: 'Importar Estado de Cuenta (PDF)',
         notAvailableDemo: 'No disponible en modo demo',
         processing: 'Procesando...',
-        banksSupported: 'B. Popular y Qik soportados',
+        banksSupported: 'Solo bancos de Rep. Dominicana (B. Popular, Qik)',
+        importRdNotice: 'Esta función está calibrada para estados de cuenta de Rep. Dominicana. Otros formatos pueden no leerse correctamente.',
         importCsv: 'Importar CSV / Excel',
         bulkLoad: 'Carga masiva de transacciones',
         exportExcel: 'Exportar a Excel',
@@ -1086,6 +1089,8 @@ const translations = {
       savePassword: 'Save password',
       enterDemo: 'Enter as demo (local QA)',
       demoNote: 'Sample data · does not touch the backend',
+      enterFresh: 'Enter as new user',
+      freshNote: 'Empty local account · full onboarding and tour',
     },
     // Navigation
     nav: {
@@ -1710,7 +1715,8 @@ const translations = {
         importPdf: 'Import Bank Statement (PDF)',
         notAvailableDemo: 'Not available in demo mode',
         processing: 'Processing...',
-        banksSupported: 'B. Popular and Qik supported',
+        banksSupported: 'Dominican Republic banks only (B. Popular, Qik)',
+        importRdNotice: 'This feature is calibrated for Dominican Republic bank statements. Other formats may not parse correctly.',
         importCsv: 'Import CSV / Excel',
         bulkLoad: 'Bulk transaction load',
         exportExcel: 'Export to Excel',
