@@ -2,7 +2,7 @@
 // desglose top5+Otros, uso de presupuesto, split de patrimonio. La salud
 // (getFinancialHealthScore) y la capacidad (getMonthlySavingCapacity) se reusan
 // directo desde utils/calculations en el shell.
-import { groupByCategory } from '../../../utils/calculations';
+import { groupByCategory, getEffectiveAmount } from '../../../utils/calculations';
 import { tr } from '../../../i18n/runtime';
 
 const OTROS_COLOR = '#6b7280';
@@ -75,6 +75,22 @@ export function getBudgetPace(usage, { isCurrentMonth, dayOfMonth, daysInMonth }
   }
 
   return { monthPct, projected, leftover, runOutDay, verdict };
+}
+
+const EXPENSE_TYPES = ['expense', 'fixed_expense', 'variable_expense'];
+
+// Efectivo disponible (líquido) DERIVADO de los movimientos: arranca en el saldo
+// inicial declarado, sube con ingresos, baja con gastos (netos de cashback) y con
+// lo apartado a ahorro (transacciones tipo 'savings'). Una sola fuente de verdad:
+// las transacciones. No se almacena un saldo mutable.
+export function getLiquidCash(transactions, initialCashBalance) {
+  let cash = Number(initialCashBalance) || 0;
+  for (const t of transactions || []) {
+    if (t.type === 'income') cash += Number(t.amount) || 0;
+    else if (EXPENSE_TYPES.includes(t.type)) cash -= getEffectiveAmount(t);
+    else if (t.type === 'savings') cash -= Number(t.amount) || 0;
+  }
+  return cash;
 }
 
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -104,6 +104,43 @@ describe('getBudgetPace', () => {
     const r = getBudgetPace(usage(500, 10000), { isCurrentMonth: true, dayOfMonth: 0, daysInMonth: 30 });
     expect(r.verdict).toBe('fast'); // 500/1*30 = 15000 > 10000
     expect(r.runOutDay).toBe(20);
+  });
+});
+
+describe('getLiquidCash', () => {
+  it('sin transacciones → solo el saldo inicial', () => {
+    expect(getLiquidCash([], 50000)).toBe(50000);
+  });
+
+  it('los ingresos suben el efectivo', () => {
+    const txs = [tx('c1', 1000, 'income')];
+    expect(getLiquidCash(txs, 0)).toBe(1000);
+  });
+
+  it('los gastos bajan el efectivo, netos de cashback', () => {
+    // gasto 200 con 20 de cashback → resta 180
+    const txs = [tx('c1', 200, 'variable_expense', 20)];
+    expect(getLiquidCash(txs, 1000)).toBe(820);
+  });
+
+  it('los apartados a ahorro (savings) bajan el efectivo', () => {
+    const txs = [tx('c1', 500, 'savings')];
+    expect(getLiquidCash(txs, 1000)).toBe(500);
+  });
+
+  it('combina saldo inicial, ingresos, gastos y ahorros', () => {
+    const txs = [
+      tx('c1', 2000, 'income'),
+      tx('c2', 300, 'variable_expense', 0),
+      tx('c3', 150, 'fixed_expense', 0),
+      tx('c4', 500, 'savings'),
+    ];
+    // 1000 + 2000 - 300 - 150 - 500 = 2050
+    expect(getLiquidCash(txs, 1000)).toBe(2050);
+  });
+
+  it('saldo inicial inválido o ausente → tratado como 0', () => {
+    expect(getLiquidCash([tx('c1', 100, 'income')], undefined)).toBe(100);
   });
 });
 
