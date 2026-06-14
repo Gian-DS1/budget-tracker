@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -211,6 +211,62 @@ describe('getNetWorthSplit', () => {
     expect(r.savedPct).toBeCloseTo(60);
     expect(r.debtPct).toBeCloseTo(40);
     expect(r.netWorth).toBe(20000);
+  });
+});
+
+describe('getFirstDataMonth', () => {
+  const dtx = (date, type = 'income') => ({ categoryId: 'c1', amount: 100, type, cashbackEarned: 0, date });
+
+  it('sin transacciones → null', () => {
+    expect(getFirstDataMonth([])).toBeNull();
+  });
+
+  it('devuelve el {y, m} de la transacción más antigua', () => {
+    const txs = [dtx('2026-03-10'), dtx('2026-01-05'), dtx('2026-06-20')];
+    expect(getFirstDataMonth(txs)).toEqual({ y: 2026, m: 0 }); // enero = 0
+  });
+
+  it('cruza el cambio de año', () => {
+    const txs = [dtx('2026-02-01'), dtx('2025-11-15')];
+    expect(getFirstDataMonth(txs)).toEqual({ y: 2025, m: 10 }); // noviembre = 10
+  });
+});
+
+describe('getCumulativeLiquidWealth', () => {
+  const ref = new Date('2026-03-15T00:00:00');
+  const t = (amount, type, date, extra = {}) => ({ categoryId: 'c1', amount, type, cashbackEarned: 0, date, ...extra });
+
+  it('acumula efectivo + ahorros al cierre de cada mes (saldo corrido)', () => {
+    const txs = [
+      t(1000, 'income', '2026-01-10'),          // ene: +1000 efectivo
+      t(300, 'variable_expense', '2026-02-05'), // feb: -300 efectivo (sin tarjeta)
+      t(200, 'savings', '2026-03-08'),          // mar: -200 efectivo, +200 ahorro
+    ];
+    const r = getCumulativeLiquidWealth(txs, 500, 3, ref); // saldo inicial 500, 3 meses
+    expect(r).toHaveLength(3);
+    // ene: efectivo 500+1000=1500, ahorro 0 → wealth 1500
+    expect(r[0].wealth).toBe(1500);
+    // feb: efectivo 1500-300=1200, ahorro 0 → wealth 1200
+    expect(r[1].wealth).toBe(1200);
+    // mar: efectivo 1200-200=1000, ahorro 0+200=200 → wealth 1200 (apartar no cambia el total)
+    expect(r[2].wealth).toBe(1200);
+  });
+
+  it('los gastos con tarjeta no bajan el efectivo de la línea', () => {
+    const txs = [
+      t(1000, 'income', '2026-03-01'),
+      t(400, 'variable_expense', '2026-03-05', { cardId: 'cc1' }), // con tarjeta: no resta
+    ];
+    const r = getCumulativeLiquidWealth(txs, 0, 1, ref);
+    expect(r[r.length - 1].wealth).toBe(1000);
+  });
+
+  it('incluye income y expense del mes en cada punto (para las barras)', () => {
+    const txs = [t(5000, 'income', '2026-03-02'), t(1200, 'variable_expense', '2026-03-09')];
+    const r = getCumulativeLiquidWealth(txs, 0, 1, ref);
+    const mar = r[r.length - 1];
+    expect(mar.income).toBe(5000);
+    expect(mar.expense).toBe(1200);
   });
 });
 

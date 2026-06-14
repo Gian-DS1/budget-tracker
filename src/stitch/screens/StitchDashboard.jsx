@@ -19,9 +19,9 @@ import {
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatAmountCompact, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getLiquidDelta, getIncomeVsExpenseSeries } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
-import IncomeExpenseBars from './dashboard/IncomeExpenseBars';
+import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
 import BudgetBar from './dashboard/BudgetBar';
 import HealthRing from './dashboard/HealthRing';
@@ -56,10 +56,18 @@ export default function StitchDashboard() {
   const m = sel.m;
   const isCurrentMonth = sel.y === now.getFullYear() && sel.m === now.getMonth();
 
-  // Opciones del selector: últimos 12 meses terminando en el mes actual.
+  // Opciones del selector: desde el mes actual hacia atrás, SIN pasar del primer
+  // mes con datos registrados (no mostramos meses vacíos previos a las transacciones).
   const monthOptions = useMemo(() => {
+    const first = getFirstDataMonth(transactions);
+    // Meses entre el primer dato y hoy (incluidos). Si no hay datos, solo el mes actual.
+    let count = 1;
+    if (first) {
+      count = (now.getFullYear() - first.y) * 12 + (now.getMonth() - first.m) + 1;
+      count = Math.max(1, count);
+    }
     const opts = [];
-    for (let i = 0; i < 12; i++) {
+    for (let i = 0; i < count; i++) {
       let mm = now.getMonth() - i, yy = now.getFullYear();
       while (mm < 0) { mm += 12; yy -= 1; }
       opts.push({ value: `${yy}-${mm}`, label: `${monthShort(mm)} ${yy}` });
@@ -67,7 +75,7 @@ export default function StitchDashboard() {
     return opts;
     // `language` es dependencia real: monthShort() lee el idioma del runtime, fuera de React.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [now, language]);
+  }, [now, language, transactions]);
 
   const monthTx = useMemo(
     () => transactions.filter((t) => {
@@ -117,8 +125,17 @@ export default function StitchDashboard() {
   const liquidDelta = useMemo(() => getLiquidDelta(monthTx, cards, y, m), [monthTx, cards, y, m]);
   const [saveOpen, setSaveOpen] = useState(false);
 
-  // Serie 6 meses (ingreso/gasto) para el gráfico de barras del flujo.
-  const incomeExpense = useMemo(() => getIncomeVsExpenseSeries(transactions, 6, new Date(y, m, 1)), [transactions, y, m]);
+  // Rango del gráfico de tendencia: 6 / 12 meses o 'all' (desde el primer dato).
+  const [wealthRange, setWealthRange] = useState(6);
+  const wealthSeries = useMemo(
+    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, new Date(y, m, 1)),
+    [transactions, initialCashBalance, wealthRange, y, m],
+  );
+  const rangeOptions = [
+    { value: '6', label: t('dashboard.range6') },
+    { value: '12', label: t('dashboard.range12') },
+    { value: 'all', label: t('dashboard.rangeAll') },
+  ];
 
   // Presupuesto usado + ritmo del mes en curso (tick y veredicto de BudgetBar)
   const budgetUsage = useMemo(() => getBudgetUsage(summary), [summary]);
@@ -251,7 +268,12 @@ export default function StitchDashboard() {
               <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} mobileValue={`${totals.balance >= 0 ? '+' : '−'}${fmtMob(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
-            <IncomeExpenseBars data={incomeExpense} />
+            <div className="flex justify-end mb-sm mt-md">
+              <div className="w-[150px]">
+                <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
+              </div>
+            </div>
+            <WealthTrendChart data={wealthSeries} />
           </BentoCell>
         </Stagger.Item>
 

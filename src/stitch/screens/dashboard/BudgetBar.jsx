@@ -22,15 +22,6 @@ export default function BudgetBar({ usage, pace }) {
   const bar = COLOR[estado] || 'bg-primary';
   const txt = TEXT[estado] || 'text-on-surface';
 
-  let verdictText = null;
-  if (pace) {
-    if (pace.verdict === 'over') verdictText = strings.charts.overBudgetMonth;
-    else if (pace.verdict === 'fast') verdictText = strings.charts.paceFast.replace('{d}', pace.runOutDay);
-    else verdictText = strings.charts.paceOnTrack.replace('{amt}', fmt(Math.max(0, pace.leftover)));
-  } else if (usage.overBudget) {
-    verdictText = strings.charts.overBudgetMonth;
-  }
-
   return (
     <div className="flex-grow flex flex-col justify-center gap-sm">
       <div className="flex justify-between items-baseline">
@@ -50,9 +41,6 @@ export default function BudgetBar({ usage, pace }) {
           />
         )}
       </div>
-      {verdictText && (
-        <span className={`font-mono-data text-mono-data ${txt} normal-case tracking-normal`}>{verdictText}</span>
-      )}
     </div>
   );
 }

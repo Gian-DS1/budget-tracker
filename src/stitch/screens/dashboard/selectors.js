@@ -148,23 +148,72 @@ function monthsRange(range, refDate) {
   return out;
 }
 
-const inMonth = (t, y, m) => {
-  if (!t.date) return false;
-  const d = new Date(t.date + 'T00:00:00');
-  return d.getFullYear() === y && d.getMonth() === m;
-};
+// Primer mes con alguna transacción: { y, m } de la fecha más antigua, o null si
+// no hay datos. Sirve para limitar los selectores a "no ir antes del primer dato".
+export function getFirstDataMonth(transactions) {
+  let min = null;
+  for (const t of transactions || []) {
+    if (!t.date) continue;
+    const d = new Date(t.date + 'T00:00:00');
+    if (!min || d < min) min = d;
+  }
+  return min ? { y: min.getFullYear(), m: min.getMonth() } : null;
+}
 
-// Ingreso y gasto (neto de cashback) por mes del rango. Movido desde reports/.
-// Alimenta IncomeExpenseBars. Devuelve [{ label, income, expense }].
-export function getIncomeVsExpenseSeries(transactions, range, refDate = new Date()) {
-  return monthsRange(range, refDate).map(({ y, m }) => {
-    let income = 0, expense = 0;
-    for (const t of transactions) {
-      if (!inMonth(t, y, m)) continue;
-      if (t.type === 'income') income += Number(t.amount) || 0;
-      else if (EXPENSE_TYPES.includes(t.type)) expense += getEffectiveAmount(t);
+// Aporte al EFECTIVO de una transacción (la misma regla de getLiquidCash, por tx):
+// income suma; gasto sin tarjeta resta (neto de cashback); gasto con tarjeta no
+// mueve efectivo; savings resta (se apartó). No incluye pagos de tarjeta (esos no
+// son transacciones; se manejan aparte donde aplique).
+function cashEffect(t) {
+  if (t.type === 'income') return Number(t.amount) || 0;
+  if (EXPENSE_TYPES.includes(t.type)) return t.cardId ? 0 : -getEffectiveAmount(t);
+  if (t.type === 'savings') return -(Number(t.amount) || 0);
+  return 0;
+}
+
+// Patrimonio líquido (efectivo + ahorros) ACUMULADO al cierre de cada mes del
+// rango — un saldo corrido que muestra el crecimiento en el tiempo. La clave:
+// apartar a ahorro mueve dinero de efectivo a ahorro pero NO cambia el total, así
+// que la línea solo sube cuando entra dinero nuevo (sobrante real). También
+// devuelve income/expense del mes para las barras pequeñas de fondo.
+// `range`: número de meses, o 'all' para desde el primer dato.
+// Devuelve [{ label, y, m, income, expense, wealth }].
+export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date()) {
+  const txs = transactions || [];
+  let months;
+  if (range === 'all') {
+    const first = getFirstDataMonth(txs);
+    if (!first) {
+      months = monthsRange(1, refDate);
+    } else {
+      const span = (refDate.getFullYear() - first.y) * 12 + (refDate.getMonth() - first.m) + 1;
+      months = monthsRange(Math.max(1, span), refDate);
     }
-    return { label: monthShort(m), income, expense };
+  } else {
+    months = monthsRange(range, refDate);
+  }
+
+  return months.map(({ y, m }) => {
+    // Fin de mes (exclusivo): primer día del mes siguiente.
+    const monthEnd = new Date(y, m + 1, 1);
+    // Efectivo acumulado: saldo inicial + efecto de todo lo anterior al fin de mes.
+    let cash = Number(initialCashBalance) || 0;
+    let savings = 0;
+    let income = 0, expense = 0;
+    for (const t of txs) {
+      if (!t.date) continue;
+      const d = new Date(t.date + 'T00:00:00');
+      if (d < monthEnd) {
+        cash += cashEffect(t);
+        if (t.type === 'savings') savings += Number(t.amount) || 0;
+      }
+      // income/expense SOLO del mes (para las barras).
+      if (d.getFullYear() === y && d.getMonth() === m) {
+        if (t.type === 'income') income += Number(t.amount) || 0;
+        else if (EXPENSE_TYPES.includes(t.type)) expense += getEffectiveAmount(t);
+      }
+    }
+    return { label: monthShort(m), y, m, income, expense, wealth: cash + savings };
   });
 }
 
