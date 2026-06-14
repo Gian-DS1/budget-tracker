@@ -98,7 +98,6 @@ function ShellInner() {
     { to: '/tarjetas', icon: 'credit_card', label: t('nav.creditCards') },
     { section: t('nav.section.tools') },
     { to: '/calendario', icon: 'calendar_month', label: t('nav.calendar') },
-    { to: '/reportes', icon: 'analytics', label: t('nav.reports') },
     { to: '/categorias', icon: 'sell', label: t('nav.categories') },
   ];
 

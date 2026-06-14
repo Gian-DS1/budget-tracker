@@ -12,7 +12,6 @@ const ROUTE_KEYS = {
   '/tarjetas': 'nav.creditCards',
   '/deudas': 'nav.debts',
   '/ahorros': 'nav.savings',
-  '/reportes': 'nav.reports',
   '/calendario': 'nav.calendar',
   '/categorias': 'nav.categories',
   '/ajustes': 'nav.settings',

@@ -16,7 +16,6 @@ import StitchBudget from './screens/StitchBudget';
 import StitchCards from './screens/StitchCards';
 import StitchDebts from './screens/StitchDebts';
 import StitchVaults from './screens/StitchVaults';
-import StitchReports from './screens/StitchReports';
 import StitchCalendar from './screens/StitchCalendar';
 import StitchSettings from './screens/StitchSettings';
 import StitchFeedback from './screens/StitchFeedback';
@@ -166,7 +165,6 @@ function AuthGate() {
           <Route path="tarjetas" element={<StitchCards />} />
           <Route path="deudas" element={<StitchDebts />} />
           <Route path="ahorros" element={<StitchVaults />} />
-          <Route path="reportes" element={<StitchReports />} />
           <Route path="calendario" element={<StitchCalendar />} />
           <Route path="categorias" element={<StitchCategories />} />
           <Route path="ajustes" element={<StitchSettings />} />

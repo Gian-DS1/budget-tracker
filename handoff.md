@@ -28,7 +28,7 @@ resuelvan a 8–40px; usar valores arbitrarios `max-w-[Nrem]` en su lugar.
   grid + estado de modales + toast Deshacer) y delega en sub-componentes + selectores
   PUROS testeables (`selectors.js` + `selectors.test.js`) + un `Ui.jsx` local con
   Modal/Field/FormActions. Ejemplos de referencia: `screens/cards/`, `screens/debts/`,
-  `screens/vaults/`, `screens/dashboard/`, `screens/reports/`, `screens/calendar/`,
+  `screens/vaults/`, `screens/dashboard/`, `screens/calendar/`,
   `screens/budget/`.
 - `stores/` — estado global Zustand, uno por dominio.
 - `utils/` — cálculos financieros, formato, ciclos de tarjeta, constantes.
