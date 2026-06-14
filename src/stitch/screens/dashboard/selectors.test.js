@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getMonthComparison } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -184,5 +184,32 @@ describe('getNetWorthSplit', () => {
     expect(r.savedPct).toBeCloseTo(60);
     expect(r.debtPct).toBeCloseTo(40);
     expect(r.netWorth).toBe(20000);
+  });
+});
+
+describe('getMonthComparison', () => {
+  const cmpCats = [{ id: 'c1', name: 'Supermercado', color: '#aaa' }, { id: 'c2', name: 'Transporte', color: '#bbb' }];
+  const dtx = (categoryId, amount, date, type = 'variable_expense') => ({ categoryId, amount, type, cashbackEarned: 0, date });
+  const ref = new Date('2026-06-15T00:00:00');
+
+  it('sin gastos → arreglo vacío', () => {
+    expect(getMonthComparison([], cmpCats, ref)).toEqual([]);
+  });
+
+  it('compara mes actual (junio) vs anterior (mayo) por categoría', () => {
+    const txs = [
+      dtx('c1', 1000, '2026-06-05'), // junio: current
+      dtx('c1', 600, '2026-05-05'),  // mayo: previous
+      dtx('c2', 300, '2026-06-10'),  // junio, categoría nueva (sin previo)
+    ];
+    const r = getMonthComparison(txs, cmpCats, ref);
+    const superm = r.find((x) => x.name === 'Supermercado');
+    expect(superm.current).toBe(1000);
+    expect(superm.previous).toBe(600);
+    expect(superm.deltaPct).toBeCloseTo(((1000 - 600) / 600) * 100);
+    const transp = r.find((x) => x.name === 'Transporte');
+    expect(transp.current).toBe(300);
+    expect(transp.previous).toBe(0);
+    expect(transp.deltaPct).toBeNull(); // sin mes previo
   });
 });
