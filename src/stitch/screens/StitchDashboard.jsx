@@ -19,7 +19,7 @@ import {
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatAmountCompact, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getMonthComparison } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
 import FlowChart from './dashboard/FlowChart';
 import CategoryDonut from './dashboard/CategoryDonut';
@@ -27,6 +27,10 @@ import BudgetBar from './dashboard/BudgetBar';
 import NetWorthBar from './dashboard/NetWorthBar';
 import HealthRing from './dashboard/HealthRing';
 import SignalsRail from './dashboard/SignalsRail';
+import MonthComparison from './dashboard/MonthComparison';
+import SaveToVaultModal from './dashboard/SaveToVaultModal';
+import usePrefsStore from '../../stores/usePrefsStore';
+import { isDemoActive } from '../demoMode';
 
 const fmt = (n) => formatCurrency(n);
 // Compacto para móvil, sin prefijo de moneda: "170.0K".
@@ -134,6 +138,14 @@ export default function StitchDashboard() {
   // Donut de gastos
   const breakdown = useMemo(() => getCategoryBreakdown(monthTx, categories), [monthTx, categories]);
 
+  // Efectivo líquido (solo demo): saldo derivado + delta del mes + comparativa.
+  const demo = isDemoActive();
+  const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
+  const liquidCash = useMemo(() => getLiquidCash(transactions, initialCashBalance), [transactions, initialCashBalance]);
+  const liquidDelta = useMemo(() => getLiquidDelta(monthTx), [monthTx]);
+  const comparison = useMemo(() => getMonthComparison(transactions, categories, now), [transactions, categories, now]);
+  const [saveOpen, setSaveOpen] = useState(false);
+
   // Presupuesto usado + ritmo del mes en curso (tick y veredicto de BudgetBar)
   const budgetUsage = useMemo(() => getBudgetUsage(summary), [summary]);
   const budgetPace = useMemo(() => getBudgetPace(budgetUsage, {
@@ -198,7 +210,42 @@ export default function StitchDashboard() {
         </div>
       )}
 
+      {/* Aviso (solo demo): efectivo inicial sin declarar. */}
+      {demo && initialCashBalance === 0 && (
+        <div className="flex items-center gap-sm mb-md px-md py-sm rounded bg-primary/10 border border-primary/30">
+          <MS name="info" className="!text-[16px] text-primary" />
+          <span className="font-label-sm text-label-sm text-on-surface-variant">{t('dashboard.declareInitialCash')}</span>
+          <button onClick={() => navigate('/ajustes')} className="ml-auto font-mono-data text-mono-data text-primary hover:underline">{t('nav.settings')}</button>
+        </div>
+      )}
+
       <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-md auto-rows-min">
+        {/* 0 · Efectivo disponible (solo demo): la estrella — el líquido que arrastra. */}
+        {demo && (
+          <Stagger.Item className="col-span-2 md:col-span-6">
+            <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
+              <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
+                <span className="truncate">{t('dashboard.liquidCash').toUpperCase()}</span>
+                <InfoTip text={t('dashboard.liquidCashInfo')} />
+              </div>
+              <div className="flex items-end justify-between gap-sm flex-wrap">
+                <div>
+                  <Stat value={<CountUp value={liquidCash} format={fmt} />} mobileValue={fmtMob(liquidCash)} cls={liquidCash >= 0 ? 'text-on-surface' : 'text-accent-error'} />
+                  <span className={`font-mono-data text-mono-data ${liquidDelta >= 0 ? 'text-tertiary' : 'text-accent-error'}`}>
+                    {liquidDelta >= 0 ? '+' : '−'}{fmt(Math.abs(liquidDelta))} {t('dashboard.thisMonth')}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setSaveOpen(true)}
+                  className="px-md py-sm rounded bg-primary text-on-primary font-label-sm text-label-sm active:scale-[0.97]"
+                >
+                  {t('dashboard.saveToVault')}
+                </button>
+              </div>
+            </div>
+          </Stagger.Item>
+        )}
+
         {/* 1 · Estado inmediato: 4 KPI accionables (2×2 en móvil, fila en md+).
             El 4º es patrimonio neto con su mini barra ahorro/deuda: subirlo aquí
             eliminó una fila completa del bento (menos scroll, más densidad). */}
@@ -220,7 +267,7 @@ export default function StitchDashboard() {
               <span className="flex items-center gap-xs min-w-0"><span className="truncate">{t('dashboard.netWorth').toUpperCase()}</span>{!isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">{t('calendar.today').toUpperCase()}</span>}</span>
               <InfoTip text={t('dashboard.netWorthInfo')} />
             </div>
-            <Stat value={<CountUp value={split.netWorth} format={fmt} />} mobileValue={fmtMob(split.netWorth)} cls={split.netWorth >= 0 ? 'text-tertiary' : 'text-accent-error'} />
+            <Stat value={<CountUp value={(demo ? liquidCash : 0) + split.netWorth} format={fmt} />} mobileValue={fmtMob((demo ? liquidCash : 0) + split.netWorth)} cls={((demo ? liquidCash : 0) + split.netWorth) >= 0 ? 'text-tertiary' : 'text-accent-error'} />
             {split.hasData
               ? <NetWorthBar split={split} />
               : <span className="font-label-sm text-label-sm text-text-muted">{t('screens.charts.noSavingsOrDebts')}</span>}
@@ -271,7 +318,23 @@ export default function StitchDashboard() {
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
         </Stagger.Item>
+
+        {/* 5 · Cambios vs mes anterior (rescatado de Reportes). */}
+        <Stagger.Item className="col-span-2 md:col-span-12">
+          <BentoCell title={t('dashboard.monthComparison')} icon="compare_arrows" className="h-full">
+            <MonthComparison data={comparison} />
+          </BentoCell>
+        </Stagger.Item>
       </Stagger>
+
+      {demo && (
+        <SaveToVaultModal
+          open={saveOpen}
+          onClose={() => setSaveOpen(false)}
+          goals={goals}
+          availableCash={liquidCash}
+        />
+      )}
     </div>
   );
 }
