@@ -19,7 +19,7 @@ import {
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatAmountCompact, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getLiquidDelta, getCumulativeLiquidWealth } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
 import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
@@ -35,7 +35,7 @@ const fmt = (n) => formatCurrency(n);
 const fmtMob = (n) => formatAmountCompact(n);
 
 export default function StitchDashboard() {
-  const { t, language } = useI18n();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
@@ -55,27 +55,6 @@ export default function StitchDashboard() {
   const y = sel.y;
   const m = sel.m;
   const isCurrentMonth = sel.y === now.getFullYear() && sel.m === now.getMonth();
-
-  // Opciones del selector: desde el mes actual hacia atrás, SIN pasar del primer
-  // mes con datos registrados (no mostramos meses vacíos previos a las transacciones).
-  const monthOptions = useMemo(() => {
-    const first = getFirstDataMonth(transactions);
-    // Meses entre el primer dato y hoy (incluidos). Si no hay datos, solo el mes actual.
-    let count = 1;
-    if (first) {
-      count = (now.getFullYear() - first.y) * 12 + (now.getMonth() - first.m) + 1;
-      count = Math.max(1, count);
-    }
-    const opts = [];
-    for (let i = 0; i < count; i++) {
-      let mm = now.getMonth() - i, yy = now.getFullYear();
-      while (mm < 0) { mm += 12; yy -= 1; }
-      opts.push({ value: `${yy}-${mm}`, label: `${monthShort(mm)} ${yy}` });
-    }
-    return opts;
-    // `language` es dependencia real: monthShort() lee el idioma del runtime, fuera de React.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [now, language, transactions]);
 
   const monthTx = useMemo(
     () => transactions.filter((t) => {
@@ -125,14 +104,15 @@ export default function StitchDashboard() {
   const liquidDelta = useMemo(() => getLiquidDelta(monthTx, cards, y, m), [monthTx, cards, y, m]);
   const [saveOpen, setSaveOpen] = useState(false);
 
-  // Rango del gráfico de tendencia: 6 / 12 meses o 'all' (desde el primer dato).
-  const [wealthRange, setWealthRange] = useState(6);
+  // Rango del gráfico de tendencia: 3 meses / 1 año / todo el tiempo. Siempre
+  // termina en el mes actual (now) y arranca a lo sumo en la primera transacción.
+  const [wealthRange, setWealthRange] = useState(3);
   const wealthSeries = useMemo(
-    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, new Date(y, m, 1)),
-    [transactions, initialCashBalance, wealthRange, y, m],
+    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now),
+    [transactions, initialCashBalance, wealthRange, now],
   );
   const rangeOptions = [
-    { value: '6', label: t('dashboard.range6') },
+    { value: '3', label: t('dashboard.range3') },
     { value: '12', label: t('dashboard.range12') },
     { value: 'all', label: t('dashboard.rangeAll') },
   ];
@@ -254,9 +234,14 @@ export default function StitchDashboard() {
         <Stagger.Item className="col-span-2 md:col-span-8">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-md gap-sm">
-              <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs"><MS name="show_chart" className="!text-[14px] text-text-muted" /> {t('dashboard.monthFlow')}</span>
-              <div className="w-[150px]">
-                <StitchSelect value={`${sel.y}-${sel.m}`} onChange={(v) => { const [yy, mm] = v.split('-').map(Number); setSel({ y: yy, m: mm }); }} options={monthOptions} compact />
+              <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs min-w-0">
+                <MS name="show_chart" className="!text-[14px] text-text-muted shrink-0" />
+                <span className="truncate">{t('dashboard.monthFlow')}</span>
+                {/* Mes activo (lo fija el clic en una barra del gráfico). */}
+                <span className="text-primary shrink-0">· {monthShort(m)} {y}</span>
+              </span>
+              <div className="w-[140px] shrink-0">
+                <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
               </div>
             </div>
             {/* En móvil el monto completo no cabe en 3 columnas y se truncaba
@@ -268,12 +253,12 @@ export default function StitchDashboard() {
               <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} mobileValue={`${totals.balance >= 0 ? '+' : '−'}${fmtMob(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
-            <div className="flex justify-end mb-sm mt-md">
-              <div className="w-[150px]">
-                <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
-              </div>
-            </div>
-            <WealthTrendChart data={wealthSeries} />
+            <div className="mt-md" />
+            <WealthTrendChart
+              data={wealthSeries}
+              activeKey={`${y}-${m}`}
+              onBarClick={(d) => setSel({ y: d.y, m: d.m })}
+            />
           </BentoCell>
         </Stagger.Item>
 

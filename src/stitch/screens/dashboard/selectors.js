@@ -176,22 +176,19 @@ function cashEffect(t) {
 // apartar a ahorro mueve dinero de efectivo a ahorro pero NO cambia el total, así
 // que la línea solo sube cuando entra dinero nuevo (sobrante real). También
 // devuelve income/expense del mes para las barras pequeñas de fondo.
-// `range`: número de meses, o 'all' para desde el primer dato.
-// Devuelve [{ label, y, m, income, expense, wealth }].
+// `range`: número de meses (3, 12…) o 'all'. En TODOS los casos el rango se
+// recorta para NO ir antes de la primera transacción (no se muestran meses vacíos
+// previos a los datos). Devuelve [{ label, y, m, income, expense, wealth }].
 export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date()) {
   const txs = transactions || [];
-  let months;
-  if (range === 'all') {
-    const first = getFirstDataMonth(txs);
-    if (!first) {
-      months = monthsRange(1, refDate);
-    } else {
-      const span = (refDate.getFullYear() - first.y) * 12 + (refDate.getMonth() - first.m) + 1;
-      months = monthsRange(Math.max(1, span), refDate);
-    }
-  } else {
-    months = monthsRange(range, refDate);
-  }
+  // Meses disponibles desde el primer dato hasta refDate (incluidos).
+  const first = getFirstDataMonth(txs);
+  const available = first
+    ? Math.max(1, (refDate.getFullYear() - first.y) * 12 + (refDate.getMonth() - first.m) + 1)
+    : 1;
+  // 'all' = todo lo disponible; un número = ese número, pero sin pasar del primer dato.
+  const count = range === 'all' ? available : Math.min(Number(range) || 1, available);
+  const months = monthsRange(count, refDate);
 
   return months.map(({ y, m }) => {
     // Fin de mes (exclusivo): primer día del mes siguiente.

@@ -38,13 +38,13 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
         const data = [{ name: 'salud', value: animated, fill: color }];
         return (
           <div className="flex-grow flex flex-col">
-            {/* Gauge semicircular grande: ocupa el ancho de la celda. El número
-                vive en el hueco del semicírculo, centrado abajo. */}
-            <div className="relative w-full h-[150px] sm:h-[170px]">
+            {/* Gauge semicircular. Radios reducidos + padding lateral para que el
+                arco no toque los rótulos "EN RIESGO/EXCELENTE" de los extremos. */}
+            <div className="relative w-full h-[140px] sm:h-[155px] px-xl">
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
-                  innerRadius="135%"
-                  outerRadius="178%"
+                  innerRadius="115%"
+                  outerRadius="152%"
                   data={data}
                   startAngle={180}
                   endAngle={0}
@@ -55,8 +55,8 @@ export default function HealthRing({ health, hasData, monthsCounted = 0 }) {
                 </RadialBarChart>
               </ResponsiveContainer>
               <div className="absolute inset-x-0 bottom-0 flex flex-col items-center justify-end pb-xs pointer-events-none">
-                <span className="font-hero-headline text-[52px] leading-none tracking-tighter" style={{ color }}>{Math.round(animated)}</span>
-                <span className="font-headline-md text-[16px] tracking-tight mt-xs" style={{ color }}>{health.labelKey ? t(health.labelKey) : health.label}</span>
+                <span className="font-hero-headline text-[46px] leading-none tracking-tighter" style={{ color }}>{Math.round(animated)}</span>
+                <span className="font-headline-md text-[15px] tracking-tight mt-xs" style={{ color }}>{health.labelKey ? t(health.labelKey) : health.label}</span>
               </div>
               {/* Extremos de la escala bajo el arco */}
               <span className="absolute left-0 bottom-0 font-mono-data text-[9px] text-text-muted uppercase">{strings.charts.atRisk}</span>
