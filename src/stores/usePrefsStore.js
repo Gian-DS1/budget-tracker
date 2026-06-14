@@ -32,6 +32,9 @@ const usePrefsStore = create(
       // tour a quien ya lo vio en otro dispositivo, y evita la carrera con OAuth
       // donde loading hace false→true→false tras el primer paint).
       prefsLoaded: false,
+      // Efectivo líquido inicial declarado por el usuario (modo demo). NO se
+      // persiste (no está en partialize) ni se sincroniza a Supabase en esta fase.
+      initialCashBalance: 0,
 
       /** Carga prefs desde Supabase (si hay sesión). Sin sesión deja el caché. */
       fetchPrefs: async () => {
@@ -116,6 +119,14 @@ const usePrefsStore = create(
           set({ currency: prev });
           setRuntimeCurrency(prev);
         }
+      },
+
+      /** Fija el efectivo inicial (modo demo). Solo memoria; no toca Supabase. */
+      setInitialCashBalance: (amount) => {
+        const value = Number(amount) || 0;
+        set({ initialCashBalance: value });
+        // Fase demo: no se persiste ni se sincroniza. Si en el futuro se conecta a
+        // Supabase, aquí iría el upsert tras `if (isDemoActive()) return;`.
       },
     }),
     {
