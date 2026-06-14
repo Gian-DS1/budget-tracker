@@ -27,7 +27,7 @@ import './stitch.css';
 
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { isDemoActive, seedDemoStores } from './demoMode';
+import { isDemoActive, isFreshActive, seedDemoStores, seedFreshStores } from './demoMode';
 import useCategoryStore from '../stores/useCategoryStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useBudgetStore from '../stores/useBudgetStore';
@@ -67,6 +67,7 @@ function AuthGate() {
   const location = useLocation();
 
   const demo = isDemoActive();
+  const fresh = isFreshActive();
   const authedUser = user || (demo ? { id: 'demo', email: 'demo@local' } : null);
   const isPublic = !authedUser || isRecoveringPassword;
 
@@ -86,12 +87,12 @@ function AuthGate() {
 
   useEffect(() => {
     if (demo) {
-      queueMicrotask(seedDemoStores);
+      queueMicrotask(fresh ? seedFreshStores : seedDemoStores);
       // En demo no corre el effect de fetches (no hay user real); fetchPrefs marca
       // prefsLoaded para que el auto-arranque del tutorial pueda decidir.
       fetchPrefs();
     }
-  }, [demo, fetchPrefs]);
+  }, [demo, fresh, fetchPrefs]);
 
   useEffect(() => {
     if (!user) return;
@@ -150,8 +151,9 @@ function AuthGate() {
       : <StitchAuth />;
   }
 
-  // Gate de moneda: usuario real sin moneda elegida ve el onboarding bloqueante.
-  const showCurrencyOnboarding = !demo && prefsLoaded && !currency;
+  // Gate de moneda: usuario real y modo "usuario nuevo" (fresh) ven el onboarding
+  // bloqueante. El demo establecido lo salta (ya trae moneda sembrada).
+  const showCurrencyOnboarding = (!demo || fresh) && prefsLoaded && !currency;
 
   // App autenticada: renderizar las rutas protegidas.
   return (
