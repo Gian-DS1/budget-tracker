@@ -9,8 +9,12 @@ import { ResponsiveContainer, ComposedChart, Bar, Area, XAxis, YAxis, Tooltip, C
 import { formatCurrency } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
+import CountUp from '../../CountUp';
 
 const fmt = (n) => formatCurrency(n);
+// Count-up corto para el scrubbing: los números transicionan entre meses en vez
+// de saltar. Duración baja (240ms) para que se sienta reactivo al deslizar.
+const pct = (n) => `${(Number(n) || 0).toFixed(1)}%`;
 
 export default function WealthTrendChart({ data, activeKey, onBarClick }) {
   const { t } = useI18n();
@@ -37,16 +41,30 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
   };
 
   return (
-    <div className="flex flex-col h-56">
-      {/* Encabezado Robinhood: valor grande del punto enfocado + su mes. */}
-      <div className="flex items-baseline justify-between gap-sm mb-xs">
+    <div className="flex flex-col h-64">
+      {/* Encabezado Robinhood: patrimonio del punto enfocado (cyan, count-up) + su
+          mes; a la derecha, tasa de ahorro y tarjetas por pagar de ese mes (también
+          count-up). Todos transicionan al hacer scrubbing en vez de saltar. */}
+      <div className="flex items-end justify-between gap-md mb-sm">
         <div className="flex items-baseline gap-sm min-w-0">
-          <span className="font-headline-md text-[22px] tracking-tight tabular-nums" style={{ color: lineColor }}>{fmt(head.wealth)}</span>
+          <span className="font-headline-md text-[24px] tracking-tight tabular-nums" style={{ color: lineColor }}>
+            <CountUp value={head.wealth} format={fmt} duration={240} />
+          </span>
           <span className="font-mono-data text-mono-data text-text-muted uppercase shrink-0">{head.label} {head.y}</span>
         </div>
-        <div className="flex items-center gap-md font-mono-data text-mono-data shrink-0">
-          <span className="text-tertiary">↑ {fmt(head.income)}</span>
-          <span className="text-accent-error">↓ {fmt(head.expense)}</span>
+        <div className="flex items-center gap-lg shrink-0">
+          <div className="flex flex-col items-end">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.savingsRate')}</span>
+            <span className="font-headline-md text-[15px] tracking-tight tabular-nums text-tertiary">
+              <CountUp value={head.savingsRate} format={pct} duration={240} />
+            </span>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.creditCardsPayable')}</span>
+            <span className={`font-headline-md text-[15px] tracking-tight tabular-nums ${head.cardsDue > 0 ? 'text-accent-warning' : 'text-tertiary'}`}>
+              <CountUp value={head.cardsDue} format={fmt} duration={240} />
+            </span>
+          </div>
         </div>
       </div>
 

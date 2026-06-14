@@ -261,6 +261,26 @@ describe('getCumulativeLiquidWealth', () => {
     expect(r[r.length - 1].wealth).toBe(1000);
   });
 
+  it('calcula savingsRate por mes: (income − gasto) / income', () => {
+    const txs = [t(5000, 'income', '2026-03-02'), t(1000, 'variable_expense', '2026-03-09')];
+    const r = getCumulativeLiquidWealth(txs, 0, 1, ref);
+    const mar = r[r.length - 1];
+    // (5000 - 1000) / 5000 = 0.8 → 80%
+    expect(mar.savingsRate).toBeCloseTo(80);
+  });
+
+  it('savingsRate es 0 cuando no hay ingresos del mes', () => {
+    const txs = [t(500, 'variable_expense', '2026-03-09')];
+    const r = getCumulativeLiquidWealth(txs, 0, 1, ref);
+    expect(r[r.length - 1].savingsRate).toBe(0);
+  });
+
+  it('cardsDue: 0 si no se pasan tarjetas; usa getCardBalances si se pasan', () => {
+    const txs = [t(5000, 'income', '2026-03-02')];
+    const sinCards = getCumulativeLiquidWealth(txs, 0, 1, ref);
+    expect(sinCards[0].cardsDue).toBe(0);
+  });
+
   it('incluye income y expense del mes en cada punto (para las barras)', () => {
     const txs = [t(5000, 'income', '2026-03-02'), t(1200, 'variable_expense', '2026-03-09')];
     const r = getCumulativeLiquidWealth(txs, 0, 1, ref);

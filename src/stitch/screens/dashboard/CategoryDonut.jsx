@@ -46,7 +46,7 @@ export default function CategoryDonut({ data, compact = false }) {
   return (
     <div className={`flex-grow flex items-center min-h-[200px] ${compact ? 'flex-col gap-md' : 'flex-col sm:flex-row gap-xl min-h-[240px]'}`}>
       {/* Dona: en compact arriba (tamaño cómodo); en normal al lado de la leyenda. */}
-      <div className={`relative shrink-0 ${compact ? 'w-[190px] h-[190px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
+      <div className={`relative shrink-0 ${compact ? 'w-[210px] h-[210px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie

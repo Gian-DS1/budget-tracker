@@ -3,6 +3,7 @@
 // (getFinancialHealthScore) y la capacidad (getMonthlySavingCapacity) se reusan
 // directo desde utils/calculations en el shell.
 import { groupByCategory, getEffectiveAmount } from '../../../utils/calculations';
+import { getCardBalances } from '../../../utils/creditCards';
 import { tr, monthShort } from '../../../i18n/runtime';
 
 const OTROS_COLOR = '#6b7280';
@@ -178,8 +179,10 @@ function cashEffect(t) {
 // devuelve income/expense del mes para las barras pequeñas de fondo.
 // `range`: número de meses (3, 12…) o 'all'. En TODOS los casos el rango se
 // recorta para NO ir antes de la primera transacción (no se muestran meses vacíos
-// previos a los datos). Devuelve [{ label, y, m, income, expense, wealth }].
-export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date()) {
+// previos a los datos). `cards` (opcional) permite calcular las "tarjetas por
+// pagar" históricas por mes (saldo facturado pendiente al cierre de cada mes).
+// Devuelve [{ label, y, m, income, expense, wealth, savingsRate, cardsDue }].
+export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date(), cards = []) {
   const txs = transactions || [];
   // Meses disponibles desde el primer dato hasta refDate (incluidos).
   const first = getFirstDataMonth(txs);
@@ -193,6 +196,8 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
   return months.map(({ y, m }) => {
     // Fin de mes (exclusivo): primer día del mes siguiente.
     const monthEnd = new Date(y, m + 1, 1);
+    // Día representativo del mes para "tarjetas por pagar" históricas (fin de mes).
+    const monthRef = new Date(y, m + 1, 0);
     // Efectivo acumulado: saldo inicial + efecto de todo lo anterior al fin de mes.
     let cash = Number(initialCashBalance) || 0;
     let savings = 0;
@@ -210,7 +215,13 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
         else if (EXPENSE_TYPES.includes(t.type)) expense += getEffectiveAmount(t);
       }
     }
-    return { label: monthShort(m), y, m, income, expense, wealth: cash + savings };
+    // Tasa de ahorro del mes: (ingresos − gastos) / ingresos, en %.
+    const savingsRate = income > 0 ? ((income - expense) / income) * 100 : 0;
+    // Tarjetas por pagar al cierre del mes (saldo facturado pendiente).
+    const cardsDue = (cards || []).reduce(
+      (sum, c) => sum + (getCardBalances(c, txs, monthRef).pendingBilled || 0), 0,
+    );
+    return { label: monthShort(m), y, m, income, expense, wealth: cash + savings, savingsRate, cardsDue };
   });
 }
 

@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
 import StitchSelect from '../StitchSelect';
-import CountUp from '../CountUp';
 import { useI18n } from '../../contexts/I18nContext';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useSavingsStore from '../../stores/useSavingsStore';
@@ -17,10 +16,10 @@ import {
   getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
 } from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
-import { formatCurrency, formatAmountCompact, formatDate } from '../../utils/formatters';
+import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getLiquidDelta, getCumulativeLiquidWealth } from './dashboard/selectors';
-import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getCumulativeLiquidWealth } from './dashboard/selectors';
+import { BentoCell } from './dashboard/dashboardUi';
 import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
 import BudgetBar from './dashboard/BudgetBar';
@@ -31,8 +30,6 @@ import usePrefsStore from '../../stores/usePrefsStore';
 import { isDemoActive } from '../demoMode';
 
 const fmt = (n) => formatCurrency(n);
-// Compacto para móvil, sin prefijo de moneda: "170.0K".
-const fmtMob = (n) => formatAmountCompact(n);
 
 export default function StitchDashboard() {
   const { t } = useI18n();
@@ -77,39 +74,22 @@ export default function StitchDashboard() {
     debtPlanned: getTotalMonthlyPayment(), debtPaid: debtPaidThisMonth,
   }), [monthTx, monthBudgets, categories, getTotalMonthlyPayment, debtPaidThisMonth]);
 
-  // Flujo del mes
-  const totals = useMemo(() => {
-    let income = 0, expense = 0;
-    monthTx.forEach((t) => {
-      if (t.type === 'income') income += Number(t.amount);
-      else if (['expense', 'fixed_expense', 'variable_expense'].includes(t.type))
-        expense += Number(t.amount) - Number(t.cashbackEarned || 0);
-    });
-    return { income, expense, balance: income - expense };
-  }, [monthTx]);
-  const savingsRate = totals.income > 0 ? ((totals.income - totals.expense) / totals.income) * 100 : 0;
-
-  const totalPendingCards = useMemo(() => cards.reduce(
-    (sum, c) => sum + (getCardBalances(c, transactions, now).pendingBilled || 0), 0,
-  ), [cards, transactions, now]);
-
   // Donut de gastos
   const breakdown = useMemo(() => getCategoryBreakdown(monthTx, categories), [monthTx, categories]);
 
-  // Efectivo líquido (solo demo): saldo derivado + delta del mes. Los gastos con
-  // tarjeta NO restan del efectivo; los pagos de tarjeta (card.payments) sí.
+  // Efectivo líquido (solo demo): saldo derivado para el modal "Apartar a ahorro".
+  // Los gastos con tarjeta NO restan del efectivo; los pagos de tarjeta sí.
   const demo = isDemoActive();
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
   const liquidCash = useMemo(() => getLiquidCash(transactions, initialCashBalance, cards), [transactions, initialCashBalance, cards]);
-  const liquidDelta = useMemo(() => getLiquidDelta(monthTx, cards, y, m), [monthTx, cards, y, m]);
   const [saveOpen, setSaveOpen] = useState(false);
 
   // Rango del gráfico de tendencia: 3 meses / 1 año / todo el tiempo. Siempre
   // termina en el mes actual (now) y arranca a lo sumo en la primera transacción.
   const [wealthRange, setWealthRange] = useState(3);
   const wealthSeries = useMemo(
-    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now),
-    [transactions, initialCashBalance, wealthRange, now],
+    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now, cards),
+    [transactions, initialCashBalance, wealthRange, now, cards],
   );
   const rangeOptions = [
     { value: '3', label: t('dashboard.range3') },
@@ -159,12 +139,6 @@ export default function StitchDashboard() {
     return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
   }, [cards, debts, goals, transactions, now, t]);
 
-  // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
-  const metrics = [
-    { l: t('dashboard.creditCardsPayable').toUpperCase(), v: <CountUp value={totalPendingCards} format={fmt} />, mv: fmtMob(totalPendingCards), d: totalPendingCards > 0 ? t('dashboard.pending') : t('dashboard.upToDate'), warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.cardStatus'), live: true },
-    { l: t('dashboard.savingsRate').toUpperCase(), v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, mv: `${savingsRate.toFixed(0)}%`, d: t('dashboard.ofIncome'), c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: t('dashboard.savingsFormula') },
-  ];
-
   return (
     <div className="p-sm sm:p-md max-w-[1728px] mx-auto w-full">
       {/* Título de página para lectores de pantalla (el bento no tiene header visible). */}
@@ -189,69 +163,32 @@ export default function StitchDashboard() {
       )}
 
       <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-sm auto-rows-min">
-        {/* 0 · Efectivo disponible (solo demo): la estrella — el líquido que arrastra. */}
-        {demo && (
-          <Stagger.Item className="col-span-2 md:col-span-4">
-            <div className="glass-card rounded-lg inner-glow p-sm px-md flex flex-col gap-xs h-full">
-              <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
-                <span className="truncate">{t('dashboard.liquidCash').toUpperCase()}</span>
-                <InfoTip text={t('dashboard.liquidCashInfo')} />
-              </div>
-              <div className="flex items-end justify-between gap-sm flex-wrap">
-                <div>
-                  <Stat value={<CountUp value={liquidCash} format={fmt} />} mobileValue={fmtMob(liquidCash)} cls={liquidCash >= 0 ? 'text-on-surface' : 'text-accent-error'} />
-                  <span className={`font-mono-data text-mono-data ${liquidDelta >= 0 ? 'text-tertiary' : 'text-accent-error'}`}>
-                    {liquidDelta >= 0 ? '+' : '−'}{fmt(Math.abs(liquidDelta))} {t('dashboard.thisMonth')}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setSaveOpen(true)}
-                  className="px-sm py-xs rounded bg-primary text-on-primary font-label-sm text-label-sm active:scale-[0.97] shrink-0"
-                >
-                  {t('dashboard.saveToVault')}
-                </button>
-              </div>
-            </div>
-          </Stagger.Item>
-        )}
-
-        {/* 1 · Estado inmediato: 3 KPI accionables, compactos (col-4 c/u). */}
-        {metrics.map((mx) => (
-          <Stagger.Item key={mx.l} className="col-span-1 md:col-span-4">
-            <div className="glass-card rounded-lg inner-glow p-sm px-md flex flex-col gap-xs h-full">
-              <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
-                <span className="flex items-center gap-xs min-w-0"><span className="truncate">{mx.l}</span>{mx.live && !isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">{t('calendar.today').toUpperCase()}</span>}</span>
-                <InfoTip text={mx.info} />
-              </div>
-              <Stat value={mx.v} mobileValue={mx.mv} cls={mx.c} sub={mx.d} warn={mx.warn} />
-            </div>
-          </Stagger.Item>
-        ))}
-
-        {/* 2 · Flujo del mes (HERO, col-7) + Donut (col-5) lado a lado. */}
+        {/* 1 · Flujo del mes (HERO, col-7) + Donut (col-5) lado a lado. El gráfico
+            unifica patrimonio, tasa de ahorro y tarjetas por pagar en su header. */}
         <Stagger.Item className="col-span-2 md:col-span-7">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-sm gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs min-w-0">
                 <MS name="show_chart" className="!text-[14px] text-text-muted shrink-0" />
                 <span className="truncate">{t('dashboard.monthFlow')}</span>
-                {/* Mes activo (lo fija el clic en una barra del gráfico). */}
                 <span className="text-primary shrink-0">· {monthShort(m)} {y}</span>
               </span>
-              <div className="w-[140px] shrink-0">
-                <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
+              <div className="flex items-center gap-sm shrink-0">
+                {demo && (
+                  <button
+                    onClick={() => setSaveOpen(true)}
+                    className="px-sm py-xs rounded bg-primary text-on-primary font-label-sm text-label-sm active:scale-[0.97]"
+                  >
+                    {t('dashboard.saveToVault')}
+                  </button>
+                )}
+                <div className="w-[130px]">
+                  <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
+                </div>
               </div>
             </div>
-            {/* En móvil el monto completo no cabe en 3 columnas y se truncaba
-                ("+RD$ 170,…"); ahí se usa formato compacto sin prefijo (+170.0K),
-                como el mockup de la landing: la moneda ya es contexto. */}
-            <div className="grid grid-cols-3 gap-sm mb-sm">
-              <Stat label={t('dashboard.income')} value={<CountUp value={totals.income} format={(n) => `+${fmt(n)}`} />} mobileValue={`+${fmtMob(totals.income)}`} cls="text-tertiary" />
-              <Stat label={t('dashboard.expenses')} value={<CountUp value={totals.expense} format={(n) => `−${fmt(n)}`} />} mobileValue={`−${fmtMob(totals.expense)}`} cls="text-accent-error" />
-              <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} mobileValue={`${totals.balance >= 0 ? '+' : '−'}${fmtMob(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
-            </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
-            <div className="mt-sm" />
+            <div className="mt-md" />
             <WealthTrendChart
               data={wealthSeries}
               activeKey={`${y}-${m}`}
