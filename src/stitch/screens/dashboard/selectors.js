@@ -93,6 +93,19 @@ export function getLiquidCash(transactions, initialCashBalance) {
   return cash;
 }
 
+// Cambio del efectivo en un conjunto de transacciones (típicamente las del mes
+// seleccionado): income − gastos netos − apartados a ahorro. Misma regla que
+// getLiquidCash pero sin saldo inicial (es un delta, no un saldo).
+export function getLiquidDelta(monthTransactions) {
+  let delta = 0;
+  for (const t of monthTransactions || []) {
+    if (t.type === 'income') delta += Number(t.amount) || 0;
+    else if (EXPENSE_TYPES.includes(t.type)) delta -= getEffectiveAmount(t);
+    else if (t.type === 'savings') delta -= Number(t.amount) || 0;
+  }
+  return delta;
+}
+
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.
 export function getNetWorthSplit(totalSaved, totalDebt) {
   const saved = Number(totalSaved) || 0;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -141,6 +141,27 @@ describe('getLiquidCash', () => {
 
   it('saldo inicial inválido o ausente → tratado como 0', () => {
     expect(getLiquidCash([tx('c1', 100, 'income')], undefined)).toBe(100);
+  });
+});
+
+describe('getLiquidDelta', () => {
+  it('sin transacciones → 0', () => {
+    expect(getLiquidDelta([])).toBe(0);
+  });
+
+  it('income − gastos netos − savings del mes', () => {
+    const txs = [
+      tx('c1', 5000, 'income'),
+      tx('c2', 1200, 'variable_expense', 200), // neto 1000
+      tx('c3', 500, 'savings'),
+    ];
+    // 5000 - 1000 - 500 = 3500
+    expect(getLiquidDelta(txs)).toBe(3500);
+  });
+
+  it('mes negativo cuando se gasta más de lo que entra', () => {
+    const txs = [tx('c1', 1000, 'income'), tx('c2', 1500, 'fixed_expense', 0)];
+    expect(getLiquidDelta(txs)).toBe(-500);
   });
 });
 
