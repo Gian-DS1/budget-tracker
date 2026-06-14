@@ -3,7 +3,7 @@
 // (getFinancialHealthScore) y la capacidad (getMonthlySavingCapacity) se reusan
 // directo desde utils/calculations en el shell.
 import { groupByCategory, getEffectiveAmount } from '../../../utils/calculations';
-import { tr } from '../../../i18n/runtime';
+import { tr, monthShort } from '../../../i18n/runtime';
 
 const OTROS_COLOR = '#6b7280';
 const OTROS_ICON = '📦';
@@ -79,64 +79,93 @@ export function getBudgetPace(usage, { isCurrentMonth, dayOfMonth, daysInMonth }
 
 const EXPENSE_TYPES = ['expense', 'fixed_expense', 'variable_expense'];
 
-// Efectivo disponible (líquido) DERIVADO de los movimientos: arranca en el saldo
-// inicial declarado, sube con ingresos, baja con gastos (netos de cashback) y con
-// lo apartado a ahorro (transacciones tipo 'savings'). Una sola fuente de verdad:
-// las transacciones. No se almacena un saldo mutable.
-export function getLiquidCash(transactions, initialCashBalance) {
+// Suma todos los pagos registrados a tarjetas (card.payments). Esos pagos son el
+// momento en que el efectivo REALMENTE sale del banco para saldar la tarjeta.
+function sumCardPayments(cards) {
+  let total = 0;
+  for (const c of cards || []) {
+    for (const p of c.payments || []) total += Number(p.amount) || 0;
+  }
+  return total;
+}
+
+// Efectivo disponible (líquido) DERIVADO de los movimientos. Modela el efectivo
+// REAL en la cuenta de banco:
+//   + saldo inicial declarado
+//   + ingresos
+//   − gastos SIN tarjeta (netos de cashback)   ← un gasto con tarjeta NO sale del
+//                                                 banco hasta pagar el estado de cuenta
+//   − apartados a ahorro (tipo 'savings')
+//   − pagos de tarjeta registrados (card.payments) ← aquí sí sale el efectivo
+// Una sola fuente de verdad: transacciones + pagos de tarjeta. No se almacena saldo.
+export function getLiquidCash(transactions, initialCashBalance, cards) {
   let cash = Number(initialCashBalance) || 0;
   for (const t of transactions || []) {
     if (t.type === 'income') cash += Number(t.amount) || 0;
-    else if (EXPENSE_TYPES.includes(t.type)) cash -= getEffectiveAmount(t);
-    else if (t.type === 'savings') cash -= Number(t.amount) || 0;
+    else if (EXPENSE_TYPES.includes(t.type)) {
+      if (t.cardId) continue; // gasto con tarjeta: el efectivo sigue en el banco
+      cash -= getEffectiveAmount(t);
+    } else if (t.type === 'savings') cash -= Number(t.amount) || 0;
   }
+  cash -= sumCardPayments(cards);
   return cash;
 }
 
-const inMonthCmp = (t, y, m) => {
+// Cambio del efectivo en el mes: income − gastos SIN tarjeta netos − apartados a
+// ahorro − pagos de tarjeta hechos ESE mes. Misma regla que getLiquidCash pero sin
+// saldo inicial (es un delta, no un saldo). `cards`/`year`/`month` son opcionales:
+// si se pasan, se restan los pagos de tarjeta con fecha dentro de (year, month).
+export function getLiquidDelta(monthTransactions, cards, year, month) {
+  let delta = 0;
+  for (const t of monthTransactions || []) {
+    if (t.type === 'income') delta += Number(t.amount) || 0;
+    else if (EXPENSE_TYPES.includes(t.type)) {
+      if (t.cardId) continue; // gasto con tarjeta: no mueve el efectivo
+      delta -= getEffectiveAmount(t);
+    } else if (t.type === 'savings') delta -= Number(t.amount) || 0;
+  }
+  if (cards && year != null && month != null) {
+    for (const c of cards) {
+      for (const p of c.payments || []) {
+        if (!p.date) continue;
+        const d = new Date(p.date + 'T00:00:00');
+        if (d.getFullYear() === year && d.getMonth() === month) delta -= Number(p.amount) || 0;
+      }
+    }
+  }
+  return delta;
+}
+
+// Lista de {y, m} para los `range` meses que terminan en refDate (incluido).
+function monthsRange(range, refDate) {
+  const out = [];
+  for (let i = range - 1; i >= 0; i--) {
+    let m = refDate.getMonth() - i;
+    let y = refDate.getFullYear();
+    while (m < 0) { m += 12; y -= 1; }
+    out.push({ y, m });
+  }
+  return out;
+}
+
+const inMonth = (t, y, m) => {
   if (!t.date) return false;
   const d = new Date(t.date + 'T00:00:00');
   return d.getFullYear() === y && d.getMonth() === m;
 };
 
-// Comparativa por categoría: gasto del mes actual vs el anterior (relativo a
-// refDate). Movido desde reports/. Devuelve [{ name, color, current, previous,
-// deltaPct }] ordenado por mayor cambio absoluto. deltaPct null si no hubo mes
-// previo (categoría nueva).
-export function getMonthComparison(transactions, categories, refDate = new Date()) {
-  const curY = refDate.getFullYear(), curM = refDate.getMonth();
-  let prevM = curM - 1, prevY = curY;
-  if (prevM < 0) { prevM = 11; prevY -= 1; }
-
-  const map = new Map();
-  const bump = (t, key) => {
-    const cat = categories.find((c) => c.id === t.categoryId);
-    const name = cat?.name || tr('screens.charts.uncategorized');
-    const color = cat?.color || '#94a3b8';
-    if (!map.has(name)) map.set(name, { name, color, current: 0, previous: 0 });
-    map.get(name)[key] += getEffectiveAmount(t);
-  };
-  for (const t of transactions) {
-    if (!EXPENSE_TYPES.includes(t.type)) continue;
-    if (inMonthCmp(t, curY, curM)) bump(t, 'current');
-    else if (inMonthCmp(t, prevY, prevM)) bump(t, 'previous');
-  }
-  return [...map.values()]
-    .map((x) => ({ ...x, deltaPct: x.previous > 0 ? ((x.current - x.previous) / x.previous) * 100 : null }))
-    .sort((a, b) => Math.abs(b.current - b.previous) - Math.abs(a.current - a.previous));
-}
-
-// Cambio del efectivo en un conjunto de transacciones (típicamente las del mes
-// seleccionado): income − gastos netos − apartados a ahorro. Misma regla que
-// getLiquidCash pero sin saldo inicial (es un delta, no un saldo).
-export function getLiquidDelta(monthTransactions) {
-  let delta = 0;
-  for (const t of monthTransactions || []) {
-    if (t.type === 'income') delta += Number(t.amount) || 0;
-    else if (EXPENSE_TYPES.includes(t.type)) delta -= getEffectiveAmount(t);
-    else if (t.type === 'savings') delta -= Number(t.amount) || 0;
-  }
-  return delta;
+// Ingreso y gasto (neto de cashback) por mes del rango. Movido desde reports/.
+// Alimenta IncomeExpenseBars. Devuelve [{ label, income, expense }].
+export function getIncomeVsExpenseSeries(transactions, range, refDate = new Date()) {
+  return monthsRange(range, refDate).map(({ y, m }) => {
+    let income = 0, expense = 0;
+    for (const t of transactions) {
+      if (!inMonth(t, y, m)) continue;
+      if (t.type === 'income') income += Number(t.amount) || 0;
+      else if (EXPENSE_TYPES.includes(t.type)) expense += getEffectiveAmount(t);
+    }
+    return { label: monthShort(m), income, expense };
+  });
 }
 
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.

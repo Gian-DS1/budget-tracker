@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getMonthComparison } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -109,38 +109,50 @@ describe('getBudgetPace', () => {
 
 describe('getLiquidCash', () => {
   it('sin transacciones → solo el saldo inicial', () => {
-    expect(getLiquidCash([], 50000)).toBe(50000);
+    expect(getLiquidCash([], 50000, [])).toBe(50000);
   });
 
   it('los ingresos suben el efectivo', () => {
     const txs = [tx('c1', 1000, 'income')];
-    expect(getLiquidCash(txs, 0)).toBe(1000);
+    expect(getLiquidCash(txs, 0, [])).toBe(1000);
   });
 
-  it('los gastos bajan el efectivo, netos de cashback', () => {
-    // gasto 200 con 20 de cashback → resta 180
+  it('los gastos SIN tarjeta bajan el efectivo, netos de cashback', () => {
+    // gasto 200 con 20 de cashback, sin tarjeta → resta 180
     const txs = [tx('c1', 200, 'variable_expense', 20)];
-    expect(getLiquidCash(txs, 1000)).toBe(820);
+    expect(getLiquidCash(txs, 1000, [])).toBe(820);
+  });
+
+  it('los gastos CON tarjeta NO bajan el efectivo (sigue en el banco)', () => {
+    // gasto con cardId: el efectivo no se mueve hasta pagar la tarjeta
+    const txs = [{ categoryId: 'c1', amount: 500, type: 'variable_expense', cashbackEarned: 0, cardId: 'cc1' }];
+    expect(getLiquidCash(txs, 1000, [])).toBe(1000);
+  });
+
+  it('los pagos de tarjeta SÍ bajan el efectivo', () => {
+    const cards = [{ id: 'cc1', payments: [{ id: 'p1', amount: 300 }, { id: 'p2', amount: 200 }] }];
+    expect(getLiquidCash([], 1000, cards)).toBe(500);
   });
 
   it('los apartados a ahorro (savings) bajan el efectivo', () => {
     const txs = [tx('c1', 500, 'savings')];
-    expect(getLiquidCash(txs, 1000)).toBe(500);
+    expect(getLiquidCash(txs, 1000, [])).toBe(500);
   });
 
-  it('combina saldo inicial, ingresos, gastos y ahorros', () => {
+  it('combina saldo, ingresos, gastos sin/con tarjeta, ahorros y pagos de tarjeta', () => {
     const txs = [
       tx('c1', 2000, 'income'),
-      tx('c2', 300, 'variable_expense', 0),
-      tx('c3', 150, 'fixed_expense', 0),
-      tx('c4', 500, 'savings'),
+      tx('c2', 300, 'variable_expense', 0),                                              // sin tarjeta: resta 300
+      { categoryId: 'c3', amount: 800, type: 'variable_expense', cashbackEarned: 0, cardId: 'cc1' }, // con tarjeta: no resta
+      tx('c4', 500, 'savings'),                                                          // resta 500
     ];
-    // 1000 + 2000 - 300 - 150 - 500 = 2050
-    expect(getLiquidCash(txs, 1000)).toBe(2050);
+    const cards = [{ id: 'cc1', payments: [{ id: 'p1', amount: 600 }] }];               // pago tarjeta: resta 600
+    // 1000 + 2000 - 300 - 500 - 600 = 1600
+    expect(getLiquidCash(txs, 1000, cards)).toBe(1600);
   });
 
-  it('saldo inicial inválido o ausente → tratado como 0', () => {
-    expect(getLiquidCash([tx('c1', 100, 'income')], undefined)).toBe(100);
+  it('saldo inicial inválido o ausente → tratado como 0; cards opcional', () => {
+    expect(getLiquidCash([tx('c1', 100, 'income')], undefined, undefined)).toBe(100);
   });
 });
 
@@ -149,14 +161,29 @@ describe('getLiquidDelta', () => {
     expect(getLiquidDelta([])).toBe(0);
   });
 
-  it('income − gastos netos − savings del mes', () => {
+  it('income − gastos sin tarjeta netos − savings del mes', () => {
     const txs = [
       tx('c1', 5000, 'income'),
-      tx('c2', 1200, 'variable_expense', 200), // neto 1000
+      tx('c2', 1200, 'variable_expense', 200), // sin tarjeta, neto 1000
       tx('c3', 500, 'savings'),
     ];
     // 5000 - 1000 - 500 = 3500
     expect(getLiquidDelta(txs)).toBe(3500);
+  });
+
+  it('los gastos con tarjeta NO afectan el delta', () => {
+    const txs = [
+      tx('c1', 5000, 'income'),
+      { categoryId: 'c2', amount: 2000, type: 'variable_expense', cashbackEarned: 0, cardId: 'cc1' },
+    ];
+    expect(getLiquidDelta(txs)).toBe(5000);
+  });
+
+  it('los pagos de tarjeta del mes restan del delta', () => {
+    const txs = [tx('c1', 5000, 'income')];
+    // pago de tarjeta en el mes del cálculo (year/month)
+    const cards = [{ id: 'cc1', payments: [{ id: 'p1', amount: 1200, date: '2026-06-10' }] }];
+    expect(getLiquidDelta(txs, cards, 2026, 5)).toBe(3800); // 5000 - 1200
   });
 
   it('mes negativo cuando se gasta más de lo que entra', () => {
@@ -187,29 +214,3 @@ describe('getNetWorthSplit', () => {
   });
 });
 
-describe('getMonthComparison', () => {
-  const cmpCats = [{ id: 'c1', name: 'Supermercado', color: '#aaa' }, { id: 'c2', name: 'Transporte', color: '#bbb' }];
-  const dtx = (categoryId, amount, date, type = 'variable_expense') => ({ categoryId, amount, type, cashbackEarned: 0, date });
-  const ref = new Date('2026-06-15T00:00:00');
-
-  it('sin gastos → arreglo vacío', () => {
-    expect(getMonthComparison([], cmpCats, ref)).toEqual([]);
-  });
-
-  it('compara mes actual (junio) vs anterior (mayo) por categoría', () => {
-    const txs = [
-      dtx('c1', 1000, '2026-06-05'), // junio: current
-      dtx('c1', 600, '2026-05-05'),  // mayo: previous
-      dtx('c2', 300, '2026-06-10'),  // junio, categoría nueva (sin previo)
-    ];
-    const r = getMonthComparison(txs, cmpCats, ref);
-    const superm = r.find((x) => x.name === 'Supermercado');
-    expect(superm.current).toBe(1000);
-    expect(superm.previous).toBe(600);
-    expect(superm.deltaPct).toBeCloseTo(((1000 - 600) / 600) * 100);
-    const transp = r.find((x) => x.name === 'Transporte');
-    expect(transp.current).toBe(300);
-    expect(transp.previous).toBe(0);
-    expect(transp.deltaPct).toBeNull(); // sin mes previo
-  });
-});

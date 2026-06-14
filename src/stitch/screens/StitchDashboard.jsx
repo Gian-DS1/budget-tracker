@@ -19,15 +19,13 @@ import {
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatAmountCompact, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getMonthComparison } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getLiquidDelta, getIncomeVsExpenseSeries } from './dashboard/selectors';
 import { BentoCell, Stat, InfoTip } from './dashboard/dashboardUi';
-import FlowChart from './dashboard/FlowChart';
+import IncomeExpenseBars from './dashboard/IncomeExpenseBars';
 import CategoryDonut from './dashboard/CategoryDonut';
 import BudgetBar from './dashboard/BudgetBar';
-import NetWorthBar from './dashboard/NetWorthBar';
 import HealthRing from './dashboard/HealthRing';
 import SignalsRail from './dashboard/SignalsRail';
-import MonthComparison from './dashboard/MonthComparison';
 import SaveToVaultModal from './dashboard/SaveToVaultModal';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { isDemoActive } from '../demoMode';
@@ -41,8 +39,6 @@ export default function StitchDashboard() {
   const navigate = useNavigate();
   const transactions = useTransactionStore((s) => s.transactions);
   const categories = useCategoryStore((s) => s.categories);
-  const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
-  const getTotalDebt = useDebtStore((s) => s.getTotalDebt);
   const getTotalMonthlyPayment = useDebtStore((s) => s.getTotalMonthlyPayment);
   const budgets = useBudgetStore((s) => s.budgets);
   const payments = useDebtStore((s) => s.payments);
@@ -106,45 +102,23 @@ export default function StitchDashboard() {
   }, [monthTx]);
   const savingsRate = totals.income > 0 ? ((totals.income - totals.expense) / totals.income) * 100 : 0;
 
-  // Patrimonio (su celda lo muestra; getNetWorthSplit calcula el neto internamente)
-  const totalSaved = getTotalSaved();
-  const totalDebt = getTotalDebt();
-  const split = useMemo(() => getNetWorthSplit(totalSaved, totalDebt), [totalSaved, totalDebt]);
-
   const totalPendingCards = useMemo(() => cards.reduce(
     (sum, c) => sum + (getCardBalances(c, transactions, now).pendingBilled || 0), 0,
   ), [cards, transactions, now]);
 
-  // Serie 6 meses (inc/exp/net) para FlowChart
-  const series = useMemo(() => {
-    const arr = [];
-    for (let i = 5; i >= 0; i--) {
-      let mm = m - i, yy = y;
-      while (mm < 0) { mm += 12; yy -= 1; }
-      let inc = 0, exp = 0;
-      transactions.forEach((t) => {
-        const d = new Date(t.date + 'T00:00:00');
-        if (d.getFullYear() !== yy || d.getMonth() !== mm) return;
-        if (t.type === 'income') inc += Number(t.amount);
-        else if (['expense', 'fixed_expense', 'variable_expense'].includes(t.type)) exp += Number(t.amount) - Number(t.cashbackEarned || 0);
-      });
-      arr.push({ label: monthShort(mm), y: yy, m: mm, inc, exp, net: inc - exp });
-    }
-    return arr;
-    // `language` es dependencia real: monthShort() lee el idioma del runtime, fuera de React.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [transactions, y, m, language]);
-
   // Donut de gastos
   const breakdown = useMemo(() => getCategoryBreakdown(monthTx, categories), [monthTx, categories]);
 
-  // Efectivo líquido (solo demo): saldo derivado + delta del mes + comparativa.
+  // Efectivo líquido (solo demo): saldo derivado + delta del mes. Los gastos con
+  // tarjeta NO restan del efectivo; los pagos de tarjeta (card.payments) sí.
   const demo = isDemoActive();
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
-  const liquidCash = useMemo(() => getLiquidCash(transactions, initialCashBalance), [transactions, initialCashBalance]);
-  const liquidDelta = useMemo(() => getLiquidDelta(monthTx), [monthTx]);
-  const comparison = useMemo(() => getMonthComparison(transactions, categories, now), [transactions, categories, now]);
+  const liquidCash = useMemo(() => getLiquidCash(transactions, initialCashBalance, cards), [transactions, initialCashBalance, cards]);
+  const liquidDelta = useMemo(() => getLiquidDelta(monthTx, cards, y, m), [monthTx, cards, y, m]);
   const [saveOpen, setSaveOpen] = useState(false);
+
+  // Serie 6 meses (ingreso/gasto) para el gráfico de barras del flujo.
+  const incomeExpense = useMemo(() => getIncomeVsExpenseSeries(transactions, 6, new Date(y, m, 1)), [transactions, y, m]);
 
   // Presupuesto usado + ritmo del mes en curso (tick y veredicto de BudgetBar)
   const budgetUsage = useMemo(() => getBudgetUsage(summary), [summary]);
@@ -189,9 +163,7 @@ export default function StitchDashboard() {
   }, [cards, debts, goals, transactions, now, t]);
 
   // `live: true` = métrica de HOY (no cambia con el mes seleccionado).
-  // El patrimonio neto es el 4º KPI (celda propia con mini barra ahorro/deuda).
   const metrics = [
-    { l: t('dashboard.canSpend').toUpperCase(), v: <CountUp value={summary.puedesGastar} format={fmt} />, mv: fmtMob(summary.puedesGastar), d: summary.estado === 'danger' ? t('dashboard.tooMuchSpent') : summary.estado === 'warning' ? t('dashboard.justRight') : t('dashboard.leftover'), c: summary.estado === 'danger' ? 'text-accent-error' : summary.estado === 'warning' ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.incomeMinusExpenses') },
     { l: t('dashboard.creditCardsPayable').toUpperCase(), v: <CountUp value={totalPendingCards} format={fmt} />, mv: fmtMob(totalPendingCards), d: totalPendingCards > 0 ? t('dashboard.pending') : t('dashboard.upToDate'), warn: totalPendingCards > 0, c: totalPendingCards > 0 ? 'text-accent-warning' : 'text-tertiary', info: t('dashboard.cardStatus'), live: true },
     { l: t('dashboard.savingsRate').toUpperCase(), v: <CountUp value={savingsRate} format={(n) => `${n.toFixed(1)}%`} />, mv: `${savingsRate.toFixed(0)}%`, d: t('dashboard.ofIncome'), c: savingsRate >= 20 ? 'text-tertiary' : 'text-on-surface-variant', info: t('dashboard.savingsFormula') },
   ];
@@ -261,19 +233,6 @@ export default function StitchDashboard() {
           </Stagger.Item>
         ))}
 
-        <Stagger.Item className="col-span-1 md:col-span-3">
-          <div className="glass-card rounded-lg inner-glow p-md flex flex-col gap-sm h-full">
-            <div className="font-mono-data text-mono-data text-text-muted border-b border-border-subtle pb-xs flex items-center justify-between gap-xs">
-              <span className="flex items-center gap-xs min-w-0"><span className="truncate">{t('dashboard.netWorth').toUpperCase()}</span>{!isCurrentMonth && <span className="text-[8px] text-secondary border border-secondary/40 rounded px-1 shrink-0">{t('calendar.today').toUpperCase()}</span>}</span>
-              <InfoTip text={t('dashboard.netWorthInfo')} />
-            </div>
-            <Stat value={<CountUp value={(demo ? liquidCash : 0) + split.netWorth} format={fmt} />} mobileValue={fmtMob((demo ? liquidCash : 0) + split.netWorth)} cls={((demo ? liquidCash : 0) + split.netWorth) >= 0 ? 'text-tertiary' : 'text-accent-error'} />
-            {split.hasData
-              ? <NetWorthBar split={split} />
-              : <span className="font-label-sm text-label-sm text-text-muted">{t('screens.charts.noSavingsOrDebts')}</span>}
-          </div>
-        </Stagger.Item>
-
         {/* 2 · ¿Voy bien este mes? Presupuesto + flujo (HERO, dominante) */}
         <Stagger.Item className="col-span-2 md:col-span-8">
           <BentoCell className="h-full">
@@ -292,7 +251,7 @@ export default function StitchDashboard() {
               <Stat label={t('dashboard.balance')} value={<CountUp value={totals.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} />} mobileValue={`${totals.balance >= 0 ? '+' : '−'}${fmtMob(Math.abs(totals.balance))}`} cls={totals.balance >= 0 ? 'text-on-surface' : 'text-accent-error'} />
             </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
-            <FlowChart series={series} selY={sel.y} selM={sel.m} />
+            <IncomeExpenseBars data={incomeExpense} />
           </BentoCell>
         </Stagger.Item>
 
@@ -316,13 +275,6 @@ export default function StitchDashboard() {
         <Stagger.Item className="col-span-2 md:col-span-12 lg:col-span-4">
           <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
-          </BentoCell>
-        </Stagger.Item>
-
-        {/* 5 · Cambios vs mes anterior (rescatado de Reportes). */}
-        <Stagger.Item className="col-span-2 md:col-span-12">
-          <BentoCell title={t('dashboard.monthComparison')} icon="compare_arrows" className="h-full">
-            <MonthComparison data={comparison} />
           </BentoCell>
         </Stagger.Item>
       </Stagger>
