@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import toast from 'react-hot-toast';
 import { useI18n } from '../../contexts/I18nContext';
 import ModalShell from '../ModalShell';
+import MS from '../MS';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
 import useCategoryStore from '../../stores/useCategoryStore';
@@ -136,6 +137,12 @@ export default function StatementImportModal({ onClose, pdfData }) {
             <p className="font-body-md text-on-surface-variant">
               {t('screens.settings.bankDetected')} <strong className="uppercase">{pdfData.bank}</strong>. {t('screens.settings.foundN').replace('{n}', pdfData.transactions.length)}
             </p>
+            <div className="flex items-start gap-sm mt-sm px-md py-sm rounded bg-secondary/10 border border-secondary/30">
+              <MS name="info" className="!text-[16px] text-secondary shrink-0 mt-[1px]" />
+              <span className="font-mono-data text-mono-data text-secondary normal-case tracking-normal">
+                {t('screens.settings.importRdNotice')}
+              </span>
+            </div>
           </div>
 
           <div className="p-md sm:p-lg flex-1 overflow-y-auto min-h-0 flex flex-col gap-md">
