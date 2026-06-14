@@ -78,6 +78,15 @@ function ShellInner() {
   const { t } = useI18n();
   const demo = isDemoActive();
   const [menuOpen, setMenuOpen] = useState(false);
+  // Colapso del sidebar en desktop (solo iconos). Se recuerda en localStorage.
+  const [collapsed, setCollapsed] = useState(() => {
+    try { return localStorage.getItem('fintrack-nav-collapsed') === '1'; } catch { return false; }
+  });
+  const toggleCollapsed = () => setCollapsed((c) => {
+    const next = !c;
+    try { localStorage.setItem('fintrack-nav-collapsed', next ? '1' : '0'); } catch { /* ignore */ }
+    return next;
+  });
   const outlet = useOutlet();
   const location = useLocation();
   usePageTitle();
@@ -112,16 +121,21 @@ function ShellInner() {
       <nav
         data-tour="nav"
         className={[
-          'bg-surface-panel h-full w-64 border-r border-border-subtle flex flex-col py-lg px-md gap-xs shrink-0 overflow-y-auto',
-          'fixed inset-y-0 left-0 z-40 transition-transform duration-300 lg:static lg:translate-x-0',
-          menuOpen ? 'translate-x-0' : '-translate-x-full',
+          'bg-surface-panel h-full border-r border-border-subtle flex flex-col py-lg gap-xs shrink-0 overflow-y-auto overflow-x-hidden',
+          'fixed inset-y-0 left-0 z-40 transition-[transform,width] duration-300 lg:static lg:translate-x-0',
+          collapsed ? 'lg:w-[72px] px-sm' : 'w-64 px-md',
+          menuOpen ? 'translate-x-0 w-64 px-md' : '-translate-x-full',
         ].join(' ')}
       >
-        <div className="mb-lg px-sm flex items-center justify-between">
-          <div>
-            <Logo size={26} withText />
-            <div className="text-text-muted font-label-sm text-label-sm pl-[34px] -mt-xs">{t('nav.tagline')}</div>
-          </div>
+        <div className={`mb-lg flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-sm'}`}>
+          {collapsed ? (
+            <Logo size={26} />
+          ) : (
+            <div className="min-w-0">
+              <Logo size={26} withText />
+              <div className="text-text-muted font-label-sm text-label-sm pl-[34px] -mt-xs">{t('nav.tagline')}</div>
+            </div>
+          )}
           {/* Cerrar en móvil */}
           <button onClick={() => setMenuOpen(false)} className="lg:hidden text-text-muted hover:text-on-surface p-xs" aria-label={t('shell.closeMenu')}>
             <MS name="close" className="text-[20px]" />
@@ -131,28 +145,34 @@ function ShellInner() {
         <div className="flex flex-col gap-xs flex-grow">
           {NAV.map((item, i) =>
             item.section ? (
-              <div key={`s-${i}`} className="font-mono-data text-mono-data text-text-muted uppercase tracking-[0.18em] px-md pt-md pb-xs">
-                {item.section}
-              </div>
+              collapsed ? (
+                <div key={`s-${i}`} className="h-px bg-border-subtle mx-sm my-sm" />
+              ) : (
+                <div key={`s-${i}`} className="font-mono-data text-mono-data text-text-muted uppercase tracking-[0.18em] px-md pt-md pb-xs">
+                  {item.section}
+                </div>
+              )
             ) : (
               <NavLink
                 key={item.to}
                 to={item.to}
                 end={item.end}
                 onClick={() => setMenuOpen(false)}
+                title={collapsed ? item.label : undefined}
                 className={({ isActive }) =>
                   [
-                    'flex items-center gap-md px-md py-sm rounded transition-all duration-200 border',
+                    'flex items-center gap-md py-sm rounded transition-all duration-200 border',
+                    collapsed ? 'justify-center px-0' : 'px-md',
                     isActive
-                      ? 'bg-surface-container-highest text-primary border-border-subtle font-bold translate-x-1 shadow-[0_0_15px_rgba(190,194,255,0.2)]'
+                      ? 'bg-surface-container-highest text-primary border-border-subtle font-bold shadow-[0_0_15px_rgba(190,194,255,0.2)]'
                       : 'text-on-surface-variant border-transparent hover:text-on-surface hover:bg-surface-container-highest',
                   ].join(' ')
                 }
               >
                 {({ isActive }) => (
                   <>
-                    <MS name={item.icon} fill={isActive} className="text-[20px]" />
-                    <span className="font-label-sm text-label-sm">{item.label}</span>
+                    <MS name={item.icon} fill={isActive} className="text-[20px] shrink-0" />
+                    {!collapsed && <span className="font-label-sm text-label-sm truncate">{item.label}</span>}
                   </>
                 )}
               </NavLink>
@@ -160,11 +180,22 @@ function ShellInner() {
           )}
         </div>
 
+        {/* Colapsar/expandir (solo desktop). */}
+        <button
+          onClick={toggleCollapsed}
+          title={collapsed ? t('shell.expandMenu') : t('shell.collapseMenu')}
+          className={`hidden lg:flex mt-md py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-on-surface transition-colors items-center gap-sm ${collapsed ? 'justify-center px-0' : 'justify-start px-md'}`}
+        >
+          <MS name={collapsed ? 'chevron_right' : 'chevron_left'} className="text-[18px] shrink-0" />
+          {!collapsed && <span className="truncate">{t('shell.collapseMenu')}</span>}
+        </button>
+
         <button
           onClick={handleSignOut}
-          className="mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center justify-center gap-sm"
+          title={collapsed ? t('auth.signOut') : undefined}
+          className={`mt-xs w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center gap-sm ${collapsed ? 'justify-center px-0' : 'justify-center'}`}
         >
-          <MS name="logout" className="text-[16px]" /> {demo ? t('auth.signOut') : t('auth.signOut')}
+          <MS name="logout" className="text-[16px] shrink-0" />{!collapsed && <span>{t('auth.signOut')}</span>}
         </button>
       </nav>
 

@@ -45,8 +45,8 @@ export default function CategoryDonut({ data, compact = false }) {
 
   return (
     <div className={`flex-grow flex items-center min-h-[200px] ${compact ? 'flex-col gap-md' : 'flex-col sm:flex-row gap-xl min-h-[240px]'}`}>
-      {/* Dona: en compact más chica y arriba; en normal al lado de la leyenda. */}
-      <div className={`relative shrink-0 ${compact ? 'w-[150px] h-[150px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
+      {/* Dona: en compact arriba (tamaño cómodo); en normal al lado de la leyenda. */}
+      <div className={`relative shrink-0 ${compact ? 'w-[190px] h-[190px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -80,9 +80,9 @@ export default function CategoryDonut({ data, compact = false }) {
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
           {/* El bloque se limita al diámetro del agujero (innerRadius 58%) para
               que un nombre largo se trunque dentro y nunca choque con el anillo. */}
-          <div className="flex flex-col items-center text-center leading-tight max-w-[56%]">
+          <div className="flex flex-col items-center text-center leading-tight max-w-[62%]">
             <span className="font-mono-data text-[9px] text-text-muted uppercase truncate max-w-full w-full">{activeName || 'Total'}</span>
-            <span className="font-headline-md text-[15px] text-on-surface tracking-tight truncate max-w-full w-full">{fmt(active >= 0 ? withPct[active].value : total)}</span>
+            <span className={`font-headline-md text-on-surface tracking-tight truncate max-w-full w-full ${compact ? 'text-[16px]' : 'text-[15px]'}`}>{fmt(active >= 0 ? withPct[active].value : total)}</span>
             {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
           </div>
         </div>
@@ -104,7 +104,7 @@ export default function CategoryDonut({ data, compact = false }) {
             className={`flex items-center gap-sm font-mono-data text-mono-data rounded px-sm py-xs transition-colors text-left ${active === i ? 'bg-surface-container-high' : ''}`}
           >
             {d.icon && <span className="shrink-0 flex items-center"><Emoji e={d.icon} size={16} /></span>}
-            <span className={`text-on-surface-variant truncate shrink-0 ${compact ? 'w-[80px]' : 'w-[110px] sm:w-[150px]'}`}>{d.name}</span>
+            <span className={`text-on-surface-variant truncate shrink-0 ${compact ? 'w-[120px]' : 'w-[110px] sm:w-[150px]'}`}>{d.name}</span>
             <span className="relative flex-grow h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
               <span
                 className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out motion-reduce:transition-none"

@@ -176,6 +176,8 @@ const translations = {
     // Shell
     shell: {
       closeMenu: 'Cerrar menú',
+      collapseMenu: 'Colapsar menú',
+      expandMenu: 'Expandir menú',
     },
     // Configuración / Settings
     settings: {
@@ -1133,6 +1135,8 @@ const translations = {
     // Shell
     shell: {
       closeMenu: 'Close menu',
+      collapseMenu: 'Collapse menu',
+      expandMenu: 'Expand menu',
     },
     // Settings
     settings: {

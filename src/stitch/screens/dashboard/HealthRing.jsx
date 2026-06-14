@@ -37,10 +37,10 @@ export default function HealthRing({ health, hasData, monthsCounted = 0, compact
       {(animated) => {
         const data = [{ name: 'salud', value: animated, fill: color }];
         return (
-          <div className={`flex-grow flex ${compact ? 'flex-row items-center gap-lg' : 'flex-col'}`}>
+          <div className={`flex-grow flex ${compact ? 'flex-row items-center gap-xl py-md' : 'flex-col'}`}>
             {/* Gauge semicircular. Radios reducidos + padding lateral para que el
                 arco no toque los rótulos "EN RIESGO/EXCELENTE" de los extremos. */}
-            <div className={`relative px-xl shrink-0 ${compact ? 'w-[55%] h-[120px]' : 'w-full h-[140px] sm:h-[155px]'}`}>
+            <div className={`relative shrink-0 ${compact ? 'w-[48%] h-[160px] px-lg' : 'w-full h-[140px] sm:h-[155px] px-xl'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   innerRadius="115%"

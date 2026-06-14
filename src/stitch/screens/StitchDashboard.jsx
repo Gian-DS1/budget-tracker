@@ -228,8 +228,8 @@ export default function StitchDashboard() {
           </Stagger.Item>
         ))}
 
-        {/* 2 · Flujo del mes (HERO, col-8) + Donut (col-4) lado a lado. */}
-        <Stagger.Item className="col-span-2 md:col-span-8">
+        {/* 2 · Flujo del mes (HERO, col-7) + Donut (col-5) lado a lado. */}
+        <Stagger.Item className="col-span-2 md:col-span-7">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-sm gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs min-w-0">
@@ -260,21 +260,21 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* Donut de gastos AL LADO del flujo (col-4, angosto → apila vertical). */}
-        <Stagger.Item className="col-span-2 md:col-span-4">
+        {/* Donut de gastos AL LADO del flujo (col-5). */}
+        <Stagger.Item className="col-span-2 md:col-span-5">
           <BentoCell title={t('dashboard.expenses') + ' ' + t('pages.analysis')} icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} compact />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Salud financiera (col-8, compacta horizontal) + Recordatorios (col-4). */}
-        <Stagger.Item className="col-span-2 md:col-span-8">
+        {/* 3 · Salud financiera (col-7, compacta horizontal) + Recordatorios (col-5). */}
+        <Stagger.Item className="col-span-2 md:col-span-7">
           <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="h-full">
             <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} compact />
           </BentoCell>
         </Stagger.Item>
 
-        <Stagger.Item className="col-span-2 md:col-span-4">
+        <Stagger.Item className="col-span-2 md:col-span-5">
           <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
