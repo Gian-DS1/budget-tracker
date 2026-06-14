@@ -121,7 +121,7 @@ function ShellInner() {
       <nav
         data-tour="nav"
         className={[
-          'bg-surface-panel h-full border-r border-border-subtle flex flex-col py-lg gap-xs shrink-0 overflow-y-auto overflow-x-hidden',
+          'bg-surface-panel h-full border-r border-border-subtle flex flex-col py-lg gap-xs shrink-0 relative',
           'fixed inset-y-0 left-0 z-40 transition-[transform,width] duration-300 lg:static lg:translate-x-0',
           collapsed ? 'lg:w-[72px] px-sm' : 'w-64 px-md',
           menuOpen ? 'translate-x-0 w-64 px-md' : '-translate-x-full',
@@ -142,7 +142,7 @@ function ShellInner() {
           </button>
         </div>
 
-        <div className="flex flex-col gap-xs flex-grow">
+        <div className="flex flex-col gap-xs flex-grow overflow-y-auto overflow-x-hidden">
           {NAV.map((item, i) =>
             item.section ? (
               collapsed ? (
@@ -180,22 +180,23 @@ function ShellInner() {
           )}
         </div>
 
-        {/* Colapsar/expandir (solo desktop). */}
-        <button
-          onClick={toggleCollapsed}
-          title={collapsed ? t('shell.expandMenu') : t('shell.collapseMenu')}
-          className={`hidden lg:flex mt-md py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-on-surface transition-colors items-center gap-sm ${collapsed ? 'justify-center px-0' : 'justify-start px-md'}`}
-        >
-          <MS name={collapsed ? 'chevron_right' : 'chevron_left'} className="text-[18px] shrink-0" />
-          {!collapsed && <span className="truncate">{t('shell.collapseMenu')}</span>}
-        </button>
-
         <button
           onClick={handleSignOut}
           title={collapsed ? t('auth.signOut') : undefined}
-          className={`mt-xs w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center gap-sm ${collapsed ? 'justify-center px-0' : 'justify-center'}`}
+          className={`mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center gap-sm ${collapsed ? 'justify-center px-0' : 'justify-center'}`}
         >
           <MS name="logout" className="text-[16px] shrink-0" />{!collapsed && <span>{t('auth.signOut')}</span>}
+        </button>
+
+        {/* Handle de colapso: pestaña discreta en el borde derecho del sidebar
+            (solo desktop). Tenue por defecto, se resalta al hover. Sin texto. */}
+        <button
+          onClick={toggleCollapsed}
+          title={collapsed ? t('shell.expandMenu') : t('shell.collapseMenu')}
+          aria-label={collapsed ? t('shell.expandMenu') : t('shell.collapseMenu')}
+          className="hidden lg:flex absolute top-1/2 -right-3 -translate-y-1/2 z-50 h-12 w-6 items-center justify-center rounded-full border border-border-subtle bg-surface-container text-text-muted opacity-40 hover:opacity-100 hover:text-on-surface hover:bg-surface-container-high transition-[opacity,color,background-color] duration-200 active:scale-95"
+        >
+          <MS name={collapsed ? 'chevron_right' : 'chevron_left'} className="text-[18px]" />
         </button>
       </nav>
 
