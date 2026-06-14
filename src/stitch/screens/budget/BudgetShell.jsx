@@ -127,7 +127,7 @@ export default function BudgetShell({ level = 'zero' }) {
             })}
           </div>
         </div>
-        <div className="flex gap-md bg-surface-card p-sm rounded border border-border-subtle inner-glow items-center">
+        <div data-tour="budget-summary" className="flex gap-md bg-surface-card p-sm rounded border border-border-subtle inner-glow items-center">
           <button onClick={() => navMonth(-1)} className="p-xs rounded hover:bg-surface-container-high text-on-surface-variant"><MS name="chevron_left" className="text-[18px]" /></button>
           <div className="flex flex-col px-sm py-xs border-x border-border-subtle text-center min-w-[120px]">
             <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.period').toUpperCase()}</span>

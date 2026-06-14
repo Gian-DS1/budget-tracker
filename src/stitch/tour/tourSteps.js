@@ -48,7 +48,10 @@ export const TOUR_STEPS = [
     'tour.budgetSpendTitle', 'tour.budgetSpendBody'),
 
   // ── 6. Todo conectado (cierre conceptual) ────────────────────────────────────
-  step({ id: 'connected', route: '/', anchor: '[data-tour="dashboard-grid"]', placement: 'center' },
+  // Centrado puro (anchor null): el grid del dashboard es más alto que el viewport
+  // y al recortarlo el halo se salía de pantalla. Como es el cierre conceptual, el
+  // velo plano + globo centrado comunica mejor "todo conectado" sin recorte roto.
+  step({ id: 'connected', route: '/', anchor: null, placement: 'center' },
     'tour.connectedTitle', 'tour.connectedBody'),
 
   // ── 7. Cierre ────────────────────────────────────────────────────────────────

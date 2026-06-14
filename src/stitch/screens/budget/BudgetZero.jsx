@@ -107,7 +107,7 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
 
       {/* Bento: disponible (con "por asignar" como métrica de primer nivel:
           en base cero, dinero sin asignar es tarea pendiente) + daily burn */}
-      <div data-tour="budget-summary" className="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-gutter mb-gutter">
         <div className="md:col-span-8 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col">
           <div className="flex justify-between items-center mb-lg border-b border-border-subtle pb-sm">
             <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.budget.available').toUpperCase()}</h2>
