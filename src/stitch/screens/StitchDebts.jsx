@@ -17,7 +17,7 @@ import HistoryModal from './debts/HistoryModal';
 
 const fmt = (n) => formatCurrency(n);
 
-export default function StitchDebts() {
+export default function StitchDebts({ embedded = false }) {
   const { t } = useI18n();
   const { debts, payments, addDebt, deleteDebt, restorePayment } = useDebtStore();
   const getTotalDebt = useDebtStore((s) => s.getTotalDebt);
@@ -61,7 +61,7 @@ export default function StitchDebts() {
   };
 
   return (
-    <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
+    <div className={embedded ? '' : 'p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full'}>
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-lg mb-xl">
         <div>
           <div className="flex items-center gap-sm mb-xs">
@@ -69,7 +69,7 @@ export default function StitchDebts() {
             <span className="font-mono-data text-mono-data text-accent-error uppercase tracking-wider">{t('screens.debts.liabilitiesAvalanche')}</span>
           </div>
           <h1 className="font-headline-lg text-headline-lg text-on-surface">{t('screens.debts.debtControl')}</h1>
-          <p className="font-body-md text-body-md text-text-muted mt-sm">{t('screens.debts.totalActiveDebt')} <span className="text-accent-error font-mono-data"><CountUp value={totalDebt} format={fmt} /></span></p>
+          {!embedded && <p className="font-body-md text-body-md text-text-muted mt-sm">{t('screens.debts.totalActiveDebt')} <span className="text-accent-error font-mono-data"><CountUp value={totalDebt} format={fmt} /></span></p>}
         </div>
         <button data-tour="debts-new" onClick={openCreate} className="bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold px-md py-sm rounded hover:bg-primary-container transition-colors inner-glow flex items-center gap-xs self-start">
           <MS name="add" className="text-[16px]" /> {t('common.newDebt')}
