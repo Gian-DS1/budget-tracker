@@ -252,6 +252,18 @@ describe('getCumulativeLiquidWealth', () => {
     expect(r[2].wealth).toBe(1200);
   });
 
+  it('desglosa wealth en cash (efectivo) y savings (ahorro) por mes', () => {
+    const txs = [
+      t(1000, 'income', '2026-01-10'),  // ene: efectivo +1000
+      t(200, 'savings', '2026-03-08'),  // mar: efectivo -200, ahorro +200
+    ];
+    const r = getCumulativeLiquidWealth(txs, 500, 3, ref);
+    // mar: cash = 500+1000-200 = 1300, savings = 200, wealth = 1500
+    expect(r[2].cash).toBe(1300);
+    expect(r[2].savings).toBe(200);
+    expect(r[2].wealth).toBe(r[2].cash + r[2].savings);
+  });
+
   it('los gastos con tarjeta no bajan el efectivo de la línea', () => {
     const txs = [
       t(1000, 'income', '2026-03-01'),

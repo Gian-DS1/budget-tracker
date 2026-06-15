@@ -10,8 +10,10 @@ import { formatCurrency } from '../../../utils/formatters';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { EmptyCell } from './dashboardUi';
 import Emoji from '../../Emoji';
+import CountUp from '../../CountUp';
 
 const fmt = (n) => formatCurrency(n);
+const pct0 = (n) => `${Math.round(Number(n) || 0)}%`;
 
 // Forma activa: el sector crece hacia afuera + sombra (drop-shadow) de su color.
 function ActiveSector(props) {
@@ -82,8 +84,10 @@ export default function CategoryDonut({ data, compact = false }) {
               que un nombre largo se trunque dentro y nunca choque con el anillo. */}
           <div className="flex flex-col items-center text-center leading-tight max-w-[62%]">
             <span className="font-mono-data text-[9px] text-text-muted uppercase truncate max-w-full w-full">{activeName || 'Total'}</span>
-            <span className={`font-headline-md text-on-surface tracking-tight truncate max-w-full w-full ${compact ? 'text-[16px]' : 'text-[15px]'}`}>{fmt(active >= 0 ? withPct[active].value : total)}</span>
-            {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted">{withPct[active].pct.toFixed(1)}%</span>}
+            <span className={`font-headline-md text-on-surface tracking-tight tabular-nums truncate max-w-full w-full ${compact ? 'text-[16px]' : 'text-[15px]'}`}>
+              <CountUp value={active >= 0 ? withPct[active].value : total} format={fmt} duration={240} />
+            </span>
+            {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted tabular-nums"><CountUp value={withPct[active].pct} format={(n) => `${n.toFixed(1)}%`} duration={240} /></span>}
           </div>
         </div>
       </div>
@@ -115,8 +119,8 @@ export default function CategoryDonut({ data, compact = false }) {
                 }}
               />
             </span>
-            <span className="text-on-surface shrink-0 text-right tabular-nums">{fmt(d.value)}</span>
-            <span className="text-text-muted shrink-0 w-[34px] text-right tabular-nums">{d.pct.toFixed(0)}%</span>
+            <span className="text-on-surface shrink-0 text-right tabular-nums"><CountUp value={d.value} format={fmt} duration={240} /></span>
+            <span className="text-text-muted shrink-0 w-[34px] text-right tabular-nums"><CountUp value={d.pct} format={pct0} duration={240} /></span>
           </button>
         ))}
       </div>

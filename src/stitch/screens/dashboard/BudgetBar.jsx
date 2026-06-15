@@ -6,8 +6,10 @@
 import { formatCurrency } from '../../../utils/formatters';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { EmptyCell } from './dashboardUi';
+import CountUp from '../../CountUp';
 
 const fmt = (n) => formatCurrency(n);
+const pct0 = (n) => `${Math.round(Number(n) || 0)}%`;
 
 const COLOR = { good: 'bg-tertiary', warning: 'bg-accent-warning', danger: 'bg-accent-error', neutral: 'bg-primary' };
 const TEXT = { good: 'text-tertiary', warning: 'text-accent-warning', danger: 'text-accent-error', neutral: 'text-on-surface' };
@@ -27,12 +29,18 @@ export default function BudgetBar({ usage, pace }) {
       {/* Rótulo: deja claro que esta barra mide el presupuesto del mes (no el patrimonio). */}
       <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.charts.budgetOfMonth}</span>
       <div className="flex justify-between items-baseline">
-        <span className={`font-headline-md text-[22px] tracking-tight ${txt}`}>{usage.pct.toFixed(0)}%</span>
-        <span className="font-mono-data text-mono-data text-text-muted">{fmt(usage.spent)} {strings.charts.of} {fmt(usage.budgeted)}</span>
+        <span className={`font-headline-md text-[22px] tracking-tight tabular-nums ${txt}`}>
+          <CountUp value={usage.pct} format={pct0} duration={240} />
+        </span>
+        <span className="font-mono-data text-mono-data text-text-muted tabular-nums">
+          <CountUp value={usage.spent} format={fmt} duration={240} /> {strings.charts.of} <CountUp value={usage.budgeted} format={fmt} duration={240} />
+        </span>
       </div>
       <div className="relative w-full h-2 bg-surface-container-highest rounded-full">
         <div className="absolute inset-0 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${bar}`} style={{ width: `${usage.pct}%` }} />
+          <CountUp value={usage.pct} duration={240}>
+            {(p) => <div className={`h-full rounded-full ${bar}`} style={{ width: `${p}%` }} />}
+          </CountUp>
         </div>
         {/* Tick de ritmo: avance del calendario. La meta es que la barra no lo rebase. */}
         {pace && (

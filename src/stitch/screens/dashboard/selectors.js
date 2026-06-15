@@ -181,7 +181,8 @@ function cashEffect(t) {
 // recorta para NO ir antes de la primera transacción (no se muestran meses vacíos
 // previos a los datos). `cards` (opcional) permite calcular las "tarjetas por
 // pagar" históricas por mes (saldo facturado pendiente al cierre de cada mes).
-// Devuelve [{ label, y, m, income, expense, wealth, savingsRate, cardsDue }].
+// Devuelve [{ label, y, m, income, expense, cash, savings, wealth, savingsRate, cardsDue }]
+// donde wealth = cash + savings (efectivo disponible + ahorro acumulados al cierre).
 export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date(), cards = []) {
   const txs = transactions || [];
   // Meses disponibles desde el primer dato hasta refDate (incluidos).
@@ -221,7 +222,7 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
     const cardsDue = (cards || []).reduce(
       (sum, c) => sum + (getCardBalances(c, txs, monthRef).pendingBilled || 0), 0,
     );
-    return { label: monthShort(m), y, m, income, expense, wealth: cash + savings, savingsRate, cardsDue };
+    return { label: monthShort(m), y, m, income, expense, cash, savings, wealth: cash + savings, savingsRate, cardsDue };
   });
 }
 

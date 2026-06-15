@@ -177,7 +177,7 @@ export default function StitchDashboard() {
 
         {/* Donut de gastos AL LADO del flujo (col-5). */}
         <Stagger.Item className="col-span-2 md:col-span-5">
-          <BentoCell title={t('dashboard.expenses') + ' ' + t('pages.analysis')} icon="donut_small" className="h-full">
+          <BentoCell title={t('dashboard.whereSpend')} icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} compact />
           </BentoCell>
         </Stagger.Item>
