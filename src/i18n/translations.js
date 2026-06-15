@@ -207,6 +207,15 @@ const translations = {
       tabDebts: 'Deudas',
       tabCards: 'Tarjetas',
     },
+    cascade: {
+      shortfallTitle: 'Falta efectivo',
+      shortfallBody: 'Te faltan {amt} para cubrir este pago. ¿De qué meta los tomamos?',
+      noFunds: 'No tienes fondos suficientes. Disponible {avail} (efectivo + ahorros), necesitas {need}.',
+      noSingleGoal: 'Ninguna meta tiene suficiente para cubrir el faltante de {amt}. Reduce el monto del pago.',
+      takeFrom: 'Tomar de',
+      confirm: 'Confirmar pago',
+      usedSavings: 'Se usaron {amt} de "{goal}" para este pago.',
+    },
     // Dashboard
     dashboard: {
       title: 'Resumen',
@@ -1180,6 +1189,15 @@ const translations = {
       tabSavings: 'Savings',
       tabDebts: 'Debts',
       tabCards: 'Cards',
+    },
+    cascade: {
+      shortfallTitle: 'Not enough cash',
+      shortfallBody: 'You are {amt} short for this payment. Which goal should we take it from?',
+      noFunds: 'Not enough funds. Available {avail} (cash + savings), you need {need}.',
+      noSingleGoal: 'No goal has enough to cover the {amt} shortfall. Lower the payment amount.',
+      takeFrom: 'Take from',
+      confirm: 'Confirm payment',
+      usedSavings: 'Used {amt} from "{goal}" for this payment.',
     },
     // Dashboard
     dashboard: {
