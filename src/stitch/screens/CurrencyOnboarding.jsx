@@ -14,6 +14,7 @@ import { motion, useReducedMotion } from 'framer-motion';
 import { useI18n } from '../../contexts/I18nContext';
 import usePrefsStore from '../../stores/usePrefsStore';
 import StitchSelect from '../StitchSelect';
+import StitchCurrencyInput from '../StitchCurrencyInput';
 import { currencyOptions } from '../../utils/currencyOptions';
 import { EASE_OUT } from '../motionTokens';
 
@@ -24,7 +25,9 @@ const FOCUSABLE =
 export default function CurrencyOnboarding() {
   const { t, language } = useI18n();
   const setCurrency = usePrefsStore((s) => s.setCurrency);
+  const setInitialCashBalance = usePrefsStore((s) => s.setInitialCashBalance);
   const [picked, setPicked] = useState('');
+  const [cash, setCash] = useState('');
 
   // Fix 2: memoizar opciones de moneda; se recalcula sólo si cambia el idioma.
   // Derivamos el locale a partir de `language` (misma lógica que currentLocale())
@@ -92,6 +95,8 @@ export default function CurrencyOnboarding() {
 
   const handleConfirm = () => {
     if (!picked) return;
+    // Persistir el efectivo inicial declarado (opcional; vacío = 0, se declara luego).
+    if (cash) setInitialCashBalance(cash);
     setCurrency(picked);
     // setCurrency es optimista: actualiza el store de inmediato; el gate
     // desaparece solo porque currency pasa de null a un código.
@@ -134,6 +139,13 @@ export default function CurrencyOnboarding() {
           options={options}
           placeholder={t('screens.currencyOnboarding.placeholder')}
         />
+
+        {/* Efectivo inicial (opcional). Es enfocable → el focus-trap lo incluye solo. */}
+        <label className="flex flex-col gap-xs">
+          <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.currencyOnboarding.cashLabel')}</span>
+          <StitchCurrencyInput value={cash} onChange={setCash} />
+          <span className="font-label-sm text-label-sm text-text-muted">{t('screens.currencyOnboarding.cashHelp')}</span>
+        </label>
 
         {/* Botón confirmar */}
         <button

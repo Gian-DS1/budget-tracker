@@ -880,6 +880,8 @@ const translations = {
         subtitle: 'Todos tus montos vivirán en esta moneda. Podrás cambiarla en Ajustes (los montos no se convierten).',
         placeholder: 'Elige tu moneda…',
         confirm: 'Empezar',
+        cashLabel: '¿Cuánto efectivo tienes hoy?',
+        cashHelp: 'Lo que tienes disponible ahora (opcional, puedes ponerlo después).',
       },
       status: {
         completedGoal: 'Meta completada',
@@ -1836,6 +1838,8 @@ const translations = {
         subtitle: 'All your amounts will live in this currency. You can change it in Settings (amounts are not converted).',
         placeholder: 'Choose your currency…',
         confirm: 'Get started',
+        cashLabel: 'How much cash do you have today?',
+        cashHelp: 'What you have available now (optional, you can set it later).',
       },
       status: {
         completedGoal: 'Goal completed',
