@@ -22,6 +22,7 @@ const fmt = (n, c) => formatCurrency(n, c);
 export default function PaymentModal({ debt, onClose }) {
   const { t } = useI18n();
   const addPayment = useDebtStore((s) => s.addPayment);
+  const addPaymentWithCascade = useDebtStore((s) => s.addPaymentWithCascade);
   const transactions = useTransactionStore((s) => s.transactions);
   const cards = useCreditCardStore((s) => s.cards);
   const goals = useSavingsStore((s) => s.goals);
@@ -38,7 +39,8 @@ export default function PaymentModal({ debt, onClose }) {
       if (savingsPick) applyDebtPaymentWithCascade(debt.id, amt, date, note.trim(), savingsPick);
       else demoAddDebtPayment(debt.id, amt, date, note.trim());
     } else {
-      addPayment(debt.id, amt, date, note.trim()); // cuenta real: sin cascada (como hoy)
+      if (savingsPick) addPaymentWithCascade(debt.id, amt, date, note.trim(), savingsPick);
+      else addPayment(debt.id, amt, date, note.trim());
     }
     const newBal = Number(debt.currentBalance) - amt;
     if (newBal <= 0) toastCelebrate(t('screens.debts.debtPaidOff'));
@@ -55,9 +57,8 @@ export default function PaymentModal({ debt, onClose }) {
     const amt = Number(amount);
     if (!amt || amt <= 0) return;
 
-    // Cuenta real (no demo): sin cascada, comportamiento de hoy.
-    if (!isDemoActive()) { applyPayment(amt, null); return; }
-
+    // La cascada corre en demo Y en cuenta real (el cálculo de faltante usa los
+    // stores, que en cuenta real vienen de Supabase).
     const { available, shortfall } = getCashShortfall(transactions, initialCashBalance, cards, amt);
     if (shortfall === 0) { applyPayment(amt, null); return; }
 
