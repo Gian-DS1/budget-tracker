@@ -4,6 +4,7 @@ import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import useCategoryStore from './useCategoryStore';
 import useTransactionStore from './useTransactionStore';
+import useSavingsStore from './useSavingsStore';
 import { getCurrency } from '../utils/currencyRuntime';
 
 const useDebtStore = create(
@@ -62,6 +63,7 @@ const useDebtStore = create(
         remainingBalance: Number(p.remaining_balance),
         notes: p.notes,
         transactionId: p.transaction_id || null,
+        savingsUsed: p.savings_used || [],
         createdAt: p.created_at
       }));
     }
@@ -151,7 +153,7 @@ const useDebtStore = create(
     }
   },
 
-  addPayment: async (debtId, amount, date, notes = '') => {
+  addPayment: async (debtId, amount, date, notes = '', savingsUsed = []) => {
     const user = await getCurrentUser();
     if (!user) return;
 
@@ -167,7 +169,8 @@ const useDebtStore = create(
       amount: Number(amount),
       date: date,
       remaining_balance: newBalance,
-      notes: notes || null
+      notes: notes || null,
+      savings_used: savingsUsed,
     };
 
     // We do both: insert payment and update debt
@@ -188,6 +191,7 @@ const useDebtStore = create(
         remainingBalance: Number(paymentData.remaining_balance),
         notes: paymentData.notes,
         transactionId: null,
+        savingsUsed: paymentData.savings_used || [],
         createdAt: paymentData.created_at
       };
 
@@ -240,6 +244,18 @@ const useDebtStore = create(
     }
   },
 
+  // Pago de deuda con cascada (cuenta real). Si savingsPick no es null, retira ese
+  // monto del ahorro (aporte negativo → baja la meta y devuelve efectivo) y registra
+  // el pago con savingsUsed para la reversa. Espejo de applyDebtPaymentWithCascade (demo).
+  addPaymentWithCascade: async (debtId, amount, date, notes, savingsPick) => {
+    const savingsUsed = [];
+    if (savingsPick && savingsPick.amount > 0) {
+      await useSavingsStore.getState().addContribution(savingsPick.goalId, -Math.abs(savingsPick.amount), date, 'Retiro para pago de deuda');
+      savingsUsed.push({ goalId: savingsPick.goalId, amount: Math.abs(savingsPick.amount) });
+    }
+    return get().addPayment(debtId, amount, date, notes, savingsUsed);
+  },
+
   // Elimina un pago y revierte todo lo que addPayment hizo: devuelve el monto al
   // saldo de la deuda, recalcula el estado, borra la fila del pago y, si está
   // enlazada, borra también la transacción generada. Pagos legados sin
@@ -248,6 +264,10 @@ const useDebtStore = create(
   deletePayment: async (paymentId) => {
     const payment = get().payments.find((p) => p.id === paymentId);
     if (!payment) return { ok: false };
+    // Reversa de cascada: devuelve a cada meta lo que el pago tomó del ahorro.
+    for (const s of payment.savingsUsed || []) {
+      await useSavingsStore.getState().addContribution(s.goalId, Math.abs(s.amount), payment.date, 'Reversa de retiro por pago');
+    }
     const debt = get().debts.find((d) => d.id === payment.debtId);
 
     // Revertir saldo + estado de la deuda (si la deuda aún existe).
