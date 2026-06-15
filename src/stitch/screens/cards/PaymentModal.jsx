@@ -4,44 +4,78 @@ import { useState } from 'react';
 import toast from 'react-hot-toast';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
 import StitchDatePicker from '../../StitchDatePicker';
-import { isDemoActive, demoAddCardPayment } from '../../demoMode';
+import { isDemoActive, demoAddCardPayment, applyCardPaymentWithCascade } from '../../demoMode';
 import { useI18n } from '../../../contexts/I18nContext';
 import useCreditCardStore from '../../../stores/useCreditCardStore';
+import useSavingsStore from '../../../stores/useSavingsStore';
+import usePrefsStore from '../../../stores/usePrefsStore';
 import { getCardBalances } from '../../../utils/creditCards';
 import { todayISO, formatCurrency } from '../../../utils/formatters';
 import { toastCelebrate } from '../../toastCelebrate';
 import { Modal, Field, FormActions, inputCls } from './cardsUi';
+import { getCashShortfall, canAffordPayment } from '../dashboard/selectors';
+import SavingsPickerModal from '../finances/SavingsPickerModal';
 
 const fmt = (n) => formatCurrency(n);
 
 export default function PaymentModal({ card, transactions, onClose }) {
   const { t } = useI18n();
   const addCardPayment = useCreditCardStore((s) => s.addCardPayment);
+  const cards = useCreditCardStore((s) => s.cards);
+  const goals = useSavingsStore((s) => s.goals);
+  const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
+  const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
   const bal = getCardBalances(card, transactions, new Date());
   const [amount, setAmount] = useState(bal.pendingBilled > 0 ? String(Math.round(bal.pendingBilled * 100) / 100) : '');
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState('');
+  const [picker, setPicker] = useState(null);
 
-  const submit = async (e) => {
-    e.preventDefault();
-    const amt = Number(amount);
-    if (!amt || amt <= 0) return;
+  const applyPayment = (amt, savingsPick) => {
     const payload = { amount: amt, date, note: note.trim() };
     if (isDemoActive()) {
-      demoAddCardPayment(card.id, payload);
+      if (savingsPick) applyCardPaymentWithCascade(card.id, payload, savingsPick);
+      else demoAddCardPayment(card.id, payload);
       toast.success(t('screens.cards.paymentRegistered'));
     } else {
-      await addCardPayment(card.id, payload);
+      addCardPayment(card.id, payload); // cuenta real: sin cascada
     }
-    // ¿Este abono SALDÓ un estado de cuenta que estaba pendiente? (no en prepagos
-    // sobre una tarjeta que ya estaba al día).
+    // ¿Este abono SALDÓ un estado de cuenta que estaba pendiente?
     if (bal.pendingBilled > 0.01 && amt + bal.paid >= bal.billed - 0.01) {
       toastCelebrate(t('creditCards.amountPaid'));
+    }
+    if (savingsPick) {
+      const g = goals.find((gg) => gg.id === savingsPick.goalId);
+      toast(t('cascade.usedSavings').replace('{amt}', fmt(savingsPick.amount)).replace('{goal}', g?.title || ''), { icon: 'ℹ️' });
     }
     onClose();
   };
 
+  const submit = (e) => {
+    e.preventDefault();
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+
+    if (!isDemoActive()) { applyPayment(amt, null); return; }
+
+    const { available, shortfall } = getCashShortfall(transactions, initialCashBalance, cards, amt);
+    if (shortfall === 0) { applyPayment(amt, null); return; }
+
+    const totalSavings = getTotalSaved();
+    if (!canAffordPayment(available, totalSavings, amt)) {
+      toast.error(t('cascade.noFunds').replace('{avail}', fmt(available + totalSavings)).replace('{need}', fmt(amt)));
+      return;
+    }
+    const hasEligible = goals.some((g) => g.status !== 'completed' && Number(g.currentAmount) >= shortfall);
+    if (!hasEligible) {
+      toast.error(t('cascade.noSingleGoal').replace('{amt}', fmt(shortfall)));
+      return;
+    }
+    setPicker({ shortfall, amt });
+  };
+
   return (
+    <>
     <Modal title={`${t('screens.cards.paymentTitle')} · ${card.name}`} onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-md">
         <div className="bg-surface-container-lowest border border-border-subtle rounded p-md inner-glow flex justify-between items-center">
@@ -59,5 +93,15 @@ export default function PaymentModal({ card, transactions, onClose }) {
         <FormActions onCancel={onClose} label={t('screens.cards.registerPayment')} disabled={!Number(amount)} />
       </form>
     </Modal>
+    {picker && (
+      <SavingsPickerModal
+        open
+        shortfall={picker.shortfall}
+        goals={goals}
+        onPick={(pick) => { const amt = picker.amt; setPicker(null); applyPayment(amt, pick); }}
+        onClose={() => setPicker(null)}
+      />
+    )}
+    </>
   );
 }
