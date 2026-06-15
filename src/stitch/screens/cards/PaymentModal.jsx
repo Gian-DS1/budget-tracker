@@ -21,6 +21,7 @@ const fmt = (n) => formatCurrency(n);
 export default function PaymentModal({ card, transactions, onClose }) {
   const { t } = useI18n();
   const addCardPayment = useCreditCardStore((s) => s.addCardPayment);
+  const addCardPaymentWithCascade = useCreditCardStore((s) => s.addCardPaymentWithCascade);
   const cards = useCreditCardStore((s) => s.cards);
   const goals = useSavingsStore((s) => s.goals);
   const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
@@ -38,7 +39,8 @@ export default function PaymentModal({ card, transactions, onClose }) {
       else demoAddCardPayment(card.id, payload);
       toast.success(t('screens.cards.paymentRegistered'));
     } else {
-      addCardPayment(card.id, payload); // cuenta real: sin cascada
+      if (savingsPick) addCardPaymentWithCascade(card.id, payload, savingsPick);
+      else addCardPayment(card.id, payload);
     }
     // ¿Este abono SALDÓ un estado de cuenta que estaba pendiente?
     if (bal.pendingBilled > 0.01 && amt + bal.paid >= bal.billed - 0.01) {
@@ -56,8 +58,7 @@ export default function PaymentModal({ card, transactions, onClose }) {
     const amt = Number(amount);
     if (!amt || amt <= 0) return;
 
-    if (!isDemoActive()) { applyPayment(amt, null); return; }
-
+    // La cascada corre en demo Y en cuenta real.
     const { available, shortfall } = getCashShortfall(transactions, initialCashBalance, cards, amt);
     if (shortfall === 0) { applyPayment(amt, null); return; }
 
