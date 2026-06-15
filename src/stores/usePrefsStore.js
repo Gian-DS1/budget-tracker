@@ -44,13 +44,14 @@ const usePrefsStore = create(
         set({ loading: true });
         const { data, error } = await supabase
           .from('profiles')
-          .select('budget_level, tutorial_seen, currency')
+          .select('budget_level, tutorial_seen, currency, initial_cash_balance')
           .eq('user_id', user.id)
           .maybeSingle();
         if (!error && data) {
           const next = { loading: false, prefsLoaded: true };
           if (data.budget_level && BUDGET_LEVELS.includes(data.budget_level)) next.budgetLevel = data.budget_level;
           if (typeof data.tutorial_seen === 'boolean') next.tutorialSeen = data.tutorial_seen;
+          if (data.initial_cash_balance != null) next.initialCashBalance = Number(data.initial_cash_balance);
           if (data.currency) {
             next.currency = data.currency;
             setRuntimeCurrency(data.currency);
@@ -121,18 +122,27 @@ const usePrefsStore = create(
         }
       },
 
-      /** Fija el efectivo inicial (modo demo). Solo memoria; no toca Supabase. */
-      setInitialCashBalance: (amount) => {
+      /** Fija el efectivo inicial (optimista). En demo solo caché; con sesión upsert. */
+      setInitialCashBalance: async (amount) => {
         const value = Number(amount) || 0;
-        set({ initialCashBalance: value });
-        // Fase demo: no se persiste ni se sincroniza. Si en el futuro se conecta a
-        // Supabase, aquí iría el upsert tras `if (isDemoActive()) return;`.
+        const prev = get().initialCashBalance;
+        set({ initialCashBalance: value }); // optimista
+        if (isDemoActive()) return; // demo: solo memoria
+        const user = await getCurrentUser();
+        if (!user) return; // sin sesión, solo caché local
+        const { error } = await supabase
+          .from('profiles')
+          .upsert({ user_id: user.id, initial_cash_balance: value, updated_at: new Date().toISOString() }, { onConflict: 'user_id' });
+        if (error) {
+          if (import.meta.env.DEV) console.error('Error guardando efectivo inicial:', error);
+          set({ initialCashBalance: prev }); // rollback
+        }
       },
     }),
     {
       name: 'fintrack-prefs-cache',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen, currency: state.currency }),
+      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen, currency: state.currency, initialCashBalance: state.initialCashBalance }),
       onRehydrateStorage: () => (state) => { if (state?.currency) setRuntimeCurrency(state.currency); },
     },
   ),
