@@ -816,7 +816,7 @@ const translations = {
       },
       settings: {
         initialCashLabel: 'Efectivo inicial',
-        initialCashHelp: 'Tu efectivo líquido al empezar. El Dashboard parte de aquí (solo demo).',
+        initialCashHelp: 'Tu efectivo líquido al empezar. El Dashboard parte de aquí.',
         levelTrackingDesc: 'Solo registra tus gastos y mira a dónde se va tu dinero. Sin metas.',
         level503020Desc: 'Tres baldes: necesidades, gustos y ahorro. Simple y automático.',
         levelZeroDesc: 'Asigna cada peso por categoría. Control total para avanzados.',
@@ -1772,7 +1772,7 @@ const translations = {
       },
       settings: {
         initialCashLabel: 'Starting cash',
-        initialCashHelp: 'Your liquid cash at the start. The Dashboard builds from here (demo only).',
+        initialCashHelp: 'Your liquid cash at the start. The Dashboard builds from here.',
         levelTrackingDesc: 'Just record your expenses and see where your money goes. No goals.',
         level503020Desc: 'Three buckets: needs, wants and savings. Simple and automatic.',
         levelZeroDesc: 'Allocate every peso by category. Full control for advanced users.',

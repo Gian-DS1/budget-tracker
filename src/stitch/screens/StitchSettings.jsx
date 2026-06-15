@@ -157,6 +157,7 @@ export default function StitchSettings() {
   const currency = usePrefsStore((s) => s.currency);
   const setCurrency = usePrefsStore((s) => s.setCurrency);
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
+  const setInitialCashBalance = usePrefsStore((s) => s.setInitialCashBalance);
 
   // Fix 2: memoizar opciones de moneda; se recalcula sólo si cambia el idioma.
   // Derivamos el locale a partir de `language` (misma lógica que currentLocale())
@@ -258,19 +259,18 @@ export default function StitchSettings() {
           </div>
         </Stagger.Item>
 
-        {/* Efectivo inicial (solo demo): base del efectivo líquido del Dashboard. */}
-        {demo && (
-          <Stagger.Item className="lg:col-span-12 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-sm">
-            <h2 className="font-mono-data text-mono-data text-on-surface-variant border-b border-border-subtle pb-sm">{t('screens.settings.initialCashLabel').toUpperCase()}</h2>
-            <div className="max-w-[280px]">
-              <StitchCurrencyInput
-                value={initialCashBalance === 0 ? '' : String(initialCashBalance)}
-                onChange={(v) => demoSetInitialCashBalance(v)}
-              />
-            </div>
-            <span className="font-label-sm text-label-sm text-text-muted">{t('screens.settings.initialCashHelp')}</span>
-          </Stagger.Item>
-        )}
+        {/* Efectivo inicial: base del efectivo líquido del Dashboard. En demo se
+            guarda en memoria; con sesión se persiste en profiles. */}
+        <Stagger.Item className="lg:col-span-12 bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg flex flex-col gap-sm">
+          <h2 className="font-mono-data text-mono-data text-on-surface-variant border-b border-border-subtle pb-sm">{t('screens.settings.initialCashLabel').toUpperCase()}</h2>
+          <div className="max-w-[280px]">
+            <StitchCurrencyInput
+              value={initialCashBalance === 0 ? '' : String(initialCashBalance)}
+              onChange={(v) => { if (demo) demoSetInitialCashBalance(v); else setInitialCashBalance(v); }}
+            />
+          </div>
+          <span className="font-label-sm text-label-sm text-text-muted">{t('screens.settings.initialCashHelp')}</span>
+        </Stagger.Item>
 
       </Stagger>
 
