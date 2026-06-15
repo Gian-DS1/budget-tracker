@@ -143,15 +143,6 @@ export default function StitchDashboard() {
     <div className="p-sm sm:p-md max-w-[1728px] mx-auto w-full">
       {/* Título de página para lectores de pantalla (el bento no tiene header visible). */}
       <h1 className="sr-only">{t('nav.dashboard')}</h1>
-      {/* Banner: solo cuando se revisa un mes pasado. Aclara qué refleja el pasado. */}
-      {!isCurrentMonth && (
-        <div className="flex items-center gap-sm mb-md px-md py-sm rounded bg-secondary/10 border border-secondary/30">
-          <MS name="history" className="!text-[16px] text-secondary" />
-          <span className="font-mono-data text-mono-data text-secondary uppercase">{t('dashboard.viewing')} {monthShort(m)} {y}</span>
-          <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal">{t('dashboard.pastMonthNote')}</span>
-          <button onClick={() => setSel({ y: now.getFullYear(), m: now.getMonth() })} className="ml-auto font-mono-data text-mono-data text-primary hover:underline">{t('dashboard.backToToday')}</button>
-        </div>
-      )}
 
       {/* Aviso (solo demo): efectivo inicial sin declarar. */}
       {demo && initialCashBalance === 0 && (
