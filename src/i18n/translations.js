@@ -166,6 +166,7 @@ const translations = {
       savings: 'Ahorros',
       debts: 'Deudas',
       creditCards: 'Tarjetas',
+      finances: 'Mis finanzas',
       calendar: 'Calendario',
       reports: 'Reportes',
       categories: 'Categorías',
@@ -195,6 +196,16 @@ const translations = {
       export: 'Exportar',
       import: 'Importar',
       deleteAccount: 'Eliminar cuenta',
+    },
+    finances: {
+      title: 'Mis finanzas',
+      netWorth: 'Patrimonio neto',
+      cash: 'Efectivo',
+      savings: 'Ahorro',
+      debts: 'Deudas',
+      tabSavings: 'Ahorros',
+      tabDebts: 'Deudas',
+      tabCards: 'Tarjetas',
     },
     // Dashboard
     dashboard: {
@@ -1129,6 +1140,7 @@ const translations = {
       savings: 'Savings',
       debts: 'Debts',
       creditCards: 'Credit cards',
+      finances: 'My finances',
       calendar: 'Calendar',
       reports: 'Reports',
       categories: 'Categories',
@@ -1158,6 +1170,16 @@ const translations = {
       export: 'Export',
       import: 'Import',
       deleteAccount: 'Delete account',
+    },
+    finances: {
+      title: 'My finances',
+      netWorth: 'Net worth',
+      cash: 'Cash',
+      savings: 'Savings',
+      debts: 'Debts',
+      tabSavings: 'Savings',
+      tabDebts: 'Debts',
+      tabCards: 'Cards',
     },
     // Dashboard
     dashboard: {
