@@ -66,6 +66,29 @@ y convierte TODO lo guardado en USD a DOP con la tasa editada en el script
 (el monto original queda anotado en notes en transactions). Correr ANTES de
 desplegar el código de moneda única. Irreversible.
 
+## Modelo financiero — efectivo líquido + cascada (2026-06-15)
+
+Para activar el efectivo líquido y la cascada efectivo→ahorro en cuentas reales.
+Correr **antes** de desplegar el código de la fase 2:
+
+1. **`add_initial_cash_balance.sql`** — añade `profiles.initial_cash_balance`
+   (numeric, default 0): el efectivo que el usuario declara al empezar. Usuarios
+   existentes arrancan en 0 y lo declaran luego en Ajustes (el dashboard les muestra
+   el aviso "Declara tu efectivo actual").
+2. **`add_debt_payment_savings_used.sql`** — añade `debt_payments.savings_used`
+   (jsonb, default `[]`): de qué meta tomó la cascada al pagar, para revertir el pago
+   exacto. (Tarjetas guarda esto en su columna `payments` jsonb existente; no necesita
+   migración.)
+
+Ambas idempotentes y aditivas. El orden entre ellas no importa (son independientes).
+
+### ¿Qué pasa si despliegas el código ANTES de correr estas migraciones?
+- **`initial_cash_balance`:** `fetchPrefs` lee la columna; si no existe, Supabase
+  devuelve error y cae al flujo de "usuario nuevo" sin romper, pero el efectivo
+  inicial no se carga hasta correr la migración.
+- **`savings_used`:** guardar un pago de deuda con cascada fallaría al persistir esa
+  columna hasta correr la migración. El resto de pagos (sin cascada) no se ve afectado.
+
 ## Migraciones previas (ya aplicadas en producción histórica)
 
 `schema.sql` es la fuente de verdad canónica (idempotente; ya incluye las columnas
