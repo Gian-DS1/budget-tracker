@@ -75,7 +75,10 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
         </div>
       </div>
 
-      <div className="flex-grow min-h-0">
+      {/* El clic en una barra/SVG no debe dibujar el focus ring del navegador
+          alrededor del gráfico. Se suprime el outline SOLO en foco por puntero
+          (:focus:not(:focus-visible)); la navegación por teclado conserva el suyo. */}
+      <div className="flex-grow min-h-0 [&_*:focus:not(:focus-visible)]:outline-none">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={data}
