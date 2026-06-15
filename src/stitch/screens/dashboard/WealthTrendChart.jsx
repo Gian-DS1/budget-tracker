@@ -43,14 +43,21 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
   return (
     <div className="flex flex-col h-64">
       {/* Encabezado Robinhood: patrimonio del punto enfocado (cyan, count-up) + su
-          mes; a la derecha, tasa de ahorro y tarjetas por pagar de ese mes (también
-          count-up). Todos transicionan al hacer scrubbing en vez de saltar. */}
-      <div className="flex items-end justify-between gap-md mb-sm">
-        <div className="flex items-baseline gap-sm min-w-0">
-          <span className="font-headline-md text-[24px] tracking-tight tabular-nums" style={{ color: lineColor }}>
-            <CountUp value={head.wealth} format={fmt} duration={240} />
-          </span>
-          <span className="font-mono-data text-mono-data text-text-muted uppercase shrink-0">{head.label} {head.y}</span>
+          mes, con ingresos/gastos del mes en pequeño (verde/rojo) debajo; a la
+          derecha, tasa de ahorro y tarjetas por pagar. Todo anima con el scrubbing. */}
+      <div className="flex items-start justify-between gap-md mb-sm">
+        <div className="min-w-0">
+          <div className="flex items-baseline gap-sm">
+            <span className="font-headline-md text-[24px] tracking-tight tabular-nums" style={{ color: lineColor }}>
+              <CountUp value={head.wealth} format={fmt} duration={240} />
+            </span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase shrink-0">{head.label} {head.y}</span>
+          </div>
+          {/* Ingresos / gastos del mes, pequeños (como antes). */}
+          <div className="flex items-center gap-md font-mono-data text-mono-data mt-xs">
+            <span className="text-tertiary">↑ <CountUp value={head.income} format={fmt} duration={240} /></span>
+            <span className="text-accent-error">↓ <CountUp value={head.expense} format={fmt} duration={240} /></span>
+          </div>
         </div>
         <div className="flex items-center gap-lg shrink-0">
           <div className="flex flex-col items-end">
