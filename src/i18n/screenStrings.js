@@ -152,6 +152,7 @@ export const SCREEN_STRINGS = {
     noExpensesThisMonth: 'screens.charts.noExpensesThisMonth',
     noMovementsIn: 'screens.charts.noMovementsIn',
     defineBudget: 'screens.charts.defineBudget',
+    budgetOfMonth: 'screens.charts.budgetOfMonth',
     of: 'screens.charts.of',
     overBudgetMonth: 'screens.charts.overBudgetMonth',
     noSavingsOrDebts: 'screens.charts.noSavingsOrDebts',

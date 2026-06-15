@@ -80,8 +80,8 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
           <ComposedChart
             data={data}
             margin={{ top: 6, right: 4, bottom: 0, left: 4 }}
-            barGap={1}
-            barCategoryGap="12%"
+            barGap={0}
+            barCategoryGap="28%"
             onClick={handleClick}
             onMouseMove={(s) => setHoverIdx(s?.activeTooltipIndex ?? null)}
             onMouseLeave={() => setHoverIdx(null)}
@@ -108,12 +108,13 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
               content={() => null}
             />
 
-            {/* Barras de contexto (juntas, discretas). La del mes activo, más opaca. */}
-            <Bar yAxisId="flow" dataKey="income" radius={[2, 2, 0, 0]} maxBarSize={14} isAnimationActive={!reduced} animationDuration={500} animationEasing="ease-out">
-              {data.map((d) => <Cell key={`i-${keyOf(d)}`} fill={CHART.tertiary} fillOpacity={keyOf(d) === activeKey ? 0.85 : 0.35} />)}
+            {/* Barras de contexto: ingreso (verde) y gasto (rojo) del mes, pegadas
+                una al lado de otra (barGap 0). La pareja del mes activo, más opaca. */}
+            <Bar yAxisId="flow" dataKey="income" radius={[2, 2, 0, 0]} maxBarSize={12} isAnimationActive={!reduced} animationDuration={500} animationEasing="ease-out">
+              {data.map((d) => <Cell key={`i-${keyOf(d)}`} fill={CHART.tertiary} fillOpacity={keyOf(d) === activeKey ? 0.9 : 0.4} />)}
             </Bar>
-            <Bar yAxisId="flow" dataKey="expense" radius={[2, 2, 0, 0]} maxBarSize={14} isAnimationActive={!reduced} animationDuration={500} animationEasing="ease-out">
-              {data.map((d) => <Cell key={`e-${keyOf(d)}`} fill={CHART.error} fillOpacity={keyOf(d) === activeKey ? 0.85 : 0.35} />)}
+            <Bar yAxisId="flow" dataKey="expense" radius={[2, 2, 0, 0]} maxBarSize={12} isAnimationActive={!reduced} animationDuration={500} animationEasing="ease-out">
+              {data.map((d) => <Cell key={`e-${keyOf(d)}`} fill={CHART.error} fillOpacity={keyOf(d) === activeKey ? 0.9 : 0.4} />)}
             </Bar>
 
             {/* La protagonista: área de patrimonio líquido con gradiente que se desvanece. */}
