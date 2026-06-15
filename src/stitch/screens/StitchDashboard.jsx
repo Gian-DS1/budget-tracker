@@ -18,14 +18,13 @@ import {
 import { getCardBalances } from '../../utils/creditCards';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getLiquidCash, getCumulativeLiquidWealth } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getCumulativeLiquidWealth } from './dashboard/selectors';
 import { BentoCell } from './dashboard/dashboardUi';
 import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
 import BudgetBar from './dashboard/BudgetBar';
 import HealthRing from './dashboard/HealthRing';
 import SignalsRail from './dashboard/SignalsRail';
-import SaveToVaultModal from './dashboard/SaveToVaultModal';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { isDemoActive } from '../demoMode';
 
@@ -81,8 +80,6 @@ export default function StitchDashboard() {
   // Los gastos con tarjeta NO restan del efectivo; los pagos de tarjeta sí.
   const demo = isDemoActive();
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
-  const liquidCash = useMemo(() => getLiquidCash(transactions, initialCashBalance, cards), [transactions, initialCashBalance, cards]);
-  const [saveOpen, setSaveOpen] = useState(false);
 
   // Rango del gráfico de tendencia: 3 meses / 1 año / todo el tiempo. Siempre
   // termina en el mes actual (now) y arranca a lo sumo en la primera transacción.
@@ -164,18 +161,8 @@ export default function StitchDashboard() {
                 <span className="truncate">{t('dashboard.monthFlow')}</span>
                 <span className="text-primary shrink-0">· {monthShort(m)} {y}</span>
               </span>
-              <div className="flex items-center gap-sm shrink-0">
-                {demo && (
-                  <button
-                    onClick={() => setSaveOpen(true)}
-                    className="px-sm py-xs rounded bg-primary text-on-primary font-label-sm text-label-sm active:scale-[0.97]"
-                  >
-                    {t('dashboard.saveToVault')}
-                  </button>
-                )}
-                <div className="w-[130px]">
-                  <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
-                </div>
+              <div className="w-[130px] shrink-0">
+                <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
               </div>
             </div>
             <BudgetBar usage={budgetUsage} pace={budgetPace} />
@@ -208,15 +195,6 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
       </Stagger>
-
-      {demo && (
-        <SaveToVaultModal
-          open={saveOpen}
-          onClose={() => setSaveOpen(false)}
-          goals={goals}
-          availableCash={liquidCash}
-        />
-      )}
     </div>
   );
 }
