@@ -5,34 +5,78 @@ import toast from 'react-hot-toast';
 import StitchCurrencyInput from '../../StitchCurrencyInput';
 import StitchDatePicker from '../../StitchDatePicker';
 import useDebtStore from '../../../stores/useDebtStore';
-import { isDemoActive, demoAddDebtPayment } from '../../demoMode';
+import { isDemoActive, demoAddDebtPayment, applyDebtPaymentWithCascade } from '../../demoMode';
 import { todayISO, formatCurrency } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
 import { toastCelebrate } from '../../toastCelebrate';
 import { Modal, Field, FormActions, inputCls } from './debtsUi';
+import useTransactionStore from '../../../stores/useTransactionStore';
+import useCreditCardStore from '../../../stores/useCreditCardStore';
+import useSavingsStore from '../../../stores/useSavingsStore';
+import usePrefsStore from '../../../stores/usePrefsStore';
+import { getCashShortfall, canAffordPayment } from '../dashboard/selectors';
+import SavingsPickerModal from '../finances/SavingsPickerModal';
 
 const fmt = (n, c) => formatCurrency(n, c);
 
 export default function PaymentModal({ debt, onClose }) {
   const { t } = useI18n();
   const addPayment = useDebtStore((s) => s.addPayment);
+  const transactions = useTransactionStore((s) => s.transactions);
+  const cards = useCreditCardStore((s) => s.cards);
+  const goals = useSavingsStore((s) => s.goals);
+  const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
+  const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
   const [amount, setAmount] = useState(debt.monthlyPayment ? String(debt.monthlyPayment) : '');
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState('');
+  const [picker, setPicker] = useState(null); // { shortfall, amt } cuando hay faltante
 
-  const submit = async (e) => {
-    e.preventDefault();
-    const amt = Number(amount);
-    if (!amt || amt <= 0) return;
-    if (isDemoActive()) demoAddDebtPayment(debt.id, amt, date, note.trim());
-    else await addPayment(debt.id, amt, date, note.trim());
+  // Registra el pago (con o sin cascada). Llamado tras decidir la meta si hizo falta.
+  const applyPayment = (amt, savingsPick) => {
+    if (isDemoActive()) {
+      if (savingsPick) applyDebtPaymentWithCascade(debt.id, amt, date, note.trim(), savingsPick);
+      else demoAddDebtPayment(debt.id, amt, date, note.trim());
+    } else {
+      addPayment(debt.id, amt, date, note.trim()); // cuenta real: sin cascada (como hoy)
+    }
     const newBal = Number(debt.currentBalance) - amt;
     if (newBal <= 0) toastCelebrate(t('screens.debts.debtPaidOff'));
     else toast.success(t('screens.debts.paymentRegistered').replace('{amt}', fmt(amt, debt.currency)), { duration: 4000 });
+    if (savingsPick) {
+      const g = goals.find((gg) => gg.id === savingsPick.goalId);
+      toast(t('cascade.usedSavings').replace('{amt}', fmt(savingsPick.amount, debt.currency)).replace('{goal}', g?.title || ''), { icon: 'ℹ️' });
+    }
     onClose();
   };
 
+  const submit = (e) => {
+    e.preventDefault();
+    const amt = Number(amount);
+    if (!amt || amt <= 0) return;
+
+    // Cuenta real (no demo): sin cascada, comportamiento de hoy.
+    if (!isDemoActive()) { applyPayment(amt, null); return; }
+
+    const { available, shortfall } = getCashShortfall(transactions, initialCashBalance, cards, amt);
+    if (shortfall === 0) { applyPayment(amt, null); return; }
+
+    const totalSavings = getTotalSaved();
+    if (!canAffordPayment(available, totalSavings, amt)) {
+      toast.error(t('cascade.noFunds').replace('{avail}', fmt(available + totalSavings, debt.currency)).replace('{need}', fmt(amt, debt.currency)));
+      return;
+    }
+    // ¿Hay una meta que cubra el faltante sola? (no repartimos)
+    const hasEligible = goals.some((g) => g.status !== 'completed' && Number(g.currentAmount) >= shortfall);
+    if (!hasEligible) {
+      toast.error(t('cascade.noSingleGoal').replace('{amt}', fmt(shortfall, debt.currency)));
+      return;
+    }
+    setPicker({ shortfall, amt }); // abre el modal de meta
+  };
+
   return (
+    <>
     <Modal title={`${t('screens.debts.payTitle')} · ${debt.creditorName}`} onClose={onClose}>
       <form onSubmit={submit} className="flex flex-col gap-md">
         <div className="bg-surface-container-lowest border border-border-subtle rounded p-md inner-glow flex justify-between items-center">
@@ -48,5 +92,15 @@ export default function PaymentModal({ debt, onClose }) {
         <FormActions onCancel={onClose} label={t('screens.debts.registerPayment')} disabled={!Number(amount)} />
       </form>
     </Modal>
+    {picker && (
+      <SavingsPickerModal
+        open
+        shortfall={picker.shortfall}
+        goals={goals}
+        onPick={(pick) => { const amt = picker.amt; setPicker(null); applyPayment(amt, pick); }}
+        onClose={() => setPicker(null)}
+      />
+    )}
+    </>
   );
 }
