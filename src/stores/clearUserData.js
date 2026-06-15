@@ -26,7 +26,7 @@ const RESETS = [
   [useDebtStore, { debts: [], payments: [] }],
   [useCreditCardStore, { cards: [] }],
   [useRecurringStore, { recurring: [] }],
-  [usePrefsStore, { budgetLevel: 'tracking', tutorialSeen: false, currency: null, prefsLoaded: false }],
+  [usePrefsStore, { budgetLevel: 'tracking', tutorialSeen: false, currency: null, prefsLoaded: false, initialCashBalance: 0 }],
 ];
 
 export function clearUserData() {

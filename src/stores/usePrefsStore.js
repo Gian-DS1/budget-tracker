@@ -51,7 +51,11 @@ const usePrefsStore = create(
           const next = { loading: false, prefsLoaded: true };
           if (data.budget_level && BUDGET_LEVELS.includes(data.budget_level)) next.budgetLevel = data.budget_level;
           if (typeof data.tutorial_seen === 'boolean') next.tutorialSeen = data.tutorial_seen;
+          // Reset explícito a 0 si el perfil no tiene valor: evita que un usuario
+          // herede el efectivo inicial del usuario anterior en el mismo navegador
+          // (mismo patrón que currency arriba).
           if (data.initial_cash_balance != null) next.initialCashBalance = Number(data.initial_cash_balance);
+          else next.initialCashBalance = 0;
           if (data.currency) {
             next.currency = data.currency;
             setRuntimeCurrency(data.currency);
