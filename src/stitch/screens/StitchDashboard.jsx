@@ -84,9 +84,13 @@ export default function StitchDashboard() {
   // Rango del gráfico de tendencia: 3 meses / 1 año / todo el tiempo. Siempre
   // termina en el mes actual (now) y arranca a lo sumo en la primera transacción.
   const [wealthRange, setWealthRange] = useState(3);
+  // Ahorro REAL de hoy = Σ del monto actual de cada meta (incluye el saldo previo
+  // que ya tenían las metas, no solo los aportes registrados). El selector lo usa
+  // para que el "Ahorro total" del gráfico cuadre con la pestaña de Ahorros.
+  const currentSavings = useMemo(() => goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0), [goals]);
   const wealthSeries = useMemo(
-    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now, cards),
-    [transactions, initialCashBalance, wealthRange, now, cards],
+    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now, cards, currentSavings),
+    [transactions, initialCashBalance, wealthRange, now, cards, currentSavings],
   );
   const rangeOptions = [
     { value: '3', label: t('dashboard.range3') },

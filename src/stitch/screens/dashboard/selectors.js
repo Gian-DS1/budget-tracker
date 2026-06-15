@@ -181,9 +181,13 @@ function cashEffect(t) {
 // recorta para NO ir antes de la primera transacción (no se muestran meses vacíos
 // previos a los datos). `cards` (opcional) permite calcular las "tarjetas por
 // pagar" históricas por mes (saldo facturado pendiente al cierre de cada mes).
-// Devuelve [{ label, y, m, income, expense, cash, savings, wealth, savingsRate, cardsDue }]
-// donde wealth = cash + savings (efectivo disponible + ahorro acumulados al cierre).
-export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date(), cards = []) {
+// `currentSavings` es el ahorro REAL de hoy (Σ goal.currentAmount, incluye el saldo
+// que ya tenían las metas antes de usar la app). El ahorro de cada mes se reconstruye
+// hacia atrás desde ese total real, restando los aportes (savings) posteriores al
+// cierre del mes — así el mes actual cuadra con la pestaña de Ahorros y el histórico
+// tiene sentido. Devuelve [{ label, y, m, income, expense, cash, savings, wealth,
+// savingsRate, cardsDue }] donde wealth = cash + savings.
+export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date(), cards = [], currentSavings = 0) {
   const txs = transactions || [];
   // Meses disponibles desde el primer dato hasta refDate (incluidos).
   const first = getFirstDataMonth(txs);
@@ -200,15 +204,20 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
     // Día representativo del mes para "tarjetas por pagar" históricas (fin de mes).
     const monthRef = new Date(y, m + 1, 0);
     // Efectivo acumulado: saldo inicial + efecto de todo lo anterior al fin de mes.
+    // Ahorro: parte del total REAL de hoy y resta los aportes POSTERIORES al cierre,
+    // así reconstruye cuánto había al cierre de este mes (incluye el saldo previo
+    // de las metas, que no viene de transacciones).
     let cash = Number(initialCashBalance) || 0;
-    let savings = 0;
+    let savings = Number(currentSavings) || 0;
     let income = 0, expense = 0;
     for (const t of txs) {
       if (!t.date) continue;
       const d = new Date(t.date + 'T00:00:00');
       if (d < monthEnd) {
         cash += cashEffect(t);
-        if (t.type === 'savings') savings += Number(t.amount) || 0;
+      } else if (t.type === 'savings') {
+        // Aporte posterior al cierre: réstalo para volver al ahorro de aquel mes.
+        savings -= Number(t.amount) || 0;
       }
       // income/expense SOLO del mes (para las barras).
       if (d.getFullYear() === y && d.getMonth() === m) {

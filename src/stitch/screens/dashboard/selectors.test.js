@@ -242,13 +242,14 @@ describe('getCumulativeLiquidWealth', () => {
       t(300, 'variable_expense', '2026-02-05'), // feb: -300 efectivo (sin tarjeta)
       t(200, 'savings', '2026-03-08'),          // mar: -200 efectivo, +200 ahorro
     ];
-    const r = getCumulativeLiquidWealth(txs, 500, 3, ref); // saldo inicial 500, 3 meses
+    // saldo inicial 500, 3 meses, currentSavings hoy = 200 (el unico aporte).
+    const r = getCumulativeLiquidWealth(txs, 500, 3, ref, [], 200);
     expect(r).toHaveLength(3);
-    // ene: efectivo 500+1000=1500, ahorro 0 → wealth 1500
+    // ene: efectivo 500+1000=1500, ahorro 200-200(aporte mar posterior)=0 → wealth 1500
     expect(r[0].wealth).toBe(1500);
     // feb: efectivo 1500-300=1200, ahorro 0 → wealth 1200
     expect(r[1].wealth).toBe(1200);
-    // mar: efectivo 1200-200=1000, ahorro 0+200=200 → wealth 1200 (apartar no cambia el total)
+    // mar: efectivo 1200-200=1000, ahorro 200 → wealth 1200 (apartar no cambia el total)
     expect(r[2].wealth).toBe(1200);
   });
 
@@ -257,11 +258,33 @@ describe('getCumulativeLiquidWealth', () => {
       t(1000, 'income', '2026-01-10'),  // ene: efectivo +1000
       t(200, 'savings', '2026-03-08'),  // mar: efectivo -200, ahorro +200
     ];
-    const r = getCumulativeLiquidWealth(txs, 500, 3, ref);
+    // currentSavings (hoy) = 200 (solo el aporte registrado, sin saldo previo).
+    const r = getCumulativeLiquidWealth(txs, 500, 3, ref, [], 200);
     // mar: cash = 500+1000-200 = 1300, savings = 200, wealth = 1500
     expect(r[2].cash).toBe(1300);
     expect(r[2].savings).toBe(200);
     expect(r[2].wealth).toBe(r[2].cash + r[2].savings);
+  });
+
+  it('el ahorro parte del total REAL de hoy (incluye saldo previo de las metas)', () => {
+    // currentSavings hoy = 605000 (metas con saldo previo). Solo 1 aporte de 5000
+    // registrado en marzo. El mes actual debe mostrar 605000, no 5000.
+    const txs = [t(5000, 'savings', '2026-03-10')];
+    const r = getCumulativeLiquidWealth(txs, 0, 3, ref, [], 605000);
+    const mar = r[r.length - 1]; // mes actual (marzo, = ref)
+    expect(mar.savings).toBe(605000);
+  });
+
+  it('reconstruye el ahorro historico restando aportes posteriores', () => {
+    // Hoy hay 600000 ahorrado. En marzo se aporto 100000. Antes de marzo (feb y
+    // ene) el ahorro era 600000 - 100000 = 500000. La tx de enero asegura un rango
+    // de 3 meses (el clamp no acorta por falta de datos previos).
+    const txs = [t(1, 'income', '2026-01-02'), t(100000, 'savings', '2026-03-15')];
+    const r = getCumulativeLiquidWealth(txs, 0, 3, ref, [], 600000);
+    expect(r).toHaveLength(3);
+    expect(r[0].savings).toBe(500000); // enero: antes del aporte de marzo
+    expect(r[1].savings).toBe(500000); // febrero: idem
+    expect(r[2].savings).toBe(600000); // marzo: ya incluye el aporte
   });
 
   it('los gastos con tarjeta no bajan el efectivo de la línea', () => {
