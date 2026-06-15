@@ -503,7 +503,7 @@ export function demoRestoreDebt(debt, payments = []) {
     useDebtStore.setState((s) => ({ payments: [...s.payments, p] }));
   }
 }
-export function demoAddDebtPayment(debtId, amount, date, notes = '') {
+export function demoAddDebtPayment(debtId, amount, date, notes = '', savingsUsed = []) {
   const { debts } = useDebtStore.getState();
   const debt = debts.find((d) => d.id === debtId);
   if (!debt) return null;
@@ -520,17 +520,34 @@ export function demoAddDebtPayment(debtId, amount, date, notes = '') {
       date, categoryId: catId, currency: debt.currency || 'DOP', notes: notes || 'Generado automáticamente desde Deudas',
     });
   }
-  const payment = { id: demoId(), debtId, amount: value, date, remainingBalance: newBalance, notes: notes || null, transactionId, createdAt: new Date().toISOString() };
+  const payment = { id: demoId(), debtId, amount: value, date, remainingBalance: newBalance, notes: notes || null, transactionId, savingsUsed, createdAt: new Date().toISOString() };
   useDebtStore.setState((s) => ({
     payments: [...s.payments, payment],
     debts: s.debts.map((d) => (d.id === debtId ? { ...d, currentBalance: newBalance, status: newStatus } : d)),
   }));
   return payment;
 }
+
+// Aplica un pago de deuda con cascada: si `savingsPick` ({ goalId, amount }) no es
+// null, primero retira ese monto del ahorro (aporte negativo, que devuelve efectivo
+// vía getLiquidCash) y luego registra el pago, anotando savingsUsed para la reversa.
+export function applyDebtPaymentWithCascade(debtId, amount, date, notes, savingsPick) {
+  const savingsUsed = [];
+  if (savingsPick && savingsPick.amount > 0) {
+    demoAddContribution(savingsPick.goalId, -Math.abs(savingsPick.amount), date, 'Retiro para pago de deuda');
+    savingsUsed.push({ goalId: savingsPick.goalId, amount: Math.abs(savingsPick.amount) });
+  }
+  return demoAddDebtPayment(debtId, amount, date, notes, savingsUsed);
+}
+
 export function demoDeleteDebtPayment(paymentId) {
   const { payments, debts } = useDebtStore.getState();
   const payment = payments.find((p) => p.id === paymentId);
   if (!payment) return { ok: false };
+  // Reversa de cascada: devuelve a cada meta lo que el pago tomó del ahorro.
+  for (const s of payment.savingsUsed || []) {
+    demoAddContribution(s.goalId, Math.abs(s.amount), payment.date, 'Reversa de retiro por pago');
+  }
   const debt = debts.find((d) => d.id === payment.debtId);
   if (payment.transactionId) demoDeleteTransaction(payment.transactionId);
   useDebtStore.setState((s) => ({
