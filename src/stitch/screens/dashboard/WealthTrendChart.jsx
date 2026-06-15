@@ -44,36 +44,36 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
           desglose (efectivo + ahorro) y tarjetas por pagar. Todo anima al hacer scrubbing. */}
       <div className="flex items-start justify-between gap-md mb-sm">
         <div className="min-w-0">
-          <span className="font-mono-data text-mono-data text-text-muted uppercase block mb-px">{t('dashboard.myMoneyTotal')}</span>
-          <div className="flex items-baseline gap-sm">
-            <span className="font-headline-md text-[24px] tracking-tight tabular-nums" style={{ color: lineColor }}>
-              <CountUp value={head.wealth} format={fmt} duration={240} />
-            </span>
-            <span className="font-mono-data text-mono-data text-text-muted uppercase shrink-0">{head.label} {head.y}</span>
+          <div className="flex items-baseline gap-xs">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.myMoneyTotal')}</span>
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">· {head.label} {head.y}</span>
+          </div>
+          <div className="font-headline-md text-[22px] tracking-tight tabular-nums whitespace-nowrap" style={{ color: lineColor }}>
+            <CountUp value={head.wealth} format={fmt} duration={240} />
           </div>
           {/* Ingresos / gastos del mes, pequeños (como antes). */}
-          <div className="flex items-center gap-md font-mono-data text-mono-data mt-xs">
+          <div className="flex items-center gap-md font-mono-data text-mono-data mt-xs whitespace-nowrap">
             <span className="text-tertiary">↑ <CountUp value={head.income} format={fmt} duration={240} /></span>
             <span className="text-accent-error">↓ <CountUp value={head.expense} format={fmt} duration={240} /></span>
           </div>
         </div>
-        <div className="flex items-start gap-lg shrink-0">
+        <div className="flex items-start gap-md shrink-0">
           {/* Desglose del total: efectivo disponible + ahorro acumulado. */}
           <div className="flex flex-col items-end">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.liquidCash')}</span>
-            <span className="font-headline-md text-[15px] tracking-tight tabular-nums text-on-surface">
+            <span className="font-headline-md text-[14px] tracking-tight tabular-nums text-on-surface whitespace-nowrap">
               <CountUp value={head.cash} format={fmt} duration={240} />
             </span>
           </div>
           <div className="flex flex-col items-end">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.savedTotal')}</span>
-            <span className="font-headline-md text-[15px] tracking-tight tabular-nums text-secondary">
+            <span className="font-headline-md text-[14px] tracking-tight tabular-nums text-secondary whitespace-nowrap">
               <CountUp value={head.savings} format={fmt} duration={240} />
             </span>
           </div>
           <div className="flex flex-col items-end">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.creditCardsPayable')}</span>
-            <span className={`font-headline-md text-[15px] tracking-tight tabular-nums ${head.cardsDue > 0 ? 'text-accent-warning' : 'text-tertiary'}`}>
+            <span className={`font-headline-md text-[14px] tracking-tight tabular-nums whitespace-nowrap ${head.cardsDue > 0 ? 'text-accent-warning' : 'text-tertiary'}`}>
               <CountUp value={head.cardsDue} format={fmt} duration={240} />
             </span>
           </div>
