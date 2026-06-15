@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { supabase, getCurrentUser } from '../lib/supabase';
 import toast from 'react-hot-toast';
 import { todayISO } from '../utils/formatters';
+import useSavingsStore from './useSavingsStore';
 
 const mapFromDb = (c) => ({
   id: c.id,
@@ -105,7 +106,7 @@ const useCreditCardStore = create(
 
       // Un abono LIQUIDA el saldo de la tarjeta; nunca es un gasto del presupuesto
       // (el gasto ya se contó al registrar cada consumo). Se guarda en `payments`.
-      addCardPayment: async (cardId, { amount, date, note } = {}) => {
+      addCardPayment: async (cardId, { amount, date, note, savingsUsed = [] } = {}) => {
         const card = get().cards.find((c) => c.id === cardId);
         if (!card) return;
         const value = Number(amount) || 0;
@@ -116,6 +117,7 @@ const useCreditCardStore = create(
           amount: value,
           date: date || todayISO(),
           note: note || '',
+          savingsUsed,
         };
         const newPayments = [...(card.payments || []), entry];
 
@@ -131,9 +133,26 @@ const useCreditCardStore = create(
         toast.success('Abono registrado');
       },
 
+      // Pago de tarjeta con cascada (cuenta real). Si savingsPick no es null, retira
+      // ese monto del ahorro (aporte negativo → baja la meta y devuelve efectivo) y
+      // registra el pago con savingsUsed. Espejo de applyCardPaymentWithCascade (demo).
+      addCardPaymentWithCascade: async (cardId, payload, savingsPick) => {
+        const savingsUsed = [];
+        if (savingsPick && savingsPick.amount > 0) {
+          await useSavingsStore.getState().addContribution(savingsPick.goalId, -Math.abs(savingsPick.amount), payload.date, 'Retiro para pago de tarjeta');
+          savingsUsed.push({ goalId: savingsPick.goalId, amount: Math.abs(savingsPick.amount) });
+        }
+        return get().addCardPayment(cardId, { ...payload, savingsUsed });
+      },
+
       deleteCardPayment: async (cardId, paymentId) => {
         const card = get().cards.find((c) => c.id === cardId);
         if (!card) return;
+        // Reversa de cascada: devuelve a la meta lo que este pago tomó del ahorro.
+        const entry = (card.payments || []).find((p) => p.id === paymentId);
+        for (const s of (entry?.savingsUsed || [])) {
+          await useSavingsStore.getState().addContribution(s.goalId, Math.abs(s.amount), entry.date, 'Reversa de retiro por pago');
+        }
         const newPayments = (card.payments || []).filter((p) => p.id !== paymentId);
 
         const { error } = await supabase.from('credit_cards').update({ payments: newPayments }).eq('id', cardId);
