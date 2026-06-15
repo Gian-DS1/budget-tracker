@@ -424,16 +424,33 @@ export function demoDeleteCard(id) {
 export function demoRestoreCard(card) {
   useCreditCardStore.setState((s) => ({ cards: [...s.cards, card] }));
 }
-export function demoAddCardPayment(cardId, { amount, date, note } = {}) {
+export function demoAddCardPayment(cardId, { amount, date, note, savingsUsed = [] } = {}) {
   const value = Number(amount) || 0;
   if (value <= 0) return null;
-  const entry = { id: demoId(), amount: value, date: date || iso(new Date()), note: note || '' };
+  const entry = { id: demoId(), amount: value, date: date || iso(new Date()), note: note || '', savingsUsed };
   useCreditCardStore.setState((s) => ({
     cards: s.cards.map((c) => (c.id === cardId ? { ...c, payments: [...(c.payments || []), entry] } : c)),
   }));
   return entry;
 }
+
+// Aplica un pago de tarjeta con cascada (ver applyDebtPaymentWithCascade).
+export function applyCardPaymentWithCascade(cardId, { amount, date, note }, savingsPick) {
+  const savingsUsed = [];
+  if (savingsPick && savingsPick.amount > 0) {
+    demoAddContribution(savingsPick.goalId, -Math.abs(savingsPick.amount), date, 'Retiro para pago de tarjeta');
+    savingsUsed.push({ goalId: savingsPick.goalId, amount: Math.abs(savingsPick.amount) });
+  }
+  return demoAddCardPayment(cardId, { amount, date, note, savingsUsed });
+}
+
 export function demoDeleteCardPayment(cardId, paymentId) {
+  // Reversa de cascada: devuelve a la meta lo que este pago tomó del ahorro.
+  const card = useCreditCardStore.getState().cards.find((c) => c.id === cardId);
+  const entry = card?.payments?.find((p) => p.id === paymentId);
+  for (const s of (entry?.savingsUsed || [])) {
+    demoAddContribution(s.goalId, Math.abs(s.amount), entry.date, 'Reversa de retiro por pago');
+  }
   useCreditCardStore.setState((s) => ({
     cards: s.cards.map((c) => (c.id === cardId ? { ...c, payments: (c.payments || []).filter((p) => p.id !== paymentId) } : c)),
   }));
