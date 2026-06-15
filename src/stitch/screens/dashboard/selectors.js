@@ -249,3 +249,16 @@ export function getNetWorthSplit(totalSaved, totalDebt) {
     hasData: sum > 0,
   };
 }
+
+// Cuánto falta de efectivo para cubrir un pago. `shortfall` es lo que habría que
+// tomar de ahorros; `available` es el efectivo disponible hoy.
+export function getCashShortfall(transactions, initialCashBalance, cards, paymentAmount) {
+  const available = getLiquidCash(transactions, initialCashBalance, cards);
+  const amt = Number(paymentAmount) || 0;
+  return { available, shortfall: Math.max(0, amt - available) };
+}
+
+// ¿Se puede pagar? (efectivo + ahorros ≥ pago). totalSavings = Σ goal.currentAmount.
+export function canAffordPayment(available, totalSavings, paymentAmount) {
+  return (Number(available) || 0) + (Number(totalSavings) || 0) >= (Number(paymentAmount) || 0);
+}

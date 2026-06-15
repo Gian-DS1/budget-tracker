@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getCashShortfall, canAffordPayment } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -322,6 +322,41 @@ describe('getCumulativeLiquidWealth', () => {
     const mar = r[r.length - 1];
     expect(mar.income).toBe(5000);
     expect(mar.expense).toBe(1200);
+  });
+});
+
+describe('getCashShortfall', () => {
+  it('pago cubierto por el efectivo → shortfall 0', () => {
+    const r = getCashShortfall([], 5000, [], 3000);
+    expect(r.available).toBe(5000);
+    expect(r.shortfall).toBe(0);
+  });
+
+  it('pago mayor que el efectivo → shortfall = diferencia', () => {
+    const r = getCashShortfall([], 5000, [], 8000);
+    expect(r.available).toBe(5000);
+    expect(r.shortfall).toBe(3000);
+  });
+
+  it('considera los movimientos en el efectivo disponible', () => {
+    const txs = [{ categoryId: 'c1', amount: 1000, type: 'income', cashbackEarned: 0 }];
+    const r = getCashShortfall(txs, 5000, [], 7000);
+    expect(r.available).toBe(6000);
+    expect(r.shortfall).toBe(1000);
+  });
+});
+
+describe('canAffordPayment', () => {
+  it('alcanza cuando efectivo + ahorros ≥ pago', () => {
+    expect(canAffordPayment(5000, 10000, 12000)).toBe(true);
+  });
+
+  it('no alcanza cuando efectivo + ahorros < pago', () => {
+    expect(canAffordPayment(5000, 4000, 12000)).toBe(false);
+  });
+
+  it('límite exacto cuenta como alcanza', () => {
+    expect(canAffordPayment(5000, 5000, 10000)).toBe(true);
   });
 });
 
