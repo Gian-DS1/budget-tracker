@@ -13,9 +13,7 @@ import StitchLanding from './screens/StitchLanding';
 import StitchDashboard from './screens/StitchDashboard';
 import StitchLedger from './screens/StitchLedger';
 import StitchBudget from './screens/StitchBudget';
-import StitchCards from './screens/StitchCards';
-import StitchDebts from './screens/StitchDebts';
-import StitchVaults from './screens/StitchVaults';
+import StitchFinances from './screens/StitchFinances';
 import StitchCalendar from './screens/StitchCalendar';
 import StitchSettings from './screens/StitchSettings';
 import StitchFeedback from './screens/StitchFeedback';
@@ -162,9 +160,10 @@ function AuthGate() {
           <Route index element={<StitchDashboard />} />
           <Route path="transacciones" element={<StitchLedger />} />
           <Route path="presupuesto" element={<StitchBudget />} />
-          <Route path="tarjetas" element={<StitchCards />} />
-          <Route path="deudas" element={<StitchDebts />} />
-          <Route path="ahorros" element={<StitchVaults />} />
+          <Route path="mis-finanzas" element={<StitchFinances />} />
+          <Route path="ahorros" element={<Navigate to="/mis-finanzas?tab=vaults" replace />} />
+          <Route path="deudas" element={<Navigate to="/mis-finanzas?tab=debts" replace />} />
+          <Route path="tarjetas" element={<Navigate to="/mis-finanzas?tab=cards" replace />} />
           <Route path="calendario" element={<StitchCalendar />} />
           <Route path="categorias" element={<StitchCategories />} />
           <Route path="ajustes" element={<StitchSettings />} />
