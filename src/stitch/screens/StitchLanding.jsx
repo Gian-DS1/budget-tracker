@@ -451,12 +451,24 @@ export default function StitchLanding({ onAccess }) {
   const rawY = useTransform(scrollYProgress, [0, 1], [0, v.reduce ? 0 : -48]);
   const mockY = useSpring(rawY, SPRING_SCROLL);
 
-  // Failsafe de revelado: las secciones bajo el fold entran con whileInView,
-  // pero si el IntersectionObserver no dispara (prerender, capturas full-page),
-  // a los 2.5s se fuerza "show" para que el contenido NUNCA quede invisible.
-  const [revealAll, setRevealAll] = useState(false);
+  // Failsafe de revelado: las secciones bajo el fold se animan con whileInView
+  // SOLO cuando el usuario las hace visibles al scrollear (comportamiento que
+  // queremos). El failsafe únicamente cubre entornos donde el
+  // IntersectionObserver no existe o no dispara (prerender SSR, capturas
+  // full-page, navegadores muy viejos): en ese caso se fuerza "show" para que
+  // el contenido NUNCA quede invisible. En navegadores normales el observer SÍ
+  // existe, así que `failsafe` queda en undefined y cada sección espera a estar
+  // en pantalla — no se revela nada de golpe a los pocos segundos.
+  // Sin IntersectionObserver (prerender SSR, navegadores muy viejos) revelamos
+  // todo de entrada: no hay forma de detectar scroll, así que el contenido no
+  // debe quedar invisible.
+  const [revealAll, setRevealAll] = useState(() => typeof IntersectionObserver === 'undefined');
   useEffect(() => {
-    const id = setTimeout(() => setRevealAll(true), 2500);
+    if (typeof IntersectionObserver === 'undefined') return;
+    // Heartbeat de seguridad muy holgado: si tras 12s NADA se ha revelado
+    // (observer roto / pestaña en background sin scroll), se muestra todo para
+    // no dejar la página en blanco. No interfiere con el scroll normal.
+    const id = setTimeout(() => setRevealAll(true), 12000);
     return () => clearTimeout(id);
   }, []);
   const failsafe = revealAll ? 'show' : undefined;

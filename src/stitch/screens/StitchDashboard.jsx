@@ -123,21 +123,28 @@ export default function StitchDashboard() {
       const due = new Date(bal.cycles.dueDateISO + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({ tag: t('dashboard.cardToPay'), tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${card.name}: ${fmt(bal.pendingBilled)} ${t('dashboard.dueOn')} ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
+      out.push({ days, tag: t('dashboard.cardToPay'), tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${card.name}: ${fmt(bal.pendingBilled)} ${t('dashboard.dueOn')} ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
     });
     debts.filter((d) => d.status === 'active' && d.due_date).forEach((d) => {
       const due = new Date(String(d.due_date).slice(0, 10) + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({ tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment))}.`, to: '/deudas' });
+      out.push({ days, tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment))}.`, to: '/deudas' });
     });
     goals.filter((g) => g.status !== 'completed' && g.deadline).forEach((g) => {
       const due = new Date(g.deadline + 'T00:00:00');
       const days = Math.ceil((due - todayMid) / 86400000);
       if (days < 0 || days > 30) return;
-      out.push({ tag: t('dashboard.goalUpcoming'), tc: 'text-secondary', t: t('dashboard.inDays').replace('{d}', days), body: `"${g.title}" ${t('dashboard.dueOn')} ${formatDate(g.deadline)}.`, to: '/ahorros' });
+      out.push({ days, tag: t('dashboard.goalUpcoming'), tc: 'text-secondary', t: t('dashboard.inDays').replace('{d}', days), body: `"${g.title}" ${t('dashboard.dueOn')} ${formatDate(g.deadline)}.`, to: '/ahorros' });
     });
-    return out.sort((a) => (a.tc === 'text-accent-error' ? -1 : 1)).slice(0, 6);
+    // Orden ascendente por vencimiento: lo que se paga ANTES va primero, para
+    // que el usuario sepa de un vistazo a qué darle prioridad (una tarjeta a 2
+    // días pesa más que un préstamo a 10). Empates → desempata por urgencia de
+    // color (rojo antes que ámbar/secundario).
+    const urgency = { 'text-accent-error': 0, 'text-accent-warning': 1, 'text-secondary': 2 };
+    return out
+      .sort((a, b) => a.days - b.days || (urgency[a.tc] ?? 3) - (urgency[b.tc] ?? 3))
+      .slice(0, 6);
   }, [cards, debts, goals, transactions, now, t]);
 
   return (

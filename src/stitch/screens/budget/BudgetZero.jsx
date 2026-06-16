@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../../MS';
+import InfoTip from '../../InfoTip';
 import { Stagger } from '../../StitchMotion';
 import { useI18n } from '../../../contexts/I18nContext';
 import EnvelopeRow from './EnvelopeRow';
@@ -56,8 +57,10 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
   const totalEstimated = rows.reduce((s, r) => s + r.estimated, 0);
 
   // Agrupa los sobres por TIPO de categoría, en el orden del flujo base cero
-  // (ingreso → fijo → variable → ahorro), y alfabético dentro de cada grupo.
-  // Así es fácil ubicarse: las categorías del mismo tipo quedan juntas.
+  // (ingreso → fijo → variable → ahorro). Dentro de cada grupo: primero las que
+  // tienen monto asignado (de mayor a menor, para que lo más relevante salte a
+  // la vista), y después las sin monto en orden alfabético. La categoría de
+  // deuda (managed) usa su cuota como estimado, así que ordena junto al resto.
   const groups = useMemo(() => {
     const collated = rows.reduce((acc, r) => {
       const key = GROUP_OF[r.cat.type] || 'variable_expense';
@@ -67,8 +70,13 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
     return GROUP_ORDER
       .map((g) => ({
         ...g,
-        items: (collated[g.key] || []).sort((a, b) =>
-          (a.cat.name || '').localeCompare(b.cat.name || '', 'es', { sensitivity: 'base' })),
+        items: (collated[g.key] || []).sort((a, b) => {
+          const aHas = a.estimated > 0;
+          const bHas = b.estimated > 0;
+          if (aHas !== bHas) return aHas ? -1 : 1;            // con monto antes que sin monto
+          if (aHas && bHas && a.estimated !== b.estimated) return b.estimated - a.estimated; // mayor primero
+          return (a.cat.name || '').localeCompare(b.cat.name || '', 'es', { sensitivity: 'base' });
+        }),
       }))
       .filter((g) => g.items.length > 0)
       .map((g) => ({
@@ -116,16 +124,16 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
           <div className="flex-1 flex flex-col justify-center">
             <div className="flex flex-wrap justify-between items-end gap-md mb-xs">
               <div className="flex flex-col">
-                <span className="font-mono-data text-mono-data text-text-muted">{t('dashboard.canSpend').toUpperCase()}</span>
+                <span className="font-mono-data text-mono-data text-text-muted inline-flex items-center gap-xs">{t('dashboard.canSpend').toUpperCase()} <InfoTip text={t('screens.budget.canSpendInfo')} /></span>
                 <span className={`font-headline-md text-[36px] tracking-tighter ${summary.disponible < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(summary.puedesGastar)}</span>
               </div>
               <div className="flex gap-xl text-right">
-                <div className="flex flex-col">
-                  <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.committed').toUpperCase()}</span>
+                <div className="flex flex-col items-end">
+                  <span className="font-mono-data text-mono-data text-text-muted inline-flex items-center gap-xs">{t('screens.budget.committed').toUpperCase()} <InfoTip text={t('screens.budget.committedInfo')} /></span>
                   <span className="font-headline-md text-[24px] text-on-background tracking-tighter">{fmt(summary.comprometido)}</span>
                 </div>
-                <div className="flex flex-col">
-                  <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.toAllocate').toUpperCase()}</span>
+                <div className="flex flex-col items-end">
+                  <span className="font-mono-data text-mono-data text-text-muted inline-flex items-center gap-xs">{t('screens.budget.toAllocate').toUpperCase()} <InfoTip text={t('screens.budget.toAllocateInfo')} /></span>
                   <span className={`font-headline-md text-[24px] tracking-tighter ${summary.porAsignar > 0 ? 'text-accent-warning' : 'text-on-background'}`}>{fmt(summary.porAsignar)}</span>
                 </div>
               </div>

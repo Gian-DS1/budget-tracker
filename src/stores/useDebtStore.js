@@ -210,9 +210,30 @@ const useDebtStore = create(
         const categories = useCategoryStore.getState().categories;
         // Buscar por slug estable; respaldo por nombre para cuentas previas a la
         // migración del slug.
-        const loanCategory =
+        let loanCategory =
           categories.find((c) => c.slug === 'pago-deuda') ||
           categories.find((c) => c.name === 'Pago de Préstamos y Deudas' || (c.name && c.name.includes('Préstamos')));
+
+        // Tras el reinicio del modelo financiero las cuentas arrancan SIN
+        // categorías semilla, así que "Pago de Préstamos y Deudas" puede no
+        // existir todavía. En vez de saltarnos la sincronización (lo que dejaría
+        // el abono fuera del flujo de transacciones), creamos la categoría la
+        // primera vez que se registra un pago. ensureCategory es idempotente:
+        // los pagos siguientes reusan la misma. Así el usuario no tiene que
+        // crearla ni vincularla a mano.
+        if (!loanCategory) {
+          const newId = await useCategoryStore.getState().ensureCategory({
+            slug: 'pago-deuda',
+            name: 'Pago de Préstamos y Deudas',
+            type: 'fixed_expense',
+            icon: '🏛️',
+            color: '#dc2626',
+            keywords: ['prestamo', 'prestamos', 'cuota', 'capital', 'abono a deuda', 'financiamiento', 'asociacion', 'cooperativa'],
+          });
+          if (newId) {
+            loanCategory = useCategoryStore.getState().categories.find((c) => c.id === newId);
+          }
+        }
 
         if (loanCategory) {
           const addTransaction = useTransactionStore.getState().addTransaction;

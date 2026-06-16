@@ -529,8 +529,18 @@ export function demoAddDebtPayment(debtId, amount, date, notes = '', savingsUsed
   const newStatus = newBalance <= 0 ? 'paid_off' : 'active';
 
   // Transacción de gasto enlazada (base caja), igual que el store real.
+  // Si la categoría de pago de deuda aún no existe (cuenta nueva sin semillas),
+  // se crea al vuelo para que el abono sí entre al flujo de transacciones.
   let transactionId = null;
-  const catId = demoLoanCategoryId();
+  let catId = demoLoanCategoryId();
+  if (!catId) {
+    const created = demoAddCategory({
+      slug: 'pago-deuda', name: 'Pago de Préstamos y Deudas', type: 'fixed_expense',
+      icon: '🏛️', color: '#dc2626',
+      keywords: ['prestamo', 'prestamos', 'cuota', 'capital', 'abono a deuda', 'financiamiento', 'asociacion', 'cooperativa'],
+    });
+    catId = created?.id || demoLoanCategoryId();
+  }
   if (catId) {
     transactionId = demoAddTransaction({
       amount: value, type: 'fixed_expense', description: `Pago cuota - ${debt.creditorName}`,

@@ -11,13 +11,15 @@ import StitchCards from './StitchCards';
 import { useI18n } from '../../contexts/I18nContext';
 import { EASE_OUT } from '../motionTokens';
 
-const TABS = ['vaults', 'debts', 'cards'];
+// Tarjetas primero: es lo que el usuario consulta con más frecuencia, así que
+// es la pestaña que aparece por defecto al entrar a Mis finanzas.
+const TABS = ['cards', 'vaults', 'debts'];
 
 export default function StitchFinances() {
   const { t } = useI18n();
   const reduced = useReducedMotion();
   const [params] = useSearchParams();
-  const initial = TABS.includes(params.get('tab')) ? params.get('tab') : 'vaults';
+  const initial = TABS.includes(params.get('tab')) ? params.get('tab') : 'cards';
   const [tab, setTab] = useState(initial);
 
   const tabLabels = {
