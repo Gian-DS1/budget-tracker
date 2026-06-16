@@ -4,7 +4,7 @@ import ModalShell from './ModalShell';
 import { tr } from '../i18n/runtime';
 
 export const inputCls =
-  'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface focus:outline-none focus:border-primary inner-glow';
+  'w-full bg-surface-container-lowest border border-border-subtle rounded py-sm px-md font-body-md text-body-md text-on-surface transition-colors focus:outline-none focus:border-primary inner-glow';
 
 // El <label> ENVUELVE al control (asociación implícita): los lectores de
 // pantalla anuncian el nombre del campo y hacer click en el texto enfoca el

@@ -7,6 +7,7 @@
 //   - onChange(raw): recibe el string crudo (sin comas) para el estado del form.
 
 import { useRef } from 'react';
+import { inputCls } from './formUi';
 
 // Agrupa la parte entera con comas, conserva hasta 2 decimales.
 function formatLive(raw) {
@@ -62,7 +63,10 @@ function caretFromSignificant(formatted, count) {
 export default function StitchCurrencyInput({
   value = '',
   onChange,
-  className = '',
+  // Sin className explícito usa el estilo estándar de input (borde, fondo,
+  // focus:border-primary, inner-glow) — el mismo de inputCls. Así el campo se
+  // ve igual que el resto de inputs aunque el consumidor no pase clases.
+  className = inputCls,
   placeholder = '0.00',
   autoFocus = false,
   id,
