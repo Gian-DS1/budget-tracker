@@ -117,7 +117,7 @@ export default function CurrencyOnboarding() {
         aria-modal="true"
         aria-label={title}
         tabIndex={-1}
-        className="bg-surface-card border border-border-subtle rounded-lg inner-glow w-full max-w-sm p-lg flex flex-col gap-lg outline-none"
+        className="bg-surface-card border border-border-subtle rounded-lg inner-glow w-full max-w-[400px] p-lg flex flex-col gap-lg outline-none"
         style={{ transformOrigin: 'center' }}
         onClick={(e) => e.stopPropagation()}
         {...panelVariants}
