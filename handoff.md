@@ -54,9 +54,10 @@ resuelvan a 8–40px; usar valores arbitrarios `max-w-[Nrem]` en su lugar.
 ## Sistema de tutorial guiado (product tour)
 
 Tour con spotlight propio en `src/stitch/tour/`:
-- `tourSteps.js` — guión declarativo. **7 pasos** enfocados en el núcleo: bienvenida,
+- `tourSteps.js` — guión declarativo. **8 pasos** enfocados en el núcleo: bienvenida,
   menú, registrar dinero (la categoría define el tipo), presupuesto por niveles, cuánto
-  puedes gastar (integración sin duplicar), todo conectado, cierre.
+  puedes gastar (integración sin duplicar), Mis finanzas (patrimonio unificado), todo
+  conectado, cierre.
 - `TourProvider.jsx` — orquesta paso actual, navegación entre rutas, persistencia de
   "ya visto", y "forzar demo" para usuarios sin datos (lo revierte al cerrar).
 - `Spotlight.jsx` — capa visual en portal: oscurece la pantalla y deja un hueco

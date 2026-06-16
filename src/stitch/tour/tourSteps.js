@@ -10,11 +10,11 @@
 //   cabe (clamp a viewport).
 // `padding`: holgura (px) del halo alrededor del elemento. Default 8.
 //
-// Diseño del guión: 7 pasos, enfocados en el NÚCLEO (lo más difícil de entender):
-// el flujo del dinero (transacciones → la categoría define el tipo) y los niveles
-// de presupuesto. El patrimonio y las herramientas se mencionan de pasada; el
-// usuario los descubre solo. Lenguaje: español sencillo, sentence-case, sin em
-// dashes. Qué es · para qué sirve · cómo.
+// Diseño del guión: 8 pasos, enfocados en el NÚCLEO (lo más difícil de entender):
+// el flujo del dinero (transacciones → la categoría define el tipo), los niveles
+// de presupuesto y el patrimonio unificado (Mis finanzas). Las herramientas se
+// mencionan de pasada; el usuario las descubre solo. Lenguaje: español sencillo,
+// sentence-case, sin em dashes. Qué es · para qué sirve · cómo.
 
 import { tr } from '../../i18n/runtime';
 
@@ -51,7 +51,13 @@ export const TOUR_STEPS = [
   step({ id: 'budget-spend', route: '/presupuesto', anchor: '[data-tour="budget-spend"]', placement: 'top' },
     'tour.budgetSpendTitle', 'tour.budgetSpendBody'),
 
-  // ── 6. Todo conectado (cierre conceptual) ────────────────────────────────────
+  // ── 6. Mis finanzas (patrimonio unificado) ───────────────────────────────────
+  // Patrimonio neto + las 3 bolsas (efectivo, ahorro, deudas) en una sola pantalla.
+  // El anchor vive en PatrimonioSummary, que se monta al entrar a /mis-finanzas.
+  step({ id: 'finances', route: '/mis-finanzas', anchor: '[data-tour="finances"]', placement: 'bottom' },
+    'tour.financesTitle', 'tour.financesBody'),
+
+  // ── 7. Todo conectado (cierre conceptual) ────────────────────────────────────
   // Centrado puro (anchor null): el grid del dashboard es más alto que el viewport
   // y al recortarlo el halo se salía de pantalla. Como es el cierre conceptual, el
   // velo plano + globo centrado comunica mejor "todo conectado" sin recorte roto.
