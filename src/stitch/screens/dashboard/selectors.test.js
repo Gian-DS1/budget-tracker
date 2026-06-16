@@ -296,6 +296,20 @@ describe('getCumulativeLiquidWealth', () => {
     expect(r[r.length - 1].wealth).toBe(1000);
   });
 
+  it('los pagos de tarjeta SÍ bajan el efectivo de la línea, según su fecha', () => {
+    // El pago de tarjeta es cuando el efectivo sale del banco: debe restar del
+    // efectivo acumulado en los meses ≥ a su fecha, no antes. Misma regla que
+    // getLiquidCash (consistencia entre el gráfico y "Mis finanzas").
+    const txs = [t(1000, 'income', '2026-01-10')]; // ene: +1000 efectivo
+    const cards = [{ id: 'cc1', cutoffDay: 25, dueDay: 5, payments: [
+      { id: 'p1', amount: 400, date: '2026-02-15' }, // pago en febrero
+    ] }];
+    const r = getCumulativeLiquidWealth(txs, 0, 3, ref, cards, 0);
+    expect(r[0].cash).toBe(1000); // ene: antes del pago → sin restar
+    expect(r[1].cash).toBe(600);  // feb: ya restó el pago de 400
+    expect(r[2].cash).toBe(600);  // mar: sigue restado
+  });
+
   it('calcula savingsRate por mes: (income − gasto) / income', () => {
     const txs = [t(5000, 'income', '2026-03-02'), t(1000, 'variable_expense', '2026-03-09')];
     const r = getCumulativeLiquidWealth(txs, 0, 1, ref);

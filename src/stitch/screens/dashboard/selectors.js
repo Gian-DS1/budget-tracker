@@ -203,7 +203,8 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
     const monthEnd = new Date(y, m + 1, 1);
     // Día representativo del mes para "tarjetas por pagar" históricas (fin de mes).
     const monthRef = new Date(y, m + 1, 0);
-    // Efectivo acumulado: saldo inicial + efecto de todo lo anterior al fin de mes.
+    // Efectivo acumulado: saldo inicial + efecto de las transacciones anteriores al
+    // fin de mes − pagos de tarjeta anteriores al fin de mes (ver más abajo).
     // Ahorro: parte del total REAL de hoy y resta los aportes POSTERIORES al cierre,
     // así reconstruye cuánto había al cierre de este mes (incluye el saldo previo
     // de las metas, que no viene de transacciones).
@@ -223,6 +224,15 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
       if (d.getFullYear() === y && d.getMonth() === m) {
         if (t.type === 'income') income += Number(t.amount) || 0;
         else if (EXPENSE_TYPES.includes(t.type)) expense += getEffectiveAmount(t);
+      }
+    }
+    // Pagos de tarjeta anteriores al cierre del mes: aquí el efectivo SÍ sale del
+    // banco (mismo criterio que getLiquidCash). Sin fecha → se trata como ya
+    // ocurrido (se resta), igual que el saldo total. Esto mantiene la línea del
+    // gráfico consistente con el efectivo de "Mis finanzas".
+    for (const c of cards || []) {
+      for (const p of c.payments || []) {
+        if (!p.date || new Date(p.date + 'T00:00:00') < monthEnd) cash -= Number(p.amount) || 0;
       }
     }
     // Tasa de ahorro del mes: (ingresos − gastos) / ingresos, en %.

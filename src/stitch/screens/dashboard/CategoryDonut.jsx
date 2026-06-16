@@ -46,9 +46,9 @@ export default function CategoryDonut({ data, compact = false }) {
   const maxValue = Math.max(...withPct.map((d) => d.value));
 
   return (
-    <div className={`flex-grow flex items-center min-h-[200px] ${compact ? 'flex-col gap-md' : 'flex-col sm:flex-row gap-xl min-h-[240px]'}`}>
-      {/* Dona: en compact arriba (tamaño cómodo); en normal al lado de la leyenda. */}
-      <div className={`relative shrink-0 ${compact ? 'w-[210px] h-[210px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
+    <div className={`flex-grow flex min-h-[200px] ${compact ? 'flex-col gap-lg justify-center' : 'flex-col sm:flex-row gap-xl items-center min-h-[240px]'}`}>
+      {/* Dona: en compact arriba (más grande, centrada); en normal al lado de la leyenda. */}
+      <div className={`relative shrink-0 mx-auto ${compact ? 'w-[260px] h-[260px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -94,7 +94,7 @@ export default function CategoryDonut({ data, compact = false }) {
 
       {/* Leyenda-barra: emoji + nombre + riel proporcional + monto + %. Hover,
           click (touch) y focus (teclado) sincronizados con la dona. */}
-      <div className={`flex flex-col gap-xs w-full flex-grow ${compact ? '' : 'max-w-[640px]'}`}>
+      <div className={`flex flex-col w-full ${compact ? 'gap-sm' : 'gap-xs flex-grow max-w-[640px]'}`}>
         {withPct.map((d, i) => (
           <button
             type="button"
