@@ -38,8 +38,10 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
   return (
     <>
       {/* Hero: el balance manda; ingreso y gastos lo acompañan, y la barra
-          cuenta la historia completa (cuánto del ingreso ya se fue). */}
-      <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg mb-gutter">
+          cuenta la historia completa (cuánto del ingreso ya se fue). Es el ancla
+          del paso 5 del tour ("cuánto puedes gastar"): muestra comprometido vs.
+          libre, que es justo lo que ese paso describe. */}
+      <div data-tour="budget-spend" className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg mb-gutter">
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-md">
           <div className="flex flex-col">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.balance')}</span>

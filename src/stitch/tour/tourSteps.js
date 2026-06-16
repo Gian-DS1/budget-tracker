@@ -44,7 +44,11 @@ export const TOUR_STEPS = [
     'tour.budgetLevelsTitle', 'tour.budgetLevelsBody'),
 
   // ── 5. Cuánto puedes gastar (integración sin duplicar) ───────────────────────
-  step({ id: 'budget-spend', route: '/presupuesto', anchor: '[data-tour="budget-summary"]', placement: 'bottom' },
+  // Apunta al hero del presupuesto (balance / ingreso / gastos / cuánto queda),
+  // que es lo que describe el texto. El anchor 'budget-spend' vive en el nivel
+  // Seguimiento (el default del usuario nuevo). En otros niveles el anchor no
+  // existe y el Spotlight degrada a globo centrado (fallback con gracia).
+  step({ id: 'budget-spend', route: '/presupuesto', anchor: '[data-tour="budget-spend"]', placement: 'top' },
     'tour.budgetSpendTitle', 'tour.budgetSpendBody'),
 
   // ── 6. Todo conectado (cierre conceptual) ────────────────────────────────────
