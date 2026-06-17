@@ -1,94 +1,94 @@
-# Seguridad — FinTrack
+# Security — FinTrack
 
-Resumen de las medidas de seguridad de la app y decisiones de diseño. Útil para
-auditorías y para entender por qué ciertas configuraciones son intencionales.
+A summary of the app's security measures and design decisions. Useful for audits
+and for understanding why certain configurations are intentional.
 
-## Cabeceras HTTP (vercel.json)
+## HTTP headers (vercel.json)
 
-Aplicadas en el edge de Vercel a todas las respuestas:
+Applied at the Vercel edge to every response:
 
-| Cabecera | Valor | Propósito |
+| Header | Value | Purpose |
 |----------|-------|-----------|
-| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Fuerza HTTPS |
+| `Strict-Transport-Security` | `max-age=63072000; includeSubDomains; preload` | Forces HTTPS |
 | `X-Frame-Options` | `DENY` | Anti-clickjacking (legacy) |
-| `Content-Security-Policy` | ver abajo | Restringe orígenes de recursos |
-| `X-Content-Type-Options` | `nosniff` | Evita MIME sniffing |
-| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limita fuga de referrer |
-| `Permissions-Policy` | cámara/mic/geo/payment/usb/cohort deshabilitados | Restringe APIs del navegador |
-| `Cross-Origin-Opener-Policy` | `same-origin` | Aísla el contexto de navegación |
-| `Cross-Origin-Resource-Policy` | `same-origin` | Evita que otros orígenes lean recursos |
-| `Access-Control-Allow-Origin` | el propio dominio (no `*`) | CORS no abierto |
+| `Content-Security-Policy` | see below | Restricts resource origins |
+| `X-Content-Type-Options` | `nosniff` | Prevents MIME sniffing |
+| `Referrer-Policy` | `strict-origin-when-cross-origin` | Limits referrer leakage |
+| `Permissions-Policy` | camera/mic/geo/payment/usb/cohort disabled | Restricts browser APIs |
+| `Cross-Origin-Opener-Policy` | `same-origin` | Isolates the browsing context |
+| `Cross-Origin-Resource-Policy` | `same-origin` | Prevents other origins from reading resources |
+| `Access-Control-Allow-Origin` | the app's own domain (not `*`) | CORS not wide open |
 
 ### Cache
-- **HTML / rutas SPA**: `no-store, no-cache, must-revalidate`. Las páginas de
-  autenticación y los datos sensibles nunca se cachean en navegador ni proxies.
-- **`/assets/*`** (JS/CSS con hash de contenido): `public, max-age=31536000, immutable`.
-  Seguro porque el hash cambia si cambia el contenido.
+- **HTML / SPA routes**: `no-store, no-cache, must-revalidate`. Authentication
+  pages and sensitive data are never cached in the browser or proxies.
+- **`/assets/*`** (JS/CSS with content hashes): `public, max-age=31536000, immutable`.
+  Safe because the hash changes whenever the content changes.
 
-### CSP — nota sobre `'unsafe-inline'` en estilos (INTENCIONAL)
-`script-src` es estricto (`'self'`, **sin** `'unsafe-inline'`) — este es el vector
-de XSS importante y está cerrado.
+### CSP — note on `'unsafe-inline'` in styles (INTENTIONAL)
+`script-src` is strict (`'self'`, **without** `'unsafe-inline'`) — this is the
+important XSS vector and it is closed.
 
-`style-src` mantiene `'unsafe-inline'` a propósito. Eliminarlo no es viable en
-este SPA estático:
-- `react-hot-toast` usa **goober** (CSS-in-JS), que inyecta un `<style>` en runtime.
-- 30+ componentes usan atributos `style=` (React + framer-motion + recharts), que
-  no admiten nonce.
-- Generar nonces por request requeriría SSR; la app es estática en Vercel.
+`style-src` keeps `'unsafe-inline'` on purpose. Removing it is not viable in this
+static SPA:
+- `react-hot-toast` uses **goober** (CSS-in-JS), which injects a `<style>` at runtime.
+- 30+ components use `style=` attributes (React + framer-motion + recharts), which
+  do not accept a nonce.
+- Generating per-request nonces would require SSR; the app is static on Vercel.
 
-El riesgo residual es bajo: el CSS no ejecuta JavaScript. Si en el futuro se migra
-a SSR o se elimina goober, se puede endurecer `style-src-elem`.
+The residual risk is low: CSS does not execute JavaScript. If the app later moves
+to SSR or removes goober, `style-src-elem` can be hardened.
 
-## Datos (Supabase)
-- **Row Level Security activado** en todas las tablas (`supabase/schema.sql`), con
-  política "solo mis filas" (`auth.uid() = user_id`) para usuarios autenticados.
-- El rol `anon` no tiene privilegios sobre las tablas de datos.
-- El cliente usa la **anon key** (pública por diseño); la protección real es RLS.
-- Sesión en `sessionStorage` (no persiste tras cerrar el navegador).
+## Data (Supabase)
+- **Row Level Security enabled** on every table (`supabase/schema.sql`), with a
+  "only my rows" policy (`auth.uid() = user_id`) for authenticated users.
+- The `anon` role has no privileges over the data tables.
+- The client uses the **anon key** (public by design); the real protection is RLS.
+- Session in `sessionStorage` (does not persist after the browser is closed).
 
 ## Backend (api/)
-- `api/parse-pdf.js`: requiere **Bearer token** válido (verificado contra Supabase),
-  limita el tamaño del PDF (~6MB, anti-DoS), sanitiza el texto extraído y devuelve
-  **errores genéricos** al cliente (el detalle solo va a los logs del servidor).
+- `api/parse-pdf.js`: requires a valid **Bearer token** (verified against Supabase),
+  limits the PDF size (~6MB, anti-DoS), sanitizes the extracted text, and returns
+  **generic errors** to the client (the detail only goes to the server logs).
 
-## Secretos
-- `.env` está en `.gitignore`; solo se versiona `.env.example` (sin valores reales).
-- Variables con prefijo `VITE_` se exponen al cliente (solo la URL y anon key de
-  Supabase, que son públicas). El resto es server-only.
+## Secrets
+- `.env` is in `.gitignore`; only `.env.example` is versioned (without real values).
+- Variables with the `VITE_` prefix are exposed to the client (only the Supabase URL
+  and anon key, which are public). Everything else is server-only.
 
-## Login con Google — marca en la pantalla de consentimiento
+## Google sign-in — branding on the consent screen
 
-Al iniciar sesión con Google, la pantalla de consentimiento mostraba el subdominio
-crudo de Supabase (`<ref>.supabase.co`) en vez de la marca de la app. Esto NO se
-arregla en el código (`signInWithOAuth` en `src/contexts/AuthContext.jsx` solo
-controla el `redirectTo` de vuelta). Se configura en Google Cloud Console.
+When signing in with Google, the consent screen used to show Supabase's raw
+subdomain (`<ref>.supabase.co`) instead of the app's brand. This is NOT fixed in
+the code (`signInWithOAuth` in `src/contexts/AuthContext.jsx` only controls the
+`redirectTo` on the way back). It is configured in the Google Cloud Console.
 
-### Mostrar "FinTrack" + logo (gratis, sin dominio propio)
-1. [console.cloud.google.com](https://console.cloud.google.com) → seleccionar el
-   proyecto donde están las credenciales OAuth (el del Client ID configurado en
-   Supabase → Authentication → Providers → Google).
+### Show "FinTrack" + logo (free, no custom domain)
+1. [console.cloud.google.com](https://console.cloud.google.com) → select the
+   project where the OAuth credentials live (the one with the Client ID configured
+   in Supabase → Authentication → Providers → Google).
 2. **APIs & Services → OAuth consent screen → Branding**:
    - App name: `FinTrack`
    - User support email + Developer contact email
-   - App logo: subir el logo (cuadrado, ≤1MB) — opcional
-   - Authorized domains: `vercel.app` (o el dominio propio cuando exista)
-3. Guardar. La pantalla pasa a decir "FinTrack quiere acceder…".
+   - App logo: upload the logo (square, ≤1MB) — optional
+   - Authorized domains: `vercel.app` (or your own domain once you have one)
+3. Save. The screen now reads "FinTrack wants to access…".
 
-**Notas:**
-- El cambio de **nombre** aplica de inmediato y no requiere verificación con el
-  scope básico de login (email/perfil).
-- Subir **logo** puede disparar la verificación de Google (días/semanas). El nombre
-  solo suele ir directo.
-- En modo "Testing" no hay verificación pero limita a 100 usuarios; "Production"
-  con scopes básicos normalmente va directo.
+**Notes:**
+- The **name** change applies immediately and does not require verification with the
+  basic login scope (email/profile).
+- Uploading a **logo** can trigger Google verification (days/weeks). The name alone
+  usually goes through directly.
+- In "Testing" mode there is no verification but it is limited to 100 users;
+  "Production" with basic scopes normally goes through directly.
 
-### Mostrar tu propio dominio en el callback (requiere dominio propio + pago)
-Para que aparezca `auth.tudominio.do` en vez de `<ref>.supabase.co`:
-1. Registrar un dominio propio.
-2. Supabase → Custom Domains (add-on de pago, ~$10/mes): agregar `auth.tudominio.do`
-   y configurar el CNAME en DNS.
-3. Actualizar el callback en Google Cloud Console a
-   `https://auth.tudominio.do/auth/v1/callback`.
+### Show your own domain in the callback (requires a custom domain + payment)
+To make `auth.yourdomain.do` appear instead of `<ref>.supabase.co`:
+1. Register your own domain.
+2. Supabase → Custom Domains (paid add-on, ~$10/mo): add `auth.yourdomain.do`
+   and configure the CNAME in DNS.
+3. Update the callback in the Google Cloud Console to
+   `https://auth.yourdomain.do/auth/v1/callback`.
 
-> Nota: con el subdominio gratuito `*.vercel.app` esto no es posible (no controlas
-> el DNS de `vercel.app`). Pendiente para cuando se registre un dominio propio.
+> Note: with the free `*.vercel.app` subdomain this is not possible (you do not
+> control `vercel.app`'s DNS). Pending until a custom domain is registered.

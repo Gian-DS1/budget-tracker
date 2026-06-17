@@ -1,98 +1,99 @@
-# Migraciones — orden y notas de producción
+# Migrations — order and production notes
 
-Estas migraciones se corren **a mano** en el SQL editor de Supabase. Todas son
-**idempotentes** (`if not exists`, `drop policy if exists`, copias con `not
-exists`), así que re-correrlas en una base con datos es seguro.
+These migrations are run **by hand** in the Supabase SQL editor. They are all
+**idempotent** (`if not exists`, `drop policy if exists`, `not exists` copies),
+so re-running them against a database with data is safe.
 
-## Para lanzar el rediseño (rama de UI) sobre una base con datos existentes
+## To ship the redesign (UI branch) onto a database with existing data
 
-Correr **en este orden** antes de (o junto con) el despliegue del código nuevo:
+Run them **in this order** before (or together with) deploying the new code:
 
-1. **`add_savings_contributions.sql`** — añade `currency` y `monthly_contribution`
-   a `savings`, y crea la tabla `savings_contributions`.
-2. **`add_savings_horizon.sql`** — añade `horizon` a `savings` y copia las filas de
-   `plans` a `savings` (fusión Plan→Ahorros).
+1. **`add_savings_contributions.sql`** — adds `currency` and `monthly_contribution`
+   to `savings`, and creates the `savings_contributions` table.
+2. **`add_savings_horizon.sql`** — adds `horizon` to `savings` and copies the rows
+   from `plans` into `savings` (Plan→Savings merge).
 
-⚠️ **El orden importa.** `add_savings_horizon.sql` escribe las columnas
-`currency`/`monthly_contribution` que crea la migración #1. Correrlas al revés
-falla con `column "currency" of relation "savings" does not exist`.
+⚠️ **Order matters.** `add_savings_horizon.sql` writes the
+`currency`/`monthly_contribution` columns created by migration #1. Running them in
+reverse fails with `column "currency" of relation "savings" does not exist`.
 
-> La tabla `plans` NO se elimina (queda huérfana tras la fusión). Bórrala a mano
-> solo cuando hayas verificado que las metas migraron bien.
+> The `plans` table is NOT dropped (it is left orphaned after the merge). Drop it
+> by hand only once you have verified that the goals migrated correctly.
 
-### ¿Qué pasa si despliegas el código ANTES de correr estas migraciones?
-- **Lecturas:** seguras. La pantalla de Ahorros carga; las columnas faltantes caen
-  a sus valores por defecto y los aportes degradan a lista vacía.
-- **Escrituras:** crear/editar/restaurar una meta de ahorro **falla con un toast**
-  claro ("…puede faltar una migración de la base de datos") en vez de fallar en
-  silencio. No corrompe datos. Registrar un aporte también avisa con toast.
-- El resto de la app (transacciones, deudas, tarjetas, presupuesto, categorías)
-  **no se ve afectado** por estas migraciones: sus datos legados cargan y se
-  escriben sin cambios.
+### What happens if you deploy the code BEFORE running these migrations?
+- **Reads:** safe. The Savings screen loads; missing columns fall back to their
+  defaults and contributions degrade to an empty list.
+- **Writes:** creating/editing/restoring a savings goal **fails with a clear toast**
+  ("…a database migration may be missing") instead of failing silently. It does not
+  corrupt data. Logging a contribution also warns with a toast.
+- The rest of the app (transactions, debts, cards, budget, categories) is **not
+  affected** by these migrations: its legacy data reads and writes unchanged.
 
-Conclusión: lo ideal es correr las dos migraciones (en orden) y luego desplegar.
-Si el código sale antes, la app no se rompe; solo la creación/edición de metas de
-ahorro queda temporalmente deshabilitada con aviso, hasta correr las migraciones.
+Bottom line: ideally run both migrations (in order) and then deploy. If the code
+ships first, the app does not break; only creating/editing savings goals is
+temporarily disabled with a notice, until the migrations are run.
 
-## Tutorial guiado (product tour)
+## Guided tutorial (product tour)
 
-**`add_tutorial_seen.sql`** — añade la columna `tutorial_seen boolean` a
-`profiles`. Controla que el tutorial guiado arranque solo la **primera vez**.
+**`add_tutorial_seen.sql`** — adds the `tutorial_seen boolean` column to
+`profiles`. It controls that the guided tutorial only starts the **first time**.
 
-### ¿Qué pasa si despliegas el código ANTES de correr esta migración?
-- **Lecturas:** seguras. `fetchPrefs` ignora la columna ausente y `tutorialSeen`
-  queda en su default (`false`).
-- **Efecto temporal:** como no se puede persistir "ya visto" en Supabase, el
-  auto-arranque del tour podría reaparecer en cada dispositivo/recarga hasta que
-  exista la columna (el caché local mitiga dentro del mismo navegador). El resto
-  de la app no se ve afectado. Correr la migración resuelve el auto-arranque.
+### What happens if you deploy the code BEFORE running this migration?
+- **Reads:** safe. `fetchPrefs` ignores the missing column and `tutorialSeen`
+  stays at its default (`false`).
+- **Temporary effect:** because "already seen" cannot be persisted to Supabase, the
+  tour auto-start could reappear on every device/reload until the column exists (the
+  local cache mitigates this within the same browser). The rest of the app is not
+  affected. Running the migration resolves the auto-start.
 
-## Saldo inicial de tarjetas (deuda previa)
+## Card opening balance (prior debt)
 
-**`add_card_opening_balance.sql`** — añade `opening_balance numeric` a
-`credit_cards`. Permite registrar la deuda que el usuario YA tenía en la tarjeta
-al empezar a usar la app, sin crear transacciones ni afectar el presupuesto.
+**`add_card_opening_balance.sql`** — adds `opening_balance numeric` to
+`credit_cards`. It lets the user record the debt they ALREADY had on the card when
+they started using the app, without creating transactions or affecting the budget.
 
-### ¿Qué pasa si despliegas el código ANTES de correr esta migración?
-- **Lecturas:** seguras. La columna ausente cae a `0` (el código usa `|| 0`), así
-  que el saldo se comporta como hoy.
-- **Escrituras:** guardar una tarjeta con saldo inicial fallaría al persistir esa
-  columna hasta correr la migración. El resto (corte/pago/cashback) no se ve
-  afectado. Correr la migración habilita el campo.
+### What happens if you deploy the code BEFORE running this migration?
+- **Reads:** safe. The missing column falls back to `0` (the code uses `|| 0`), so
+  the balance behaves as it does today.
+- **Writes:** saving a card with an opening balance would fail to persist that
+  column until the migration is run. The rest (statement/payment/cashback) is not
+  affected. Running the migration enables the field.
 
 ## globalize_single_currency.sql (2026-06-11)
-Globalización: añade `profiles.currency` (default DOP), crea perfiles faltantes
-y convierte TODO lo guardado en USD a DOP con la tasa editada en el script
-(el monto original queda anotado en notes en transactions). Correr ANTES de
-desplegar el código de moneda única. Irreversible.
+Globalization: adds `profiles.currency` (default DOP), creates missing profiles,
+and converts EVERYTHING stored in USD to DOP using the rate edited in the script
+(the original amount is noted in `notes` on `transactions`). Run BEFORE deploying
+the single-currency code. Irreversible.
 
-## Modelo financiero — efectivo líquido + cascada (2026-06-15)
+## Financial model — liquid cash + waterfall (2026-06-15)
 
-Para activar el efectivo líquido y la cascada efectivo→ahorro en cuentas reales.
-Correr **antes** de desplegar el código de la fase 2:
+To enable liquid cash and the cash→savings waterfall on real accounts. Run
+**before** deploying the phase-2 code:
 
-1. **`add_initial_cash_balance.sql`** — añade `profiles.initial_cash_balance`
-   (numeric, default 0): el efectivo que el usuario declara al empezar. Usuarios
-   existentes arrancan en 0 y lo declaran luego en Ajustes (el dashboard les muestra
-   el aviso "Declara tu efectivo actual").
-2. **`add_debt_payment_savings_used.sql`** — añade `debt_payments.savings_used`
-   (jsonb, default `[]`): de qué meta tomó la cascada al pagar, para revertir el pago
-   exacto. (Tarjetas guarda esto en su columna `payments` jsonb existente; no necesita
-   migración.)
+1. **`add_initial_cash_balance.sql`** — adds `profiles.initial_cash_balance`
+   (numeric, default 0): the cash the user declares at the start. Existing users
+   start at 0 and declare it later in Settings (the dashboard shows them the
+   "Declare your current cash" notice).
+2. **`add_debt_payment_savings_used.sql`** — adds `debt_payments.savings_used`
+   (jsonb, default `[]`): which goal the waterfall drew from when paying, so the
+   exact payment can be reverted. (Cards store this in their existing `payments`
+   jsonb column; no migration needed.)
 
-Ambas idempotentes y aditivas. El orden entre ellas no importa (son independientes).
+Both are idempotent and additive. The order between them does not matter (they are
+independent).
 
-### ¿Qué pasa si despliegas el código ANTES de correr estas migraciones?
-- **`initial_cash_balance`:** `fetchPrefs` lee la columna; si no existe, Supabase
-  devuelve error y cae al flujo de "usuario nuevo" sin romper, pero el efectivo
-  inicial no se carga hasta correr la migración.
-- **`savings_used`:** guardar un pago de deuda con cascada fallaría al persistir esa
-  columna hasta correr la migración. El resto de pagos (sin cascada) no se ve afectado.
+### What happens if you deploy the code BEFORE running these migrations?
+- **`initial_cash_balance`:** `fetchPrefs` reads the column; if it does not exist,
+  Supabase returns an error and falls back to the "new user" flow without breaking,
+  but the initial cash is not loaded until the migration is run.
+- **`savings_used`:** saving a debt payment with a waterfall would fail to persist
+  that column until the migration is run. Other payments (without a waterfall) are
+  not affected.
 
-## Migraciones previas (ya aplicadas en producción histórica)
+## Previous migrations (already applied in historical production)
 
-`schema.sql` es la fuente de verdad canónica (idempotente; ya incluye las columnas
-y tablas nuevas con `if not exists`). Los demás `add_*.sql`/`*.sql`
+`schema.sql` is the canonical source of truth (idempotent; it already includes the
+new columns and tables with `if not exists`). The other `add_*.sql`/`*.sql` files
 (`add_profiles_table`, `add_card_payments_column`, `add_vehiculo_categories`,
-`advisor_fixes`, `cleanup_duplicate_categories`) son migraciones puntuales
-anteriores; no son requeridas por el rediseño de UI.
+`advisor_fixes`, `cleanup_duplicate_categories`) are earlier one-off migrations;
+they are not required by the UI redesign.

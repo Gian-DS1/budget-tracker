@@ -58,9 +58,15 @@ export default async function handler(req, res) {
     }
     const typeLabel = TYPE_LABELS[type] || TYPE_LABELS.general;
 
-    // La access key de Web3Forms es pública por diseño (identifica el buzón de
-    // destino), pero se prefiere la env var para poder rotarla sin redeploy.
-    const accessKey = process.env.WEB3FORMS_ACCESS_KEY || '446c31a3-399d-4d75-81e9-5e6344334122';
+    // La access key de Web3Forms identifica el buzón de destino. Se lee solo de
+    // la env var (no se versiona): así cada quien apunta el feedback a su propio
+    // buzón y la clave puede rotarse sin redeploy. Sin ella, el endpoint se
+    // desactiva limpiamente en vez de enviar a un destino inválido.
+    const accessKey = process.env.WEB3FORMS_ACCESS_KEY;
+    if (!accessKey) {
+      console.warn('WEB3FORMS_ACCESS_KEY no configurada: feedback deshabilitado.');
+      return res.status(503).json({ error: 'El feedback no está disponible en este momento.' });
+    }
 
     const w3res = await fetch('https://api.web3forms.com/submit', {
       method: 'POST',
