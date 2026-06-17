@@ -1,6 +1,6 @@
-# FinTrack — Smart Budgeting 🇩🇴
+# FinTrack — Smart Budgeting
 
-A personal-finance web app built for the Dominican Republic. It replaces spreadsheets with **zero-based budgeting**, debt and credit-card tracking, savings goals, recurring transactions, smart analysis, and reminders — all synced to the cloud.
+A global personal-finance web app (beta). It replaces spreadsheets with **zero-based budgeting**, debt and credit-card tracking, savings goals, recurring transactions, smart analysis, and reminders — all synced to the cloud. Multi-currency and bilingual (es/en): pick your currency on first sign-in and the whole app formats amounts with it.
 
 > Data is stored in **Supabase** (Postgres + Auth) and cached locally so the app loads instantly and works without friction.
 
@@ -112,7 +112,7 @@ budget-tracker/
 ├── src/
 │   ├── stitch/           # The whole UI: shell, screens (screens/), components, and stitch.css
 │   ├── contexts/         # AuthContext (Supabase session)
-│   ├── data/             # Default categories (DR) + auto-categorization
+│   ├── data/             # Category templates + auto-categorization
 │   ├── lib/              # Supabase client
 │   ├── stores/           # Global Zustand state (one per domain)
 │   └── utils/            # Financial calculations, formatting, card cycles
