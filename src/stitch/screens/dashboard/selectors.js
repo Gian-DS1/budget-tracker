@@ -43,7 +43,11 @@ export function getBudgetUsage(summary) {
   return {
     spent,
     budgeted,
+    // pct: para el ANCHO de la barra (topado a 100). rawPct: para el NÚMERO,
+    // sin topar, para que el usuario vea cuánto se pasó de su plan (p. ej. 115%)
+    // en vez de quedarse mudo en "100%".
     pct: Math.min(100, rawPct),
+    rawPct,
     overBudget: spent > budgeted,
     estado: summary.estado,
   };

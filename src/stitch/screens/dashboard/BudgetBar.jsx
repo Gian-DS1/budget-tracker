@@ -6,6 +6,7 @@
 import { formatCurrency } from '../../../utils/formatters';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { EmptyCell } from './dashboardUi';
+import { InfoTip } from '../../InfoTip';
 import CountUp from '../../CountUp';
 
 const fmt = (n) => formatCurrency(n);
@@ -26,11 +27,17 @@ export default function BudgetBar({ usage, pace }) {
 
   return (
     <div className="flex-grow flex flex-col justify-center gap-sm">
-      {/* Rótulo: deja claro que esta barra mide el presupuesto del mes (no el patrimonio). */}
-      <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.charts.budgetOfMonth}</span>
+      {/* Rótulo: deja claro que esta barra mide el presupuesto del mes (no el patrimonio).
+          El InfoTip aclara que compara GASTADO vs PLAN (no vs ingreso): pasar de
+          100% es pasarse del plan, no del ingreso. */}
+      <span className="font-mono-data text-mono-data text-text-muted uppercase inline-flex items-center gap-xs">
+        {strings.charts.budgetOfMonth} <InfoTip text={strings.charts.budgetOfMonthInfo} />
+      </span>
       <div className="flex justify-between items-baseline">
+        {/* Número: % REAL (rawPct, sin topar) para que se vea el sobregasto del
+            plan; la barra de abajo sí se topa a 100. */}
         <span className={`font-headline-md text-[22px] tracking-tight tabular-nums ${txt}`}>
-          <CountUp value={usage.pct} format={pct0} duration={240} />
+          <CountUp value={usage.rawPct ?? usage.pct} format={pct0} duration={240} />
         </span>
         <span className="font-mono-data text-mono-data text-text-muted tabular-nums">
           <CountUp value={usage.spent} format={fmt} duration={240} /> {strings.charts.of} <CountUp value={usage.budgeted} format={fmt} duration={240} />

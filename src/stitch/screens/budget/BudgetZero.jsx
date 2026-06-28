@@ -148,10 +148,36 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
             <div className="w-full h-1 bg-surface-container-highest mt-md relative">
               <div className="absolute top-0 left-0 h-full bg-primary" style={{ width: `${consumedPct}%` }} />
             </div>
-            <div className="flex justify-between mt-sm">
-              <span className="font-mono-data text-mono-data text-text-muted">{t('transactions.income')} {fmt(summary.ingresoRecibido)}</span>
-              <span className="font-mono-data text-mono-data text-primary">{consumedPct.toFixed(0)}% {t('screens.budget.committed').toLowerCase()}</span>
+            {/* Pie: distingue lo RECIBIDO de lo PLANIFICADO (eran la misma línea
+                antes, lo que hacía creer que "por asignar" se medía sobre lo
+                recibido). El % es del ingreso recibido ya usado (comprometido +
+                variable gastado): por eso "usado", no "comprometido". */}
+            <div className="flex flex-wrap justify-between gap-x-md mt-sm">
+              <span className="font-mono-data text-mono-data text-text-muted">
+                {t('screens.budget.received')} {fmt(summary.ingresoRecibido)}
+                {summary.ingresoEstimado !== summary.ingresoRecibido && (
+                  <> · {t('screens.budget.planned')} {fmt(summary.ingresoEstimado)}</>
+                )}
+              </span>
+              <span className="font-mono-data text-mono-data text-primary">{consumedPct.toFixed(0)}% {t('screens.budget.used')}</span>
             </div>
+            {/* Reparto del PLAN: hace visible la identidad exacta
+                  comprometido + variable planificado + por asignar = ingreso planificado.
+                Sin esta línea, "comprometido" y "por asignar" parecían no cuadrar
+                con el ingreso (faltaba el sobre de variable y el ancla correcta
+                es lo planificado, no lo recibido). */}
+            {summary.ingresoEstimado > 0 && (
+              <div className="flex flex-wrap items-center gap-x-sm gap-y-xs mt-sm pt-sm border-t border-border-subtle font-mono-data text-mono-data">
+                <span className="text-text-muted inline-flex items-center gap-xs">{t('screens.budget.planSplit')} <InfoTip text={t('screens.budget.planSplitInfo')} /></span>
+                <span className="text-on-surface-variant">{fmt(summary.comprometido)} {t('screens.budget.committed').toLowerCase()}</span>
+                <span className="text-text-muted">+</span>
+                <span className="text-on-surface-variant">{fmt(summary.gastosVariablesPlan)} {t('screens.budget.variableShort')}</span>
+                <span className="text-text-muted">+</span>
+                <span className="text-on-surface-variant">{fmt(summary.porAsignar)} {t('screens.budget.toAllocate').toLowerCase()}</span>
+                <span className="text-text-muted">=</span>
+                <span className="text-on-background">{fmt(summary.ingresoEstimado)}</span>
+              </div>
+            )}
           </div>
         </div>
 
