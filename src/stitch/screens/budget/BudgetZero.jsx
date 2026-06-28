@@ -54,7 +54,14 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
     [categories, monthBudgets, monthTx, debtCategoryId, summary],
   );
 
-  const totalEstimated = rows.reduce((s, r) => s + r.estimated, 0);
+  // Total ASIGNADO del header: solo sobres de gasto/ahorro/deuda; EXCLUYE los
+  // de ingreso. Sumar el ingreso planificado aquí inflaba la cifra y la hacía
+  // incomparable con "comprometido". Así reconcilia: comprometido + variable
+  // planificado.
+  const assignedExpenses = rows.reduce(
+    (s, r) => (GROUP_OF[r.cat.type] === 'income' ? s : s + r.estimated),
+    0,
+  );
 
   // Agrupa los sobres por TIPO de categoría, en el orden del flujo base cero
   // (ingreso → fijo → variable → ahorro). Dentro de cada grupo: primero las que
@@ -164,7 +171,7 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       {/* Sobres */}
       <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
         <div className="flex flex-wrap justify-between items-center gap-md mb-lg border-b border-border-subtle pb-sm">
-          <h2 className="font-mono-data text-mono-data text-on-surface-variant">{t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(totalEstimated)} {t('screens.budget.assigned').toUpperCase()}</h2>
+          <h2 className="font-mono-data text-mono-data text-on-surface-variant inline-flex items-center gap-xs">{t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(assignedExpenses)} {t('screens.budget.assigned').toUpperCase()} <InfoTip text={t('screens.budget.assignedInfo')} /></h2>
           <button onClick={handleCopy} className="flex items-center gap-xs bg-transparent border border-border-subtle text-on-surface font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high transition-colors">
             <MS name="content_copy" className="text-[14px]" /> {t('screens.budget.copyPrevMonth')}
           </button>
