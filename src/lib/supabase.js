@@ -9,7 +9,16 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
   auth: {
-    storage: typeof window !== 'undefined' ? window.sessionStorage : undefined,
+    // localStorage (no sessionStorage): la SESIÓN debe sobrevivir al cierre del
+    // navegador y al apagado de la PC. Mientras el refresh token siga vigente y
+    // sea el mismo navegador, el usuario vuelve a entrar sin re-loguearse.
+    // Los datos financieros (stores Zustand) sí se cachean en sessionStorage a
+    // propósito —son solo caché y se re-cargan desde Supabase en cada sesión—,
+    // así no queda información sensible en disco entre sesiones del navegador.
+    // El signOut de Supabase borra su propia clave de localStorage, y el handler
+    // SIGNED_OUT limpia los caches en sessionStorage: la protección multiusuario
+    // se mantiene intacta.
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
