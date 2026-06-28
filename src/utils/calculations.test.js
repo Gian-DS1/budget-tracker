@@ -71,7 +71,7 @@ describe('getBudgetSummary', () => {
     expect(r.estado).toBe('neutral');
   });
 
-  it('calcula porAsignar = ingresoEstimado - fijos - variables - ahorro - deuda', () => {
+  it('sin ingreso recibido, ingresoBase = estimado y porAsignar se calcula sobre él', () => {
     const r = getBudgetSummary({
       monthTransactions: [],
       monthBudgets: [
@@ -84,7 +84,42 @@ describe('getBudgetSummary', () => {
       debtPlanned: 10000,
       debtPaid: 0,
     });
-    expect(r.porAsignar).toBe(10000);
+    expect(r.ingresoBase).toBe(60000); // respaldo al estimado mientras recibido = 0
+    expect(r.porAsignar).toBe(10000); // 60000 - 20000 - 15000 - 5000 - 10000
+  });
+
+  it('con ingreso recibido, ingresoBase = recibido y porAsignar lo ignora el estimado', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 50000 }, // entró el primer peso → manda lo recibido
+      ],
+      monthBudgets: [
+        { categoryId: 'inc', estimatedAmount: 60000 }, // estimado debe ignorarse
+        { categoryId: 'fix', estimatedAmount: 20000 },
+        { categoryId: 'var', estimatedAmount: 15000 },
+        { categoryId: 'sav', estimatedAmount: 5000 },
+      ],
+      categories,
+      debtPlanned: 10000,
+      debtPaid: 0,
+    });
+    expect(r.ingresoBase).toBe(50000);
+    expect(r.porAsignar).toBe(0); // 50000 - 20000 - 15000 - 5000 - 10000
+  });
+
+  it('preserva la identidad comprometido + variable planificado + porAsignar = ingresoBase', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'inc', amount: 50000 }],
+      monthBudgets: [
+        { categoryId: 'fix', estimatedAmount: 20000 },
+        { categoryId: 'var', estimatedAmount: 15000 },
+        { categoryId: 'sav', estimatedAmount: 5000 },
+      ],
+      categories,
+      debtPlanned: 10000,
+      debtPaid: 0,
+    });
+    expect(r.comprometido + r.gastosVariablesPlan + r.porAsignar).toBe(r.ingresoBase);
   });
 
   it('clasifica el gasto por el tipo de la categoría, no por transaction.type', () => {

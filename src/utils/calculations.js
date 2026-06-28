@@ -187,8 +187,14 @@ export function getBudgetSummary({
   const disponible = ingresoRecibido - comprometido - variableGastado;
   const puedesGastar = Math.max(0, disponible);
 
+  // Base del presupuesto: el ingreso REAL recibido manda en cuanto entra el
+  // primer peso del mes; mientras no haya ingreso registrado, se respalda en el
+  // estimado para que el usuario pueda presupuestar a inicio de mes. Así "por
+  // asignar" deja de depender de una predicción fija que puede no cumplirse.
+  const ingresoBase = ingresoRecibido > 0 ? ingresoRecibido : ingresoEstimado;
+
   const porAsignar =
-    ingresoEstimado - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - debtCommitted;
+    ingresoBase - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - debtCommitted;
 
   let estado;
   if (ingresoRecibido === 0) estado = 'neutral';
@@ -199,6 +205,7 @@ export function getBudgetSummary({
   return {
     ingresoRecibido,
     ingresoEstimado,
+    ingresoBase,
     gastosFijosPlan,
     gastosVariablesPlan,
     ahorroPlan,
