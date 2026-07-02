@@ -15,6 +15,8 @@ import { useI18n } from '../../../contexts/I18nContext';
 import BudgetZero from './BudgetZero';
 import Budget503020 from './Budget503020';
 import BudgetTracking from './BudgetTracking';
+import RealPlanSummary from './RealPlanSummary';
+import BudgetGroups from './BudgetGroups';
 
 const ESTADO_COLOR = { good: 'text-tertiary', warning: 'text-accent-warning', danger: 'text-accent-error', neutral: 'text-text-muted' };
 
@@ -141,6 +143,10 @@ export default function BudgetShell({ level = 'zero' }) {
         </div>
       </div>
 
+      {/* Real vs Presupuestado: mismo desglose en los 3 modos y para cualquier
+          mes (pasado, presente o futuro). El restante puede ser negativo. */}
+      <RealPlanSummary summary={summary} />
+
       {/* Sub-vista según el nivel.
           Para 503020 y zero se necesitan categorías; si no hay, mostramos el
           empty state. Tracking funciona sin categorías (solo muestra totales). */}
@@ -159,6 +165,12 @@ export default function BudgetShell({ level = 'zero' }) {
           {level === '503020' && <Budget503020 {...viewProps} />}
           {level === 'zero' && <BudgetZero {...viewProps} />}
         </>
+      )}
+
+      {/* Grupos de categorías: totales combinados de sobres que cubren lo mismo.
+          Necesita categorías para ser útil (el modal elige entre ellas). */}
+      {categories.length > 0 && (
+        <BudgetGroups monthBudgets={monthBudgets} monthTx={monthTx} categories={categories} />
       )}
     </div>
   );

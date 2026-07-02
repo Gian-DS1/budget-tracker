@@ -12,6 +12,7 @@
 import useTransactionStore from './useTransactionStore';
 import useCategoryStore from './useCategoryStore';
 import useBudgetStore from './useBudgetStore';
+import useBudgetGroupStore from './useBudgetGroupStore';
 import useSavingsStore from './useSavingsStore';
 import useDebtStore from './useDebtStore';
 import useCreditCardStore from './useCreditCardStore';
@@ -22,6 +23,7 @@ const RESETS = [
   [useTransactionStore, { transactions: [] }],
   [useCategoryStore, { categories: [] }],
   [useBudgetStore, { budgets: [] }],
+  [useBudgetGroupStore, { groups: [] }],
   [useSavingsStore, { goals: [], contributions: [] }],
   [useDebtStore, { debts: [], payments: [] }],
   [useCreditCardStore, { cards: [] }],

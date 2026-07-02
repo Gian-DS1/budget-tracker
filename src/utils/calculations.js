@@ -196,6 +196,20 @@ export function getBudgetSummary({
   const porAsignar =
     ingresoBase - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - debtCommitted;
 
+  // ── Vista REAL vs PRESUPUESTADO ────────────────────────────────────────────
+  // REAL: solo dinero que de verdad entró/salió este mes. Ingresos en positivo;
+  // gastos fijos + variables (y deuda pagada, ahorro apartado, botes) en
+  // negativo. restanteReal puede ser negativo: gastaste más de lo que ganaste.
+  const gastosReal = gastosFijosReal + variableGastado;
+  const restanteReal =
+    ingresoRecibido - gastosReal - debtPaidEffective - ahorroReal - accumulativeSpent;
+
+  // PRESUPUESTADO: el plan puro del mes (sobres + cuota planificada de deuda),
+  // sin mezclar montos reales. Espejo del bloque REAL.
+  const gastosPlan = gastosFijosPlan + gastosVariablesPlan;
+  const restantePlan =
+    ingresoEstimado - gastosPlan - planDebt - ahorroPlan - accumulativePlan;
+
   let estado;
   if (ingresoRecibido === 0) estado = 'neutral';
   else if (disponible < 0) estado = 'danger';
@@ -221,8 +235,31 @@ export function getBudgetSummary({
     disponible,
     puedesGastar,
     porAsignar,
+    gastosReal,
+    restanteReal,
+    gastosPlan,
+    restantePlan,
     estado,
   };
+}
+
+/**
+ * Totales de un grupo de categorías (presupuestos agrupados): suma el estimado
+ * de los sobres del mes y el gasto real (neto de cashback) de las categorías
+ * miembro. Sirve para ver como uno solo varios sobres que cubren lo mismo
+ * (p. ej. Bravo + Grupo CCN + Supermercado = "Supermercados").
+ */
+export function getBudgetGroupTotals({ categoryIds = [], monthBudgets = [], monthTransactions = [] }) {
+  const members = new Set(categoryIds);
+  let estimated = 0;
+  for (const b of monthBudgets) {
+    if (members.has(b.categoryId)) estimated += Number(b.estimatedAmount) || 0;
+  }
+  let actual = 0;
+  for (const t of monthTransactions) {
+    if (members.has(t.categoryId)) actual += getEffectiveAmount(t);
+  }
+  return { estimated, actual, pct: calculateBudgetProgress(actual, estimated) };
 }
 
 /**

@@ -8,6 +8,7 @@
 import useCategoryStore from '../stores/useCategoryStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useBudgetStore from '../stores/useBudgetStore';
+import useBudgetGroupStore from '../stores/useBudgetGroupStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
@@ -202,6 +203,11 @@ const budgets = [
   { id: 'b6', categoryId: catId('Salario'), year: yearIdx, month: monthIdx, estimatedAmount: 170000, currency: 'DOP', createdAt: '' },
 ];
 
+// Grupo de presupuesto de ejemplo: dos categorías vistas como un total.
+const budgetGroups = [
+  { id: 'bg1', name: 'Comida', icon: null, categoryIds: [catId('Supermercado'), catId('Restaurantes y Delivery')], createdAt: '' },
+];
+
 const goals = [
   { id: 'g1', title: 'Fondo de emergencia', targetAmount: 180000, currentAmount: 105000, monthlyContribution: 15000, deadline: iso(new Date(yearIdx + 1, 2, 1)), icon: '🆘', color: '#bec2ff', status: 'active', currency: 'DOP', horizon: null, createdAt: '' },
   { id: 'g2', title: 'Viaje a Europa', targetAmount: 250000, currentAmount: 60000, monthlyContribution: 20000, deadline: iso(new Date(yearIdx + 1, 7, 1)), icon: '✈️', color: '#50d8e9', status: 'active', currency: 'DOP', horizon: 'medium', createdAt: '' },
@@ -223,6 +229,7 @@ export function seedDemoStores() {
   useCategoryStore.setState({ categories, loading: false });
   useTransactionStore.setState({ transactions, loading: false });
   useBudgetStore.setState({ budgets, loading: false });
+  useBudgetGroupStore.setState({ groups: budgetGroups, loading: false });
   useSavingsStore.setState({ goals, contributions: [], loading: false });
   useDebtStore.setState({ debts, payments: [], loading: false });
   useCreditCardStore.setState({ cards, loading: false });
@@ -246,6 +253,7 @@ export function seedFreshStores() {
   useCategoryStore.setState({ categories: [], loading: false });
   useTransactionStore.setState({ transactions: [], loading: false });
   useBudgetStore.setState({ budgets: [], loading: false });
+  useBudgetGroupStore.setState({ groups: [], loading: false });
   useSavingsStore.setState({ goals: [], contributions: [], loading: false });
   useDebtStore.setState({ debts: [], payments: [], loading: false });
   useCreditCardStore.setState({ cards: [], loading: false });

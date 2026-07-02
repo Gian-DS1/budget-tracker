@@ -90,6 +90,20 @@ independent).
   that column until the migration is run. Other payments (without a waterfall) are
   not affected.
 
+## Budget groups (2026-07-02)
+
+**`add_budget_groups.sql`** — creates the `budget_groups` table (with RLS and
+grants). It lets the user group several budget categories to see their combined
+total in Budget (e.g. Bravo + Grupo CCN + Supermercado = "Supermercados").
+Idempotent and additive.
+
+### What happens if you deploy the code BEFORE running this migration?
+- **Reads:** safe. The groups section loads empty (the fetch degrades to an empty
+  list without breaking the Budget tab).
+- **Writes:** creating/editing/deleting a group fails with a clear toast ("…a
+  database migration may be missing"). It does not corrupt data. Running the
+  migration enables the feature.
+
 ## Previous migrations (already applied in historical production)
 
 `schema.sql` is the canonical source of truth (idempotent; it already includes the

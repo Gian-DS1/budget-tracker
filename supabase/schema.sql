@@ -87,6 +87,16 @@ create table if not exists public.budgets (
   unique (user_id, category_id, month)
 );
 
+-- ── Grupos de presupuesto (varias categorías vistas como un total) ──────────
+create table if not exists public.budget_groups (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references auth.users(id) on delete cascade,
+  name         text not null,
+  icon         text,
+  category_ids uuid[] not null default '{}',
+  created_at   timestamptz not null default now()
+);
+
 -- ── Metas de ahorro ─────────────────────────────────────────────────────────
 create table if not exists public.savings (
   id             uuid primary key default gen_random_uuid(),
@@ -193,6 +203,7 @@ create index if not exists transactions_category_id_idx           on public.tran
 create index if not exists transactions_card_id_idx               on public.transactions (card_id);
 create index if not exists budgets_user_id_idx                    on public.budgets (user_id);
 create index if not exists budgets_category_id_idx                on public.budgets (category_id);
+create index if not exists budget_groups_user_id_idx              on public.budget_groups (user_id);
 create index if not exists savings_user_id_idx                    on public.savings (user_id);
 create index if not exists debts_user_id_idx                      on public.debts (user_id);
 create index if not exists debt_payments_user_id_idx              on public.debt_payments (user_id);
@@ -216,8 +227,8 @@ do $$
 declare
   t text;
   tables text[] := array[
-    'profiles', 'categories', 'credit_cards', 'transactions', 'budgets', 'savings',
-    'savings_contributions',
+    'profiles', 'categories', 'credit_cards', 'transactions', 'budgets', 'budget_groups',
+    'savings', 'savings_contributions',
     'debts', 'debt_payments', 'plans', 'recurring_transactions'
   ];
 begin

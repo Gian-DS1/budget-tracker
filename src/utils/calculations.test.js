@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getBudgetSummary, getBuckets503020, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions, getFinancialHealthScore } from './calculations';
+import { getBudgetSummary, getBuckets503020, getBudgetGroupTotals, getAccumulatedBalance, getMonthlySavingCapacity, getBudgetSuggestions, getFinancialHealthScore } from './calculations';
 
 const categories = [
   { id: 'inc', type: 'income' },
@@ -152,6 +152,123 @@ describe('getBudgetSummary', () => {
     expect(r.gastosFijosReal).toBe(18000);
     expect(r.variableGastado).toBe(7000);
     expect(r.ahorroReal).toBe(4000);
+  });
+
+  it('restanteReal = ingresos reales - gastos fijos reales - gastos variables reales', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 50000 },
+        { categoryId: 'fix', amount: 20000 },
+        { categoryId: 'var', amount: 12000 },
+      ],
+      monthBudgets: [],
+      categories,
+      debtPlanned: 0,
+      debtPaid: 0,
+    });
+    expect(r.gastosReal).toBe(32000);
+    expect(r.restanteReal).toBe(18000); // 50000 - 20000 - 12000
+  });
+
+  it('restanteReal es negativo cuando se gasta más de lo que se gana', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 30000 },
+        { categoryId: 'fix', amount: 25000 },
+        { categoryId: 'var', amount: 15000 },
+      ],
+      monthBudgets: [],
+      categories,
+      debtPlanned: 0,
+      debtPaid: 0,
+    });
+    expect(r.restanteReal).toBe(-10000);
+  });
+
+  it('restanteReal también descuenta deuda pagada y ahorro apartado (dinero que salió)', () => {
+    const catsDebt = [...categories, { id: 'debt', type: 'fixed_expense', slug: 'pago-deuda' }];
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 60000 },
+        { categoryId: 'fix', amount: 10000 },
+        { categoryId: 'var', amount: 5000 },
+        { categoryId: 'debt', amount: 8000 }, // pago de deuda real
+        { categoryId: 'sav', amount: 4000 },  // ahorro apartado
+      ],
+      monthBudgets: [],
+      categories: catsDebt,
+      debtPlanned: 8000,
+      debtPaid: 8000,
+      debtCategoryId: 'debt',
+    });
+    expect(r.gastosReal).toBe(15000); // solo fijos + variables (la deuda vive aparte)
+    expect(r.restanteReal).toBe(33000); // 60000 - 15000 - 8000 - 4000
+  });
+
+  it('restantePlan = ingreso presupuestado - plan de gastos - cuota de deuda - ahorro plan', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [],
+      monthBudgets: [
+        { categoryId: 'inc', estimatedAmount: 60000 },
+        { categoryId: 'fix', estimatedAmount: 20000 },
+        { categoryId: 'var', estimatedAmount: 15000 },
+        { categoryId: 'sav', estimatedAmount: 5000 },
+      ],
+      categories,
+      debtPlanned: 10000,
+      debtPaid: 0,
+    });
+    expect(r.gastosPlan).toBe(35000);
+    expect(r.restantePlan).toBe(10000); // 60000 - 35000 - 10000 - 5000
+  });
+
+  it('restantePlan usa la cuota planificada, no el sobrepago real de deuda', () => {
+    const catsDebt = [...categories, { id: 'debt', type: 'fixed_expense', slug: 'pago-deuda' }];
+    const r = getBudgetSummary({
+      monthTransactions: [{ categoryId: 'debt', amount: 13000 }],
+      monthBudgets: [{ categoryId: 'inc', estimatedAmount: 50000 }],
+      categories: catsDebt,
+      debtPlanned: 10000,
+      debtPaid: 13000, // sobrepago: afecta lo REAL, no el plan
+      debtCategoryId: 'debt',
+    });
+    expect(r.restantePlan).toBe(40000); // 50000 - 10000 (cuota plan)
+    expect(r.restanteReal).toBe(-13000); // 0 ingreso real - 13000 pagados
+  });
+});
+
+describe('getBudgetGroupTotals', () => {
+  // Grupo "Supermercados" = bravo + ccn + super (tres sobres que cubren lo mismo).
+  const monthBudgets = [
+    { categoryId: 'bravo', estimatedAmount: 3000 },
+    { categoryId: 'ccn', estimatedAmount: 2000 },
+    { categoryId: 'super', estimatedAmount: 5000 },
+    { categoryId: 'otra', estimatedAmount: 9999 },
+  ];
+  const monthTransactions = [
+    { categoryId: 'bravo', amount: 1500 },
+    { categoryId: 'ccn', amount: 800, cashbackEarned: 50 },
+    { categoryId: 'super', amount: 2000 },
+    { categoryId: 'otra', amount: 7777 },
+  ];
+
+  it('suma estimado y gasto real (neto de cashback) solo de las categorías miembro', () => {
+    const r = getBudgetGroupTotals({ categoryIds: ['bravo', 'ccn', 'super'], monthBudgets, monthTransactions });
+    expect(r.estimated).toBe(10000);
+    expect(r.actual).toBe(4250); // 1500 + (800-50) + 2000
+    expect(r.pct).toBe(42.5);
+  });
+
+  it('sin presupuesto asignado el pct es 0 (sin dividir entre cero)', () => {
+    const r = getBudgetGroupTotals({ categoryIds: ['bravo'], monthBudgets: [], monthTransactions });
+    expect(r.estimated).toBe(0);
+    expect(r.actual).toBe(1500);
+    expect(r.pct).toBe(0);
+  });
+
+  it('grupo vacío devuelve todo en 0', () => {
+    const r = getBudgetGroupTotals({ categoryIds: [], monthBudgets, monthTransactions });
+    expect(r).toEqual({ estimated: 0, actual: 0, pct: 0 });
   });
 });
 

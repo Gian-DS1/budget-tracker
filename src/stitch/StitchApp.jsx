@@ -28,6 +28,7 @@ import { isDemoActive, isFreshActive, seedDemoStores, seedFreshStores } from './
 import useCategoryStore from '../stores/useCategoryStore';
 import useTransactionStore from '../stores/useTransactionStore';
 import useBudgetStore from '../stores/useBudgetStore';
+import useBudgetGroupStore from '../stores/useBudgetGroupStore';
 import useSavingsStore from '../stores/useSavingsStore';
 import useDebtStore from '../stores/useDebtStore';
 import useCreditCardStore from '../stores/useCreditCardStore';
@@ -73,6 +74,7 @@ function AuthGate() {
   const fetchCategories = useCategoryStore((s) => s.fetchCategories);
   const fetchTransactions = useTransactionStore((s) => s.fetchTransactions);
   const fetchBudgets = useBudgetStore((s) => s.fetchBudgets);
+  const fetchBudgetGroups = useBudgetGroupStore((s) => s.fetchGroups);
   const fetchGoals = useSavingsStore((s) => s.fetchGoals);
   const fetchDebtsAndPayments = useDebtStore((s) => s.fetchDebtsAndPayments);
   const fetchCards = useCreditCardStore((s) => s.fetchCards);
@@ -106,11 +108,12 @@ function AuthGate() {
     fetchCategories();
     fetchTransactions();
     fetchBudgets();
+    fetchBudgetGroups();
     fetchGoals();
     fetchDebtsAndPayments();
     fetchCards();
     fetchPrefs();
-  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchGoals, fetchDebtsAndPayments, fetchCards, fetchPrefs]);
+  }, [user, fetchCategories, fetchTransactions, fetchBudgets, fetchBudgetGroups, fetchGoals, fetchDebtsAndPayments, fetchCards, fetchPrefs]);
 
   useEffect(() => {
     if (!user) return;
