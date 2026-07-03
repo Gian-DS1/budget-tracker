@@ -183,8 +183,19 @@ export function getBudgetSummary({
   const debtPaidEffective = (Number(debtPaid) || 0) || debtPaidFromTx;
   const debtCommitted = Math.max(planDebt, debtPaidEffective);
 
-  const comprometido = gastosFijosPlan + debtCommitted + ahorroPlan + accumulativePlan;
-  const disponible = ingresoRecibido - comprometido - variableGastado;
+  // Comprometido = TODO el dinero ya asignado a un destino: sobres de gasto
+  // fijo Y variable, ahorro, botes y la cuota de deuda. Coincide con el total
+  // "asignado" de los sobres y hace exacta la identidad:
+  //   ingresoBase = comprometido + porAsignar.
+  const comprometido =
+    gastosFijosPlan + gastosVariablesPlan + ahorroPlan + accumulativePlan + debtCommitted;
+
+  // "Puedes gastar" (nivel 50/30/20 y semáforo `estado`): lo que de verdad
+  // queda del ingreso recibido tras reservar fijos/ahorro/botes/deuda y
+  // descontar lo YA gastado en variables. No parte de `comprometido` porque
+  // este incluye el PLAN variable; aquí lo que resta es el gasto variable REAL.
+  const disponible =
+    ingresoRecibido - gastosFijosPlan - ahorroPlan - accumulativePlan - debtCommitted - variableGastado;
   const puedesGastar = Math.max(0, disponible);
 
   // Base del presupuesto: el ingreso REAL recibido manda en cuanto entra el
@@ -193,8 +204,9 @@ export function getBudgetSummary({
   // asignar" deja de depender de una predicción fija que puede no cumplirse.
   const ingresoBase = ingresoRecibido > 0 ? ingresoRecibido : ingresoEstimado;
 
-  const porAsignar =
-    ingresoBase - gastosFijosPlan - gastosVariablesPlan - ahorroPlan - accumulativePlan - debtCommitted;
+  // Lo que aún no tiene destino (y lo que se espera que quede disponible si se
+  // cumple el plan): el ingreso menos todo lo comprometido.
+  const porAsignar = ingresoBase - comprometido;
 
   // ── Vista REAL vs PRESUPUESTADO ────────────────────────────────────────────
   // REAL: solo dinero que de verdad entró/salió este mes. Ingresos en positivo;

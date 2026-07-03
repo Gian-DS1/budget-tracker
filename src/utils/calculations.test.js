@@ -9,7 +9,7 @@ const categories = [
 ];
 
 describe('getBudgetSummary', () => {
-  it('calcula puedesGastar = ingresoRecibido - comprometido - variableGastado', () => {
+  it('calcula puedesGastar = ingreso recibido − reservas (fijo/ahorro/deuda) − variable gastado', () => {
     const r = getBudgetSummary({
       monthTransactions: [
         { categoryId: 'inc', amount: 50000 },
@@ -24,10 +24,31 @@ describe('getBudgetSummary', () => {
       debtPaid: 0,
     });
     expect(r.ingresoRecibido).toBe(50000);
-    expect(r.comprometido).toBe(35000); // 20000 fijo + 10000 deuda + 5000 ahorro
+    expect(r.comprometido).toBe(35000); // 20000 fijo + 10000 deuda + 5000 ahorro (sin sobre variable)
     expect(r.variableGastado).toBe(3000);
     expect(r.puedesGastar).toBe(12000);
     expect(r.estado).toBe('good');
+  });
+
+  it('comprometido incluye TODOS los sobres: fijos, variables, ahorro y deuda', () => {
+    const r = getBudgetSummary({
+      monthTransactions: [
+        { categoryId: 'inc', amount: 50000 },
+        { categoryId: 'var', amount: 3000 },
+      ],
+      monthBudgets: [
+        { categoryId: 'fix', estimatedAmount: 20000 },
+        { categoryId: 'var', estimatedAmount: 15000 },
+        { categoryId: 'sav', estimatedAmount: 5000 },
+      ],
+      categories,
+      debtPlanned: 10000,
+      debtPaid: 0,
+    });
+    expect(r.comprometido).toBe(50000); // 20000 fijo + 15000 variable + 5000 ahorro + 10000 deuda
+    expect(r.porAsignar).toBe(0); // 50000 ingreso − 50000 comprometido
+    // El plan variable NO se resta de puedesGastar (ahí cuenta el gasto variable real).
+    expect(r.puedesGastar).toBe(12000); // 50000 − 20000 − 5000 − 10000 − 3000
   });
 
   it('marca danger y puedesGastar 0 cuando lo comprometido supera el ingreso recibido', () => {
@@ -107,7 +128,7 @@ describe('getBudgetSummary', () => {
     expect(r.porAsignar).toBe(0); // 50000 - 20000 - 15000 - 5000 - 10000
   });
 
-  it('preserva la identidad comprometido + variable planificado + porAsignar = ingresoBase', () => {
+  it('preserva la identidad comprometido + porAsignar = ingresoBase', () => {
     const r = getBudgetSummary({
       monthTransactions: [{ categoryId: 'inc', amount: 50000 }],
       monthBudgets: [
@@ -119,7 +140,7 @@ describe('getBudgetSummary', () => {
       debtPlanned: 10000,
       debtPaid: 0,
     });
-    expect(r.comprometido + r.gastosVariablesPlan + r.porAsignar).toBe(r.ingresoBase);
+    expect(r.comprometido + r.porAsignar).toBe(r.ingresoBase);
   });
 
   it('clasifica el gasto por el tipo de la categoría, no por transaction.type', () => {
