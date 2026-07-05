@@ -4,23 +4,29 @@
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import toast from 'react-hot-toast';
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 
 import StitchHead from './StitchHead';
 import StitchShell from './StitchShell';
-import StitchAuth from './screens/StitchAuth';
-import StitchLanding from './screens/StitchLanding';
-import StitchDashboard from './screens/StitchDashboard';
-import StitchLedger from './screens/StitchLedger';
-import StitchBudget from './screens/StitchBudget';
-import StitchFinances from './screens/StitchFinances';
-import StitchCalendar from './screens/StitchCalendar';
-import StitchSettings from './screens/StitchSettings';
-import StitchFeedback from './screens/StitchFeedback';
-import StitchCategories from './screens/StitchCategories';
-import CurrencyOnboarding from './screens/CurrencyOnboarding';
 import { DEFAULT_TITLE } from './usePageTitle';
 import './stitch.css';
+
+// Pantallas con code-splitting por ruta: el bundle inicial solo trae el shell;
+// cada pantalla (y sus librerías pesadas, p. ej. recharts en el dashboard) se
+// descarga al navegar. React Router envuelve las navegaciones en transiciones,
+// así que al cambiar de ruta no hay flash del fallback: la UI actual se queda
+// hasta que el chunk llega.
+const StitchAuth = lazy(() => import('./screens/StitchAuth'));
+const StitchLanding = lazy(() => import('./screens/StitchLanding'));
+const StitchDashboard = lazy(() => import('./screens/StitchDashboard'));
+const StitchLedger = lazy(() => import('./screens/StitchLedger'));
+const StitchBudget = lazy(() => import('./screens/StitchBudget'));
+const StitchFinances = lazy(() => import('./screens/StitchFinances'));
+const StitchCalendar = lazy(() => import('./screens/StitchCalendar'));
+const StitchSettings = lazy(() => import('./screens/StitchSettings'));
+const StitchFeedback = lazy(() => import('./screens/StitchFeedback'));
+const StitchCategories = lazy(() => import('./screens/StitchCategories'));
+const CurrencyOnboarding = lazy(() => import('./screens/CurrencyOnboarding'));
 
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
@@ -185,7 +191,11 @@ export default function StitchApp() {
       <StitchHead />
       <Toaster {...toasterOptions} />
       <BrowserRouter>
-        <AuthGate />
+        {/* Suspense para la PRIMERA carga de un chunk lazy (arranque). Las
+            navegaciones posteriores no pasan por aquí: van en transición. */}
+        <Suspense fallback={<LoadingScreen label="Cargando aplicación…" />}>
+          <AuthGate />
+        </Suspense>
       </BrowserRouter>
     </>
   );

@@ -22,6 +22,11 @@ export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
     autoRefreshToken: true,
     persistSession: true,
     detectSessionInUrl: true,
+    // PKCE en vez del flujo implícito: el callback OAuth vuelve con ?code= en
+    // la query (no tokens en el hash). En la PWA instalada de iOS el hash puede
+    // perderse en el handoff del visor in-app a la app standalone; el code de
+    // PKCE sobrevive, y además los tokens nunca pisan la URL ni el historial.
+    flowType: 'pkce',
   },
 });
 

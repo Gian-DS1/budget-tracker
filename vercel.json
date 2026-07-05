@@ -14,7 +14,7 @@
         { "key": "Access-Control-Allow-Origin", "value": "https://fintrack-rd.vercel.app" },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://accounts.google.com; frame-src https://*.supabase.co https://accounts.google.com; frame-ancestors 'none'; form-action 'self' https://*.supabase.co https://accounts.google.com; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://cdn.jsdelivr.net; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://cdn.jsdelivr.net https://accounts.google.com; frame-src https://*.supabase.co https://accounts.google.com; frame-ancestors 'none'; form-action 'self' https://*.supabase.co https://accounts.google.com; base-uri 'self'; object-src 'none'; upgrade-insecure-requests"
         }
       ]
     },
@@ -25,10 +25,16 @@
       ]
     },
     {
-      "source": "/((?!assets/).*)",
+      "source": "/((?!assets/|icons/|manifest\\.webmanifest|apple-touch-icon\\.png|favicon\\.svg).*)",
       "headers": [
         { "key": "Cache-Control", "value": "no-store, no-cache, must-revalidate, max-age=0" },
         { "key": "Pragma", "value": "no-cache" }
+      ]
+    },
+    {
+      "source": "/(manifest\\.webmanifest|apple-touch-icon\\.png|favicon\\.svg|icons/.*)",
+      "headers": [
+        { "key": "Cache-Control", "value": "public, max-age=86400" }
       ]
     }
   ],

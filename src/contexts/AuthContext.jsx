@@ -18,11 +18,13 @@ export const AuthProvider = ({ children }) => {
 
   useEffect(() => {
     // Enlace de recuperación vencido o ya usado: Supabase redirige con el error
-    // en el hash (#error=access_denied&error_code=otp_expired&...). Sin esto el
-    // usuario aterriza en la landing sin ninguna explicación.
-    const hash = window.location.hash;
-    if (hash.includes('error_code=')) {
-      const params = new URLSearchParams(hash.slice(1));
+    // en el hash (#error=access_denied&error_code=otp_expired&...) con el flujo
+    // implícito, o en la query (?error_code=...) con PKCE. Sin esto el usuario
+    // aterriza en la landing sin ninguna explicación.
+    const errorSource = [window.location.hash.slice(1), window.location.search.slice(1)]
+      .find((s) => s.includes('error_code='));
+    if (errorSource) {
+      const params = new URLSearchParams(errorSource);
       const code = params.get('error_code') || '';
       const msg = code === 'otp_expired'
         ? tr('auth.resetLinkExpired', 'El enlace ya venció o fue usado. Pide uno nuevo desde "¿Olvidaste tu contraseña?".')
@@ -41,6 +43,14 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Error getting session:', error.message);
       } finally {
+        // El intercambio PKCE ya consumió el ?code= del callback OAuth, pero
+        // supabase-js no lo quita de la URL; sin esto queda un query param
+        // muerto (y un enlace que falla si se comparte/recarga).
+        const url = new URL(window.location.href);
+        if (url.searchParams.has('code')) {
+          url.searchParams.delete('code');
+          window.history.replaceState(null, '', url.pathname + (url.search || '') + url.hash);
+        }
         setLoading(false);
       }
     };

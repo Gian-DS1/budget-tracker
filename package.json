@@ -3,6 +3,16 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "knip": {
+    "entry": [
+      "src/main.jsx",
+      "api/*.js"
+    ],
+    "project": [
+      "src/**",
+      "api/**"
+    ]
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -17,7 +27,6 @@
     "@supabase/supabase-js": "^2.106.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
-    "emoji-toolkit": "^10.0.0",
     "framer-motion": "^12.40.0",
     "papaparse": "^5.5.3",
     "pdf-parse": "^1.1.1",
@@ -36,6 +45,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "emoji-toolkit": "^10.0.0",
     "eslint": "^10.3.0",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
