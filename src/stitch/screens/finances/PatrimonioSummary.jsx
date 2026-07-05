@@ -36,7 +36,9 @@ export default function PatrimonioSummary() {
   return (
     <div data-tour="finances" className="glass-card rounded-lg inner-glow p-lg mb-lg">
       <div className="font-mono-data text-mono-data text-text-muted uppercase mb-xs">{t('finances.netWorth')}</div>
-      <div className={`font-hero-headline text-[40px] sm:text-[48px] tracking-tighter leading-none tabular-nums ${netWorth >= 0 ? 'text-on-surface' : 'text-accent-error'}`}>
+      {/* clamp: en móvil "RD$ 1,094,025.00" a 40px no cabe en una línea; el
+          tamaño escala con el viewport para que símbolo y cifra vayan juntos. */}
+      <div className={`font-hero-headline text-[clamp(26px,8vw,40px)] sm:text-[48px] tracking-tighter leading-none tabular-nums ${netWorth >= 0 ? 'text-on-surface' : 'text-accent-error'}`}>
         <CountUp value={netWorth} format={fmt} />
       </div>
       <div className="flex flex-wrap gap-x-xl gap-y-sm mt-md">

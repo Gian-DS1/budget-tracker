@@ -49,7 +49,7 @@ export default function SavingsPickerModal({ open, shortfall, goals, onPick, onC
                     goalId === g.id ? 'border-primary bg-surface-container-high' : 'border-border-subtle hover:bg-surface-container-high'
                   }`}
                 >
-                  <span className="font-label-sm text-label-sm text-on-surface truncate">{g.title}</span>
+                  <span className="font-label-sm text-label-sm text-on-surface break-words min-w-0">{g.title}</span>
                   <span className="font-mono-data text-mono-data text-secondary shrink-0">{fmt(g.currentAmount)}</span>
                 </button>
               ))}

@@ -177,7 +177,9 @@ export default function StitchCategorySelect({
                       }`}
                     >
                       {c._all ? <MS name="apps" className="text-[18px] text-text-muted" /> : <Emoji e={c.icon} size={18} />}
-                      <span className="truncate flex-1">{c.name}</span>
+                      {/* En la lista el nombre se muestra COMPLETO (envuelve);
+                          el trigger sí trunca porque es un control de una línea. */}
+                      <span className="break-words min-w-0 flex-1">{c.name}</span>
                       {isSel && <MS name="check" className="text-[16px] text-primary" />}
                     </button>
                   );

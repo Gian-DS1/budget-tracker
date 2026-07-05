@@ -111,7 +111,7 @@ export default function Budget503020({ summary }) {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-md">
           <div className="flex flex-col">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.budget.leftToSpend')}</span>
-            <span className={`font-headline-md text-[40px] tracking-tighter ${summary.disponible < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(summary.puedesGastar)}</span>
+            <span className={`font-headline-md text-[clamp(26px,8vw,40px)] tracking-tighter ${summary.disponible < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(summary.puedesGastar)}</span>
             <span className="font-body-md text-body-md text-on-surface-variant mt-xs">{t('screens.budget.withoutFallingBehind')}</span>
           </div>
           <div className="flex flex-col sm:text-right">

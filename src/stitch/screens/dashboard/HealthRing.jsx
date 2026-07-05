@@ -37,10 +37,13 @@ export default function HealthRing({ health, hasData, monthsCounted = 0, compact
       {(animated) => {
         const data = [{ name: 'salud', value: animated, fill: color }];
         return (
-          <div className={`flex-grow flex ${compact ? 'flex-row items-center gap-xl py-md' : 'flex-col'}`}>
+          <div className={`flex-grow flex ${compact ? 'flex-col sm:flex-row sm:items-center gap-md sm:gap-xl py-md' : 'flex-col'}`}>
             {/* Gauge semicircular. Radios reducidos + padding lateral para que el
-                arco no toque los rótulos "EN RIESGO/EXCELENTE" de los extremos. */}
-            <div className={`relative shrink-0 ${compact ? 'w-[48%] h-[160px] px-lg' : 'w-full h-[140px] sm:h-[155px] px-xl'}`}>
+                arco no toque los rótulos "EN RIESGO/EXCELENTE" de los extremos.
+                En compact el layout lado a lado solo entra desde sm:; en móvil el
+                gauge a 48% queda en ~150px y recharts recorta el arco sobre el
+                número (el score quedaba tapado por el anillo). */}
+            <div className={`relative shrink-0 ${compact ? 'w-full sm:w-[48%] h-[140px] sm:h-[160px] px-xl sm:px-lg' : 'w-full h-[140px] sm:h-[155px] px-xl'}`}>
               <ResponsiveContainer width="100%" height="100%">
                 <RadialBarChart
                   innerRadius="115%"
@@ -69,7 +72,7 @@ export default function HealthRing({ health, hasData, monthsCounted = 0, compact
               <div className={`flex flex-col gap-sm flex-grow justify-center ${compact ? '' : 'mt-md'}`}>
                 {factors.map((f) => (
                   <div key={f.key} className="flex items-center gap-sm">
-                    <span className="font-mono-data text-mono-data text-text-muted uppercase w-[52px] shrink-0">{f.label}</span>
+                    <span className="font-mono-data text-mono-data text-text-muted uppercase min-w-[52px] shrink-0">{f.label}</span>
                     <span className="relative flex-grow h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
                       <span
                         className="absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out motion-reduce:transition-none"

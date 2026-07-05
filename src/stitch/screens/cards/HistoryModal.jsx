@@ -37,9 +37,9 @@ export default function HistoryModal({ card, transactions, onClose }) {
 
   return (
     <Modal title={`${t('screens.cards.paymentsTitle')} · ${card.name}`} onClose={onClose}>
-      <div className="bg-surface-container-lowest border border-border-subtle rounded p-md inner-glow flex justify-between items-center mb-md">
-        <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('screens.cards.lifetimeCashback')}</span>
-        <span className="font-mono-data text-[15px] text-tertiary">+{fmt(cashback)}</span>
+      <div className="bg-surface-container-lowest border border-border-subtle rounded p-md inner-glow flex justify-between items-center gap-sm mb-md">
+        <span className="font-mono-data text-mono-data text-text-muted uppercase min-w-0">{t('screens.cards.lifetimeCashback')}</span>
+        <span className="font-mono-data text-[15px] text-tertiary whitespace-nowrap shrink-0">+{fmt(cashback)}</span>
       </div>
 
       {payments.length === 0 ? (
@@ -55,7 +55,7 @@ export default function HistoryModal({ card, transactions, onClose }) {
                 <span className="font-mono-data text-[14px] text-on-surface">{fmt(p.amount)}</span>
                 <span className="font-mono-data text-mono-data text-text-muted">{formatDate(p.date)}{p.note ? ` · ${p.note}` : ''}</span>
               </div>
-              <button onClick={() => onDelete(p)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={t('screens.cards.deletePayment')}>
+              <button onClick={() => onDelete(p)} className="text-text-muted hover:text-accent-error p-xs tap-target hover-reveal" aria-label={t('screens.cards.deletePayment')}>
                 <MS name="delete" className="!text-[16px]" />
               </button>
             </div>

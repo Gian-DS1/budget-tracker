@@ -22,7 +22,7 @@ export default function DebtItem({ debt, index, onPay, onHistory, onEdit, onDele
       <div className="flex justify-between items-center gap-sm">
         <span className="font-label-sm text-label-sm uppercase text-on-surface flex items-center gap-xs min-w-0">
           {index === 0 && <span className="font-mono-data text-[8px] text-accent-error border border-accent-error/40 rounded px-1 shrink-0">{t('screens.debts.payFirst')}</span>}
-          <span className="truncate">{debt.creditorName}</span>
+          <span className="break-words min-w-0">{debt.creditorName}</span>
         </span>
         <span className={`font-mono-data text-mono-data shrink-0 ${high ? 'text-accent-warning' : 'text-text-muted'}`}>{Number(debt.interestRate).toFixed(1)}% TNA</span>
       </div>

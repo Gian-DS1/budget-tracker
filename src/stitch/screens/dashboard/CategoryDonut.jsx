@@ -15,6 +15,15 @@ import CountUp from '../../CountUp';
 const fmt = (n) => formatCurrency(n);
 const pct0 = (n) => `${Math.round(Number(n) || 0)}%`;
 
+// Tamaño del monto del centro según su longitud: el agujero de la dona es un
+// espacio fijo, así que un monto largo (RD$ 1,472,025.00) baja de cuerpo para
+// caber COMPLETO en una línea, en vez de truncarse o abreviarse.
+const centerSizeFor = (text, compact) => {
+  if (text.length > 14) return 'text-[11px]';
+  if (text.length > 11) return 'text-[13px]';
+  return compact ? 'text-[16px]' : 'text-[15px]';
+};
+
 // Forma activa: el sector crece hacia afuera + sombra (drop-shadow) de su color.
 function ActiveSector(props) {
   const { cx, cy, innerRadius, outerRadius, startAngle, endAngle, fill } = props;
@@ -48,7 +57,7 @@ export default function CategoryDonut({ data, compact = false }) {
   return (
     <div className={`flex-grow flex min-h-[200px] ${compact ? 'flex-col gap-lg justify-center' : 'flex-col sm:flex-row gap-xl items-center min-h-[240px]'}`}>
       {/* Dona: en compact arriba (más grande, centrada); en normal al lado de la leyenda. */}
-      <div className={`relative shrink-0 mx-auto ${compact ? 'w-[260px] h-[260px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
+      <div className={`relative shrink-0 mx-auto ${compact ? 'w-full max-w-[260px] h-[240px] sm:h-[260px]' : 'w-full sm:w-[280px] h-[240px]'}`}>
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
@@ -80,11 +89,12 @@ export default function CategoryDonut({ data, compact = false }) {
           </PieChart>
         </ResponsiveContainer>
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          {/* El bloque se limita al diámetro del agujero (innerRadius 58%) para
-              que un nombre largo se trunque dentro y nunca choque con el anillo. */}
+          {/* El bloque se limita al diámetro del agujero (innerRadius 58%). El
+              nombre envuelve en varias líneas y el monto baja de cuerpo según
+              su longitud: TODO se muestra completo, nada se trunca ni abrevia. */}
           <div className="flex flex-col items-center text-center leading-tight max-w-[62%]">
-            <span className="font-mono-data text-[9px] text-text-muted uppercase truncate max-w-full w-full">{activeName || 'Total'}</span>
-            <span className={`font-headline-md text-on-surface tracking-tight tabular-nums truncate max-w-full w-full ${compact ? 'text-[16px]' : 'text-[15px]'}`}>
+            <span className="font-mono-data text-[9px] text-text-muted uppercase break-words max-w-full w-full">{activeName || 'Total'}</span>
+            <span className={`font-headline-md text-on-surface tracking-tight tabular-nums whitespace-nowrap ${centerSizeFor(fmt(active >= 0 ? withPct[active].value : total), compact)}`}>
               <CountUp value={active >= 0 ? withPct[active].value : total} format={fmt} duration={240} />
             </span>
             {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted tabular-nums"><CountUp value={withPct[active].pct} format={(n) => `${n.toFixed(1)}%`} duration={240} /></span>}
@@ -105,11 +115,22 @@ export default function CategoryDonut({ data, compact = false }) {
             onBlur={() => setActive(-1)}
             onClick={() => setActive((prev) => (prev === i ? -1 : i))}
             aria-pressed={active === i}
-            className={`flex items-center gap-sm font-mono-data text-mono-data rounded px-sm py-xs transition-colors text-left ${active === i ? 'bg-surface-container-high' : ''}`}
+            className={`flex flex-col gap-xs font-mono-data text-mono-data rounded px-sm py-xs transition-colors text-left ${active === i ? 'bg-surface-container-high' : ''}`}
           >
-            {d.icon && <span className="shrink-0 flex items-center"><Emoji e={d.icon} size={16} /></span>}
-            <span className={`text-on-surface-variant truncate shrink-0 ${compact ? 'w-[120px]' : 'w-[110px] sm:w-[150px]'}`}>{d.name}</span>
-            <span className="relative flex-grow h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
+            {/* Fila 1: nombre COMPLETO (envuelve si hace falta) + monto y %
+                completos a la derecha. Fila 2: riel proporcional a lo ancho.
+                Así ni el nombre ni el monto compiten por espacio en móvil. */}
+            <span className="flex items-baseline justify-between gap-sm w-full">
+              <span className="flex items-center gap-xs min-w-0 text-on-surface-variant">
+                {d.icon && <span className="shrink-0 flex items-center"><Emoji e={d.icon} size={16} /></span>}
+                <span className="break-words min-w-0">{d.name}</span>
+              </span>
+              <span className="shrink-0 flex items-baseline gap-sm">
+                <span className="text-on-surface tabular-nums"><CountUp value={d.value} format={fmt} duration={240} /></span>
+                <span className="text-text-muted w-[34px] text-right tabular-nums"><CountUp value={d.pct} format={pct0} duration={240} /></span>
+              </span>
+            </span>
+            <span className="relative w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
               <span
                 className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out motion-reduce:transition-none"
                 style={{
@@ -119,8 +140,6 @@ export default function CategoryDonut({ data, compact = false }) {
                 }}
               />
             </span>
-            <span className="text-on-surface shrink-0 text-right tabular-nums"><CountUp value={d.value} format={fmt} duration={240} /></span>
-            <span className="text-text-muted shrink-0 w-[34px] text-right tabular-nums"><CountUp value={d.pct} format={pct0} duration={240} /></span>
           </button>
         ))}
       </div>

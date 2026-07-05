@@ -46,20 +46,30 @@ function currencySymbol(code, locale) {
   return result;
 }
 
+// Blindaje de entrada: los formatters reciben datos de cálculos encadenados y
+// de la DB; un NaN/undefined que se cuele no debe pintar "RD$ NaN" en la UI.
+function safeNumber(value) {
+  const n = Number(value);
+  return Number.isFinite(n) ? n : 0;
+}
+
 /**
  * Format a number as currency. Sin `currencyCode` usa la moneda del usuario.
  */
 export function formatCurrency(amount, currencyCode) {
+  const n = safeNumber(amount);
   const code = currencyCode || getCurrency();
   const locale = currentLocale();
-  const absAmount = Math.abs(amount);
-  const formatted = amountFormatter(locale).format(absAmount);
-  const sign = amount < 0 ? '-' : '';
-  return `${sign}${currencySymbol(code, locale)} ${formatted}`;
+  const formatted = amountFormatter(locale).format(Math.abs(n));
+  const sign = n < 0 ? '-' : '';
+  // Espacio irrompible: "RD$ 1,094,025.00" no debe partirse entre símbolo y
+  // cifra al envolver línea (en móvil el monto quedaba debajo del "RD$").
+  return `${sign}${currencySymbol(code, locale)}\u00A0${formatted}`;
 }
 
-// Número compacto sin símbolo (1.5K, 2.3M). Base de los dos formatos de abajo.
+// Número compacto sin símbolo (1.5K, 2.3M, 4.1B). Base de los formatos de abajo.
 function compactAmount(absAmount) {
+  if (absAmount >= 1_000_000_000) return (absAmount / 1_000_000_000).toFixed(1) + 'B';
   if (absAmount >= 1_000_000) return (absAmount / 1_000_000).toFixed(1) + 'M';
   if (absAmount >= 1_000) return (absAmount / 1_000).toFixed(1) + 'K';
   return absAmount.toFixed(2);
@@ -69,10 +79,11 @@ function compactAmount(absAmount) {
  * Format a number as compact currency (e.g., RD$ 1.5K)
  */
 export function formatCurrencyCompact(amount, currencyCode) {
+  const n = safeNumber(amount);
   const code = currencyCode || getCurrency();
   const locale = currentLocale();
-  const sign = amount < 0 ? '-' : '';
-  return `${sign}${currencySymbol(code, locale)} ${compactAmount(Math.abs(amount))}`;
+  const sign = n < 0 ? '-' : '';
+  return `${sign}${currencySymbol(code, locale)}\u00A0${compactAmount(Math.abs(n))}`;
 }
 
 /**
@@ -81,15 +92,9 @@ export function formatCurrencyCompact(amount, currencyCode) {
  * que rompía con cualquier otra moneda del perfil.)
  */
 export function formatAmountCompact(amount) {
-  const sign = amount < 0 ? '-' : '';
-  return `${sign}${compactAmount(Math.abs(amount))}`;
-}
-
-/**
- * Format a number as percentage
- */
-export function formatPercent(value, decimals = 1) {
-  return `${value.toFixed(decimals)}%`;
+  const n = safeNumber(amount);
+  const sign = n < 0 ? '-' : '';
+  return `${sign}${compactAmount(Math.abs(n))}`;
 }
 
 /**
@@ -150,19 +155,4 @@ export function titleCase(str) {
  */
 export function getTypeLabel(type) {
   return tr(`types.${type}`, type);
-}
-
-/**
- * Get badge class for transaction type
- */
-export function getTypeBadgeClass(type) {
-  const classes = {
-    income: 'badge-income',
-    expense: 'badge-expense',
-    fixed_expense: 'badge-fixed',
-    variable_expense: 'badge-variable',
-    savings: 'badge-savings',
-    debt_payment: 'badge-debt',
-  };
-  return classes[type] || '';
 }

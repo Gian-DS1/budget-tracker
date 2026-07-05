@@ -199,7 +199,7 @@ export default function StatementImportModal({ onClose, pdfData }) {
                  <div className="flex flex-col gap-xs max-h-[150px] overflow-y-auto">
                     {matchResult.toImport.slice(0, 5).map((t, i) => (
                       <div key={i} className="flex justify-between border-b border-border-subtle pb-xs last:border-0 font-mono-data text-[12px] text-on-surface-variant">
-                         <span className="truncate flex-1">{t.description}</span>
+                         <span className="break-words min-w-0 flex-1">{t.description}</span>
                          <span className="shrink-0 ml-md">{formatCurrency(t.amount)}</span>
                       </div>
                     ))}

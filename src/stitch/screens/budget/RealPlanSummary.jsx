@@ -40,7 +40,7 @@ function SummaryCard({ title, icon, rows, result, resultLabel, captionPos, capti
               <Row key={r.label} label={r.label} amount={r.amount} sign={r.sign} />
             ))}
           </div>
-          <div className="border-t border-border-subtle mt-md pt-md flex items-end justify-between gap-sm">
+          <div className="border-t border-border-subtle mt-md pt-md flex flex-wrap items-end justify-between gap-sm">
             <div className="flex flex-col min-w-0">
               <span className="font-mono-data text-mono-data text-text-muted uppercase">{resultLabel}</span>
               <span className="font-label-sm text-label-sm text-on-surface-variant mt-1">

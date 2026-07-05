@@ -83,7 +83,7 @@ export default function HistoryModal({ debt: debtProp, onClose }) {
                 <span className="font-mono-data text-[14px] text-on-surface">{fmt(p.amount, debt.currency)}</span>
                 <span className="font-mono-data text-mono-data text-text-muted">{formatDate(p.date)}{p.notes ? ` · ${p.notes}` : ''}</span>
               </div>
-              <button onClick={() => onDelete(p)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={t('screens.debts.deletePayment')}>
+              <button onClick={() => onDelete(p)} className="text-text-muted hover:text-accent-error p-xs tap-target hover-reveal" aria-label={t('screens.debts.deletePayment')}>
                 <MS name="delete" className="!text-[16px]" />
               </button>
             </div>

@@ -35,7 +35,7 @@ export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, manag
     <Stagger.Item className="bg-surface-card border border-border-subtle rounded p-md inner-glow flex flex-col gap-sm">
       <div className="flex justify-between items-center gap-sm">
         <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs min-w-0">
-          <Emoji e={cat.icon} size={16} /> <span className="truncate">{cat.name}</span>
+          <Emoji e={cat.icon} size={16} /> <span className="break-words min-w-0">{cat.name}</span>
         </span>
         {managed ? (
           <span
@@ -51,13 +51,13 @@ export default function EnvelopeRow({ cat, estimated, actual, pct, onSave, manag
             onFocus={() => { focused.current = true; }}
             onBlur={() => { focused.current = false; onSave(v); }}
             placeholder="0"
-            className="w-24 bg-surface-container-lowest border border-border-subtle rounded py-xs px-sm font-mono-data text-[11px] text-right text-on-surface focus:outline-none focus:border-primary inner-glow"
+            className="w-24 max-sm:w-28 max-sm:h-10 bg-surface-container-lowest border border-border-subtle rounded py-xs px-sm font-mono-data text-[11px] max-sm:text-[13px] text-right text-on-surface focus:outline-none focus:border-primary inner-glow"
           />
         )}
       </div>
-      <div className="flex justify-between items-baseline">
-        <span className="font-mono-data text-[15px] text-on-background tracking-tight">{fmt(actual)}</span>
-        <span className="font-mono-data text-mono-data text-text-muted">{t('screens.charts.of')} {fmt(estimated)}</span>
+      <div className="flex flex-wrap justify-between items-baseline gap-x-sm gap-y-xs">
+        <span className="font-mono-data text-[15px] text-on-background tracking-tight whitespace-nowrap">{fmt(actual)}</span>
+        <span className="font-mono-data text-mono-data text-text-muted whitespace-nowrap">{t('screens.charts.of')} {fmt(estimated)}</span>
       </div>
       <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
         <div className={`h-full ${over ? 'bg-accent-error' : typeColor(cat.type)}`} style={{ width: `${Math.min(pct, 100)}%` }} />

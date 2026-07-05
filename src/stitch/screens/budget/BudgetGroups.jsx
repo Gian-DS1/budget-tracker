@@ -69,7 +69,7 @@ function GroupModal({ group, categories, onClose }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-md" style={{ background: 'rgba(0,0,0,0.66)' }} onClick={onClose}>
-      <div className="stitch-scroll bg-surface-card border border-border-subtle rounded-lg inner-glow w-full max-h-[85vh] overflow-y-auto p-lg" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
+      <div className="stitch-scroll bg-surface-card border border-border-subtle rounded-lg inner-glow w-full stitch-modal-max-h overflow-y-auto overscroll-contain p-lg" style={{ maxWidth: '520px' }} onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-lg">
           <h3 className="font-headline-md text-[20px] font-bold text-on-surface tracking-tight">{group ? t('screens.budget.editGroup') : t('screens.budget.newGroup')}</h3>
           <button onClick={onClose} className="text-text-muted hover:text-on-surface p-xs"><MS name="close" className="text-[20px]" /></button>
@@ -103,7 +103,7 @@ function GroupModal({ group, categories, onClose }) {
                           className="accent-primary"
                         />
                         <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs min-w-0">
-                          <Emoji e={c.icon} size={14} /> <span className="truncate">{c.name}</span>
+                          <Emoji e={c.icon} size={14} /> <span className="break-words min-w-0">{c.name}</span>
                         </span>
                       </label>
                     ))}
@@ -144,7 +144,7 @@ function GroupCard({ group, categories, monthBudgets, monthTx, onEdit, onDelete 
       <div className="flex justify-between items-center gap-sm">
         <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs min-w-0">
           <MS name="folder_open" className="text-[16px] text-secondary" />
-          <span className="truncate">{group.name}</span>
+          <span className="break-words min-w-0">{group.name}</span>
           <span className="font-mono-data text-mono-data text-text-muted">· {members.length}</span>
         </span>
         <div className="flex items-center gap-xs shrink-0">

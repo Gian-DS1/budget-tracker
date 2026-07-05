@@ -34,6 +34,10 @@ const fmt = (n) => formatCurrency(n);
 // TYPES se construye dinámicamente en el componente usando strings del hook
 const blank = { date: todayISO(), amount: '', type: 'variable_expense', categoryId: '', cardId: '', description: '', notes: '', isRecurring: false, recurrencePattern: 'monthly' };
 
+// Tamaño de página del listado. Renderizar miles de filas de golpe congela el
+// primer paint (sobre todo en móvil); se muestran bloques y un "Mostrar más".
+const PAGE_SIZE = 50;
+
 export default function StitchLedger() {
   const strings = useScreenStrings();
   const { t } = useI18n();
@@ -81,11 +85,18 @@ export default function StitchLedger() {
   // Selección múltiple (ids). La barra de acciones aparece cuando hay ≥1.
   const [selected, setSelected] = useState(() => new Set());
 
-  // Render de la categoría con su emoji JoyPixels + nombre.
+  // Render de la categoría con su emoji JoyPixels + nombre. El nombre ENVUELVE
+  // contra el ancho disponible (no se trunca): una categoría kilométrica ocupa
+  // más líneas, pero siempre se lee completa.
   const catCell = (id) => {
     const c = categories.find((x) => x.id === id);
     if (!c) return '—';
-    return <span className="inline-flex items-center gap-xs"><Emoji e={c.icon} size={16} />{c.name}</span>;
+    return (
+      <span className="inline-flex items-baseline gap-xs max-w-full min-w-0 align-bottom">
+        <span className="shrink-0 self-center flex"><Emoji e={c.icon} size={16} /></span>
+        <span className="break-words min-w-0">{c.name}</span>
+      </span>
+    );
   };
 
   // ¿Es un gasto? (fijo o variable). El cashback y la tarjeta solo aplican a gastos.
@@ -191,13 +202,16 @@ export default function StitchLedger() {
   const submit = async (e) => {
     e.preventDefault();
     const err = {};
+    // Number.isFinite descarta NaN: un input como "." pasa Number(x) <= 0
+    // (NaN no es <= 0) y guardaría un monto inválido.
+    const amount = Number(form.amount);
     if (!form.date) err.date = '1';
-    if (!form.amount || Number(form.amount) <= 0) err.amount = '1';
+    if (!Number.isFinite(amount) || amount <= 0) err.amount = '1';
     if (!form.categoryId) err.categoryId = '1';
     if (Object.keys(err).length) { setErrors(err); return; }
 
     const description = titleCase(form.description);
-    const data = { ...form, description, amount: Number(form.amount), cashbackEarned: cashbackToFreeze };
+    const data = { ...form, description, amount, cashbackEarned: cashbackToFreeze };
 
     if (editing) {
       if (demo) demoUpdateTransaction(editing, data); else await updateTransaction(editing, data);
@@ -238,22 +252,6 @@ export default function StitchLedger() {
     ), { duration: 6000 });
   };
 
-  // Cashback a MOSTRAR por transacción, calculado EN VIVO desde las reglas
-  // actuales de la tarjeta (planas y escalonadas) vía getTransactionCashback. No
-  // dependemos del cashbackEarned congelado: este podía quedar en 0 (transacción
-  // creada/importada antes de configurar la regla) y la fila no mostraba el
-  // cashback aunque al editar sí aparecía. Calcular en vivo lo hace consistente
-  // para todas las tarjetas de todos los usuarios. Mapa id→cashback, memoizado.
-  const cashbackById = useMemo(() => {
-    const map = new Map();
-    const cardById = new Map(cards.map((c) => [c.id, c]));
-    for (const t of transactions) {
-      const card = t.cardId ? cardById.get(t.cardId) : null;
-      map.set(t.id, card ? getTransactionCashback(card, t, transactions) : 0);
-    }
-    return map;
-  }, [transactions, cards]);
-
   const filtered = useMemo(() => {
     let r = [...transactions];
     if (search) { const q = search.toLowerCase(); r = r.filter((t) => t.description?.toLowerCase().includes(q) || t.notes?.toLowerCase().includes(q)); }
@@ -272,6 +270,38 @@ export default function StitchLedger() {
     });
   }, [transactions, search, filterType, filterCat, dateFrom, dateTo, sortKey, sortDir]);
 
+  // ── Paginación ──────────────────────────────────────────────────────────────
+  // Se renderizan bloques de PAGE_SIZE; "Mostrar más" amplía. Al cambiar filtros
+  // u orden se vuelve al primer bloque — ajuste de estado EN RENDER (patrón
+  // recomendado por React), sin effect que cause un render en cascada.
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+  const filterKey = [search, filterType, filterCat, dateFrom, dateTo, sortKey, sortDir].join('|');
+  const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
+  if (prevFilterKey !== filterKey) {
+    setPrevFilterKey(filterKey);
+    setVisibleCount(PAGE_SIZE);
+  }
+  const paged = useMemo(() => filtered.slice(0, visibleCount), [filtered, visibleCount]);
+  const hiddenCount = filtered.length - paged.length;
+
+  // Cashback a MOSTRAR por transacción, calculado EN VIVO desde las reglas
+  // actuales de la tarjeta (planas y escalonadas) vía getTransactionCashback. No
+  // dependemos del cashbackEarned congelado: este podía quedar en 0 (transacción
+  // creada/importada antes de configurar la regla) y la fila no mostraba el
+  // cashback aunque al editar sí aparecía. Calcular en vivo lo hace consistente
+  // para todas las tarjetas de todos los usuarios. Mapa id→cashback, memoizado.
+  // Solo para las filas VISIBLES: las escalonadas escanean todo el historial por
+  // fila (O(n²) si se calculara para todas) y las ocultas no se muestran.
+  const cashbackById = useMemo(() => {
+    const map = new Map();
+    const cardById = new Map(cards.map((c) => [c.id, c]));
+    for (const t of paged) {
+      const card = t.cardId ? cardById.get(t.cardId) : null;
+      map.set(t.id, card ? getTransactionCashback(card, t, transactions) : 0);
+    }
+    return map;
+  }, [paged, transactions, cards]);
+
   // Click en encabezado: si ya ordena por esa columna, alterna asc/desc; si no,
   // cambia de columna (fechas arrancan desc = más reciente, monto desc = mayor).
   const toggleSort = (key) => {
@@ -284,19 +314,21 @@ export default function StitchLedger() {
 
   // ── Selección múltiple ──────────────────────────────────────────────────────
   // La selección efectiva se DERIVA en render como la intersección entre lo
-  // marcado y lo visible (filtrado). Así, al cambiar los filtros, las filas
-  // ocultas dejan de contar automáticamente sin tocar estado en un effect
-  // (evita cascading renders). El Set `selected` puede contener ids "rezagados"
-  // de filas ocultas; se ignoran al derivar y al ejecutar acciones.
-  const filteredIds = useMemo(() => filtered.map((t) => t.id), [filtered]);
+  // marcado y lo VISIBLE (filtrado + paginado). Así, al cambiar los filtros,
+  // las filas ocultas dejan de contar automáticamente sin tocar estado en un
+  // effect (evita cascading renders). Basarla en `paged` (no en `filtered`)
+  // evita que las acciones en bloque toquen filas que el usuario nunca vio.
+  // El Set `selected` puede contener ids "rezagados" de filas ocultas; se
+  // ignoran al derivar y al ejecutar acciones.
+  const pagedIds = useMemo(() => paged.map((t) => t.id), [paged]);
   const visibleSelectedIds = useMemo(
-    () => filteredIds.filter((id) => selected.has(id)),
-    [filteredIds, selected],
+    () => pagedIds.filter((id) => selected.has(id)),
+    [pagedIds, selected],
   );
   const isSelected = (id) => selected.has(id);
 
   const selectedCount = visibleSelectedIds.length;
-  const allVisibleSelected = filteredIds.length > 0 && selectedCount === filteredIds.length;
+  const allVisibleSelected = pagedIds.length > 0 && selectedCount === pagedIds.length;
   const someVisibleSelected = selectedCount > 0 && !allVisibleSelected;
 
   const toggleOne = (id) => setSelected((prev) => {
@@ -305,8 +337,8 @@ export default function StitchLedger() {
     return next;
   });
   const toggleAll = () => setSelected((prev) => {
-    if (filteredIds.every((id) => prev.has(id))) return new Set(); // todas marcadas → desmarca todo
-    return new Set(filteredIds); // marca todo lo filtrado
+    if (pagedIds.every((id) => prev.has(id))) return new Set(); // todas marcadas → desmarca todo
+    return new Set(pagedIds); // marca todo lo visible
   });
   const clearSelection = () => setSelected(new Set());
 
@@ -362,9 +394,11 @@ export default function StitchLedger() {
         </button>
       </div>
 
-      {/* Filtros */}
-      <div data-tour="ledger-filters" className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg flex flex-wrap gap-sm items-center inner-glow">
-        <div className="relative flex-1 min-w-[200px]">
+      {/* Filtros. En móvil: cuadrícula simétrica de 2 columnas (búsqueda a todo
+          el ancho; tipo/categoría en par; DESDE/HASTA en par con el rótulo
+          encima). En sm+ vuelve a la fila envolvente original. */}
+      <div data-tour="ledger-filters" className="bg-surface-container-lowest border border-border-subtle rounded-lg p-sm mb-lg grid grid-cols-2 gap-sm sm:flex sm:flex-wrap sm:items-center inner-glow">
+        <div className="relative col-span-2 sm:col-auto sm:flex-1 min-w-0 sm:min-w-[200px]">
           <MS name="search" className="absolute left-sm top-1/2 -translate-y-1/2 text-text-muted !text-[14px]" />
           <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder={strings.ledger.searchPlaceholder} aria-label={strings.ledger.searchPlaceholder} className="w-full h-[34px] max-sm:h-11 bg-surface-container border border-border-subtle rounded py-0 pl-[28px] pr-sm font-label-sm text-label-sm text-on-surface focus:outline-none focus:border-primary inner-glow placeholder:text-text-muted" />
         </div>
@@ -374,7 +408,7 @@ export default function StitchLedger() {
           options={[{ value: '', label: strings.ledger.typeFilterAll }, ...TYPES.map((t) => ({ value: t.v, label: t.l }))]}
           placeholder={strings.ledger.typeFilterAll}
           compact
-          className="min-w-[150px]"
+          className="w-full min-w-0 sm:w-auto sm:min-w-[150px]"
         />
         <StitchCategorySelect
           value={filterCat}
@@ -383,17 +417,21 @@ export default function StitchLedger() {
           includeAllOption
           allLabel={strings.ledger.categoryFilterAll}
           compact
-          className="min-w-[200px]"
+          className="w-full min-w-0 sm:w-auto sm:min-w-[200px]"
         />
-        {/* Rango de fechas */}
-        <div className="flex items-center gap-xs">
-          <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.ledger.from}</span>
-          <StitchDatePicker value={dateFrom} max={dateTo || undefined} onChange={setDateFrom} compact className="w-[150px]" />
-          <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.ledger.to}</span>
-          <StitchDatePicker value={dateTo} min={dateFrom || undefined} onChange={setDateTo} compact className="w-[150px]" />
+        <div className="col-span-2 grid grid-cols-2 gap-sm sm:flex sm:flex-wrap sm:items-center sm:gap-xs">
+          {/* Rótulo encima del campo en móvil (columnas gemelas); en línea en sm+. */}
+          <div className="flex flex-col gap-xs sm:flex-row sm:items-center">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.ledger.from}</span>
+            <StitchDatePicker value={dateFrom} max={dateTo || undefined} onChange={setDateFrom} compact className="w-full sm:w-[150px]" />
+          </div>
+          <div className="flex flex-col gap-xs sm:flex-row sm:items-center">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{strings.ledger.to}</span>
+            <StitchDatePicker value={dateTo} min={dateFrom || undefined} onChange={setDateTo} compact className="w-full sm:w-[150px]" />
+          </div>
         </div>
         {hasFilters && (
-          <button onClick={clearFilters} className="flex items-center gap-xs font-mono-data text-mono-data uppercase text-text-muted hover:text-on-surface border border-border-subtle rounded px-sm py-xs hover:bg-surface-container-high transition-colors">
+          <button onClick={clearFilters} className="col-span-2 sm:col-auto justify-center sm:justify-start flex items-center gap-xs font-mono-data text-mono-data uppercase text-text-muted hover:text-on-surface border border-border-subtle rounded px-sm py-xs max-sm:py-sm hover:bg-surface-container-high transition-colors">
             <MS name="close" className="text-[14px]" /> {t('common.clear')}
           </button>
         )}
@@ -409,70 +447,143 @@ export default function StitchLedger() {
             {transactions.length === 0 && <button onClick={openCreate} className="mt-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest px-md py-sm rounded">{t('screens.ledger.registerFirst')}</button>}
           </div>
         ) : (
-          <table className="w-full text-left border-collapse relative z-10">
-            <thead>
-              <tr className="border-b border-border-subtle">
-                <th className="py-sm pl-md pr-0 w-[1%] align-middle">
-                  <input
-                    type="checkbox"
-                    className="stitch-check align-middle"
-                    checked={allVisibleSelected}
-                    ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
-                    onChange={toggleAll}
-                    aria-label={t('screens.ledger.selectAllVisible')}
-                  />
-                </th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">
-                  <SortHeader label={t('transactions.date')} active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
-                </th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.description')}</th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.category')}</th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.type')}</th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal text-right">
-                  <SortHeader label={t('common.amount')} active={sortKey === 'amount'} dir={sortDir} onClick={() => toggleSort('amount')} alignRight />
-                </th>
-                <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal" />
-              </tr>
-            </thead>
-            <tbody className="font-body-md text-body-md">
-              {filtered.map((t) => {
-                const inc = t.type === 'income';
-                const isSel = isSelected(t.id);
-                return (
-                  <tr key={t.id} className={`border-b border-border-subtle transition-colors group ${isSel ? 'bg-primary/[0.06]' : 'hover:bg-surface-container-high'}`}>
-                    <td className="py-sm pl-md pr-0 w-[1%] align-middle">
+          <>
+            {/* Tabla (md+). En móvil se reemplaza por la lista de tarjetas de
+                abajo: una tabla de 7 columnas obliga a scroll horizontal. */}
+            <table className="w-full text-left border-collapse relative z-10 hidden md:table">
+              <thead>
+                <tr className="border-b border-border-subtle">
+                  <th className="py-sm pl-md pr-0 w-[1%] align-middle">
+                    <input
+                      type="checkbox"
+                      className="stitch-check align-middle"
+                      checked={allVisibleSelected}
+                      ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
+                      onChange={toggleAll}
+                      aria-label={t('screens.ledger.selectAllVisible')}
+                    />
+                  </th>
+                  <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">
+                    <SortHeader label={t('transactions.date')} active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
+                  </th>
+                  <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.description')}</th>
+                  <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.category')}</th>
+                  <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal">{t('common.type')}</th>
+                  <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal text-right">
+                    <SortHeader label={t('common.amount')} active={sortKey === 'amount'} dir={sortDir} onClick={() => toggleSort('amount')} alignRight />
+                  </th>
+                  <th className="py-sm px-md font-mono-data text-mono-data text-text-muted uppercase font-normal" />
+                </tr>
+              </thead>
+              <tbody className="font-body-md text-body-md">
+                {paged.map((t) => {
+                  const inc = t.type === 'income';
+                  const isSel = isSelected(t.id);
+                  return (
+                    <tr key={t.id} className={`border-b border-border-subtle transition-colors group ${isSel ? 'bg-primary/[0.06]' : 'hover:bg-surface-container-high'}`}>
+                      <td className="py-sm pl-md pr-0 w-[1%] align-middle">
+                        <input
+                          type="checkbox"
+                          className={`stitch-check align-middle ${isSel ? '' : 'hover-reveal'}`}
+                          checked={isSel}
+                          onChange={() => toggleOne(t.id)}
+                          aria-label={`${tr('screens.ledger.selectTx')} ${t.description || formatDate(t.date)}`}
+                        />
+                      </td>
+                      <td className="py-sm px-md text-on-surface-variant whitespace-nowrap font-mono-data text-mono-data">{formatDate(t.date)}</td>
+                      <td className="py-sm px-md">
+                        {/* break-words (sin truncate): descripciones y notas
+                            largas envuelven en varias líneas, nunca "…". */}
+                        <div className="text-on-surface font-medium break-words max-w-[280px]">{t.description || '—'}</div>
+                        {t.notes && <div className="font-mono-data text-mono-data text-text-muted mt-0.5 break-words max-w-[280px]">{t.notes}</div>}
+                      </td>
+                      <td className="py-sm px-md text-on-surface-variant"><div className="max-w-[220px]">{catCell(t.categoryId)}</div></td>
+                      <td className="py-sm px-md"><TypeChip type={t.type} /></td>
+                      <td className={`py-sm px-md text-right font-mono-data tabular-nums whitespace-nowrap ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
+                        {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}
+                        {(cashbackById.get(t.id) || 0) > 0 && (
+                          <span className="block font-mono-data text-[9px] text-tertiary">cashback +{fmt(cashbackById.get(t.id))}</span>
+                        )}
+                      </td>
+                      <td className="py-sm px-md text-right whitespace-nowrap">
+                        <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs tap-target hover-reveal" aria-label={tr('common.edit')}><MS name="edit" className="text-[16px]" /></button>
+                        <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs tap-target hover-reveal" aria-label={tr('common.delete')}><MS name="delete" className="text-[16px]" /></button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+
+            {/* Lista móvil (&lt;md): tarjetas apiladas, sin scroll horizontal.
+                Checkbox y acciones SIEMPRE visibles (no hay hover en táctil) con
+                hit-area de 44px (tap-target). */}
+            <div className="md:hidden relative z-10">
+              <div className="flex items-center gap-lg px-md py-sm border-b border-border-subtle">
+                <SortHeader label={t('transactions.date')} active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
+                <SortHeader label={t('common.amount')} active={sortKey === 'amount'} dir={sortDir} onClick={() => toggleSort('amount')} />
+                <span className="flex-1" />
+                <input
+                  type="checkbox"
+                  className="stitch-check tap-target"
+                  checked={allVisibleSelected}
+                  ref={(el) => { if (el) el.indeterminate = someVisibleSelected; }}
+                  onChange={toggleAll}
+                  aria-label={t('screens.ledger.selectAllVisible')}
+                />
+              </div>
+              <ul>
+                {paged.map((t) => {
+                  const inc = t.type === 'income';
+                  const isSel = isSelected(t.id);
+                  const cb = cashbackById.get(t.id) || 0;
+                  return (
+                    <li key={t.id} className={`border-b border-border-subtle last:border-b-0 px-md py-sm flex items-start gap-md ${isSel ? 'bg-primary/[0.06]' : ''}`}>
                       <input
                         type="checkbox"
-                        className={`stitch-check align-middle transition-opacity ${isSel ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 focus-visible:opacity-100'}`}
+                        className="stitch-check tap-target mt-[3px]"
                         checked={isSel}
                         onChange={() => toggleOne(t.id)}
                         aria-label={`${tr('screens.ledger.selectTx')} ${t.description || formatDate(t.date)}`}
                       />
-                    </td>
-                    <td className="py-sm px-md text-on-surface-variant whitespace-nowrap font-mono-data text-mono-data">{formatDate(t.date)}</td>
-                    <td className="py-sm px-md">
-                      <div className="text-on-surface font-medium">{t.description || '—'}</div>
-                      {t.notes && <div className="font-mono-data text-mono-data text-text-muted mt-0.5">{t.notes}</div>}
-                    </td>
-                    <td className="py-sm px-md text-on-surface-variant">{catCell(t.categoryId)}</td>
-                    <td className="py-sm px-md">
-                      <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-surface-container-high border border-border-subtle font-mono-data text-[9px] text-on-surface-variant uppercase tracking-wider whitespace-nowrap">{getTypeLabel(t.type)}</span>
-                    </td>
-                    <td className={`py-sm px-md text-right font-mono-data tabular-nums whitespace-nowrap ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
-                      {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}
-                      {(cashbackById.get(t.id) || 0) > 0 && (
-                        <span className="block font-mono-data text-[9px] text-tertiary">cashback +{fmt(cashbackById.get(t.id))}</span>
-                      )}
-                    </td>
-                    <td className="py-sm px-md text-right whitespace-nowrap">
-                      <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={tr('common.edit')}><MS name="edit" className="text-[16px]" /></button>
-                      <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={tr('common.delete')}><MS name="delete" className="text-[16px]" /></button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      <div className="flex-1 min-w-0">
+                        {/* Todo envuelve (break-words), nada se trunca: la
+                            tarjeta crece a lo alto si el texto es largo. */}
+                        <div className="flex flex-wrap justify-between items-baseline gap-x-sm gap-y-xs">
+                          <span className="text-on-surface font-medium break-words min-w-0 flex-1 basis-[60%]">{t.description || '—'}</span>
+                          <span className={`font-mono-data tabular-nums whitespace-nowrap ml-auto ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
+                            {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap justify-between items-baseline gap-x-sm gap-y-xs mt-xs font-mono-data text-mono-data text-text-muted">
+                          <span className="break-words min-w-0 normal-case tracking-normal">{formatDate(t.date)} · {catCell(t.categoryId)}</span>
+                          {cb > 0 && <span className="text-tertiary whitespace-nowrap ml-auto normal-case tracking-normal">+{fmt(cb)}</span>}
+                        </div>
+                        {t.notes && <div className="font-mono-data text-mono-data text-text-muted mt-xs break-words normal-case tracking-normal">{t.notes}</div>}
+                        <div className="flex items-center justify-between gap-sm mt-xs">
+                          <TypeChip type={t.type} />
+                          <span className="flex items-center gap-xl">
+                            <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs tap-target" aria-label={tr('common.edit')}><MS name="edit" className="text-[18px]" /></button>
+                            <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs tap-target" aria-label={tr('common.delete')}><MS name="delete" className="text-[18px]" /></button>
+                          </span>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+
+            {/* "Mostrar más": pagina el resto del historial sin recargar. */}
+            {hiddenCount > 0 && (
+              <button
+                onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                className="relative z-10 w-full py-md border-t border-border-subtle font-mono-data text-mono-data uppercase tracking-widest text-primary hover:bg-surface-container-high transition-colors"
+              >
+                {t('screens.ledger.showMore').replace('{n}', Math.min(PAGE_SIZE, hiddenCount))} · {filtered.length - hiddenCount}/{filtered.length}
+              </button>
+            )}
+          </>
         )}
       </div>
 
@@ -584,7 +695,7 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
           initial="hidden"
           animate="show"
           exit="exit"
-          className="fixed bottom-lg left-1/2 -translate-x-1/2 z-40 w-[calc(100%-32px)] max-w-[560px]"
+          className="fixed bottom-[max(24px,env(safe-area-inset-bottom))] left-1/2 -translate-x-1/2 z-40 w-[calc(100%-32px)] max-w-[560px]"
         >
           <div className="glass-panel rounded-lg inner-glow shadow-2xl px-md py-sm flex items-center gap-sm relative">
             {/* Conteo */}
@@ -594,23 +705,28 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
             <span className="w-px h-5 bg-border-subtle mx-xs" />
 
             {/* Acciones */}
+            {/* En pantallas muy angostas los rótulos se ocultan (queda el icono
+                con aria-label): tres botones con texto no caben junto al conteo. */}
             <button
               onClick={() => setMenu((m) => (m === 'category' ? null : 'category'))}
-              className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs transition-colors ${activeMenu === 'category' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
+              aria-label={t('common.category')}
+              className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs max-sm:py-sm transition-colors ${activeMenu === 'category' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
             >
-              <MS name="sell" className="!text-[16px]" /> {t('common.category')}
+              <MS name="sell" className="!text-[16px]" /> <span className="hidden sm:inline">{t('common.category')}</span>
             </button>
             <button
               onClick={() => setMenu((m) => (m === 'card' ? null : 'card'))}
-              className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs transition-colors ${activeMenu === 'card' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
+              aria-label={t('creditCards.card')}
+              className={`flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs max-sm:py-sm transition-colors ${activeMenu === 'card' ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface'}`}
             >
-              <MS name="credit_card" className="!text-[16px]" /> {t('creditCards.card')}
+              <MS name="credit_card" className="!text-[16px]" /> <span className="hidden sm:inline">{t('creditCards.card')}</span>
             </button>
             <button
               onClick={onDelete}
-              className="flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs text-accent-error hover:bg-accent-error/10 transition-colors"
+              aria-label={t('common.delete')}
+              className="flex items-center gap-xs font-label-sm text-label-sm rounded px-sm py-xs max-sm:py-sm text-accent-error hover:bg-accent-error/10 transition-colors"
             >
-              <MS name="delete" className="!text-[16px]" /> {t('common.delete')}
+              <MS name="delete" className="!text-[16px]" /> <span className="hidden sm:inline">{t('common.delete')}</span>
             </button>
 
             <span className="flex-1" />
@@ -646,7 +762,7 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
                           onClick={() => { onCategory(c.id); setMenu(null); }}
                           className="w-full text-left flex items-center gap-sm px-sm py-sm rounded font-body-md text-body-md text-on-surface hover:bg-surface-container-high transition-colors"
                         >
-                          <Emoji e={c.icon} size={16} /> <span className="truncate">{c.name}</span>
+                          <Emoji e={c.icon} size={16} /> <span className="break-words min-w-0">{c.name}</span>
                         </button>
                       ))
                     : cards.map((c) => (
@@ -656,7 +772,7 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
                           className="w-full text-left flex items-center gap-sm px-sm py-sm rounded font-body-md text-body-md text-on-surface hover:bg-surface-container-high transition-colors"
                         >
                           <span className="w-3 h-3 rounded-sm shrink-0" style={{ backgroundColor: c.color || '#bec2ff' }} />
-                          <span className="truncate">{c.name}</span>
+                          <span className="break-words min-w-0">{c.name}</span>
                         </button>
                       ))}
                   {activeMenu === 'card' && cards.length === 0 && (
@@ -672,6 +788,16 @@ function BulkBar({ count, categories, cards, onCategory, onCard, onDelete, onCle
   );
 }
 
+
+// Chip del tipo de transacción en las filas del listado (tabla y tarjetas
+// móviles comparten exactamente el mismo estilo).
+function TypeChip({ type }) {
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded-sm bg-surface-container-high border border-border-subtle font-mono-data text-[9px] text-on-surface-variant uppercase tracking-wider whitespace-nowrap">
+      {getTypeLabel(type)}
+    </span>
+  );
+}
 
 // Badge de solo lectura del tipo derivado de la categoría. Color por tipo,
 // alineado con los tokens del tema (lima=ingreso, durazno=fijo, periwinkle=

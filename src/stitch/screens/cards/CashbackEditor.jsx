@@ -43,7 +43,7 @@ export default function CashbackEditor({ rules, onChange, onRestore, demoNote })
           <div key={i} className="flex items-center gap-sm">
             <div className="flex-1 min-w-0 flex items-center gap-sm bg-surface-container-lowest border border-border-subtle rounded px-md py-sm inner-glow">
               <MS name="stairs" className="!text-[16px] text-tertiary shrink-0" />
-              <span className="font-body-md text-body-md text-on-surface truncate">{catName(r.categoryId)}</span>
+              <span className="font-body-md text-body-md text-on-surface break-words min-w-0">{catName(r.categoryId)}</span>
               <span className="font-mono-data text-mono-data text-text-muted ml-auto shrink-0">{tiersLabel(r.tiers)}</span>
             </div>
             <button type="button" onClick={() => removeRule(i)} className="text-text-muted hover:text-accent-error p-xs shrink-0" aria-label={t('screens.cards.removeRule')}><MS name="close" className="!text-[16px]" /></button>

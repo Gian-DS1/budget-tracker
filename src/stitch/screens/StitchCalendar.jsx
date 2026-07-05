@@ -92,8 +92,9 @@ export default function StitchCalendar() {
       </div>
 
       <Stagger className="flex flex-col gap-md flex-1 min-h-0">
-        {/* Resumen del mes */}
-        <Stagger.Item className="grid grid-cols-3 gap-md shrink-0">
+        {/* Resumen del mes. En móvil las 3 tarjetas se apilan: a tres columnas
+            un monto grande (RD$ 1,234,567.89) no cabe completo en ~104px. */}
+        <Stagger.Item className="grid grid-cols-1 sm:grid-cols-3 gap-sm sm:gap-md shrink-0">
           <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.income')}</span>
             <span className="font-headline-md text-[20px] tracking-tight text-tertiary whitespace-nowrap"><CountUp value={summary.income} format={(n) => `+${fmt(n)}`} /></span>

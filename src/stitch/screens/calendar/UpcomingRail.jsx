@@ -27,7 +27,7 @@ export default function UpcomingRail({ items, onNavigate }) {
               <div className="flex items-center justify-between gap-xs">
                 <span className="flex items-center gap-xs min-w-0">
                   <span className="w-2 h-2 rounded-full shrink-0" style={{ background: it.color }} />
-                  <span className="font-label-sm text-label-sm text-on-surface truncate">{it.label}</span>
+                  <span className="font-label-sm text-label-sm text-on-surface break-words min-w-0">{it.label}</span>
                 </span>
                 <span className="font-mono-data text-mono-data text-text-muted shrink-0">{it.daysUntil === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', it.daysUntil)}</span>
               </div>

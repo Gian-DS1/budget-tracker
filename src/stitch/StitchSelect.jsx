@@ -114,12 +114,12 @@ export default function StitchSelect({
                     aria-selected={isSel}
                     onMouseEnter={() => setActive(i)}
                     onClick={() => choose(o)}
-                    className={`w-full flex items-center gap-sm px-md py-sm text-left font-body-md text-body-md transition-colors whitespace-nowrap ${
+                    className={`w-full flex items-center gap-sm px-md py-sm text-left font-body-md text-body-md transition-colors ${
                       isActive ? 'bg-surface-container-high text-on-surface' : 'text-on-surface-variant'
                     }`}
                   >
-                    {o.icon && <MS name={o.icon} className="text-[18px] text-text-muted" />}
-                    <span className="flex-1">{o.label}</span>
+                    {o.icon && <MS name={o.icon} className="text-[18px] text-text-muted shrink-0" />}
+                    <span className="flex-1 break-words min-w-0">{o.label}</span>
                     {isSel && <MS name="check" className="text-[16px] text-primary" />}
                   </button>
                 );

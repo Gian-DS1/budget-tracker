@@ -169,7 +169,7 @@ export default function StitchDashboard() {
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-sm gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs min-w-0">
                 <MS name="show_chart" className="!text-[14px] text-text-muted shrink-0" />
-                <span className="truncate">{t('dashboard.monthFlow')}</span>
+                <span className="break-words min-w-0">{t('dashboard.monthFlow')}</span>
                 <span className="text-primary shrink-0">· {monthShort(m)} {y}</span>
               </span>
               <div className="w-[130px] shrink-0">

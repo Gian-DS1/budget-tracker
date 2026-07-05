@@ -94,7 +94,7 @@ export default function StitchCategories() {
                     <span className="w-8 h-8 rounded flex items-center justify-center shrink-0" style={{ background: `${c.color}22` }}>
                       <Emoji e={c.icon} size={18} />
                     </span>
-                    <span className="font-body-md text-body-md text-on-surface truncate flex-1">{c.name}</span>
+                    <span className="font-body-md text-body-md text-on-surface break-words min-w-0 flex-1">{c.name}</span>
                     <button onClick={() => openEdit(c)} className="text-text-muted hover:text-on-surface p-xs" aria-label={t('common.edit')}>
                       <MS name="edit" className="text-[16px]" />
                     </button>

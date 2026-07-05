@@ -176,6 +176,7 @@ const translations = {
     },
     // Shell
     shell: {
+      openMenu: 'Abrir menú',
       closeMenu: 'Cerrar menú',
       collapseMenu: 'Colapsar menú',
       expandMenu: 'Expandir menú',
@@ -509,6 +510,7 @@ const translations = {
         sortBy: 'Ordenar por',
         noCategoriesYet: 'Aún no tienes categorías.',
         createFirstCategory: 'Crea tu primera categoría',
+        showMore: 'Mostrar {n} más',
       },
       vaults: {
         monthlyContribution: 'Aporte mensual',
@@ -1206,6 +1208,7 @@ const translations = {
     },
     // Shell
     shell: {
+      openMenu: 'Open menu',
       closeMenu: 'Close menu',
       collapseMenu: 'Collapse menu',
       expandMenu: 'Expand menu',
@@ -1512,6 +1515,7 @@ const translations = {
         sortBy: 'Sort by',
         noCategoriesYet: 'You have no categories yet.',
         createFirstCategory: 'Create your first category',
+        showMore: 'Show {n} more',
       },
       vaults: {
         monthlyContribution: 'Monthly contribution',

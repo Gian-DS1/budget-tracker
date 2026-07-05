@@ -40,14 +40,14 @@ export function Modal({ title, onClose, children, width = '480px' }) {
     <ModalShell
       onClose={onClose}
       labelledBy={titleId}
-      className="stitch-scroll bg-surface-card border border-border-subtle rounded-lg inner-glow w-full max-h-[85vh] overflow-y-auto p-lg"
+      className="stitch-scroll bg-surface-card border border-border-subtle rounded-lg inner-glow w-full stitch-modal-max-h overflow-y-auto overscroll-contain p-lg"
       style={{ maxWidth: width }}
     >
       {(requestClose) => (
         <>
           <div className="flex justify-between items-center mb-lg">
             <h3 id={titleId} className="font-headline-md text-[20px] font-bold text-on-surface tracking-tight">{title}</h3>
-            <button onClick={requestClose} aria-label={tr('common.close')} className="text-text-muted hover:text-on-surface p-xs"><MS name="close" className="text-[20px]" /></button>
+            <button onClick={requestClose} aria-label={tr('common.close')} className="text-text-muted hover:text-on-surface p-xs tap-target"><MS name="close" className="text-[20px]" /></button>
           </div>
           {typeof children === 'function' ? children(requestClose) : children}
         </>

@@ -98,20 +98,6 @@ export function projectedCompletionDate(currentAmount, targetAmount, monthlyCont
 }
 
 /**
- * Moving average for projections
- */
-export function movingAverage(data, windowSize = 3) {
-  if (data.length < windowSize) return data;
-  const result = [];
-  for (let i = windowSize - 1; i < data.length; i++) {
-    const window = data.slice(i - windowSize + 1, i + 1);
-    const avg = window.reduce((sum, val) => sum + val, 0) / windowSize;
-    result.push(avg);
-  }
-  return result;
-}
-
-/**
  * Fuente única de verdad del resumen mensual del presupuesto base cero.
  * Todos los montos están en moneda base (DOP); el llamante debe pasar los
  * totales de deuda ya convertidos a DOP.
@@ -470,23 +456,4 @@ export function getFinancialHealthScore({ avgIncome = 0, avgExpense = 0, monthly
       debt: Math.round(debtPts),
     },
   };
-}
-
-/**
- * Detect anomalies (values 2+ standard deviations from mean)
- */
-export function detectAnomalies(values, threshold = 2) {
-  if (values.length < 3) return [];
-  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
-  const variance = values.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / values.length;
-  const stdDev = Math.sqrt(variance);
-
-  return values
-    .map((value, index) => ({
-      index,
-      value,
-      deviation: stdDev > 0 ? Math.abs(value - mean) / stdDev : 0,
-      isAnomaly: stdDev > 0 ? Math.abs(value - mean) / stdDev >= threshold : false,
-    }))
-    .filter(item => item.isAnomaly);
 }

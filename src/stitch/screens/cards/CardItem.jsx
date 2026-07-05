@@ -40,8 +40,8 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
         <div className="flex items-center gap-sm min-w-0">
           <span className="w-2 h-2 rounded-full glow-dot shrink-0" style={{ background: card.color, color: card.color }} />
           <div className="flex flex-col min-w-0">
-            <span className="font-label-sm text-label-sm uppercase text-on-surface truncate">{card.name}</span>
-            {card.bank && <span className="font-mono-data text-mono-data text-text-muted truncate">{card.bank}</span>}
+            <span className="font-label-sm text-label-sm uppercase text-on-surface break-words">{card.name}</span>
+            {card.bank && <span className="font-mono-data text-mono-data text-text-muted break-words">{card.bank}</span>}
           </div>
         </div>
         <div className="flex gap-xs shrink-0">

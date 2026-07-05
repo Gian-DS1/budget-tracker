@@ -91,6 +91,11 @@ function ShellInner() {
   const location = useLocation();
   usePageTitle();
 
+  // El colapso a "solo iconos" es una preferencia de ESCRITORIO. En móvil el
+  // drawer abierto (menuOpen) siempre muestra las etiquetas: un menú de solo
+  // iconos a pantalla completa no se entiende y el ancho ya lo fuerza a 256px.
+  const iconOnly = collapsed && !menuOpen;
+
   const handleSignOut = () => {
     if (demo) { exitDemo(); window.location.reload(); return; }
     signOut();
@@ -109,7 +114,7 @@ function ShellInner() {
   ];
 
   return (
-    <div className="stitch-root flex h-screen overflow-hidden grid-pattern bg-surface-background font-body-md text-body-md text-on-surface">
+    <div className="stitch-root stitch-shell-height flex overflow-hidden grid-pattern bg-surface-background font-body-md text-body-md text-on-surface">
       {/* Overlay móvil */}
       {menuOpen && (
         <div className="fixed inset-0 bg-black/60 z-30 lg:hidden" onClick={() => setMenuOpen(false)} aria-hidden="true" />
@@ -119,14 +124,20 @@ function ShellInner() {
       <nav
         data-tour="nav"
         className={[
-          'bg-surface-panel h-full border-r border-border-subtle flex flex-col py-lg gap-xs shrink-0 relative',
-          'fixed inset-y-0 left-0 z-40 transition-[transform,width] duration-300 lg:static lg:translate-x-0',
-          collapsed ? 'lg:w-[72px] px-sm' : 'w-64 px-md',
+          // OJO: no mezclar utilidades de position en el mismo breakpoint. Antes
+          // había 'relative' + 'fixed' juntas: ganaba relative (orden del CSS
+          // generado) y el sidebar "off-canvas" seguía ocupando sitio en el flex,
+          // corriendo todo el contenido móvil ~75px a la derecha. En móvil es
+          // fixed (fuera de flujo); en lg+ vuelve al flujo como lg:relative
+          // (relative, no static, para anclar el handle absoluto de colapso).
+          'bg-surface-panel h-full border-r border-border-subtle flex flex-col py-lg gap-xs shrink-0',
+          'fixed inset-y-0 left-0 z-40 transition-[transform,width] duration-300 lg:relative lg:translate-x-0',
+          iconOnly ? 'lg:w-[72px] px-sm' : 'w-64 px-md',
           menuOpen ? 'translate-x-0 w-64 px-md' : '-translate-x-full',
         ].join(' ')}
       >
-        <div className={`mb-lg flex items-center ${collapsed ? 'justify-center px-0' : 'justify-between px-sm'}`}>
-          {collapsed ? (
+        <div className={`mb-lg flex items-center ${iconOnly ? 'justify-center px-0' : 'justify-between px-sm'}`}>
+          {iconOnly ? (
             <Logo size={26} />
           ) : (
             <div className="min-w-0">
@@ -135,7 +146,7 @@ function ShellInner() {
             </div>
           )}
           {/* Cerrar en móvil */}
-          <button onClick={() => setMenuOpen(false)} className="lg:hidden text-text-muted hover:text-on-surface p-xs" aria-label={t('shell.closeMenu')}>
+          <button onClick={() => setMenuOpen(false)} className="lg:hidden text-text-muted hover:text-on-surface p-xs tap-target" aria-label={t('shell.closeMenu')}>
             <MS name="close" className="text-[20px]" />
           </button>
         </div>
@@ -143,7 +154,7 @@ function ShellInner() {
         <div className="flex flex-col gap-xs flex-grow overflow-y-auto overflow-x-hidden">
           {NAV.map((item, i) =>
             item.section ? (
-              collapsed ? (
+              iconOnly ? (
                 <div key={`s-${i}`} className="h-px bg-border-subtle mx-sm my-sm" />
               ) : (
                 <div key={`s-${i}`} className="font-mono-data text-mono-data text-text-muted uppercase tracking-[0.18em] px-md pt-md pb-xs">
@@ -156,11 +167,11 @@ function ShellInner() {
                 to={item.to}
                 end={item.end}
                 onClick={() => setMenuOpen(false)}
-                title={collapsed ? item.label : undefined}
+                title={iconOnly ? item.label : undefined}
                 className={({ isActive }) =>
                   [
                     'flex items-center gap-md py-sm rounded transition-all duration-200 border',
-                    collapsed ? 'justify-center px-0' : 'px-md',
+                    iconOnly ? 'justify-center px-0' : 'px-md',
                     isActive
                       ? 'bg-surface-container-highest text-primary border-border-subtle font-bold shadow-[0_0_15px_rgba(190,194,255,0.2)]'
                       : 'text-on-surface-variant border-transparent hover:text-on-surface hover:bg-surface-container-highest',
@@ -170,7 +181,7 @@ function ShellInner() {
                 {({ isActive }) => (
                   <>
                     <MS name={item.icon} fill={isActive} className="text-[20px] shrink-0" />
-                    {!collapsed && <span className="font-label-sm text-label-sm truncate">{item.label}</span>}
+                    {!iconOnly && <span className="font-label-sm text-label-sm truncate">{item.label}</span>}
                   </>
                 )}
               </NavLink>
@@ -180,10 +191,10 @@ function ShellInner() {
 
         <button
           onClick={handleSignOut}
-          title={collapsed ? t('auth.signOut') : undefined}
-          className={`mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center gap-sm ${collapsed ? 'justify-center px-0' : 'justify-center'}`}
+          title={iconOnly ? t('auth.signOut') : undefined}
+          className={`mt-md w-full py-sm bg-transparent border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high hover:text-accent-error transition-colors flex items-center gap-sm ${iconOnly ? 'justify-center px-0' : 'justify-center'}`}
         >
-          <MS name="logout" className="text-[16px] shrink-0" />{!collapsed && <span>{t('auth.signOut')}</span>}
+          <MS name="logout" className="text-[16px] shrink-0" />{!iconOnly && <span>{t('auth.signOut')}</span>}
         </button>
 
         {/* Handle de colapso: pestaña discreta en el borde derecho del sidebar
@@ -202,7 +213,7 @@ function ShellInner() {
       <div className="flex flex-col flex-grow h-full overflow-hidden relative min-w-0">
         <header className="bg-surface-background sticky top-0 z-10 border-b border-border-subtle w-full h-16 flex justify-between items-center px-md sm:px-margin-safe inner-glow shrink-0 gap-sm">
           <div className="flex items-center gap-sm min-w-0">
-            <button onClick={() => setMenuOpen(true)} className="lg:hidden text-on-surface-variant hover:text-on-surface p-xs -ml-xs" aria-label={t('shell.closeMenu')}>
+            <button onClick={() => setMenuOpen(true)} className="lg:hidden text-on-surface-variant hover:text-on-surface p-sm -ml-sm" aria-label={t('shell.openMenu')}>
               <MS name="menu" className="text-[24px]" />
             </button>
             <div className="font-headline-md text-headline-md font-bold text-on-surface truncate">FinTrack</div>
@@ -219,7 +230,7 @@ function ShellInner() {
           </div>
         </header>
 
-        <main className="flex-grow overflow-y-auto overflow-x-hidden">
+        <main className="flex-grow overflow-y-auto overflow-x-hidden pb-[env(safe-area-inset-bottom)]">
           <AnimatePresence mode="wait" initial={false}>
             <Screen key={location.pathname}>{outlet}</Screen>
           </AnimatePresence>

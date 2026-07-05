@@ -45,16 +45,18 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-md">
           <div className="flex flex-col">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.balance')}</span>
-            <span className={`font-headline-md text-[40px] tracking-tighter ${balance < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(balance)}</span>
+            <span className={`font-headline-md text-[clamp(26px,8vw,40px)] tracking-tighter ${balance < 0 ? 'text-accent-error' : 'text-tertiary'}`}>{fmt(balance)}</span>
           </div>
-          <div className="flex gap-xl sm:text-right">
-            <div className="flex flex-col">
+          {/* En móvil: 2 columnas gemelas y cifra un punto menor; con gap-xl y
+              22px los dos montos en RD$ desbordaban la tarjeta por la derecha. */}
+          <div className="grid grid-cols-2 gap-md sm:flex sm:gap-xl sm:text-right">
+            <div className="flex flex-col min-w-0">
               <span className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-xs sm:justify-end"><MS name="south_west" className="!text-[13px] text-tertiary" /> {t('screens.budget.incomeOfMonth')}</span>
-              <span className="font-headline-md text-[22px] text-on-background tracking-tighter">{fmt(ingreso)}</span>
+              <span className="font-headline-md text-[18px] sm:text-[22px] text-on-background tracking-tighter">{fmt(ingreso)}</span>
             </div>
-            <div className="flex flex-col">
+            <div className="flex flex-col min-w-0">
               <span className="font-mono-data text-mono-data text-text-muted uppercase flex items-center gap-xs sm:justify-end"><MS name="north_east" className="!text-[13px] text-accent-error" /> {t('screens.budget.expensesOfMonth')}</span>
-              <span className="font-headline-md text-[22px] text-on-background tracking-tighter">{fmt(gastos)}</span>
+              <span className="font-headline-md text-[18px] sm:text-[22px] text-on-background tracking-tighter">{fmt(gastos)}</span>
             </div>
           </div>
         </div>
@@ -91,10 +93,10 @@ export default function BudgetTracking({ monthTx, categories, summary }) {
               const barW = maxTotal > 0 ? (g.total / maxTotal) * 100 : 0;
               return (
                 <Stagger.Item key={g.category.id} className="flex flex-col gap-xs">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between gap-sm">
                     <span className="font-label-sm text-label-sm text-on-surface flex items-center gap-xs min-w-0">
                       <span className="font-mono-data text-mono-data text-text-muted w-[18px] shrink-0">{String(i + 1).padStart(2, '0')}</span>
-                      <Emoji e={g.category.icon} size={16} /> <span className="truncate">{g.category.name}</span>
+                      <Emoji e={g.category.icon} size={16} /> <span className="break-words min-w-0">{g.category.name}</span>
                     </span>
                     <div className="flex items-baseline gap-sm whitespace-nowrap">
                       <span className="font-mono-data text-[13px] text-on-background">{fmt(g.total)}</span>

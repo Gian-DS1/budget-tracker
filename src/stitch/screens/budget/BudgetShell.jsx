@@ -111,8 +111,10 @@ export default function BudgetShell({ level = 'zero' }) {
           </div>
           <h1 className="font-hero-headline text-headline-lg md:text-[56px] text-on-background tracking-tighter leading-none">{t('budget.title').toUpperCase()}</h1>
           {/* Cambiador de nivel: control segmentado. Los 3 modos quedan visibles
-              de un vistazo (un dropdown los escondía y costaba descubrirlos). */}
-          <div data-tour="budget-mode" className="inline-flex flex-wrap items-center gap-xs bg-surface-card border border-border-subtle rounded p-xs mt-md inner-glow">
+              de un vistazo (un dropdown los escondía y costaba descubrirlos).
+              En móvil: 3 celdas iguales a todo el ancho (con flex-wrap "Base
+              cero" bajaba solo a una 2ª línea y quedaba asimétrico). */}
+          <div data-tour="budget-mode" className="grid grid-cols-3 sm:inline-flex sm:flex-wrap items-stretch sm:items-center gap-xs w-full sm:w-auto bg-surface-card border border-border-subtle rounded p-xs mt-md inner-glow">
             {LEVEL_OPTIONS.map((o) => {
               const active = level === o.value;
               return (
@@ -120,7 +122,7 @@ export default function BudgetShell({ level = 'zero' }) {
                   key={o.value}
                   onClick={() => setBudgetLevel(o.value)}
                   aria-pressed={active}
-                  className={`flex items-center gap-xs px-md py-xs rounded font-label-sm text-label-sm transition-colors border ${active ? 'bg-primary/15 border-primary/40 text-on-surface' : 'border-transparent text-text-muted hover:text-on-surface hover:bg-surface-container-high'}`}
+                  className={`flex flex-col sm:flex-row items-center justify-center sm:justify-start gap-xs px-xs sm:px-md py-sm sm:py-xs rounded font-label-sm text-label-sm text-center transition-colors border ${active ? 'bg-primary/15 border-primary/40 text-on-surface' : 'border-transparent text-text-muted hover:text-on-surface hover:bg-surface-container-high'}`}
                 >
                   <MS name={o.icon} className={`!text-[16px] ${active ? 'text-primary' : ''}`} />
                   {o.label}
@@ -129,16 +131,19 @@ export default function BudgetShell({ level = 'zero' }) {
             })}
           </div>
         </div>
-        <div data-tour="budget-summary" className="flex gap-md bg-surface-card p-sm rounded border border-border-subtle inner-glow items-center">
-          <button onClick={() => navMonth(-1)} className="p-xs rounded hover:bg-surface-container-high text-on-surface-variant"><MS name="chevron_left" className="text-[18px]" /></button>
-          <div className="flex flex-col px-sm py-xs border-x border-border-subtle text-center min-w-[120px]">
+        {/* Período + estado. En móvil el estado no cabe junto al período (el
+            "SIN DATOS" se partía en dos líneas apretado contra el borde): pasa
+            a una 2ª fila centrada a todo el ancho; en sm+ vuelve a la fila única. */}
+        <div data-tour="budget-summary" className="grid grid-cols-[auto_1fr_auto] sm:flex items-center gap-sm sm:gap-md w-full md:w-auto bg-surface-card p-sm rounded border border-border-subtle inner-glow">
+          <button onClick={() => navMonth(-1)} aria-label={monthName(month === 0 ? 11 : month - 1)} className="p-xs tap-target rounded hover:bg-surface-container-high text-on-surface-variant"><MS name="chevron_left" className="text-[18px]" /></button>
+          <div className="flex flex-col px-sm py-xs border-x border-border-subtle text-center min-w-0 sm:min-w-[120px]">
             <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.period').toUpperCase()}</span>
             <span className="font-label-sm text-label-sm text-on-background mt-1">{monthName(month)} {year}</span>
           </div>
-          <button onClick={() => navMonth(1)} disabled={isCurrentMonth} className="p-xs rounded hover:bg-surface-container-high text-on-surface-variant disabled:opacity-30"><MS name="chevron_right" className="text-[18px]" /></button>
-          <div className="flex flex-col px-md py-xs">
+          <button onClick={() => navMonth(1)} disabled={isCurrentMonth} aria-label={monthName((month + 1) % 12)} className="p-xs tap-target rounded hover:bg-surface-container-high text-on-surface-variant disabled:opacity-30 justify-self-end"><MS name="chevron_right" className="text-[18px]" /></button>
+          <div className="col-span-3 sm:col-auto flex flex-col items-center sm:items-start border-t sm:border-t-0 border-border-subtle pt-sm sm:pt-xs px-md py-xs">
             <span className="font-mono-data text-mono-data text-text-muted">{t('common.status').toUpperCase()}</span>
-            <span className={`font-label-sm text-label-sm mt-1 ${ESTADO_COLOR[summary.estado]}`}>{ESTADO_LABEL[summary.estado]}</span>
+            <span className={`font-label-sm text-label-sm mt-1 whitespace-nowrap ${ESTADO_COLOR[summary.estado]}`}>{ESTADO_LABEL[summary.estado]}</span>
           </div>
         </div>
       </div>

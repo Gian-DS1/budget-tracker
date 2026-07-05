@@ -87,7 +87,7 @@ export default function HistoryModal({ goal: goalProp, onClose }) {
                 <span className="font-mono-data text-[14px] text-on-surface">{fmt(c.amount, goal.currency)}</span>
                 <span className="font-mono-data text-mono-data text-text-muted">{formatDate(c.date)}{c.notes ? ` · ${c.notes}` : ''}</span>
               </div>
-              <button onClick={() => onDelete(c)} className="text-text-muted hover:text-accent-error p-xs opacity-0 group-hover:opacity-100 transition-opacity" aria-label={t('screens.vaults.deleteContribution')}>
+              <button onClick={() => onDelete(c)} className="text-text-muted hover:text-accent-error p-xs tap-target hover-reveal" aria-label={t('screens.vaults.deleteContribution')}>
                 <MS name="delete" className="!text-[16px]" />
               </button>
             </div>

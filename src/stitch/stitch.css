@@ -105,6 +105,55 @@
   min-height: 100vh;
 }
 
+/* ── Viewport móvil real ──────────────────────────────────────────────
+   El shell de la app usa layout fijo (h-screen + scroll interno). 100vh clásico
+   desborda tras la barra dinámica de Safari/Chrome móvil y esconde contenido;
+   dvh sigue al viewport dinámico. Doble declaración: vh queda de fallback para
+   navegadores sin dvh. Solo el shell la usa; landing/auth scrollean normal. */
+.stitch-shell-height {
+  height: 100vh;
+  height: 100dvh;
+}
+/* Tope de alto para modales: 85vh clásico puede quedar detrás de la barra
+   dinámica del navegador móvil; dvh lo corrige, vh queda de fallback. */
+.stitch-modal-max-h {
+  max-height: 85vh;
+  max-height: 85dvh;
+}
+
+/* ── Controles revelados por hover ────────────────────────────────────
+   En desktop, los controles de fila (editar/borrar, checkbox) aparecen al pasar
+   el mouse. En pantallas táctiles NO existe hover: sin esta regla quedaban
+   invisibles e inaccesibles. Con (hover: none) se muestran siempre. */
+.hover-reveal {
+  opacity: 0;
+  transition: opacity 150ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+.group:hover .hover-reveal,
+.hover-reveal:focus-visible,
+.hover-reveal:focus-within {
+  opacity: 1;
+}
+@media (hover: none) {
+  .hover-reveal { opacity: 1; }
+}
+
+/* ── Área táctil mínima (WCAG 2.5.8) ─────────────────────────────────
+   Amplía el hit-area de botones-icono pequeños a 44×44 en punteros gruesos sin
+   agrandar el glifo ni mover el layout (pseudo-elemento centrado e invisible). */
+@media (pointer: coarse) {
+  .tap-target { position: relative; }
+  .tap-target::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 44px;
+    height: 44px;
+    transform: translate(-50%, -50%);
+  }
+}
+
 /* ── Utilidades custom de las pantallas Stitch ── */
 .glass-panel {
   background: rgba(10, 10, 11, 0.6);

@@ -38,11 +38,13 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
   };
 
   return (
-    <div className="flex flex-col h-64">
+    <div className="flex flex-col h-72 sm:h-64">
       {/* Encabezado Robinhood: "mi dinero total" del punto enfocado (cyan, count-up)
           + su mes, con ingresos/gastos del mes en pequeño debajo; a la derecha, el
-          desglose (efectivo + ahorro) y tarjetas por pagar. Todo anima al hacer scrubbing. */}
-      <div className="flex items-start justify-between gap-md mb-sm">
+          desglose (efectivo + ahorro) y tarjetas por pagar. Todo anima al hacer
+          scrubbing. flex-wrap: en móvil los bloques laterales bajan de línea en
+          vez de desbordar (cada cifra individual sigue en nowrap). */}
+      <div className="flex flex-wrap items-start justify-between gap-x-md gap-y-xs mb-sm">
         <div className="min-w-0">
           <div className="flex items-baseline gap-xs">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.myMoneyTotal')}</span>
@@ -57,7 +59,7 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
             <span className="text-accent-error">↓ <CountUp value={head.expense} format={fmt} duration={240} /></span>
           </div>
         </div>
-        <div className="flex items-start gap-md shrink-0">
+        <div className="flex flex-wrap items-start justify-end gap-x-md gap-y-xs min-w-0">
           {/* Desglose del total: efectivo disponible + ahorro acumulado. */}
           <div className="flex flex-col items-end">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.liquidCash')}</span>

@@ -40,7 +40,7 @@ export default function DayDetail({ iso, movement, dues, categories }) {
                 <div key={i} className="flex justify-between items-center bg-surface-card border border-border-subtle rounded p-sm inner-glow">
                   <span className="flex items-center gap-xs min-w-0">
                     <span className="w-2 h-2 rounded-full shrink-0" style={{ background: e.color }} />
-                    <span className="font-label-sm text-label-sm text-on-surface truncate">{e.label}</span>
+                    <span className="font-label-sm text-label-sm text-on-surface break-words min-w-0">{e.label}</span>
                     <span className="font-mono-data text-[8px] text-text-muted uppercase shrink-0">{TYPE_KEY[e.type] ? t(`screens.calendar.${TYPE_KEY[e.type]}`) : e.type}</span>
                   </span>
                   <span className="font-mono-data text-[13px] tabular-nums ml-sm text-on-surface-variant">{fmt(e.amount)}</span>
@@ -56,7 +56,7 @@ export default function DayDetail({ iso, movement, dues, categories }) {
                 return (
                   <div key={t.id} className="flex justify-between items-center bg-surface-card border border-border-subtle rounded p-sm inner-glow">
                     <div className="flex flex-col min-w-0">
-                      <span className="font-label-sm text-label-sm text-on-surface truncate">{t.description || '—'}</span>
+                      <span className="font-label-sm text-label-sm text-on-surface break-words">{t.description || '—'}</span>
                       <span className="font-mono-data text-mono-data text-text-muted">{catCell(t.categoryId)}</span>
                     </div>
                     <span className={`font-mono-data text-[13px] tabular-nums ml-sm ${inc ? 'text-tertiary' : 'text-on-surface'}`}>{inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}</span>

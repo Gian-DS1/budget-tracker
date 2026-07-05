@@ -22,7 +22,7 @@ export default function VaultItem({ goal, onContribute, onHistory, onEdit, onDel
     <Stagger.Item className="bg-surface-card border border-border-subtle rounded-lg p-md inner-glow flex flex-col gap-md" style={{ opacity: paused ? 0.6 : 1 }}>
       <div className="flex items-center gap-sm">
         <div className="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center border border-border-subtle shrink-0"><Emoji e={goal.icon || '🎯'} size={18} /></div>
-        <span className="font-label-sm text-label-sm uppercase text-on-surface truncate min-w-0">{goal.title}</span>
+        <span className="font-label-sm text-label-sm uppercase text-on-surface break-words min-w-0">{goal.title}</span>
         {horizonChip && <span className="font-mono-data text-[8px] text-text-muted border border-border-subtle rounded px-1 shrink-0">{horizonChip}</span>}
       </div>
 

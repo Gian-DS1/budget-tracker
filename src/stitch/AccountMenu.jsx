@@ -69,7 +69,9 @@ export default function AccountMenu() {
               <MS name="person" className="!text-[16px] text-on-surface" />
             </div>
             <div className="flex flex-col min-w-0">
-              <span className="font-body-md text-body-md text-on-surface truncate">{label}</span>
+              {/* break-all: el label suele ser un email (sin espacios); debe
+                  leerse completo aunque ocupe dos líneas del menú. */}
+              <span className="font-body-md text-body-md text-on-surface break-all">{label}</span>
               <span className="font-mono-data text-mono-data text-text-muted uppercase">{demo ? t('common.trialSession') : t('common.activeSession')}</span>
             </div>
           </div>
