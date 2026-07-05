@@ -15,7 +15,7 @@ import { supabase, getCurrentUser } from '../lib/supabase';
 import { isDemoActive } from '../stitch/demoMode';
 import { setRuntimeCurrency } from '../utils/currencyRuntime';
 
-export const BUDGET_LEVELS = ['tracking', '503020', 'zero'];
+const BUDGET_LEVELS = ['tracking', '503020', 'zero'];
 const DEFAULT_LEVEL = 'tracking';
 
 const usePrefsStore = create(

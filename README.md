@@ -4,6 +4,8 @@ A global personal-finance web app (beta). It replaces spreadsheets with **zero-b
 
 > Data is stored in **Supabase** (Postgres + Auth) and cached locally so the app loads instantly and works without friction.
 
+**Installable PWA:** on iPhone open the app in Safari → **Share → Add to Home Screen** and it launches full-screen with its own icon, like a native app. Sessions (email or Google) persist until you sign out manually.
+
 ---
 
 ## ✨ Features
@@ -25,13 +27,13 @@ A global personal-finance web app (beta). It replaces spreadsheets with **zero-b
 
 | Layer | Technology |
 |------|-----------|
-| Frontend | React 19 + Vite 8 (Rolldown) |
-| Routing | React Router v7 |
-| State | Zustand 5 (persisted to `localStorage`) |
-| Backend / Data | Supabase (PostgreSQL + Auth + RLS) |
+| Frontend | React 19 + Vite 8 (Rolldown), installable **PWA** (`manifest.webmanifest` + iOS meta tags) |
+| Routing | React Router v7 with **route-level code splitting** (`React.lazy` per screen) |
+| State | Zustand 5 (data cached in `sessionStorage`; the Supabase session lives in `localStorage` so it survives browser restarts) |
+| Backend / Data | Supabase (PostgreSQL + Auth + RLS; OAuth uses the **PKCE** flow) |
 | Styling | Tailwind CSS v4 (`@theme` with tokens, dark "Stitch" periwinkle theme) |
-| Charts | Recharts |
-| Icons | Material Symbols (UI) + JoyPixels v10 via emoji-toolkit (category emojis) |
+| Charts | Recharts (lazy — only downloaded by screens that draw charts) |
+| Icons | Material Symbols (UI) + JoyPixels v10 PNGs from jsDelivr (category emojis; the unicode→codepoint mapping is local, see `src/stitch/emojiCodepoint.js` — no runtime emoji library) |
 | Animation | Framer Motion |
 | Serverless | Vercel functions (`/api/parse-pdf` imports statements; `/api/feedback` receives feedback) |
 | Tests | Vitest |
@@ -87,7 +89,25 @@ npm run test       # tests (Vitest)
 
 1. Import the repo into Vercel.
 2. Add the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` variables (Production + Preview).
-3. The [`vercel.json`](vercel.json) file already configures the SPA rewrite (excluding `/api`).
+3. The [`vercel.json`](vercel.json) file already configures the SPA rewrite (excluding `/api`), security headers/CSP, and cache policy (immutable hashed assets; PWA manifest/icons for 24h; HTML never cached).
+
+---
+
+## 📱 Install on iPhone (PWA)
+
+1. Open the production URL in **Safari**.
+2. Tap **Share → Add to Home Screen** (Compartir → Añadir a pantalla de inicio).
+3. The app opens **full-screen** (no browser chrome), with its own dark icon and status bar matching the app background.
+
+Sign-in (email or **Google**) persists across launches: the Supabase session is stored in `localStorage` with automatic token refresh, so you stay signed in until you tap **Cerrar sesión**. Google OAuth uses the **PKCE** flow, which survives the iOS standalone-app browser handoff.
+
+---
+
+## ⚡ Performance
+
+- **Route-level code splitting:** each screen is a `React.lazy` chunk; the initial bundle only carries the shell (~63 kB of app code vs ~1.5 MB before). Heavy vendors (`recharts`, `framer-motion`, `@supabase`, React) ship as separate long-cached chunks, and `xlsx`/`papaparse` only download when you import/export files.
+- **Fonts:** Inter/Manrope/Material Symbols start downloading from `index.html` in parallel with the JS bundle.
+- **Preconnects:** to Google Fonts, jsDelivr (emoji PNGs), and the Supabase project (injected at runtime from the env), so the first data fetch skips DNS+TLS latency.
 
 ---
 
@@ -95,7 +115,7 @@ npm run test       # tests (Vitest)
 
 - **Data isolation via RLS.** Every query filters by `user_id`, and the database enforces it with Row Level Security (`auth.uid() = user_id`). Running `supabase/schema.sql` sets this up.
 - **Secrets.** The `.env` file is in `.gitignore` and is never committed. The `anon key` is public by design (safe thanks to RLS).
-- **Local cache.** For speed, data is cached in `localStorage`. On **sign-out**, sensitive caches are cleared.
+- **Local cache.** For speed, financial data is cached in `sessionStorage` (cleared when the browser closes); only the Supabase session token lives in `localStorage`. On **sign-out**, all caches are cleared.
 - **Feedback.** The Feedback page sends messages to the developer's email via the external **Web3Forms** service (it stores no data in your database).
 
 ---
@@ -105,6 +125,10 @@ npm run test       # tests (Vitest)
 ```
 budget-tracker/
 ├── api/                  # Vercel serverless functions (parse-pdf: imports statements; feedback)
+├── public/
+│   ├── manifest.webmanifest  # PWA manifest (name, icons, standalone display)
+│   ├── apple-touch-icon.png  # iOS home-screen icon (180×180)
+│   └── icons/                # PWA icons (192/512, maskable)
 ├── supabase/
 │   ├── schema.sql        # Full schema (source of truth, idempotent)
 │   ├── MIGRATIONS.md     # Migration order for existing databases

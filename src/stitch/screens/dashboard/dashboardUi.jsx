@@ -2,10 +2,6 @@
 // con el resto de la app.
 import MS from '../../MS';
 
-// InfoTip vive en src/stitch/InfoTip.jsx (compartido con Reportes). Se re-exporta
-// aquí para no romper los imports existentes del Dashboard.
-export { InfoTip } from '../../InfoTip';
-
 // Celda del bento: marco glass + título mono opcional + contenido.
 export function BentoCell({ title, icon, className = '', children, span = '' }) {
   return (
@@ -27,22 +23,6 @@ export function EmptyCell({ icon = 'inbox', message }) {
     <div className="flex-grow flex flex-col items-center justify-center text-center gap-sm py-lg">
       <MS name={icon} className="text-[24px] text-text-muted" />
       <p className="font-body-md text-body-md text-text-muted">{message}</p>
-    </div>
-  );
-}
-
-// Métrica KPI compacta. `mobileValue` (opcional): versión corta del monto que
-// se muestra bajo `sm` en lugar de `value`, para que nunca se trunque.
-export function Stat({ label, value, mobileValue, cls = 'text-on-surface', sub, warn }) {
-  return (
-    <div className="flex flex-col gap-xs">
-      {label && <span className="font-mono-data text-mono-data text-text-muted uppercase">{label}</span>}
-      <span className={`font-headline-md text-[20px] tracking-tight whitespace-nowrap overflow-hidden text-ellipsis ${cls}`}>
-        {mobileValue != null
-          ? (<><span className="sm:hidden">{mobileValue}</span><span className="hidden sm:inline">{value}</span></>)
-          : value}
-      </span>
-      {sub && <span className={`font-label-sm text-label-sm flex items-center gap-xs ${cls}`}>{warn && <MS name="warning" className="!text-[13px]" />}{sub}</span>}
     </div>
   );
 }

@@ -76,7 +76,7 @@ export function getStatementAmount(transactions, cardId, startISO, endISO) {
  * [startISO, endISO]. Muchas tarjetas acreditan el cashback de inmediato, por lo
  * que el balance efectivo del estado de cuenta es getStatementAmount − este valor.
  */
-export function getStatementCashback(transactions, cardId, startISO, endISO) {
+function getStatementCashback(transactions, cardId, startISO, endISO) {
   return transactions.reduce((sum, t) => {
     if (t.cardId !== cardId) return sum;
     if (t.date >= startISO && t.date <= endISO) return sum + (Number(t.cashbackEarned) || 0);

@@ -4,7 +4,7 @@
 import { useMemo } from 'react';
 import toast from 'react-hot-toast';
 import MS from '../../MS';
-import InfoTip from '../../InfoTip';
+import { InfoTip } from '../../InfoTip';
 import { Stagger } from '../../StitchMotion';
 import { useI18n } from '../../../contexts/I18nContext';
 import EnvelopeRow from './EnvelopeRow';
@@ -130,16 +130,18 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
           <div className="flex flex-wrap justify-between items-end gap-md mb-xs">
             <div className="flex flex-col">
               <span className="font-mono-data text-mono-data text-text-muted inline-flex items-center gap-xs">{t('screens.budget.toAllocate').toUpperCase()} <InfoTip text={t('screens.budget.toAllocateInfo')} /></span>
-              <span className={`font-headline-md text-[36px] tracking-tighter ${summary.porAsignar < 0 ? 'text-accent-error' : summary.porAsignar > 0 ? 'text-accent-warning' : 'text-tertiary'}`}>{fmt(summary.porAsignar)}</span>
+              <span className={`font-headline-md text-[clamp(24px,7.5vw,36px)] tracking-tighter whitespace-nowrap ${summary.porAsignar < 0 ? 'text-accent-error' : summary.porAsignar > 0 ? 'text-accent-warning' : 'text-tertiary'}`}>{fmt(summary.porAsignar)}</span>
             </div>
-            <div className="flex gap-xl text-right">
+            {/* En móvil el par ingreso/comprometido envuelve (los montos de
+                24px en nowrap no caben lado a lado con gap-xl). */}
+            <div className="flex flex-wrap justify-end gap-md sm:gap-xl text-right min-w-0">
               <div className="flex flex-col items-end">
                 <span className="font-mono-data text-mono-data text-text-muted">{t('screens.budget.incomeOfMonth').toUpperCase()}</span>
-                <span className="font-headline-md text-[24px] text-on-background tracking-tighter">{fmt(summary.ingresoBase)}</span>
+                <span className="font-headline-md text-[24px] text-on-background tracking-tighter whitespace-nowrap">{fmt(summary.ingresoBase)}</span>
               </div>
               <div className="flex flex-col items-end">
                 <span className="font-mono-data text-mono-data text-text-muted inline-flex items-center gap-xs">{t('screens.budget.committed').toUpperCase()} <InfoTip text={t('screens.budget.committedInfo')} /></span>
-                <span className="font-headline-md text-[24px] text-on-background tracking-tighter">{fmt(summary.comprometido)}</span>
+                <span className="font-headline-md text-[24px] text-on-background tracking-tighter whitespace-nowrap">{fmt(summary.comprometido)}</span>
               </div>
             </div>
           </div>
@@ -174,7 +176,9 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       {/* Sobres */}
       <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
         <div className="flex flex-wrap justify-between items-center gap-md mb-lg border-b border-border-subtle pb-sm">
-          <h2 className="font-mono-data text-mono-data text-on-surface-variant inline-flex items-center gap-xs">{t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(assignedExpenses)} {t('screens.budget.assigned').toUpperCase()} <InfoTip text={t('screens.budget.assignedInfo')} /></h2>
+          {/* flex-wrap + min-w-0: el título con monto puede ser más ancho que un
+              móvil; sin wrap, el InfoTip del final quedaba fuera de pantalla. */}
+          <h2 className="font-mono-data text-mono-data text-on-surface-variant inline-flex flex-wrap items-center gap-xs min-w-0">{t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(assignedExpenses)} {t('screens.budget.assigned').toUpperCase()} <InfoTip text={t('screens.budget.assignedInfo')} /></h2>
           <button onClick={handleCopy} className="flex items-center gap-xs bg-transparent border border-border-subtle text-on-surface font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high transition-colors">
             <MS name="content_copy" className="text-[14px]" /> {t('screens.budget.copyPrevMonth')}
           </button>
@@ -188,7 +192,9 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
               <section key={g.key}>
                 {/* Encabezado de grupo: tipo + real vs asignado, con mini barra
                     de avance del grupo (lee el estado del bloque de un vistazo). */}
-                <div className="flex items-center justify-between gap-sm mb-xs">
+                {/* flex-wrap: en móvil el "real vs asignado" (nowrap) no cabe junto
+                    a la etiqueta y debe bajar a su propia línea, no montarse encima. */}
+                <div className="flex flex-wrap items-center justify-between gap-x-sm gap-y-xs mb-xs">
                   <div className="flex items-center gap-sm min-w-0">
                     <MS name={g.icon} className={`!text-[16px] ${g.cls}`} />
                     <span className={`font-mono-data text-mono-data uppercase tracking-widest ${g.cls}`}>{t(g.labelKey)}</span>

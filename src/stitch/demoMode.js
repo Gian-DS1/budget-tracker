@@ -92,10 +92,15 @@ function generateMonthlyTransactions(year, month, baseId) {
 
   const iso = (day) => `${year}-${monthStr}-${String(day).padStart(2, '0')}`;
 
-  // Variación pseudoaleatoria por mes (seed basado en mes para reproducibilidad)
+  // Variación pseudoaleatoria por mes (seed basado en mes para reproducibilidad).
+  // OJO: contador propio, separado de idCounter. Cuando random() compartía
+  // idCounter, cada llamada "quemaba" un id sin emitir fila; el caller avanza
+  // baseId por el número de FILAS, así que los rangos de meses se solapaban y
+  // salían ids t### duplicados (keys duplicadas de React en el ledger demo).
   const seed = month * 7 + 13;
+  let rngCounter = 1;
   const random = () => {
-    const x = Math.sin(seed * idCounter++) * 10000;
+    const x = Math.sin(seed * rngCounter++) * 10000;
     return x - Math.floor(x);
   };
 
@@ -176,7 +181,9 @@ function generateMonthlyTransactions(year, month, baseId) {
     txList.push(txWithDate(`t${idCounter++}`, 'Restaurantes y Delivery', Math.round(2500 + random() * 1500), 'variable_expense', 'Comidas en viaje', iso(10 + Math.floor(random() * 8)), 0));
   }
   if (month === 4) { // Mayo: fin de mes con bonificación
-    txList.push(txWithDate(`t${idCounter++}`, 'Salario', 12000, 'income', 'Bonificación performance', iso(28)));
+    // Última fila del mes: sin ++ (no-useless-assignment); si añades filas
+    // después, vuelve a incrementar idCounter en cada una.
+    txList.push(txWithDate(`t${idCounter}`, 'Salario', 12000, 'income', 'Bonificación performance', iso(28)));
   }
 
   return txList;
@@ -394,19 +401,6 @@ export function demoCopyBudgetFromPreviousMonth(year, month) {
     return { budgets: [...next, ...rows] };
   });
   return true;
-}
-
-// Genérico para colecciones simples (savings/debts/cards) por si se usan.
-export function demoAdd(store, key, row) {
-  const r = { id: demoId(), createdAt: new Date().toISOString(), ...row };
-  store.setState((s) => ({ [key]: [...s[key], r] }));
-  return r;
-}
-export function demoUpdate(store, key, id, updates) {
-  store.setState((s) => ({ [key]: s[key].map((x) => (x.id === id ? { ...x, ...updates } : x)) }));
-}
-export function demoDelete(store, key, id) {
-  store.setState((s) => ({ [key]: s[key].filter((x) => x.id !== id) }));
 }
 
 // ── Tarjetas de crédito (en demo no hay sesión: las acciones del store fallan) ──

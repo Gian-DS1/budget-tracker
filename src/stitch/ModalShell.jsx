@@ -26,25 +26,13 @@
 //     escala a 0 (nada aparece/desaparece de la nada).
 //   - reduced-motion: solo opacidad, sin movimiento.
 
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import { EASE_OUT } from './motionTokens';
 
 // Selector de elementos enfocables para el focus trap del modal.
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-
-// Contexto: expone la función de cierre-con-animación a los hijos del modal.
-// Cualquier formulario/botón dentro puede consumirla para que su cierre anime la
-// salida en vez de desmontar el modal de golpe.
-const ModalCloseContext = createContext(null);
-
-// Hook para los hijos del modal: devuelve la función de cierre animado. Fuera de
-// un ModalShell devuelve null (los consumidores deben tener un fallback al
-// onClose normal: `useModalClose() ?? onClose`).
-export function useModalClose() {
-  return useContext(ModalCloseContext);
-}
 
 export default function ModalShell({ onClose, children, className = '', style, labelledBy, ariaLabel }) {
   const reduce = useReducedMotion();
@@ -128,11 +116,9 @@ export default function ModalShell({ onClose, children, className = '', style, l
             onClick={(e) => e.stopPropagation()}
             {...panel}
           >
-            <ModalCloseContext.Provider value={requestClose}>
-              {/* requestClose también va por render-prop, por si el hijo prefiere
-                  no usar el contexto. */}
-              {typeof children === 'function' ? children(requestClose) : children}
-            </ModalCloseContext.Provider>
+            {/* requestClose va por render-prop: el hijo puede animar la salida
+                en vez de desmontar el modal de golpe. */}
+            {typeof children === 'function' ? children(requestClose) : children}
           </motion.div>
         </motion.div>
       )}

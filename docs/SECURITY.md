@@ -24,6 +24,9 @@ Applied at the Vercel edge to every response:
   pages and sensitive data are never cached in the browser or proxies.
 - **`/assets/*`** (JS/CSS with content hashes): `public, max-age=31536000, immutable`.
   Safe because the hash changes whenever the content changes.
+- **PWA assets** (`manifest.webmanifest`, `apple-touch-icon.png`, `favicon.svg`,
+  `/icons/*`): `public, max-age=86400`. They contain nothing sensitive and change
+  rarely; 24h keeps icon updates reasonably fresh.
 
 ### CSP — note on `'unsafe-inline'` in styles (INTENTIONAL)
 `script-src` is strict (`'self'`, **without** `'unsafe-inline'`) — this is the
@@ -39,12 +42,26 @@ static SPA:
 The residual risk is low: CSS does not execute JavaScript. If the app later moves
 to SSR or removes goober, `style-src-elem` can be hardened.
 
+### CSP — `img-src` includes `https://cdn.jsdelivr.net`
+The category emojis are JoyPixels PNGs served from jsDelivr (see
+`src/stitch/Emoji.jsx`). Only images can load from that origin — scripts and
+styles from jsDelivr remain blocked.
+
 ## Data (Supabase)
 - **Row Level Security enabled** on every table (`supabase/schema.sql`), with a
   "only my rows" policy (`auth.uid() = user_id`) for authenticated users.
 - The `anon` role has no privileges over the data tables.
 - The client uses the **anon key** (public by design); the real protection is RLS.
-- Session in `sessionStorage` (does not persist after the browser is closed).
+- **Session in `localStorage`** (intentional): the session must survive browser
+  restarts — including the installed iOS PWA — until the user signs out manually;
+  the refresh token rotates automatically. Financial data caches (Zustand stores)
+  live in `sessionStorage` instead, so no financial information stays on disk
+  between browser sessions; every session end (manual sign-out, token expiry,
+  sign-out from another tab) clears them (`clearUserData`).
+- **OAuth uses PKCE** (`flowType: 'pkce'` in `src/lib/supabase.js`): the callback
+  returns an authorization `?code=` instead of tokens in the URL fragment, so
+  access/refresh tokens never touch the URL, browser history, or referrers — and
+  the flow survives the iOS standalone-PWA browser handoff.
 
 ## Backend (api/)
 - `api/parse-pdf.js`: requires a valid **Bearer token** (verified against Supabase),
