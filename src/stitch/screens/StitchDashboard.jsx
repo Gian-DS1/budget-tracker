@@ -4,7 +4,6 @@ import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MS from '../MS';
 import { Stagger } from '../StitchMotion';
-import StitchSelect from '../StitchSelect';
 import { useI18n } from '../../contexts/I18nContext';
 import useTransactionStore from '../../stores/useTransactionStore';
 import useSavingsStore from '../../stores/useSavingsStore';
@@ -92,10 +91,12 @@ export default function StitchDashboard() {
     () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now, cards, currentSavings),
     [transactions, initialCashBalance, wealthRange, now, cards, currentSavings],
   );
+  // Pills segmentadas del rango (3M · 1A · Todo): menos taps que un dropdown y
+  // liberan el encabezado. El aria-label conserva el nombre completo.
   const rangeOptions = [
-    { value: '3', label: t('dashboard.range3') },
-    { value: '12', label: t('dashboard.range12') },
-    { value: 'all', label: t('dashboard.rangeAll') },
+    { value: 3, label: t('dashboard.range3Short'), full: t('dashboard.range3') },
+    { value: 12, label: t('dashboard.range12Short'), full: t('dashboard.range12') },
+    { value: 'all', label: t('dashboard.rangeAllShort'), full: t('dashboard.rangeAll') },
   ];
 
   // Presupuesto usado + ritmo del mes en curso (tick y veredicto de BudgetBar)
@@ -162,8 +163,9 @@ export default function StitchDashboard() {
       )}
 
       <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-sm auto-rows-min">
-        {/* 1 · Flujo del mes (HERO, col-7) + Donut (col-5) lado a lado. El gráfico
-            unifica patrimonio, tasa de ahorro y tarjetas por pagar en su header. */}
+        {/* 1 · Mi dinero (HERO, col-7) + Donut (col-5) lado a lado. Jerarquía:
+            título único → hero (efectivo disponible) + gráfico → pills de rango
+            → barra de presupuesto al pie (el hero siempre primero). */}
         <Stagger.Item className="col-span-2 md:col-span-7">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-sm gap-sm">
@@ -172,17 +174,33 @@ export default function StitchDashboard() {
                 <span className="break-words min-w-0">{t('dashboard.monthFlow')}</span>
                 <span className="text-primary shrink-0">· {monthShort(m)} {y}</span>
               </span>
-              <div className="w-[130px] shrink-0">
-                <StitchSelect value={String(wealthRange)} onChange={(v) => setWealthRange(v === 'all' ? 'all' : Number(v))} options={rangeOptions} compact />
-              </div>
             </div>
-            <BudgetBar usage={budgetUsage} pace={budgetPace} />
-            <div className="mt-md" />
             <WealthTrendChart
               data={wealthSeries}
               activeKey={`${y}-${m}`}
               onBarClick={(d) => setSel({ y: d.y, m: d.m })}
             />
+            <div className="flex justify-center gap-xs mt-sm">
+              {rangeOptions.map((r) => (
+                <button
+                  key={String(r.value)}
+                  type="button"
+                  onClick={() => setWealthRange(r.value)}
+                  aria-label={r.full}
+                  aria-pressed={wealthRange === r.value}
+                  className={`px-md py-xs rounded-full font-mono-data text-mono-data uppercase tracking-widest transition-colors ${
+                    wealthRange === r.value
+                      ? 'bg-surface-container-high text-on-surface border border-border-subtle'
+                      : 'text-text-muted border border-transparent hover:text-on-surface-variant'
+                  }`}
+                >
+                  {r.label}
+                </button>
+              ))}
+            </div>
+            <div className="border-t border-border-subtle mt-sm pt-sm">
+              <BudgetBar usage={budgetUsage} pace={budgetPace} onDefine={() => navigate('/presupuesto')} />
+            </div>
           </BentoCell>
         </Stagger.Item>
 

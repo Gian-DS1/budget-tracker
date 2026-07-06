@@ -92,21 +92,23 @@ export default function StitchCalendar() {
       </div>
 
       <Stagger className="flex flex-col gap-md flex-1 min-h-0">
-        {/* Resumen del mes. En móvil las 3 tarjetas se apilan: a tres columnas
-            un monto grande (RD$ 1,234,567.89) no cabe completo en ~104px. */}
-        <Stagger.Item className="grid grid-cols-1 sm:grid-cols-3 gap-sm sm:gap-md shrink-0">
-          <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.income')}</span>
-            <span className="font-headline-md text-[20px] tracking-tight text-tertiary whitespace-nowrap"><CountUp value={summary.income} format={(n) => `+${fmt(n)}`} /></span>
-          </div>
-          <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.expenses')}</span>
-            <span className="font-headline-md text-[20px] tracking-tight text-accent-error whitespace-nowrap"><CountUp value={summary.expense} format={(n) => `−${fmt(n)}`} /></span>
-          </div>
-          <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-md flex flex-col gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('common.balance')}</span>
-            <span className={`font-headline-md text-[20px] tracking-tight whitespace-nowrap ${summary.balance >= 0 ? 'text-on-surface' : 'text-accent-error'}`}><CountUp value={summary.balance} format={(n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}`} /></span>
-          </div>
+        {/* Resumen del mes. En móvil una sola tarjeta con 3 filas (rótulo a la
+            izquierda, monto a la derecha): un monto grande cabe a todo el ancho
+            y no se gastan ~3 pantallas de scroll en tres tarjetas apiladas. En
+            sm+ vuelven a ser 3 tarjetas lado a lado. */}
+        <Stagger.Item className="shrink-0 max-sm:bg-surface-panel max-sm:border max-sm:border-border-subtle max-sm:rounded-lg max-sm:inner-glow max-sm:divide-y max-sm:divide-border-subtle sm:grid sm:grid-cols-3 sm:gap-md">
+          {[
+            { label: t('common.income'), cls: 'text-tertiary', value: summary.income, format: (n) => `+${fmt(n)}` },
+            { label: t('common.expenses'), cls: 'text-accent-error', value: summary.expense, format: (n) => `−${fmt(n)}` },
+            { label: t('common.balance'), cls: summary.balance >= 0 ? 'text-on-surface' : 'text-accent-error', value: summary.balance, format: (n) => `${n >= 0 ? '+' : '−'}${fmt(Math.abs(n))}` },
+          ].map((s) => (
+            <div key={s.label} className="flex max-sm:items-baseline max-sm:justify-between max-sm:gap-sm max-sm:px-md max-sm:py-sm sm:flex-col sm:gap-xs sm:bg-surface-panel sm:border sm:border-border-subtle sm:rounded-lg sm:inner-glow sm:p-md">
+              <span className="font-mono-data text-mono-data text-text-muted uppercase">{s.label}</span>
+              <span className={`font-headline-md text-[16px] sm:text-[20px] tracking-tight tabular-nums whitespace-nowrap ${s.cls}`}>
+                <CountUp value={s.value} format={s.format} />
+              </span>
+            </div>
+          ))}
         </Stagger.Item>
 
         {/* Grid + detalle */}

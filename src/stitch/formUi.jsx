@@ -25,9 +25,16 @@ export function Field({ label, children, hint, error, extra }) {
   );
 }
 
-export function FormActions({ onCancel, label, disabled }) {
+// `onDelete` (opcional): botón de borrar a la izquierda, para formularios de
+// edición cuyas filas no exponen la acción (p. ej. tarjetas móviles del ledger).
+export function FormActions({ onCancel, label, disabled, onDelete }) {
   return (
     <div className="flex gap-sm justify-end mt-sm">
+      {onDelete && (
+        <button type="button" onClick={onDelete} className="mr-auto px-md py-sm border border-accent-error/40 text-accent-error font-label-sm text-label-sm rounded hover:bg-accent-error/10 flex items-center gap-xs">
+          <MS name="delete" className="!text-[16px]" /> {tr('common.delete')}
+        </button>
+      )}
       <button type="button" onClick={onCancel} className="px-md py-sm border border-border-subtle text-on-surface-variant font-label-sm text-label-sm rounded hover:bg-surface-container-high">{tr('common.cancel')}</button>
       <button type="submit" disabled={disabled} className="px-md py-sm bg-primary text-on-primary font-label-sm text-label-sm uppercase tracking-widest font-bold rounded hover:bg-primary-container inner-glow disabled:opacity-40">{label}</button>
     </div>

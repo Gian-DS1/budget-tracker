@@ -592,12 +592,14 @@ export default function StitchLanding({ onAccess }) {
           >
             <Tilt3D reduce={v.reduce} className="relative">
               <HeroMockup t={t} />
-              <FloatChip reduce={v.reduce} z={56} className="-top-4 -right-3 sm:-right-6 flex items-center gap-sm">
+              {/* En móvil el chip queda al ras del borde del mockup (right-0):
+                  con -right-3 se salía del viewport y se veía cortado. */}
+              <FloatChip reduce={v.reduce} z={56} className="-top-4 right-0 sm:-right-6 flex items-center gap-sm">
                 <span className="w-1.5 h-1.5 rounded-full bg-tertiary status-glow-live" />
                 <span className="font-mono-data text-mono-data text-on-surface uppercase">{t('landing.mockup.biweeklySalary')}</span>
                 <span className="font-headline-md text-[14px] tracking-tight text-tertiary">+$ 85,000</span>
               </FloatChip>
-              <FloatChip reduce={v.reduce} z={40} delay={1.6} className="-bottom-5 -left-3 sm:-left-6 flex items-center gap-sm">
+              <FloatChip reduce={v.reduce} z={40} delay={1.6} className="-bottom-5 left-0 sm:-left-6 flex items-center gap-sm">
                 <MS name="savings" className="text-[16px] text-primary" />
                 <span className="font-mono-data text-mono-data text-on-surface uppercase">{t('landing.mockup.emergencyFund')}</span>
                 <span className="font-headline-md text-[14px] tracking-tight text-primary">72%</span>

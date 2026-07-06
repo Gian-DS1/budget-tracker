@@ -104,7 +104,10 @@ export default function BudgetShell({ level = 'zero' }) {
     <div className="p-md sm:p-margin-safe max-w-[1728px] mx-auto w-full">
       {/* Header */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-xl gap-lg">
-        <div>
+        {/* w-full en móvil: sin él, la columna se encoge al ancho del título y
+            el selector de modos queda corto/descentrado respecto a la tarjeta
+            de período; en md+ vuelve a auto para convivir con el período al lado. */}
+        <div className="w-full md:w-auto min-w-0">
           <div className="flex items-center gap-sm mb-xs">
             <div className={`w-1.5 h-1.5 rounded-full ${meta.dot} live-dot`} />
             <span className="font-mono-data text-mono-data text-on-surface-variant uppercase">{meta.tag}</span>

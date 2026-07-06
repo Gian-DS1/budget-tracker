@@ -516,8 +516,10 @@ export default function StitchLedger() {
             </table>
 
             {/* Lista móvil (&lt;md): tarjetas apiladas, sin scroll horizontal.
-                Checkbox y acciones SIEMPRE visibles (no hay hover en táctil) con
-                hit-area de 44px (tap-target). */}
+                Retícula fija de 4 columnas: checkbox · avatar de emoji (tamaño
+                fijo → todo alinea) · texto en 2 líneas · monto a la derecha.
+                Tocar la tarjeta abre EDITAR (no hay íconos por fila); borrar
+                vive en el modal de edición y en la barra de selección múltiple. */}
             <div className="md:hidden relative z-10">
               <div className="flex items-center gap-lg px-md py-sm border-b border-border-subtle">
                 <SortHeader label={t('transactions.date')} active={sortKey === 'date'} dir={sortDir} onClick={() => toggleSort('date')} />
@@ -537,36 +539,43 @@ export default function StitchLedger() {
                   const inc = t.type === 'income';
                   const isSel = isSelected(t.id);
                   const cb = cashbackById.get(t.id) || 0;
+                  const cat = categories.find((x) => x.id === t.categoryId);
                   return (
-                    <li key={t.id} className={`border-b border-border-subtle last:border-b-0 px-md py-sm flex items-start gap-md ${isSel ? 'bg-primary/[0.06]' : ''}`}>
-                      <input
-                        type="checkbox"
-                        className="stitch-check tap-target mt-[3px]"
-                        checked={isSel}
-                        onChange={() => toggleOne(t.id)}
-                        aria-label={`${tr('screens.ledger.selectTx')} ${t.description || formatDate(t.date)}`}
-                      />
-                      <div className="flex-1 min-w-0">
-                        {/* Todo envuelve (break-words), nada se trunca: la
-                            tarjeta crece a lo alto si el texto es largo. */}
-                        <div className="flex flex-wrap justify-between items-baseline gap-x-sm gap-y-xs">
-                          <span className="text-on-surface font-medium break-words min-w-0 flex-1 basis-[60%]">{t.description || '—'}</span>
-                          <span className={`font-mono-data tabular-nums whitespace-nowrap ml-auto ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
-                            {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}
+                    <li key={t.id} className={`border-b border-border-subtle last:border-b-0 ${isSel ? 'bg-primary/[0.06]' : ''}`}>
+                      <div className="flex items-center gap-sm px-md py-sm">
+                        <input
+                          type="checkbox"
+                          className="stitch-check tap-target shrink-0"
+                          checked={isSel}
+                          onChange={() => toggleOne(t.id)}
+                          aria-label={`${tr('screens.ledger.selectTx')} ${t.description || formatDate(t.date)}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => openEdit(t)}
+                          aria-label={`${tr('common.edit')}: ${t.description || formatDate(t.date)}`}
+                          className="flex-1 min-w-0 flex items-center gap-sm text-left"
+                        >
+                          {/* Avatar de categoría (tamaño fijo): el emoji ya no va
+                              inline con el texto, así las líneas base no chocan. */}
+                          <span className="w-9 h-9 rounded-full bg-surface-container-high border border-border-subtle flex items-center justify-center shrink-0">
+                            {cat ? <Emoji e={cat.icon} size={18} /> : <MS name="receipt_long" className="!text-[16px] text-text-muted" />}
                           </span>
-                        </div>
-                        <div className="flex flex-wrap justify-between items-baseline gap-x-sm gap-y-xs mt-xs font-mono-data text-mono-data text-text-muted">
-                          <span className="break-words min-w-0 normal-case tracking-normal">{formatDate(t.date)} · {catCell(t.categoryId)}</span>
-                          {cb > 0 && <span className="text-tertiary whitespace-nowrap ml-auto normal-case tracking-normal">+{fmt(cb)}</span>}
-                        </div>
-                        {t.notes && <div className="font-mono-data text-mono-data text-text-muted mt-xs break-words normal-case tracking-normal">{t.notes}</div>}
-                        <div className="flex items-center justify-between gap-sm mt-xs">
-                          <TypeChip type={t.type} />
-                          <span className="flex items-center gap-xl">
-                            <button onClick={() => openEdit(t)} className="text-text-muted hover:text-primary p-xs tap-target" aria-label={tr('common.edit')}><MS name="edit" className="text-[18px]" /></button>
-                            <button onClick={() => onDelete(t)} className="text-text-muted hover:text-accent-error p-xs tap-target" aria-label={tr('common.delete')}><MS name="delete" className="text-[18px]" /></button>
+                          <span className="flex-1 min-w-0">
+                            {/* Todo envuelve (break-words), nada se trunca. */}
+                            <span className="block text-on-surface font-medium break-words">{t.description || '—'}</span>
+                            <span className="block font-mono-data text-mono-data text-text-muted normal-case tracking-normal mt-[3px] break-words">
+                              {formatDate(t.date)}{cat ? ` · ${cat.name}` : ''}
+                            </span>
+                            {t.notes && <span className="block font-mono-data text-mono-data text-text-muted normal-case tracking-normal mt-[3px] break-words">{t.notes}</span>}
                           </span>
-                        </div>
+                          <span className="shrink-0 flex flex-col items-end gap-[3px]">
+                            <span className={`font-mono-data tabular-nums whitespace-nowrap ${inc ? 'text-tertiary' : 'text-on-surface'}`}>
+                              {inc ? '+' : '−'}{fmt(Math.abs(Number(t.amount)))}
+                            </span>
+                            {cb > 0 && <span className="font-mono-data text-mono-data text-tertiary normal-case tracking-normal whitespace-nowrap">+{fmt(cb)}</span>}
+                          </span>
+                        </button>
                       </div>
                     </li>
                   );
@@ -644,7 +653,17 @@ export default function StitchLedger() {
                   <span className="font-label-sm text-label-sm text-on-surface-variant">{t('screens.ledger.repeatAutomatically')} ({form.recurrencePattern === 'monthly' ? t('screens.ledger.monthly') : form.recurrencePattern})</span>
                 </label>
               )}
-              <FormActions onCancel={requestClose} label={editing ? t('common.save') : t('screens.ledger.register')} />
+              {/* Al editar, borrar vive aquí (las tarjetas móviles ya no tienen
+                  ícono por fila; en escritorio sigue el basurero al hover). */}
+              <FormActions
+                onCancel={requestClose}
+                label={editing ? t('common.save') : t('screens.ledger.register')}
+                onDelete={editing ? () => {
+                  const tx = transactions.find((x) => x.id === editing);
+                  setShowForm(false);
+                  if (tx) onDelete(tx);
+                } : undefined}
+              />
             </form>
           )}
         </Modal>

@@ -79,11 +79,14 @@ export default function CardItem({ card, transactions, onPay, onHistory, onEdit,
             {bal.spansMultipleCycles && (
               <span className="font-mono-data text-mono-data text-text-muted normal-case tracking-normal block mt-xs">{t('creditCards.multipleMonths')}</span>
             )}
-            <div className="flex items-center justify-between mt-md gap-sm">
+            {/* flex-wrap + nowrap en los botones: si no caben junto al "Abonado",
+                bajan completos a otra línea en vez de partir el rótulo en dos
+                ("PAGAR / TODO"). */}
+            <div className="flex flex-wrap items-center justify-between mt-md gap-sm">
               <span className="font-mono-data text-mono-data text-text-muted">{t('screens.cards.paidSoFar')} {fmt(bal.paid)}</span>
-              <div className="flex gap-sm">
-                <button onClick={() => onPay(card)} className="border border-border-subtle text-primary font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-primary/10 transition-colors">{t('screens.vaults.contribute')}</button>
-                <button onClick={payAll} className="bg-primary text-on-primary font-mono-data text-mono-data uppercase px-sm py-xs rounded hover:bg-primary-container transition-colors">{t('creditCards.payAll')}</button>
+              <div className="flex gap-sm ml-auto">
+                <button onClick={() => onPay(card)} className="whitespace-nowrap border border-border-subtle text-primary font-mono-data text-mono-data uppercase px-sm py-sm sm:py-xs rounded hover:bg-primary/10 transition-colors">{t('screens.vaults.contribute')}</button>
+                <button onClick={payAll} className="whitespace-nowrap bg-primary text-on-primary font-mono-data text-mono-data uppercase px-sm py-sm sm:py-xs rounded hover:bg-primary-container transition-colors">{t('creditCards.payAll')}</button>
               </div>
             </div>
           </>

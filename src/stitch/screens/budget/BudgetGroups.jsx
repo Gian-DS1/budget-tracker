@@ -161,9 +161,11 @@ function GroupCard({ group, categories, monthBudgets, monthTx, onEdit, onDelete 
         ))}
       </div>
 
-      <div className="flex justify-between items-baseline">
-        <span className="font-mono-data text-[15px] text-on-background tracking-tight">{fmt(totals.actual)}</span>
-        <span className="font-mono-data text-mono-data text-text-muted">{t('screens.charts.of')} {fmt(totals.estimated)} {t('screens.budget.groupBudgeted')}</span>
+      {/* flex-wrap + gap: en móvil el rótulo largo baja de línea en vez de
+          pegarse al monto (se veía "RD$ 0.00de RD$ 18,000.00"). */}
+      <div className="flex flex-wrap justify-between items-baseline gap-x-sm gap-y-xs">
+        <span className="font-mono-data text-[15px] text-on-background tracking-tight whitespace-nowrap">{fmt(totals.actual)}</span>
+        <span className="font-mono-data text-mono-data text-text-muted text-right ml-auto">{t('screens.charts.of')} {fmt(totals.estimated)} {t('screens.budget.groupBudgeted')}</span>
       </div>
       <div className="w-full h-1 bg-surface-container-highest rounded-full overflow-hidden">
         <div className={`h-full ${over ? 'bg-accent-error' : 'bg-secondary'}`} style={{ width: `${Math.min(totals.pct, 100)}%` }} />

@@ -1,8 +1,9 @@
-// Tendencia de patrimonio líquido (efectivo + ahorros) ACUMULADO en el tiempo,
-// con estética tipo Robinhood: línea fluida + área de gradiente que se desvanece,
-// sin ejes pesados ni rejilla, scrubbing interactivo (el cursor sigue el mouse y
-// muestra el valor + el mes en un encabezado flotante). Las barras de ingreso/
-// gasto van pequeñas y juntas de fondo, como contexto secundario.
+// Tendencia del EFECTIVO DISPONIBLE acumulado en el tiempo, con estética tipo
+// Robinhood: línea fluida + área de gradiente que se desvanece, sin ejes pesados
+// ni rejilla, scrubbing interactivo (el cursor sigue el mouse y actualiza el
+// hero). El hero es el efectivo disponible (lo gastable HOY); debajo, el
+// desglose de cómo se llega (ahorro + total) y las tarjetas por pagar como
+// aviso. Las barras de ingreso/gasto van pequeñas de fondo, como contexto.
 import { useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, ComposedChart, Bar, Area, XAxis, YAxis, Tooltip, Cell } from 'recharts';
@@ -25,9 +26,10 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
 
   const keyOf = (d) => `${d.y}-${d.m}`;
   // Encabezado: el punto bajo el cursor (scrubbing) o, en reposo, el último mes.
-  const head = (hoverIdx != null && data[hoverIdx]) || data[data.length - 1];
+  const scrubbing = hoverIdx != null && data[hoverIdx];
+  const head = scrubbing || data[data.length - 1];
   // Tendencia del periodo: subió si el último valor ≥ el primero (color de la curva).
-  const up = data[data.length - 1].wealth >= data[0].wealth;
+  const up = data[data.length - 1].cash >= data[0].cash;
   const lineColor = up ? CHART.secondary : CHART.error;
 
   // Clic en cualquier parte de una columna (mes) → fija ese mes como activo.
@@ -39,46 +41,40 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
 
   return (
     <div className="flex flex-col h-72 sm:h-64">
-      {/* Encabezado Robinhood: "mi dinero total" del punto enfocado (cyan, count-up)
-          + su mes, con ingresos/gastos del mes en pequeño debajo; a la derecha, el
-          desglose (efectivo + ahorro) y tarjetas por pagar. Todo anima al hacer
-          scrubbing. flex-wrap: en móvil los bloques laterales bajan de línea en
-          vez de desbordar (cada cifra individual sigue en nowrap). */}
-      <div className="flex flex-wrap items-start justify-between gap-x-md gap-y-xs mb-sm">
-        <div className="min-w-0">
-          <div className="flex items-baseline gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.myMoneyTotal')}</span>
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">· {head.label} {head.y}</span>
-          </div>
-          <div className="font-headline-md text-[22px] tracking-tight tabular-nums whitespace-nowrap" style={{ color: lineColor }}>
-            <CountUp value={head.wealth} format={fmt} duration={240} />
-          </div>
-          {/* Ingresos / gastos del mes, pequeños (como antes). */}
-          <div className="flex items-center gap-md font-mono-data text-mono-data mt-xs whitespace-nowrap">
-            <span className="text-tertiary">↑ <CountUp value={head.income} format={fmt} duration={240} /></span>
-            <span className="text-accent-error">↓ <CountUp value={head.expense} format={fmt} duration={240} /></span>
-          </div>
+      {/* Hero Robinhood: EFECTIVO DISPONIBLE del punto enfocado, en grande y con
+          count-up. El mes solo aparece al hacer scrubbing (en reposo ya lo dice
+          el título de la celda). Debajo, UNA línea de desglose de cómo se llega
+          al número (ahorro + dinero total) y, si hay deuda de tarjetas, un chip
+          ámbar de aviso. flex-wrap: en móvil los pares bajan de línea sin chocar. */}
+      <div className="mb-sm">
+        <div className="flex items-baseline gap-xs font-mono-data text-mono-data text-text-muted uppercase">
+          <span>{t('dashboard.liquidCash')}</span>
+          {scrubbing && <span className="text-primary">· {head.label} {head.y}</span>}
         </div>
-        <div className="flex flex-wrap items-start justify-end gap-x-md gap-y-xs min-w-0">
-          {/* Desglose del total: efectivo disponible + ahorro acumulado. */}
-          <div className="flex flex-col items-end">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.liquidCash')}</span>
-            <span className="font-headline-md text-[14px] tracking-tight tabular-nums text-on-surface whitespace-nowrap">
-              <CountUp value={head.cash} format={fmt} duration={240} />
-            </span>
-          </div>
-          <div className="flex flex-col items-end">
+        <div className="font-headline-md text-[28px] sm:text-[30px] tracking-tight tabular-nums whitespace-nowrap mt-xs" style={{ color: lineColor }}>
+          <CountUp value={head.cash} format={fmt} duration={240} />
+        </div>
+        <div className="flex flex-wrap items-center gap-x-md gap-y-xs mt-xs">
+          <span className="inline-flex items-baseline gap-xs">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.savedTotal')}</span>
-            <span className="font-headline-md text-[14px] tracking-tight tabular-nums text-secondary whitespace-nowrap">
+            <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-secondary whitespace-nowrap">
               <CountUp value={head.savings} format={fmt} duration={240} />
             </span>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.creditCardsPayable')}</span>
-            <span className={`font-headline-md text-[14px] tracking-tight tabular-nums whitespace-nowrap ${head.cardsDue > 0 ? 'text-accent-warning' : 'text-tertiary'}`}>
-              <CountUp value={head.cardsDue} format={fmt} duration={240} />
+          </span>
+          <span className="inline-flex items-baseline gap-xs">
+            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.myMoneyTotal')}</span>
+            <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-on-surface whitespace-nowrap">
+              <CountUp value={head.wealth} format={fmt} duration={240} />
             </span>
-          </div>
+          </span>
+          {head.cardsDue > 0 && (
+            <span className="inline-flex items-baseline gap-xs rounded-full border border-accent-warning/40 bg-accent-warning/5 px-sm py-[3px]">
+              <span className="font-mono-data text-mono-data text-accent-warning uppercase">{t('dashboard.creditCardsPayable')}</span>
+              <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-accent-warning whitespace-nowrap">
+                <CountUp value={head.cardsDue} format={fmt} duration={240} />
+              </span>
+            </span>
+          )}
         </div>
       </div>
 
@@ -107,7 +103,7 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
             <XAxis dataKey="label" tick={{ fill: CHART.muted, fontSize: 10 }} axisLine={false} tickLine={false} interval="preserveStartEnd" minTickGap={24} />
             {/* Ejes Y ocultos: la línea ocupa el alto completo; las barras viven en un
                 eje derecho comprimido para que queden bajas y no compitan con la curva. */}
-            <YAxis yAxisId="wealth" hide domain={['dataMin', 'dataMax']} />
+            <YAxis yAxisId="cash" hide domain={['dataMin', 'dataMax']} />
             <YAxis yAxisId="flow" orientation="right" hide domain={[0, (max) => max * 4]} />
 
             {/* Scrubbing: cursor de línea vertical tenue + activeDot. El valor se
@@ -129,11 +125,12 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
               {data.map((d) => <Cell key={`e-${keyOf(d)}`} fill={CHART.error} fillOpacity={keyOf(d) === activeKey ? 0.9 : 0.4} />)}
             </Bar>
 
-            {/* La protagonista: área de patrimonio líquido con gradiente que se desvanece. */}
+            {/* La protagonista: área del efectivo disponible con gradiente que se
+                desvanece (la misma serie que el hero, para que el scrubbing cuadre). */}
             <Area
-              yAxisId="wealth"
+              yAxisId="cash"
               type="monotone"
-              dataKey="wealth"
+              dataKey="cash"
               stroke={lineColor}
               strokeWidth={2.5}
               fill="url(#wealthFill)"

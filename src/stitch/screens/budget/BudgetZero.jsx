@@ -151,14 +151,14 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
           {/* Pie: el presupuesto se ancla al ingreso RECIBIDO. Mientras no haya
               entrado ingreso, se respalda en el estimado y se avisa con
               "usando estimado". El % es del ingreso ya asignado a un destino. */}
-          <div className="flex flex-wrap justify-between gap-x-md mt-sm">
-            <span className="font-mono-data text-mono-data text-text-muted">
+          <div className="flex flex-wrap items-baseline justify-between gap-x-md gap-y-xs mt-sm">
+            <span className="font-mono-data text-mono-data text-text-muted min-w-0">
               {t('screens.budget.received')} {fmt(summary.ingresoRecibido)}
               {summary.ingresoRecibido === 0 && summary.ingresoEstimado > 0 && (
                 <> · {t('screens.budget.usingEstimate')} {fmt(summary.ingresoEstimado)}</>
               )}
             </span>
-            <span className="font-mono-data text-mono-data text-primary">{assignedPctRaw.toFixed(0)}% {t('screens.budget.assigned').toLowerCase()}</span>
+            <span className="font-mono-data text-mono-data text-primary whitespace-nowrap ml-auto">{assignedPctRaw.toFixed(0)}% {t('screens.budget.assigned').toLowerCase()}</span>
           </div>
           {/* La resta explícita, a la vista: ingreso − comprometido = por asignar. */}
           {summary.ingresoBase > 0 && (
@@ -176,9 +176,13 @@ export default function BudgetZero({ year, month, monthBudgets, monthTx, categor
       {/* Sobres */}
       <div className="bg-surface-panel border border-border-subtle rounded-lg inner-glow p-lg">
         <div className="flex flex-wrap justify-between items-center gap-md mb-lg border-b border-border-subtle pb-sm">
-          {/* flex-wrap + min-w-0: el título con monto puede ser más ancho que un
-              móvil; sin wrap, el InfoTip del final quedaba fuera de pantalla. */}
-          <h2 className="font-mono-data text-mono-data text-on-surface-variant inline-flex flex-wrap items-center gap-xs min-w-0">{t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(assignedExpenses)} {t('screens.budget.assigned').toUpperCase()} <InfoTip text={t('screens.budget.assignedInfo')} /></h2>
+          {/* Flujo inline (no flex): el título largo envuelve como texto normal
+              y el InfoTip va atado a la última palabra (nowrap), así nunca queda
+              huérfano en su propia línea en móvil. */}
+          <h2 className="font-mono-data text-mono-data text-on-surface-variant min-w-0 leading-relaxed">
+            {t('screens.budget.envelopesByCategory').toUpperCase()} · {fmt(assignedExpenses)}{' '}
+            <span className="whitespace-nowrap inline-flex items-center gap-xs align-bottom">{t('screens.budget.assigned').toUpperCase()} <InfoTip text={t('screens.budget.assignedInfo')} /></span>
+          </h2>
           <button onClick={handleCopy} className="flex items-center gap-xs bg-transparent border border-border-subtle text-on-surface font-mono-data text-mono-data uppercase px-md py-xs rounded hover:bg-surface-container-high transition-colors">
             <MS name="content_copy" className="text-[14px]" /> {t('screens.budget.copyPrevMonth')}
           </button>
