@@ -11,7 +11,7 @@ A global personal-finance web app (beta). It replaces spreadsheets with **zero-b
 ## ✨ Features
 
 - **Budget** — progressive levels: Tracking (just log), the 50/30/20 rule, and **zero-based** (assign every dollar by category until "To Assign" reaches 0). Includes **auto-suggestion** from your last 3-month average and a one-click copy of the previous month.
-- **Transactions** — fast entry with auto-categorization (it learns from your history) and **recurring transactions** that create themselves.
+- **Transactions** — fast entry with auto-categorization (it learns from your history) and **recurring transactions** that create themselves. Filter the ledger by search, type, category, date range, and **card used** (including a "no card" option for cash), plus bulk actions and undo.
 - **Credit cards** — automatic statement/payment cycles, rule-based cashback, partial payments, **statement history**, and a card catalog with predefined cashback.
 - **Debts** — balances, interest, payment history with a linked transaction, avalanche strategy, and an estimate of months to payoff.
 - **Savings & goals** — goals with logged contributions (each contribution creates its own linked transaction), projected completion date, optional time horizon (short/medium/long), and history with undo.

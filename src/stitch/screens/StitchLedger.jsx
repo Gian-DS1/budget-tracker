@@ -77,6 +77,7 @@ export default function StitchLedger() {
   const [search, setSearch] = useState('');
   const [filterType, setFilterType] = useState('');
   const [filterCat, setFilterCat] = useState('');
+  const [filterCard, setFilterCard] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [sortKey, setSortKey] = useState('date'); // 'date' | 'amount'
@@ -257,6 +258,9 @@ export default function StitchLedger() {
     if (search) { const q = search.toLowerCase(); r = r.filter((t) => t.description?.toLowerCase().includes(q) || t.notes?.toLowerCase().includes(q)); }
     if (filterType) r = r.filter((t) => t.type === filterType);
     if (filterCat) r = r.filter((t) => t.categoryId === filterCat);
+    // Tarjeta: 'none' filtra las transacciones sin tarjeta (efectivo); cualquier
+    // otro valor es el id de una tarjeta concreta.
+    if (filterCard) r = r.filter((t) => (filterCard === 'none' ? !t.cardId : t.cardId === filterCard));
     if (dateFrom) r = r.filter((t) => t.date >= dateFrom);
     if (dateTo) r = r.filter((t) => t.date <= dateTo);
     const dir = sortDir === 'asc' ? 1 : -1;
@@ -268,14 +272,14 @@ export default function StitchLedger() {
       if (cmp === 0 && sortKey === 'amount') cmp = a.date < b.date ? -1 : a.date > b.date ? 1 : 0;
       return cmp * dir;
     });
-  }, [transactions, search, filterType, filterCat, dateFrom, dateTo, sortKey, sortDir]);
+  }, [transactions, search, filterType, filterCat, filterCard, dateFrom, dateTo, sortKey, sortDir]);
 
   // ── Paginación ──────────────────────────────────────────────────────────────
   // Se renderizan bloques de PAGE_SIZE; "Mostrar más" amplía. Al cambiar filtros
   // u orden se vuelve al primer bloque — ajuste de estado EN RENDER (patrón
   // recomendado por React), sin effect que cause un render en cascada.
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const filterKey = [search, filterType, filterCat, dateFrom, dateTo, sortKey, sortDir].join('|');
+  const filterKey = [search, filterType, filterCat, filterCard, dateFrom, dateTo, sortKey, sortDir].join('|');
   const [prevFilterKey, setPrevFilterKey] = useState(filterKey);
   if (prevFilterKey !== filterKey) {
     setPrevFilterKey(filterKey);
@@ -309,8 +313,8 @@ export default function StitchLedger() {
     else { setSortKey(key); setSortDir('desc'); }
   };
 
-  const hasFilters = search || filterType || filterCat || dateFrom || dateTo;
-  const clearFilters = () => { setSearch(''); setFilterType(''); setFilterCat(''); setDateFrom(''); setDateTo(''); };
+  const hasFilters = search || filterType || filterCat || filterCard || dateFrom || dateTo;
+  const clearFilters = () => { setSearch(''); setFilterType(''); setFilterCat(''); setFilterCard(''); setDateFrom(''); setDateTo(''); };
 
   // ── Selección múltiple ──────────────────────────────────────────────────────
   // La selección efectiva se DERIVA en render como la intersección entre lo
@@ -419,6 +423,24 @@ export default function StitchLedger() {
           compact
           className="w-full min-w-0 sm:w-auto sm:min-w-[200px]"
         />
+        {/* Filtro por tarjeta usada. Solo aparece si el usuario tiene tarjetas
+            (sin ellas no hay nada que filtrar). 'none' = pagado sin tarjeta. En
+            móvil ocupa toda la fila (col-span-2) para no romper la simetría del
+            par tipo/categoría; en sm+ se envuelve como un campo más. */}
+        {cards.length > 0 && (
+          <StitchSelect
+            value={filterCard}
+            onChange={setFilterCard}
+            options={[
+              { value: '', label: strings.ledger.cardFilterAll },
+              { value: 'none', label: t('screens.ledger.noCard') },
+              ...cards.map((c) => ({ value: c.id, label: c.name })),
+            ]}
+            placeholder={strings.ledger.cardFilterAll}
+            compact
+            className="col-span-2 min-w-0 sm:col-auto sm:w-auto sm:min-w-[180px]"
+          />
+        )}
         <div className="col-span-2 grid grid-cols-2 gap-sm sm:flex sm:flex-wrap sm:items-center sm:gap-xs">
           {/* Rótulo encima del campo en móvil (columnas gemelas); en línea en sm+. */}
           <div className="flex flex-col gap-xs sm:flex-row sm:items-center">

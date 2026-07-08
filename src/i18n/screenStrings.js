@@ -35,6 +35,7 @@ export const SCREEN_STRINGS = {
     newTransaction: 'common.newTransaction',
     typeFilterAll: 'common.allTypes',
     categoryFilterAll: 'common.allCategories',
+    cardFilterAll: 'common.allCards',
     transactionsUpdated: 'screens.ledger.transactionsUpdated',
   },
 
