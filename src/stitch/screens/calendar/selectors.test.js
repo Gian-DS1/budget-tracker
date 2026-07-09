@@ -65,15 +65,17 @@ describe('getMonthSummary', () => {
 
 describe('getUpcoming', () => {
   const now = new Date(2026, 5, 10);
-  it('ordena por fecha ascendente y excluye pasados', () => {
+  it('ordena por fecha ascendente y rueda al próximo mes los pagos ya vencidos', () => {
     const debts = [
       { creditorName: 'A', monthlyPayment: 1, due_date: '2026-06-20', status: 'active' },
-      { creditorName: 'B', monthlyPayment: 1, due_date: '2026-06-05', status: 'active' }, // pasado
+      { creditorName: 'B', monthlyPayment: 1, due_date: '2026-06-05', status: 'active' }, // ya pasó → rueda a jul 05
       { creditorName: 'C', monthlyPayment: 1, due_date: '2026-06-15', status: 'active' },
     ];
     const list = getUpcoming({ debts, cards: [], goals: [], recurring: [] }, now, [], 30);
-    expect(list.map((x) => x.label)).toEqual(['C', 'A']); // 15 antes que 20; 05 excluido
+    // C (jun 15) y A (jun 20) siguen este mes; B rodó a jul 05 y aparece al final.
+    expect(list.map((x) => x.label)).toEqual(['C', 'A', 'B']);
     expect(list[0].daysUntil).toBe(5);
+    expect(list.find((x) => x.label === 'B').date).toBe('2026-07-05');
   });
   it('respeta la ventana de N días', () => {
     const debts = [{ creditorName: 'Lejos', monthlyPayment: 1, due_date: '2026-08-01', status: 'active' }];

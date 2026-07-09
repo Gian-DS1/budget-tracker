@@ -15,6 +15,7 @@ import {
   getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
 } from '../../utils/calculations';
 import { getCardBalances } from '../../utils/creditCards';
+import { nextMonthlyOccurrence } from '../../utils/recurrence';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
 import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getCumulativeLiquidWealth } from './dashboard/selectors';
@@ -127,10 +128,12 @@ export default function StitchDashboard() {
       out.push({ days, tag: t('dashboard.cardToPay'), tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${card.name}: ${fmt(bal.pendingBilled)} ${t('dashboard.dueOn')} ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
     });
     debts.filter((d) => d.status === 'active' && d.due_date).forEach((d) => {
-      const due = new Date(String(d.due_date).slice(0, 10) + 'T00:00:00');
+      // Próxima fecha de pago anclada a hoy: si el día ya pasó, rueda al mes siguiente.
+      const nextDueISO = nextMonthlyOccurrence(d.due_date, now);
+      const due = new Date(nextDueISO + 'T00:00:00');
       const days = Math.round((due - todayMid) / 86400000);
       if (days < 0 || days > 14) return;
-      out.push({ days, tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment))}.`, to: '/deudas' });
+      out.push({ days, tag: t('dashboard.debtInstallment'), tc: 'text-accent-error', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${d.creditorName}: ${fmt(Number(d.monthlyPayment))} ${t('dashboard.dueOn')} ${formatDate(nextDueISO)}.`, to: '/deudas' });
     });
     goals.filter((g) => g.status !== 'completed' && g.deadline).forEach((g) => {
       const due = new Date(g.deadline + 'T00:00:00');

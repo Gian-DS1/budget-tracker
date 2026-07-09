@@ -2,6 +2,7 @@
 // devuelven mapas/listas por día. ISO local (sin toISOString).
 import { getEffectiveAmount } from '../../../utils/calculations';
 import { getCardBalances } from '../../../utils/creditCards';
+import { nextMonthlyOccurrence } from '../../../utils/recurrence';
 import { tr } from '../../../i18n/runtime';
 
 const EXPENSE_TYPES = ['expense', 'fixed_expense', 'variable_expense'];
@@ -38,8 +39,11 @@ export function getDueEvents({ debts = [], cards = [], goals = [], recurring = [
   const push = (day, ev) => { (map[day] = map[day] || []).push(ev); };
 
   debts.forEach((d) => {
-    if (d.status !== 'active' || !d.due_date || !inMonth(d.due_date, year, month)) return;
-    push(dayOf(d.due_date), { type: 'deuda', label: d.creditorName, amount: Number(d.monthlyPayment) || 0, color: COLOR.deuda, to: TO.deuda });
+    if (d.status !== 'active' || !d.due_date) return;
+    // Próxima fecha de pago anclada a hoy: si el día ya pasó, rueda al mes que sigue.
+    const nextDue = nextMonthlyOccurrence(d.due_date, now);
+    if (!inMonth(nextDue, year, month)) return;
+    push(dayOf(nextDue), { type: 'deuda', label: d.creditorName, amount: Number(d.monthlyPayment) || 0, color: COLOR.deuda, to: TO.deuda });
   });
 
   cards.forEach((c) => {
@@ -87,7 +91,7 @@ export function getUpcoming({ debts = [], cards = [], goals = [], recurring = []
     out.push({ date: String(iso).slice(0, 10), daysUntil, type, label, amount, color: COLOR[type], to: TO[type] });
   };
 
-  debts.forEach((d) => { if (d.status === 'active') add(d.due_date, 'deuda', d.creditorName, Number(d.monthlyPayment) || 0); });
+  debts.forEach((d) => { if (d.status === 'active') add(nextMonthlyOccurrence(d.due_date, now), 'deuda', d.creditorName, Number(d.monthlyPayment) || 0); });
   cards.forEach((c) => {
     const bal = getCardBalances(c, transactions, now);
     if (bal && !bal.isPaid && (bal.pendingBilled || 0) > 0) add(bal.cycles?.dueDateISO, 'tarjeta', c.name, bal.pendingBilled);
