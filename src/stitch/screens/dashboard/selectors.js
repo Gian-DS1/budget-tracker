@@ -190,7 +190,8 @@ function cashEffect(t) {
 // hacia atrás desde ese total real, restando los aportes (savings) posteriores al
 // cierre del mes — así el mes actual cuadra con la pestaña de Ahorros y el histórico
 // tiene sentido. Devuelve [{ label, y, m, income, expense, cash, savings, wealth,
-// savingsRate, cardsDue }] donde wealth = cash + savings.
+// savingsRate, cardsDue }] donde wealth = cash + savings − cardsDue (patrimonio
+// neto líquido: descuenta la deuda de tarjetas por pagar).
 export function getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate = new Date(), cards = [], currentSavings = 0) {
   const txs = transactions || [];
   // Meses disponibles desde el primer dato hasta refDate (incluidos).
@@ -245,7 +246,13 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
     const cardsDue = (cards || []).reduce(
       (sum, c) => sum + (getCardBalances(c, txs, monthRef).pendingBilled || 0), 0,
     );
-    return { label: monthShort(m), y, m, income, expense, cash, savings, wealth: cash + savings, savingsRate, cardsDue };
+    // Dinero total = patrimonio neto LÍQUIDO: efectivo + ahorro − tarjetas por
+    // pagar. Restar la deuda de tarjetas evita que "Mi dinero total" iguale al
+    // "Efectivo disponible" cuando no hay ahorro, y refleja lo que de verdad
+    // queda tras saldar lo facturado. No topa en 0: si debes más de lo que
+    // tienes, el neto puede ser negativo (señal honesta).
+    const wealth = cash + savings - cardsDue;
+    return { label: monthShort(m), y, m, income, expense, cash, savings, wealth, savingsRate, cardsDue };
   });
 }
 

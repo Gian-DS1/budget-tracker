@@ -11,6 +11,8 @@ import { formatCurrency } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
 import CountUp from '../../CountUp';
+import MS from '../../MS';
+import { InfoTip } from '../../InfoTip';
 
 const fmt = (n) => formatCurrency(n);
 
@@ -29,8 +31,16 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
   const scrubbing = hoverIdx != null && data[hoverIdx];
   const head = scrubbing || data[data.length - 1];
   // Tendencia del periodo: subió si el último valor ≥ el primero (color de la curva).
-  const up = data[data.length - 1].cash >= data[0].cash;
+  const first = data[0].cash;
+  const last = data[data.length - 1].cash;
+  const up = last >= first;
   const lineColor = up ? CHART.secondary : CHART.error;
+  // Variación % del efectivo en el periodo, para el chip de tendencia. Separa la
+  // dirección (color) del monto (que se muestra en neutro, no como alerta).
+  const trendPct = first !== 0 ? ((last - first) / Math.abs(first)) * 100 : 0;
+  // Sin base (first === 0) el % no tiene sentido: se oculta el chip en vez de
+  // mostrar un "+0.0%" engañoso.
+  const showTrend = data.length > 1 && first !== 0 && first !== last;
 
   // Clic en cualquier parte de una columna (mes) → fija ese mes como activo.
   const handleClick = (state) => {
@@ -41,40 +51,88 @@ export default function WealthTrendChart({ data, activeKey, onBarClick }) {
 
   return (
     <div className="flex flex-col h-72 sm:h-64">
-      {/* Hero Robinhood: EFECTIVO DISPONIBLE del punto enfocado, en grande y con
-          count-up. El mes solo aparece al hacer scrubbing (en reposo ya lo dice
-          el título de la celda). Debajo, UNA línea de desglose de cómo se llega
-          al número (ahorro + dinero total) y, si hay deuda de tarjetas, un chip
-          ámbar de aviso. flex-wrap: en móvil los pares bajan de línea sin chocar. */}
+      {/* Hero: EFECTIVO DISPONIBLE del punto enfocado, en grande y NEUTRO (el color
+          por tendencia migró a un chip aparte, para que el número no se lea como
+          alerta). Debajo, dos bloques rotulados: FLUJO DEL MES (ingresos vs gastos,
+          con los colores de las barras) y PATRIMONIO (ahorro · tarjetas por pagar ·
+          mi dinero total). Cada término confuso lleva un ⓘ que explica de dónde
+          sale. flex-wrap: en móvil los pares bajan de línea sin chocar. */}
       <div className="mb-sm">
-        <div className="flex items-baseline gap-xs font-mono-data text-mono-data text-text-muted uppercase">
-          <span>{t('dashboard.liquidCash')}</span>
-          {scrubbing && <span className="text-primary">· {head.label} {head.y}</span>}
+        <div className="flex items-center justify-between gap-sm">
+          <span className="flex items-baseline gap-xs font-mono-data text-mono-data text-text-muted uppercase min-w-0">
+            <span className="inline-flex items-center gap-[3px] shrink-0">
+              {t('dashboard.liquidCash')}
+              <InfoTip text={t('dashboard.liquidCashInfo')} />
+            </span>
+            {scrubbing && <span className="text-primary whitespace-nowrap">· {head.label} {head.y}</span>}
+          </span>
+          {showTrend && (
+            <span
+              className="inline-flex items-center gap-[2px] font-mono-data text-mono-data tabular-nums whitespace-nowrap shrink-0"
+              style={{ color: lineColor }}
+            >
+              <MS name={up ? 'trending_up' : 'trending_down'} className="!text-[13px]" />
+              {up ? '+' : '−'}{Math.abs(trendPct).toFixed(1)}%
+            </span>
+          )}
         </div>
-        <div className="font-headline-md text-[28px] sm:text-[30px] tracking-tight tabular-nums whitespace-nowrap mt-xs" style={{ color: lineColor }}>
+        <div className="font-headline-md text-[28px] sm:text-[30px] tracking-tight tabular-nums whitespace-nowrap mt-xs text-on-surface">
           <CountUp value={head.cash} format={fmt} duration={240} />
         </div>
-        <div className="flex flex-wrap items-center gap-x-md gap-y-xs mt-xs">
+
+        {/* Flujo del mes: ingresos vs gastos. Los puntos usan el color de las
+            barras del gráfico (lima = ingreso, rojo = gasto) para que el usuario
+            asocie de un vistazo qué barra es cuál. */}
+        <div className="flex flex-wrap items-center gap-x-md gap-y-xs mt-sm">
+          <span className="inline-flex items-baseline gap-xs">
+            <span className="inline-flex items-center gap-[4px] font-mono-data text-mono-data text-text-muted uppercase">
+              <span className="w-2 h-2 rounded-full bg-tertiary shrink-0" />
+              {t('dashboard.income')}
+            </span>
+            <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-tertiary whitespace-nowrap">
+              +<CountUp value={head.income} format={fmt} duration={240} />
+            </span>
+          </span>
+          <span className="inline-flex items-baseline gap-xs">
+            <span className="inline-flex items-center gap-[4px] font-mono-data text-mono-data text-text-muted uppercase">
+              <span className="w-2 h-2 rounded-full bg-accent-error shrink-0" />
+              {t('dashboard.expenses')}
+            </span>
+            <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-accent-error whitespace-nowrap">
+              −<CountUp value={head.expense} format={fmt} duration={240} />
+            </span>
+          </span>
+        </div>
+
+        {/* Patrimonio: cómo se llega a "Mi dinero total" = efectivo + ahorro −
+            tarjetas por pagar. El total va resaltado (periwinkle) como resultado. */}
+        <div className="flex flex-wrap items-center gap-x-md gap-y-xs mt-sm pt-sm border-t border-border-subtle">
           <span className="inline-flex items-baseline gap-xs">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.savedTotal')}</span>
             <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-secondary whitespace-nowrap">
               <CountUp value={head.savings} format={fmt} duration={240} />
             </span>
           </span>
-          <span className="inline-flex items-baseline gap-xs">
-            <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.myMoneyTotal')}</span>
-            <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-on-surface whitespace-nowrap">
-              <CountUp value={head.wealth} format={fmt} duration={240} />
-            </span>
-          </span>
           {head.cardsDue > 0 && (
-            <span className="inline-flex items-baseline gap-xs rounded-full border border-accent-warning/40 bg-accent-warning/5 px-sm py-[3px]">
-              <span className="font-mono-data text-mono-data text-accent-warning uppercase">{t('dashboard.creditCardsPayable')}</span>
+            <span className="inline-flex items-baseline gap-xs">
+              <span className="inline-flex items-center gap-[3px] font-mono-data text-mono-data text-accent-warning uppercase">
+                {t('dashboard.creditCardsPayable')}
+                <InfoTip text={t('dashboard.creditCardsPayableInfo')} />
+              </span>
               <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-accent-warning whitespace-nowrap">
-                <CountUp value={head.cardsDue} format={fmt} duration={240} />
+                −<CountUp value={head.cardsDue} format={fmt} duration={240} />
               </span>
             </span>
           )}
+          <span className="inline-flex items-baseline gap-xs">
+            <span className="inline-flex items-center gap-[3px] font-mono-data text-mono-data text-on-surface-variant uppercase font-medium">
+              {t('dashboard.myMoneyTotal')}
+              <InfoTip text={t('dashboard.myMoneyTotalInfo')} />
+            </span>
+            <span className="font-headline-md text-[15px] tracking-tight tabular-nums text-primary whitespace-nowrap">
+              <CountUp value={head.wealth} format={fmt} duration={240} />
+            </span>
+          </span>
         </div>
       </div>
 

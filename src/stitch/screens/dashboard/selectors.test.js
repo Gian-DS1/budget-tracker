@@ -330,6 +330,23 @@ describe('getCumulativeLiquidWealth', () => {
     expect(sinCards[0].cardsDue).toBe(0);
   });
 
+  it('el dinero total (wealth) DESCUENTA las tarjetas por pagar', () => {
+    // Regresión: "Mi dinero total" mostraba lo mismo que "Efectivo disponible"
+    // cuando el ahorro era 0, porque no restaba la deuda de tarjetas. El dinero
+    // total es patrimonio neto líquido = efectivo + ahorro − tarjetas por pagar.
+    // openingBalance = deuda previa → pendingBilled fijo, sin mover el efectivo.
+    const txs = [t(10000, 'income', '2026-03-02')];
+    const cards = [{ id: 'cc1', cutoffDay: 25, dueDay: 5, openingBalance: 5000, payments: [] }];
+    const r = getCumulativeLiquidWealth(txs, 0, 1, ref, cards, 0);
+    const mar = r[r.length - 1];
+    expect(mar.cash).toBe(10000);     // el saldo de apertura no toca el efectivo
+    expect(mar.savings).toBe(0);
+    expect(mar.cardsDue).toBe(5000);
+    // wealth ≠ cash: descuenta lo que se debe en tarjetas (10000 + 0 − 5000).
+    expect(mar.wealth).toBe(5000);
+    expect(mar.wealth).not.toBe(mar.cash);
+  });
+
   it('incluye income y expense del mes en cada punto (para las barras)', () => {
     const txs = [t(5000, 'income', '2026-03-02'), t(1200, 'variable_expense', '2026-03-09')];
     const r = getCumulativeLiquidWealth(txs, 0, 1, ref);
