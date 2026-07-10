@@ -256,6 +256,31 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
   });
 }
 
+// Ventana (en días) para recordar una tarjeta por pagar en el Resumen. El
+// estado de cuenta suele vencer ~25 días después del corte (p. ej. corte el 1,
+// pago el 26), así que 14 días dejaba fuera tarjetas recién facturadas. 30 días
+// alinea la ventana con la de las metas y avisa desde que la tarjeta se factura.
+export const CARD_REMINDER_WINDOW_DAYS = 30;
+
+// Recordatorios de tarjetas por pagar (puro). Una entrada por tarjeta con saldo
+// facturado pendiente (pendingBilled > 0, no pagada) cuyo pago vence dentro de
+// la ventana [0, windowDays] días desde refDate. Ordenable por `days` (asc = más
+// urgente). Devuelve [{ cardName, amount, dueDateISO, days }]. La capa de UI le
+// pone rótulos, colores e i18n; aquí solo va la regla de qué recordar y cuándo.
+export function getCardReminders(cards, transactions, refDate = new Date(), windowDays = CARD_REMINDER_WINDOW_DAYS) {
+  const todayMid = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+  const out = [];
+  for (const card of cards || []) {
+    const bal = getCardBalances(card, transactions, refDate);
+    if (bal.isPaid || bal.pendingBilled <= 0) continue;
+    const due = new Date(bal.cycles.dueDateISO + 'T00:00:00');
+    const days = Math.round((due - todayMid) / 86400000);
+    if (days < 0 || days > windowDays) continue;
+    out.push({ cardName: card.name, amount: bal.pendingBilled, dueDateISO: bal.cycles.dueDateISO, days });
+  }
+  return out;
+}
+
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.
 export function getNetWorthSplit(totalSaved, totalDebt) {
   const saved = Number(totalSaved) || 0;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getCashShortfall, canAffordPayment } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getCashShortfall, canAffordPayment, getCardReminders } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -353,6 +353,40 @@ describe('getCumulativeLiquidWealth', () => {
     const mar = r[r.length - 1];
     expect(mar.income).toBe(5000);
     expect(mar.expense).toBe(1200);
+  });
+});
+
+describe('getCardReminders', () => {
+  const ref = new Date('2026-07-10T00:00:00');
+  // Tarjeta con corte el 1 y pago el 26: su estado cierra el 1 jul y vence el
+  // 26 jul → 16 días desde hoy (10 jul). openingBalance = saldo por pagar.
+  const santaCruz = { id: 'sc', name: 'Visa Bravo', cutoffDay: 1, dueDay: 26, openingBalance: 9527.85, payments: [], paidCycles: [] };
+
+  it('recuerda una tarjeta cuyo pago vence en 16 días (más allá de 14)', () => {
+    // Regresión: la ventana de 14 días dejaba fuera tarjetas que vencen entre 15
+    // y 30 días (p. ej. Santa Cruz, corte el 1 / pago el 26), así que NO salían
+    // en Recordatorios. Con la ventana corregida (30) sí aparece.
+    const r = getCardReminders([santaCruz], [], ref);
+    expect(r).toHaveLength(1);
+    expect(r[0].cardName).toBe('Visa Bravo');
+    expect(r[0].days).toBe(16);
+    expect(r[0].amount).toBeCloseTo(9527.85);
+    expect(r[0].dueDateISO).toBe('2026-07-26');
+  });
+
+  it('omite tarjetas ya pagadas (sin saldo facturado pendiente)', () => {
+    const paid = { id: 'p', name: 'Qik', cutoffDay: 1, dueDay: 26, openingBalance: 0, payments: [], paidCycles: [] };
+    expect(getCardReminders([paid], [], ref)).toHaveLength(0);
+  });
+
+  it('omite tarjetas cuyo pago ya venció (days < 0)', () => {
+    // Corte el 1, pago el 5 → venció el 5 jul (hace 5 días).
+    const overdue = { id: 'o', name: 'Vencida', cutoffDay: 1, dueDay: 5, openingBalance: 1000, payments: [], paidCycles: [] };
+    expect(getCardReminders([overdue], [], ref)).toHaveLength(0);
+  });
+
+  it('respeta la ventana explícita: 16 días queda fuera con windowDays = 14', () => {
+    expect(getCardReminders([santaCruz], [], ref, 14)).toHaveLength(0);
   });
 });
 

@@ -14,11 +14,10 @@ import useCreditCardStore from '../../stores/useCreditCardStore';
 import {
   getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
 } from '../../utils/calculations';
-import { getCardBalances } from '../../utils/creditCards';
 import { nextMonthlyOccurrence } from '../../utils/recurrence';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getCumulativeLiquidWealth } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getCumulativeLiquidWealth, getCardReminders } from './dashboard/selectors';
 import { BentoCell } from './dashboard/dashboardUi';
 import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
@@ -119,13 +118,8 @@ export default function StitchDashboard() {
   const signals = useMemo(() => {
     const out = [];
     const todayMid = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    cards.forEach((card) => {
-      const bal = getCardBalances(card, transactions, now);
-      if (bal.isPaid || bal.pendingBilled <= 0) return;
-      const due = new Date(bal.cycles.dueDateISO + 'T00:00:00');
-      const days = Math.round((due - todayMid) / 86400000);
-      if (days < 0 || days > 14) return;
-      out.push({ days, tag: t('dashboard.cardToPay'), tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${card.name}: ${fmt(bal.pendingBilled)} ${t('dashboard.dueOn')} ${formatDate(bal.cycles.dueDateISO)}.`, to: '/tarjetas' });
+    getCardReminders(cards, transactions, now).forEach(({ cardName, amount, dueDateISO, days }) => {
+      out.push({ days, tag: t('dashboard.cardToPay'), tc: days <= 2 ? 'text-accent-error' : 'text-accent-warning', t: days === 0 ? t('calendar.today').toUpperCase() : t('dashboard.inDays').replace('{d}', days), body: `${cardName}: ${fmt(amount)} ${t('dashboard.dueOn')} ${formatDate(dueDateISO)}.`, to: '/tarjetas' });
     });
     debts.filter((d) => d.status === 'active' && d.due_date).forEach((d) => {
       // Próxima fecha de pago anclada a hoy: si el día ya pasó, rueda al mes siguiente.
