@@ -281,6 +281,16 @@ export function getCardReminders(cards, transactions, refDate = new Date(), wind
   return out;
 }
 
+// Config del número grande del hero según el tipo de gráfico elegido. En 'bars'
+// el protagonista es el patrimonio neto líquido (wealth), como el hero de Whisper
+// Money; en 'line' (o cualquier otro valor) es el efectivo disponible (cash).
+// Devuelve la clave del dato y las claves i18n de rótulo e info del tooltip.
+export function getHeroMetric(chartType) {
+  return chartType === 'bars'
+    ? { key: 'wealth', labelKey: 'dashboard.netWorth', infoKey: 'dashboard.myMoneyTotalInfo' }
+    : { key: 'cash', labelKey: 'dashboard.liquidCash', infoKey: 'dashboard.liquidCashInfo' };
+}
+
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.
 export function getNetWorthSplit(totalSaved, totalDebt) {
   const saved = Number(totalSaved) || 0;

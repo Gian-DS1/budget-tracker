@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getCashShortfall, canAffordPayment, getCardReminders } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getCashShortfall, canAffordPayment, getCardReminders, getHeroMetric } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -387,6 +387,21 @@ describe('getCardReminders', () => {
 
   it('respeta la ventana explícita: 16 días queda fuera con windowDays = 14', () => {
     expect(getCardReminders([santaCruz], [], ref, 14)).toHaveLength(0);
+  });
+});
+
+describe('getHeroMetric', () => {
+  it('bars → patrimonio neto (wealth) con su rótulo e info', () => {
+    expect(getHeroMetric('bars')).toEqual({ key: 'wealth', labelKey: 'dashboard.netWorth', infoKey: 'dashboard.myMoneyTotalInfo' });
+  });
+
+  it('line → efectivo disponible (cash)', () => {
+    expect(getHeroMetric('line')).toEqual({ key: 'cash', labelKey: 'dashboard.liquidCash', infoKey: 'dashboard.liquidCashInfo' });
+  });
+
+  it('cualquier valor distinto de bars cae en efectivo (default seguro)', () => {
+    expect(getHeroMetric(undefined).key).toBe('cash');
+    expect(getHeroMetric('otro').key).toBe('cash');
   });
 });
 

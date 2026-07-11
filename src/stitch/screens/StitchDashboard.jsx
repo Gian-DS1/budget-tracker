@@ -79,6 +79,8 @@ export default function StitchDashboard() {
   // Los gastos con tarjeta NO restan del efectivo; los pagos de tarjeta sí.
   const demo = isDemoActive();
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
+  const dashboardChartType = usePrefsStore((s) => s.dashboardChartType);
+  const setDashboardChartType = usePrefsStore((s) => s.setDashboardChartType);
 
   // Rango del gráfico de tendencia: 3 meses / 1 año / todo el tiempo. Siempre
   // termina en el mes actual (now) y arranca a lo sumo en la primera transacción.
@@ -160,10 +162,12 @@ export default function StitchDashboard() {
       )}
 
       <Stagger data-tour="dashboard-grid" className="grid grid-cols-2 md:grid-cols-12 gap-sm auto-rows-min">
-        {/* 1 · Mi dinero (HERO, col-7) + Donut (col-5) lado a lado. Jerarquía:
-            título único → hero (efectivo disponible) + gráfico → pills de rango
-            → barra de presupuesto al pie (el hero siempre primero). */}
-        <Stagger.Item className="col-span-2 md:col-span-7">
+        {/* 1 · HERO a TODO EL ANCHO (col-12): el gráfico del patrimonio es el
+            protagonista y ocupa toda la página (estilo Whisper). Jerarquía:
+            título → hero (número + toggle) + gráfico grande → pills de rango →
+            barra de presupuesto al pie. Debajo, en su propia fila, las tarjetas
+            de apoyo (donut, salud, recordatorios). */}
+        <Stagger.Item className="col-span-2 md:col-span-12">
           <BentoCell className="h-full">
             <div className="flex justify-between items-center border-b border-border-subtle pb-sm mb-sm gap-sm">
               <span className="font-mono-data text-mono-data text-on-surface-variant uppercase flex items-center gap-xs min-w-0">
@@ -176,6 +180,8 @@ export default function StitchDashboard() {
               data={wealthSeries}
               activeKey={`${y}-${m}`}
               onBarClick={(d) => setSel({ y: d.y, m: d.m })}
+              chartType={dashboardChartType}
+              onChartType={setDashboardChartType}
             />
             <div className="flex justify-center gap-xs mt-sm">
               {rangeOptions.map((r) => (
@@ -201,21 +207,21 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* Donut de gastos AL LADO del flujo (col-5). */}
-        <Stagger.Item className="col-span-2 md:col-span-5">
+        {/* 2 · Fila de apoyo bajo el hero: tres tarjetas iguales (col-4 c/u en
+            escritorio; apiladas en móvil) — En qué gasto · Salud · Recordatorios. */}
+        <Stagger.Item className="col-span-2 md:col-span-4">
           <BentoCell title={t('dashboard.whereSpend')} icon="donut_small" className="h-full">
             <CategoryDonut data={breakdown} compact />
           </BentoCell>
         </Stagger.Item>
 
-        {/* 3 · Salud financiera (col-7, compacta horizontal) + Recordatorios (col-5). */}
-        <Stagger.Item className="col-span-2 md:col-span-7">
+        <Stagger.Item className="col-span-2 md:col-span-4">
           <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="h-full">
             <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} compact />
           </BentoCell>
         </Stagger.Item>
 
-        <Stagger.Item className="col-span-2 md:col-span-5">
+        <Stagger.Item className="col-span-2 md:col-span-4">
           <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>

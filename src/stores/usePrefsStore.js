@@ -35,6 +35,11 @@ const usePrefsStore = create(
       // Efectivo líquido inicial declarado por el usuario (modo demo). NO se
       // persiste (no está en partialize) ni se sincroniza a Supabase en esta fase.
       initialCashBalance: 0,
+      // Tipo de gráfico del hero del Resumen: 'bars' (patrimonio neto, estilo
+      // Whisper) o 'line' (efectivo, área/línea). Es una preferencia de vista:
+      // vive solo en el caché local (no toca Supabase), sobrevive a la navegación
+      // dentro de la sesión. Default 'bars'.
+      dashboardChartType: 'bars',
 
       /** Carga prefs desde Supabase (si hay sesión). Sin sesión deja el caché. */
       fetchPrefs: async () => {
@@ -126,6 +131,11 @@ const usePrefsStore = create(
         }
       },
 
+      /** Cambia el tipo de gráfico del hero. Solo caché local (preferencia de vista). */
+      setDashboardChartType: (type) => {
+        if (type === 'bars' || type === 'line') set({ dashboardChartType: type });
+      },
+
       /** Fija el efectivo inicial (optimista). En demo solo caché; con sesión upsert. */
       setInitialCashBalance: async (amount) => {
         const value = Number(amount) || 0;
@@ -146,7 +156,7 @@ const usePrefsStore = create(
     {
       name: 'fintrack-prefs-cache',
       storage: createJSONStorage(() => sessionStorage),
-      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen, currency: state.currency, initialCashBalance: state.initialCashBalance }),
+      partialize: (state) => ({ budgetLevel: state.budgetLevel, tutorialSeen: state.tutorialSeen, currency: state.currency, initialCashBalance: state.initialCashBalance, dashboardChartType: state.dashboardChartType }),
       onRehydrateStorage: () => (state) => { if (state?.currency) setRuntimeCurrency(state.currency); },
     },
   ),
