@@ -11,9 +11,7 @@ import useDebtStore from '../../stores/useDebtStore';
 import useCategoryStore from '../../stores/useCategoryStore';
 import useBudgetStore from '../../stores/useBudgetStore';
 import useCreditCardStore from '../../stores/useCreditCardStore';
-import {
-  getBudgetSummary, getMonthlySavingCapacity, getFinancialHealthScore,
-} from '../../utils/calculations';
+import { getBudgetSummary } from '../../utils/calculations';
 import { nextMonthlyOccurrence } from '../../utils/recurrence';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
@@ -22,7 +20,6 @@ import { BentoCell } from './dashboard/dashboardUi';
 import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
 import BudgetBar from './dashboard/BudgetBar';
-import HealthRing from './dashboard/HealthRing';
 import SignalsRail from './dashboard/SignalsRail';
 import usePrefsStore from '../../stores/usePrefsStore';
 import { isDemoActive } from '../demoMode';
@@ -45,7 +42,7 @@ export default function StitchDashboard() {
 
   // Mes seleccionado (estado). Inicia en el mes actual; el selector permite
   // revisar meses pasados. Solo afecta las métricas MENSUALES; patrimonio,
-  // tarjetas, salud y recordatorios siguen siendo de hoy.
+  // tarjetas y recordatorios siguen siendo de hoy.
   const [sel, setSel] = useState(() => ({ y: now.getFullYear(), m: now.getMonth() }));
   const y = sel.y;
   const m = sel.m;
@@ -108,13 +105,6 @@ export default function StitchDashboard() {
     dayOfMonth: now.getDate(),
     daysInMonth: new Date(y, m + 1, 0).getDate(),
   }), [budgetUsage, isCurrentMonth, now, y, m]);
-
-  // Salud (reusa utils probadas). includeCurrent=true: cuenta el mes en curso +
-  // los anteriores, para que reaccione en vivo a lo registrado hoy sin mentir
-  // (un mes parcial pesa como un mes más en el promedio, no lo dispara).
-  const cap = useMemo(() => getMonthlySavingCapacity(transactions, now, 3, true), [transactions, now]);
-  const health = useMemo(() => getFinancialHealthScore({ avgIncome: cap.avgIncome, avgExpense: cap.avgExpense, monthlyDebt: getTotalMonthlyPayment() }), [cap, getTotalMonthlyPayment]);
-  const healthHasData = cap.avgIncome > 0;
 
   // Recordatorios (siempre de HOY, no del mes seleccionado).
   const signals = useMemo(() => {
@@ -207,21 +197,16 @@ export default function StitchDashboard() {
           </BentoCell>
         </Stagger.Item>
 
-        {/* 2 · Fila de apoyo bajo el hero: tres tarjetas iguales (col-4 c/u en
-            escritorio; apiladas en móvil) — En qué gasto · Salud · Recordatorios. */}
-        <Stagger.Item className="col-span-2 md:col-span-4">
+        {/* 2 · Fila de apoyo bajo el hero: dos tarjetas simétricas (col-6 c/u en
+            escritorio; apiladas en móvil) — En qué gasto · Recordatorios. El donut
+            usa su layout horizontal (dona + leyenda al lado) para llenar el ancho. */}
+        <Stagger.Item className="col-span-2 md:col-span-6">
           <BentoCell title={t('dashboard.whereSpend')} icon="donut_small" className="h-full">
-            <CategoryDonut data={breakdown} compact />
+            <CategoryDonut data={breakdown} />
           </BentoCell>
         </Stagger.Item>
 
-        <Stagger.Item className="col-span-2 md:col-span-4">
-          <BentoCell title={`${t('dashboard.financialHealth')} · ${t('calendar.today')}`} icon="favorite" className="h-full">
-            <HealthRing health={health} hasData={healthHasData} monthsCounted={cap.monthsCounted} compact />
-          </BentoCell>
-        </Stagger.Item>
-
-        <Stagger.Item className="col-span-2 md:col-span-4">
+        <Stagger.Item className="col-span-2 md:col-span-6">
           <BentoCell title={t('dashboard.monthReminder')} icon="radar" className="h-full">
             <SignalsRail signals={signals} onNavigate={navigate} />
           </BentoCell>
