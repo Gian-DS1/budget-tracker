@@ -255,6 +255,72 @@ describe('getCardBalances', () => {
   });
 });
 
+// Regresión (reporte de usuario, jul 2026): un abono PARCIAL a una tarjeta tipo
+// Mastercard Plus CCN se tomó como si saldara todo el balance al corte. El
+// invariante que protege a TODAS las tarjetas (y las que se agreguen): un abono
+// menor al pendiente reduce pendingBilled exactamente por su monto y NUNCA
+// marca el estado de cuenta como pagado.
+describe('getCardBalances — invariante de abono parcial (caso Mastercard Plus CCN)', () => {
+  // Perfil real: cashback escalonado (no congelado por transacción), saldo
+  // inicial previo a la app y un ciclo legado ya pagado en formato objeto.
+  const ccnCard = {
+    id: 'ccn1', cutoffDay: 20, dueDay: 5,
+    openingBalance: 4000,
+    paidCycles: [{ cycleEnd: '2026-05-20', amount: 4000, paidAt: '2026-06-01' }],
+    payments: [],
+    cashbackRules: [
+      { categoryId: 'ccn', tiers: [
+        { upTo: 7999, pct: 5 },
+        { upTo: 19999, pct: 6 },
+        { upTo: Infinity, pct: 8 },
+      ] },
+    ],
+  };
+  const ref = new Date(2026, 6, 16); // corte 2026-06-20 cerrado, hoy 16 jul 2026
+  const txs = [
+    { cardId: 'ccn1', categoryId: 'ccn', amount: 4000, date: '2026-05-10', cashbackEarned: 0 },  // ciclo legado pagado
+    { cardId: 'ccn1', categoryId: 'ccn', amount: 9000, date: '2026-06-10', cashbackEarned: 0 },  // facturado (corte 20 jun)
+    { cardId: 'ccn1', categoryId: 'ccn', amount: 2500, date: '2026-07-05', cashbackEarned: 0 },  // ciclo abierto
+  ];
+
+  it('sin abonos: por pagar = saldo inicial + facturado no pagado', () => {
+    const b = getCardBalances(ccnCard, txs, ref);
+    expect(b.pendingBilled).toBe(13000); // 4000 inicial + 9000 facturado
+    expect(b.isPaid).toBe(false);
+  });
+
+  it('abono parcial: reduce el corte EXACTAMENTE por el monto, nunca lo salda', () => {
+    const conAbono = { ...ccnCard, payments: [{ id: 'a1', amount: 5000, date: '2026-07-15' }] };
+    const b = getCardBalances(conAbono, txs, ref);
+    expect(b.pendingBilled).toBe(8000);   // 13000 − 5000
+    expect(b.isPaid).toBe(false);         // JAMÁS "al día" con abono parcial
+    expect(b.overpay).toBe(0);            // sin prepago fantasma
+    expect(b.openCycle).toBe(2500);       // el ciclo abierto no se toca
+  });
+
+  it('abonos parciales sucesivos: cada uno descuenta, isPaid solo al cubrir todo', () => {
+    const pagos = [
+      { id: 'a1', amount: 5000, date: '2026-07-10' },
+      { id: 'a2', amount: 7999.99, date: '2026-07-15' },
+    ];
+    const casi = { ...ccnCard, payments: pagos };
+    const b1 = getCardBalances(casi, txs, ref);
+    expect(b1.pendingBilled).toBeCloseTo(0.01, 5);
+    const completo = { ...ccnCard, payments: [...pagos, { id: 'a3', amount: 0.01, date: '2026-07-16' }] };
+    const b2 = getCardBalances(completo, txs, ref);
+    expect(b2.pendingBilled).toBe(0);
+    expect(b2.isPaid).toBe(true);
+  });
+
+  it('el abono parcial de un monto tecleado nunca se infla por cashback escalonado', () => {
+    // El cashback de tiers NO está congelado en cashbackEarned, así que no debe
+    // alterar ni billed ni paid: el descuento es 1:1 con el monto abonado.
+    const conAbono = { ...ccnCard, payments: [{ id: 'a1', amount: 1234.56, date: '2026-07-15' }] };
+    const b = getCardBalances(conAbono, txs, ref);
+    expect(b.pendingBilled).toBeCloseTo(13000 - 1234.56, 5);
+  });
+});
+
 describe('tierPercentage — nivel escalonado por monto acumulado', () => {
   const tiers = [
     { upTo: 7999, pct: 5 },

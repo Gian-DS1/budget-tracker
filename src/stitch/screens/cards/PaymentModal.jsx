@@ -27,7 +27,12 @@ export default function PaymentModal({ card, transactions, onClose }) {
   const getTotalSaved = useSavingsStore((s) => s.getTotalSaved);
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
   const bal = getCardBalances(card, transactions, new Date());
-  const [amount, setAmount] = useState(bal.pendingBilled > 0 ? String(Math.round(bal.pendingBilled * 100) / 100) : '');
+  // El monto SIEMPRE inicia vacío. Precargarlo con el total pendiente hacía que
+  // un abono parcial se registrara por TODO el corte: el usuario veía el campo
+  // lleno, escribía su monto en otro lado (p. ej. la nota) y confirmaba. Para
+  // saldar el total está el botón "Pagar todo" de la tarjeta; aquí el usuario
+  // teclea exactamente lo que abona (el pendiente se muestra arriba, informativo).
+  const [amount, setAmount] = useState('');
   const [date, setDate] = useState(todayISO());
   const [note, setNote] = useState('');
   const [picker, setPicker] = useState(null);
