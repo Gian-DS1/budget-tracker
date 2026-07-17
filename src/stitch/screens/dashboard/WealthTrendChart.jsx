@@ -4,9 +4,13 @@
 // tooltip píldora al hover y punto final con halo (valor de HOY). Scrubbing: el
 // cursor actualiza el encabezado; CLICK fija un punto (marcador en el gráfico y
 // valores congelados en ese día/mes) y re-click en el mismo punto lo libera.
-// TODO es INSTANTÁNEO a propósito: sin count-ups ni barridos de entrada — los
-// valores y la línea cambian en el mismo frame que el gesto del usuario.
-import { useCallback, useMemo, useState } from 'react';
+// Las INTERACCIONES son instantáneas (sin count-ups; scrubbing/click en el
+// mismo frame). Solo hay dos momentos orquestados, ambos en GPU y con
+// prefers-reduced-motion respetado (principios de emil-design-eng):
+//  · Entrada: barrido revelador izquierda→derecha (clip-path, 500ms, una vez).
+//  · Cambio de rango: "refoco" blur 3px→0 + opacity (200ms) vía WAAPI.
+import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, ComposedChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
@@ -45,8 +49,43 @@ function EndDot({ cx, cy, index, lastIndex, color }) {
 
 export default function WealthTrendChart({ data, selectedKey, onSelect }) {
   const { t } = useI18n();
+  const reduced = useReducedMotion();
   // Índice del punto bajo el cursor (scrubbing). null = en reposo.
   const [hoverIdx, setHoverIdx] = useState(null);
+
+  // Los dos momentos de motion del gráfico, ambos por WAAPI sobre el wrapper
+  // (GPU, interrumpible, sin estado extra — recomendación de emil-design-eng):
+  //  · PRIMERA serie (montaje): barrido revelador izquierda→derecha con
+  //    clip-path — el "camino del dinero" se descubre del pasado a hoy.
+  //  · Series SIGUIENTES (cambio de rango 3M/1A/TODO): la línea nueva entra
+  //    desenfocada y "reenfoca" (blur 3px→0 + opacity) en 200ms; clicks
+  //    rápidos entre rangos solo reinician el blur, nunca traban.
+  // Con reduced-motion no hay movimiento: la serie aparece directa.
+  const frameRef = useRef(null);
+  const isFirstSeriesRef = useRef(true);
+  const mountedAtRef = useRef(0);
+  useLayoutEffect(() => {
+    const el = frameRef.current;
+    const isFirst = isFirstSeriesRef.current;
+    isFirstSeriesRef.current = false;
+    if (!el || reduced) return;
+    if (isFirst) {
+      mountedAtRef.current = performance.now();
+      el.animate(
+        [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+        { duration: 500, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
+      );
+    } else {
+      // La hidratación de los stores recomputa la serie justo tras el montaje;
+      // eso pertenece a la ENTRADA (el barrido sigue corriendo), no a un cambio
+      // de rango: sin refoco durante esa ventana para no ensuciar el barrido.
+      if (performance.now() - mountedAtRef.current < 600) return;
+      el.animate(
+        [{ filter: 'blur(3px)', opacity: 0.7 }, { filter: 'blur(0px)', opacity: 1 }],
+        { duration: 200, easing: 'ease' },
+      );
+    }
+  }, [data, reduced]);
 
   // Punto fijado con click, si sigue existiendo en la serie (al cambiar de rango
   // o granularidad la clave puede no estar: el marcador simplemente no se pinta).
@@ -248,8 +287,10 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
 
       {/* El clic en el SVG no debe dibujar el focus ring del navegador alrededor
           del gráfico. Se suprime el outline SOLO en foco por puntero
-          (:focus:not(:focus-visible)); la navegación por teclado conserva el suyo. */}
-      <div className="flex-grow min-h-0 [&_*:focus:not(:focus-visible)]:outline-none">
+          (:focus:not(:focus-visible)); la navegación por teclado conserva el suyo.
+          El wrapper también es el lienzo de los dos momentos de motion: el
+          barrido de entrada (clip-path) y el refoco al cambiar de rango (WAAPI). */}
+      <div ref={frameRef} className="flex-grow min-h-0 [&_*:focus:not(:focus-visible)]:outline-none">
         {chartEl}
       </div>
     </div>
