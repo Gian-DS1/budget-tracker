@@ -15,7 +15,7 @@ import { getBudgetSummary } from '../../utils/calculations';
 import { nextMonthlyOccurrence } from '../../utils/recurrence';
 import { formatCurrency, formatDate } from '../../utils/formatters';
 import { monthShort } from '../../i18n/runtime';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getCumulativeLiquidWealth, getCardReminders } from './dashboard/selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getWealthTimeline, getCardReminders } from './dashboard/selectors';
 import { BentoCell } from './dashboard/dashboardUi';
 import WealthTrendChart from './dashboard/WealthTrendChart';
 import CategoryDonut from './dashboard/CategoryDonut';
@@ -76,18 +76,31 @@ export default function StitchDashboard() {
   // Los gastos con tarjeta NO restan del efectivo; los pagos de tarjeta sí.
   const demo = isDemoActive();
   const initialCashBalance = usePrefsStore((s) => s.initialCashBalance);
-  const dashboardChartType = usePrefsStore((s) => s.dashboardChartType);
-  const setDashboardChartType = usePrefsStore((s) => s.setDashboardChartType);
 
   // Rango del gráfico de tendencia: 3 meses / 1 año / todo el tiempo. Siempre
   // termina en el mes actual (now) y arranca a lo sumo en la primera transacción.
   const [wealthRange, setWealthRange] = useState(3);
+  // Punto del tiempo FIJADO con click en la línea (key 'YYYY-MM-DD' o 'YYYY-MM').
+  // null = sin selección (el hero muestra hoy). Al fijar, también se selecciona
+  // el MES del punto para que TODO el dashboard (flujo, donut, presupuesto)
+  // quede congelado en ese momento; re-click en el mismo punto libera y vuelve
+  // al mes actual.
+  const [selKey, setSelKey] = useState(null);
+  const handleSelectPoint = (p) => {
+    if (selKey === p.key) {
+      setSelKey(null);
+      setSel({ y: now.getFullYear(), m: now.getMonth() });
+    } else {
+      setSelKey(p.key);
+      setSel({ y: p.y, m: p.m });
+    }
+  };
   // Ahorro REAL de hoy = Σ del monto actual de cada meta (incluye el saldo previo
   // que ya tenían las metas, no solo los aportes registrados). El selector lo usa
   // para que el "Ahorro total" del gráfico cuadre con la pestaña de Ahorros.
   const currentSavings = useMemo(() => goals.reduce((sum, g) => sum + (Number(g.currentAmount) || 0), 0), [goals]);
   const wealthSeries = useMemo(
-    () => getCumulativeLiquidWealth(transactions, initialCashBalance, wealthRange, now, cards, currentSavings),
+    () => getWealthTimeline(transactions, initialCashBalance, wealthRange, now, cards, currentSavings),
     [transactions, initialCashBalance, wealthRange, now, cards, currentSavings],
   );
   // Pills segmentadas del rango (3M · 1A · Todo): menos taps que un dropdown y
@@ -168,10 +181,8 @@ export default function StitchDashboard() {
             </div>
             <WealthTrendChart
               data={wealthSeries}
-              activeKey={`${y}-${m}`}
-              onBarClick={(d) => setSel({ y: d.y, m: d.m })}
-              chartType={dashboardChartType}
-              onChartType={setDashboardChartType}
+              selectedKey={selKey}
+              onSelect={handleSelectPoint}
             />
             <div className="flex justify-center gap-xs mt-sm">
               {rangeOptions.map((r) => (

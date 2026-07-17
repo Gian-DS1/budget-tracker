@@ -1,6 +1,8 @@
 // Hex que espeja los tokens CSS de stitch.css.
 // Recharts no acepta var() — mantener sincronizado con los tokens.
 export const CHART = {
+  primary:   '#bec2ff',    // --color-primary
+  primaryDeep: '#7a85ff',  // --color-primary-container
   tertiary:  '#bdd200',  // --color-tertiary
   error:     '#ffb4ab',  // --color-error
   secondary: '#50d8e9',  // --color-secondary

@@ -220,8 +220,7 @@ const translations = {
     // Dashboard
     dashboard: {
       title: 'Resumen',
-      liquidCash: 'Efectivo disponible',
-      liquidCashInfo: 'Tu dinero gastable ahora: efectivo inicial + ingresos − gastos − lo apartado a ahorro.',
+      clearSelection: 'Quitar selección',
       saveToVault: 'Apartar a ahorro',
       saveToVaultTitle: 'Apartar a ahorro',
       saveAmount: 'Monto a apartar',
@@ -232,9 +231,6 @@ const translations = {
       declareInitialCash: 'Declara tu efectivo actual para empezar',
       monthComparison: 'Cambios vs mes anterior',
       wealthTrend: 'Patrimonio líquido',
-      chartTypeBars: 'Barras',
-      chartTypeLine: 'Línea',
-      chartTypeLabel: 'Tipo de gráfico',
       myMoneyTotal: 'Mi dinero total',
       myMoneyTotalInfo: 'Tu patrimonio neto líquido: efectivo disponible + ahorro − tarjetas por pagar.',
       savedTotal: 'Ahorro total',
@@ -1261,8 +1257,7 @@ const translations = {
     // Dashboard
     dashboard: {
       title: 'Dashboard',
-      liquidCash: 'Available cash',
-      liquidCashInfo: 'Your spendable money now: starting cash + income − expenses − what you set aside to savings.',
+      clearSelection: 'Clear selection',
       saveToVault: 'Set aside to savings',
       saveToVaultTitle: 'Set aside to savings',
       saveAmount: 'Amount to set aside',
@@ -1273,9 +1268,6 @@ const translations = {
       declareInitialCash: 'Declare your current cash to get started',
       monthComparison: 'Changes vs last month',
       wealthTrend: 'Liquid wealth',
-      chartTypeBars: 'Bars',
-      chartTypeLine: 'Line',
-      chartTypeLabel: 'Chart type',
       myMoneyTotal: 'My total money',
       myMoneyTotalInfo: 'Your net liquid worth: available cash + savings − cards to pay.',
       savedTotal: 'Total savings',
