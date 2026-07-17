@@ -7,7 +7,6 @@ import MS from '../../MS';
 import { formatCurrency } from '../../../utils/formatters';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { InfoTip } from '../../InfoTip';
-import CountUp from '../../CountUp';
 
 const fmt = (n) => formatCurrency(n);
 const pct0 = (n) => `${Math.round(Number(n) || 0)}%`;
@@ -51,17 +50,15 @@ export default function BudgetBar({ usage, pace, onDefine }) {
         {/* Número: % REAL (rawPct, sin topar) para que se vea el sobregasto del
             plan; la barra de abajo sí se topa a 100. */}
         <span className={`font-headline-md text-[22px] tracking-tight tabular-nums ${txt}`}>
-          <CountUp value={usage.rawPct ?? usage.pct} format={pct0} duration={240} />
+          {pct0(usage.rawPct ?? usage.pct)}
         </span>
         <span className="font-mono-data text-mono-data text-text-muted tabular-nums">
-          <CountUp value={usage.spent} format={fmt} duration={240} /> {strings.charts.of} <CountUp value={usage.budgeted} format={fmt} duration={240} />
+          {fmt(usage.spent)} {strings.charts.of} {fmt(usage.budgeted)}
         </span>
       </div>
       <div className="relative w-full h-2 bg-surface-container-highest rounded-full">
         <div className="absolute inset-0 rounded-full overflow-hidden">
-          <CountUp value={usage.pct} duration={240}>
-            {(p) => <div className={`h-full rounded-full ${bar}`} style={{ width: `${p}%` }} />}
-          </CountUp>
+          <div className={`h-full rounded-full ${bar}`} style={{ width: `${usage.pct}%` }} />
         </div>
         {/* Tick de ritmo: avance del calendario. La meta es que la barra no lo rebase. */}
         {pace && (

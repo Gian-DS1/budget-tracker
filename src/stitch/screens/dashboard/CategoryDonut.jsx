@@ -4,13 +4,11 @@
 // vista) con el emoji de la categoría. Hover/click/focus sincronizados entre
 // leyenda y dona: el segmento activo crece y proyecta una sombra de su color.
 import { useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, PieChart, Pie, Cell, Sector } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
 import { useScreenStrings } from '../../../i18n/useScreenStrings';
 import { EmptyCell } from './dashboardUi';
 import Emoji from '../../Emoji';
-import CountUp from '../../CountUp';
 
 const fmt = (n) => formatCurrency(n);
 const pct0 = (n) => `${Math.round(Number(n) || 0)}%`;
@@ -43,7 +41,6 @@ function ActiveSector(props) {
 
 export default function CategoryDonut({ data, compact = false }) {
   const strings = useScreenStrings();
-  const reduced = useReducedMotion();
   const [active, setActive] = useState(-1);
   if (!data || data.length === 0) return <EmptyCell icon="donut_small" message={strings.charts.noExpensesThisMonth} />;
 
@@ -77,9 +74,7 @@ export default function CategoryDonut({ data, compact = false }) {
               onMouseEnter={(_, i) => setActive(i)}
               onMouseLeave={() => setActive(-1)}
               onClick={(_, i) => setActive((prev) => (prev === i ? -1 : i))}
-              isAnimationActive={!reduced}
-              animationDuration={600}
-              animationEasing="ease-out"
+              isAnimationActive={false}
             >
               {withPct.map((d, i) => (
                 <Cell
@@ -99,9 +94,9 @@ export default function CategoryDonut({ data, compact = false }) {
           <div className="flex flex-col items-center text-center leading-tight max-w-[62%]">
             <span className="font-mono-data text-[9px] text-text-muted uppercase break-words max-w-full w-full">{activeName || 'Total'}</span>
             <span className={`font-headline-md text-on-surface tracking-tight tabular-nums whitespace-nowrap ${centerSizeFor(fmt(active >= 0 ? withPct[active].value : total), compact)}`}>
-              <CountUp value={active >= 0 ? withPct[active].value : total} format={fmt} duration={240} />
+              {fmt(active >= 0 ? withPct[active].value : total)}
             </span>
-            {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted tabular-nums"><CountUp value={withPct[active].pct} format={(n) => `${n.toFixed(1)}%`} duration={240} /></span>}
+            {active >= 0 && <span className="font-mono-data text-[10px] text-text-muted tabular-nums">{`${withPct[active].pct.toFixed(1)}%`}</span>}
           </div>
         </div>
       </div>
@@ -130,13 +125,13 @@ export default function CategoryDonut({ data, compact = false }) {
                 <span className="break-words min-w-0">{d.name}</span>
               </span>
               <span className="shrink-0 flex items-baseline gap-sm">
-                <span className="text-on-surface tabular-nums"><CountUp value={d.value} format={fmt} duration={240} /></span>
-                <span className="text-text-muted w-[34px] text-right tabular-nums"><CountUp value={d.pct} format={pct0} duration={240} /></span>
+                <span className="text-on-surface tabular-nums">{fmt(d.value)}</span>
+                <span className="text-text-muted w-[34px] text-right tabular-nums">{pct0(d.pct)}</span>
               </span>
             </span>
             <span className="relative w-full h-1.5 rounded-full bg-surface-container-highest overflow-hidden">
               <span
-                className="absolute inset-y-0 left-0 rounded-full transition-all duration-300 ease-out motion-reduce:transition-none"
+                className="absolute inset-y-0 left-0 rounded-full"
                 style={{
                   width: `${maxValue > 0 ? (d.value / maxValue) * 100 : 0}%`,
                   background: d.color,

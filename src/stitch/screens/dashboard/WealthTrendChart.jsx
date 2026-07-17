@@ -4,13 +4,13 @@
 // tooltip píldora al hover y punto final con halo (valor de HOY). Scrubbing: el
 // cursor actualiza el encabezado; CLICK fija un punto (marcador en el gráfico y
 // valores congelados en ese día/mes) y re-click en el mismo punto lo libera.
-import { useState } from 'react';
-import { useReducedMotion } from 'framer-motion';
+// TODO es INSTANTÁNEO a propósito: sin count-ups ni barridos de entrada — los
+// valores y la línea cambian en el mismo frame que el gesto del usuario.
+import { useCallback, useMemo, useState } from 'react';
 import { ResponsiveContainer, ComposedChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
-import CountUp from '../../CountUp';
 import MS from '../../MS';
 import { InfoTip } from '../../InfoTip';
 import { getHeroMetric, pickHeadPoint } from './selectors';
@@ -45,18 +45,97 @@ function EndDot({ cx, cy, index, lastIndex, color }) {
 
 export default function WealthTrendChart({ data, selectedKey, onSelect }) {
   const { t } = useI18n();
-  const reduced = useReducedMotion();
   // Índice del punto bajo el cursor (scrubbing). null = en reposo.
   const [hoverIdx, setHoverIdx] = useState(null);
+
+  // Punto fijado con click, si sigue existiendo en la serie (al cambiar de rango
+  // o granularidad la clave puede no estar: el marcador simplemente no se pinta).
+  const selPoint = selectedKey != null ? data.find((p) => p.key === selectedKey) : null;
+
+  // Lookup clave→label del eje X: O(1) por tick en vez de recorrer la serie.
+  const labelByKey = useMemo(() => new Map(data.map((p) => [p.key, p.label])), [data]);
+
+  // Clic en cualquier punto del tiempo → lo fija (o lo libera, decide el padre).
+  const handleClick = useCallback((state) => {
+    if (!onSelect || !state || state.activeTooltipIndex == null) return;
+    const d = data[state.activeTooltipIndex];
+    if (d) onSelect(d);
+  }, [data, onSelect]);
+  const handleMove = useCallback((s) => setHoverIdx(s?.activeTooltipIndex ?? null), []);
+  const handleLeave = useCallback(() => setHoverIdx(null), []);
+
+  // El subárbol de recharts va memoizado y SIN animaciones: no depende del hover,
+  // así el scrubbing re-renderiza solo el encabezado (texto) y no los cientos de
+  // puntos del SVG — recharts mueve tooltip/crosshair/activeDot por su cuenta.
+  // La línea aparece y cambia de rango en el mismo frame (nada de barridos).
+  const chartEl = useMemo(() => (
+    <ResponsiveContainer width="100%" height="100%">
+      <ComposedChart
+        data={data}
+        margin={{ top: 6, right: 4, bottom: 0, left: 4 }}
+        onClick={handleClick}
+        onMouseMove={handleMove}
+        onMouseLeave={handleLeave}
+        style={{ cursor: onSelect ? 'pointer' : 'default' }}
+      >
+        <defs>
+          {/* Degradado del área (estilo Stitch): primario que se desvanece
+              hacia abajo — brillo arriba, transparente al llegar al piso. */}
+          <linearGradient id="wealthFill" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={CHART.primaryDeep} stopOpacity={0.32} />
+            <stop offset="55%" stopColor={CHART.primaryDeep} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={CHART.primaryDeep} stopOpacity={0} />
+          </linearGradient>
+        </defs>
+
+        {/* Eje por `key` (única por punto: 'YYYY-MM-DD' o 'YYYY-MM') para que
+            el marcador de selección caiga en el punto exacto aunque el label
+            visible ("15 mar") se repita entre años. */}
+        <XAxis
+          dataKey="key"
+          tick={{ fill: CHART.muted, fontSize: 10 }}
+          tickFormatter={(k) => labelByKey.get(k) ?? k}
+          axisLine={false}
+          tickLine={false}
+          interval="preserveStartEnd"
+          minTickGap={48}
+        />
+        <YAxis yAxisId="w" hide domain={['dataMin', 'dataMax']} />
+        <Tooltip
+          isAnimationActive={false}
+          cursor={{ stroke: CHART.outline, strokeWidth: 1, strokeDasharray: '4 4' }}
+          content={<HeroTip fmt={fmt} />}
+        />
+        <Area
+          yAxisId="w"
+          type="monotone"
+          dataKey="wealth"
+          stroke={CHART.primary}
+          strokeWidth={2.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          fill="url(#wealthFill)"
+          dot={<EndDot lastIndex={data.length - 1} color={CHART.primary} />}
+          activeDot={{ r: 5, fill: CHART.primary, stroke: CHART.surface, strokeWidth: 2 }}
+          isAnimationActive={false}
+        />
+        {/* Marcador del punto FIJADO: guía vertical + punto sólido. */}
+        {selPoint && (
+          <ReferenceLine yAxisId="w" x={selPoint.key} stroke={CHART.primary} strokeDasharray="3 3" strokeOpacity={0.55} />
+        )}
+        {selPoint && (
+          <ReferenceDot yAxisId="w" x={selPoint.key} y={selPoint.wealth} r={5} fill={CHART.primary} stroke={CHART.surface} strokeWidth={2} />
+        )}
+      </ComposedChart>
+    </ResponsiveContainer>
+  ), [data, selPoint, onSelect, handleClick, handleMove, handleLeave, labelByKey]);
+
   const hasData = data.some((d) => d.income !== 0 || d.expense !== 0 || d.wealth !== 0 || d.cash !== 0);
   if (!hasData) {
     return <p className="font-body-md text-body-md text-text-muted py-xl text-center">{t('screens.reports.noMovementsPeriod')}</p>;
   }
 
   const metric = getHeroMetric();
-  // Punto fijado con click, si sigue existiendo en la serie (al cambiar de rango
-  // o granularidad la clave puede no estar: el marcador simplemente no se pinta).
-  const selPoint = selectedKey != null ? data.find((p) => p.key === selectedKey) : null;
   // Encabezado: hover (scrubbing) > punto fijado > último punto (hoy).
   const scrubbing = hoverIdx != null && data[hoverIdx];
   const head = pickHeadPoint(data, hoverIdx, selectedKey);
@@ -69,13 +148,6 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
   const trendColor = up ? CHART.secondary : CHART.error;
   const trendPct = first !== 0 ? ((last - first) / Math.abs(first)) * 100 : 0;
   const showTrend = data.length > 1 && first !== 0 && first !== last;
-
-  // Clic en cualquier punto del tiempo → lo fija (o lo libera, decide el padre).
-  const handleClick = (state) => {
-    if (!onSelect || !state || state.activeTooltipIndex == null) return;
-    const d = data[state.activeTooltipIndex];
-    if (d) onSelect(d);
-  };
 
   return (
     // Hero a todo el ancho: alto amplio para que la línea sea la protagonista.
@@ -105,10 +177,12 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
           )}
         </div>
 
-        {/* Número grande de la métrica (neutro) + chip de tendencia inline. */}
+        {/* Número grande de la métrica (neutro) + chip de tendencia inline.
+            Texto directo (sin count-up): el valor cambia en el mismo frame que
+            el cursor — el scrubbing se siente pegado a la mano. */}
         <div className="flex items-baseline gap-sm mt-xs flex-wrap">
           <span className="font-headline-md text-[28px] sm:text-[30px] tracking-tight tabular-nums whitespace-nowrap text-on-surface">
-            <CountUp value={head[metric.key]} format={fmt} duration={240} />
+            {fmt(head[metric.key])}
           </span>
           {showTrend && (
             <span className="inline-flex items-center gap-[2px] font-mono-data text-mono-data tabular-nums whitespace-nowrap" style={{ color: trendColor }}>
@@ -127,7 +201,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
               {t('dashboard.income')}
             </span>
             <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-tertiary whitespace-nowrap">
-              +<CountUp value={head.income} format={fmt} duration={240} />
+              +{fmt(head.income)}
             </span>
           </span>
           <span className="inline-flex items-baseline gap-xs">
@@ -136,7 +210,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
               {t('dashboard.expenses')}
             </span>
             <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-accent-error whitespace-nowrap">
-              −<CountUp value={head.expense} format={fmt} duration={240} />
+              −{fmt(head.expense)}
             </span>
           </span>
         </div>
@@ -146,7 +220,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
           <span className="inline-flex items-baseline gap-xs">
             <span className="font-mono-data text-mono-data text-text-muted uppercase">{t('dashboard.savedTotal')}</span>
             <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-secondary whitespace-nowrap">
-              <CountUp value={head.savings} format={fmt} duration={240} />
+              {fmt(head.savings)}
             </span>
           </span>
           {head.cardsDue > 0 && (
@@ -156,7 +230,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
                 <InfoTip text={t('dashboard.creditCardsPayableInfo')} />
               </span>
               <span className="font-headline-md text-[13px] tracking-tight tabular-nums text-accent-warning whitespace-nowrap">
-                −<CountUp value={head.cardsDue} format={fmt} duration={240} />
+                −{fmt(head.cardsDue)}
               </span>
             </span>
           )}
@@ -166,7 +240,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
               <InfoTip text={t('dashboard.myMoneyTotalInfo')} />
             </span>
             <span className="font-headline-md text-[15px] tracking-tight tabular-nums text-primary whitespace-nowrap">
-              <CountUp value={head.wealth} format={fmt} duration={240} />
+              {fmt(head.wealth)}
             </span>
           </span>
         </div>
@@ -176,70 +250,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
           del gráfico. Se suprime el outline SOLO en foco por puntero
           (:focus:not(:focus-visible)); la navegación por teclado conserva el suyo. */}
       <div className="flex-grow min-h-0 [&_*:focus:not(:focus-visible)]:outline-none">
-        <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart
-            data={data}
-            margin={{ top: 6, right: 4, bottom: 0, left: 4 }}
-            onClick={handleClick}
-            onMouseMove={(s) => setHoverIdx(s?.activeTooltipIndex ?? null)}
-            onMouseLeave={() => setHoverIdx(null)}
-            style={{ cursor: onSelect ? 'pointer' : 'default' }}
-          >
-            <defs>
-              {/* Degradado del área (estilo Stitch): primario que se desvanece
-                  hacia abajo — brillo arriba, transparente al llegar al piso. */}
-              <linearGradient id="wealthFill" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={CHART.primaryDeep} stopOpacity={0.32} />
-                <stop offset="55%" stopColor={CHART.primaryDeep} stopOpacity={0.08} />
-                <stop offset="100%" stopColor={CHART.primaryDeep} stopOpacity={0} />
-              </linearGradient>
-            </defs>
-
-            {/* Eje por `key` (única por punto: 'YYYY-MM-DD' o 'YYYY-MM') para que
-                el marcador de selección caiga en el punto exacto aunque el label
-                visible ("15 mar") se repita entre años. */}
-            <XAxis
-              dataKey="key"
-              tick={{ fill: CHART.muted, fontSize: 10 }}
-              tickFormatter={(k) => {
-                const p = data.find((pt) => pt.key === k);
-                return p ? p.label : k;
-              }}
-              axisLine={false}
-              tickLine={false}
-              interval="preserveStartEnd"
-              minTickGap={48}
-            />
-            <YAxis yAxisId="w" hide domain={['dataMin', 'dataMax']} />
-            <Tooltip
-              isAnimationActive={false}
-              cursor={{ stroke: CHART.outline, strokeWidth: 1, strokeDasharray: '4 4' }}
-              content={<HeroTip fmt={fmt} />}
-            />
-            <Area
-              yAxisId="w"
-              type="monotone"
-              dataKey="wealth"
-              stroke={CHART.primary}
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              fill="url(#wealthFill)"
-              dot={<EndDot lastIndex={data.length - 1} color={CHART.primary} />}
-              activeDot={{ r: 5, fill: CHART.primary, stroke: CHART.surface, strokeWidth: 2 }}
-              isAnimationActive={!reduced}
-              animationDuration={800}
-              animationEasing="ease-out"
-            />
-            {/* Marcador del punto FIJADO: guía vertical + punto sólido. */}
-            {selPoint && (
-              <ReferenceLine yAxisId="w" x={selPoint.key} stroke={CHART.primary} strokeDasharray="3 3" strokeOpacity={0.55} />
-            )}
-            {selPoint && (
-              <ReferenceDot yAxisId="w" x={selPoint.key} y={selPoint.wealth} r={5} fill={CHART.primary} stroke={CHART.surface} strokeWidth={2} />
-            )}
-          </ComposedChart>
-        </ResponsiveContainer>
+        {chartEl}
       </div>
     </div>
   );
