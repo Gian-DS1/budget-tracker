@@ -256,6 +256,121 @@ export function getCumulativeLiquidWealth(transactions, initialCashBalance, rang
   });
 }
 
+// Tope de puntos diarios del timeline (~18 meses). Por encima, la serie pasa a
+// granularidad MENSUAL: dibujar miles de puntos no aporta lectura y castiga el
+// render; por debajo, el detalle diario da "suficientes datos" a la línea.
+export const MAX_DAILY_POINTS = 550;
+
+const pad2 = (n) => String(n).padStart(2, '0');
+
+// Serie temporal del patrimonio para el hero del Resumen (línea estilo Stitch).
+// Misma regla de dinero que getCumulativeLiquidWealth, pero con granularidad
+// DIARIA cuando la ventana cabe en MAX_DAILY_POINTS días (rangos 3M/1A y "todo"
+// con poco historial) y MENSUAL cuando no. Cada punto lleva una `key` estable
+// para fijar la selección con click: 'YYYY-MM-DD' (diaria) o 'YYYY-MM' (mensual).
+// En los puntos diarios, income/expense son el flujo ACUMULADO del mes hasta ese
+// día (month-to-date): al escrubear o fijar un día, el encabezado cuenta cómo
+// iba el mes en ese momento. cash/savings/cardsDue/wealth son el saldo AL CIERRE
+// del día, con las mismas reglas que la serie mensual (pagos de tarjeta restan
+// desde su fecha; sin fecha se tratan como ya ocurridos; el ahorro se reconstruye
+// hacia atrás desde el total real de hoy restando aportes posteriores al día).
+export function getWealthTimeline(transactions, initialCashBalance, range, refDate = new Date(), cards = [], currentSavings = 0) {
+  const txs = (transactions || []).filter((t) => t.date);
+  const today = new Date(refDate.getFullYear(), refDate.getMonth(), refDate.getDate());
+
+  // Inicio de la ventana: primera transacción para 'all'; para N meses, el día 1
+  // del primer mes del rango — y nunca antes del primer dato (sin días vacíos).
+  let start = today; // sin datos: un solo punto (hoy) con el saldo inicial
+  if (txs.length > 0) {
+    let firstTxDate = null;
+    for (const t of txs) {
+      const d = new Date(t.date + 'T00:00:00');
+      if (!firstTxDate || d < firstTxDate) firstTxDate = d;
+    }
+    if (range === 'all') {
+      start = firstTxDate;
+    } else {
+      const rangeStart = new Date(refDate.getFullYear(), refDate.getMonth() - (Number(range) || 1) + 1, 1);
+      start = firstTxDate > rangeStart ? firstTxDate : rangeStart;
+    }
+    if (start > today) start = today;
+  }
+
+  const dayCount = Math.round((today - start) / 86400000) + 1;
+  if (dayCount > MAX_DAILY_POINTS) {
+    return getCumulativeLiquidWealth(transactions, initialCashBalance, range, refDate, cards, currentSavings)
+      .map((p) => ({ ...p, key: `${p.y}-${pad2(p.m + 1)}` }));
+  }
+
+  // ── Granularidad diaria: una sola pasada sobre movimientos ordenados ──
+  const sorted = [...txs].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  let cash = Number(initialCashBalance) || 0;
+  const payments = [];
+  for (const c of cards || []) {
+    for (const p of c.payments || []) {
+      if (!p.date) cash -= Number(p.amount) || 0; // sin fecha: como ya ocurrido
+      else payments.push(p);
+    }
+  }
+  payments.sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+
+  // Aportes a ahorro aún "futuros" respecto del día iterado: el ahorro del día
+  // es el total real de hoy menos estos aportes pendientes de descontar.
+  let futureSavings = 0;
+  for (const t of sorted) if (t.type === 'savings') futureSavings += Number(t.amount) || 0;
+
+  const out = [];
+  let ti = 0, pi = 0, mtdIncome = 0, mtdExpense = 0;
+  const day = new Date(start);
+  for (let i = 0; i < dayCount; i++) {
+    if (day.getDate() === 1) { mtdIncome = 0; mtdExpense = 0; } // nuevo mes: reinicia el flujo
+    const dayEnd = new Date(day.getFullYear(), day.getMonth(), day.getDate() + 1);
+    while (ti < sorted.length) {
+      const t = sorted[ti];
+      const d = new Date(t.date + 'T00:00:00');
+      if (d >= dayEnd) break;
+      cash += cashEffect(t);
+      if (t.type === 'savings') futureSavings -= Number(t.amount) || 0;
+      if (d.getFullYear() === day.getFullYear() && d.getMonth() === day.getMonth()) {
+        if (t.type === 'income') mtdIncome += Number(t.amount) || 0;
+        else if (EXPENSE_TYPES.includes(t.type)) mtdExpense += getEffectiveAmount(t);
+      }
+      ti++;
+    }
+    while (pi < payments.length && new Date(payments[pi].date + 'T00:00:00') < dayEnd) {
+      cash -= Number(payments[pi].amount) || 0;
+      pi++;
+    }
+    const savings = (Number(currentSavings) || 0) - futureSavings;
+    const cardsDue = (cards || []).reduce(
+      (sum, c) => sum + (getCardBalances(c, txs, day).pendingBilled || 0), 0,
+    );
+    out.push({
+      key: `${day.getFullYear()}-${pad2(day.getMonth() + 1)}-${pad2(day.getDate())}`,
+      y: day.getFullYear(), m: day.getMonth(), d: day.getDate(),
+      label: `${day.getDate()} ${monthShort(day.getMonth())}`,
+      income: mtdIncome, expense: mtdExpense, cash, savings, cardsDue,
+      wealth: cash + savings - cardsDue,
+      savingsRate: mtdIncome > 0 ? ((mtdIncome - mtdExpense) / mtdIncome) * 100 : 0,
+    });
+    day.setDate(day.getDate() + 1);
+  }
+  return out;
+}
+
+// Punto que manda en el encabezado del hero: el que está bajo el cursor
+// (scrubbing) gana; si no hay hover, el punto FIJADO con click (selectedKey);
+// en reposo y sin selección, el último (hoy). Serie vacía → null.
+export function pickHeadPoint(data, hoverIdx, selectedKey) {
+  if (!data || data.length === 0) return null;
+  if (hoverIdx != null && data[hoverIdx]) return data[hoverIdx];
+  if (selectedKey != null) {
+    const sel = data.find((p) => p.key === selectedKey);
+    if (sel) return sel;
+  }
+  return data[data.length - 1];
+}
+
 // Ventana (en días) para recordar una tarjeta por pagar en el Resumen. El
 // estado de cuenta suele vencer ~25 días después del corte (p. ej. corte el 1,
 // pago el 26), así que 14 días dejaba fuera tarjetas recién facturadas. 30 días
@@ -281,14 +396,11 @@ export function getCardReminders(cards, transactions, refDate = new Date(), wind
   return out;
 }
 
-// Config del número grande del hero según el tipo de gráfico elegido. En 'bars'
-// el protagonista es el patrimonio neto líquido (wealth), como el hero de Whisper
-// Money; en 'line' (o cualquier otro valor) es el efectivo disponible (cash).
-// Devuelve la clave del dato y las claves i18n de rótulo e info del tooltip.
-export function getHeroMetric(chartType) {
-  return chartType === 'bars'
-    ? { key: 'wealth', labelKey: 'dashboard.netWorth', infoKey: 'dashboard.myMoneyTotalInfo' }
-    : { key: 'cash', labelKey: 'dashboard.liquidCash', infoKey: 'dashboard.liquidCashInfo' };
+// Config del número grande del hero. La línea única del Resumen muestra SIEMPRE
+// el patrimonio neto líquido (wealth); se ignoran argumentos heredados del viejo
+// toggle barras/línea para no romper llamadas existentes.
+export function getHeroMetric() {
+  return { key: 'wealth', labelKey: 'dashboard.netWorth', infoKey: 'dashboard.myMoneyTotalInfo' };
 }
 
 // Split patrimonio: proporciones ahorro/deuda y patrimonio neto.
