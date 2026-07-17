@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getCashShortfall, canAffordPayment, getCardReminders, getHeroMetric } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getWealthTimeline, pickHeadPoint, getCashShortfall, canAffordPayment, getCardReminders, getHeroMetric } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -391,17 +391,151 @@ describe('getCardReminders', () => {
 });
 
 describe('getHeroMetric', () => {
-  it('bars → patrimonio neto (wealth) con su rótulo e info', () => {
-    expect(getHeroMetric('bars')).toEqual({ key: 'wealth', labelKey: 'dashboard.netWorth', infoKey: 'dashboard.myMoneyTotalInfo' });
+  it('el hero es siempre el patrimonio neto (wealth): la línea única lo muestra', () => {
+    expect(getHeroMetric()).toEqual({ key: 'wealth', labelKey: 'dashboard.netWorth', infoKey: 'dashboard.myMoneyTotalInfo' });
   });
 
-  it('line → efectivo disponible (cash)', () => {
-    expect(getHeroMetric('line')).toEqual({ key: 'cash', labelKey: 'dashboard.liquidCash', infoKey: 'dashboard.liquidCashInfo' });
+  it('ignora argumentos heredados del toggle barras/línea (contrato estable)', () => {
+    expect(getHeroMetric('line').key).toBe('wealth');
+    expect(getHeroMetric('bars').key).toBe('wealth');
+  });
+});
+
+describe('getWealthTimeline', () => {
+  const ref = new Date('2026-03-15T00:00:00');
+  const t = (amount, type, date, extra = {}) => ({ categoryId: 'c1', amount, type, cashbackEarned: 0, date, ...extra });
+
+  it('rango 3 meses → un punto por DÍA desde la primera transacción hasta hoy', () => {
+    const txs = [t(1000, 'income', '2026-01-10')];
+    const r = getWealthTimeline(txs, 500, 3, ref, [], 0);
+    // 22 días de enero (10–31) + 28 de febrero + 15 de marzo = 65 puntos diarios.
+    expect(r).toHaveLength(65);
+    expect(r[0].key).toBe('2026-01-10');
+    expect(r[r.length - 1].key).toBe('2026-03-15');
+    expect(r.every((p) => p.d != null)).toBe(true);
   });
 
-  it('cualquier valor distinto de bars cae en efectivo (default seguro)', () => {
-    expect(getHeroMetric(undefined).key).toBe('cash');
-    expect(getHeroMetric('otro').key).toBe('cash');
+  it('la ventana no retrocede antes del inicio del rango (día 1 del primer mes)', () => {
+    const txs = [t(1000, 'income', '2025-06-01')];
+    const r = getWealthTimeline(txs, 0, 3, ref, [], 0);
+    // ene (31) + feb (28) + mar (15) = 74 puntos; arranca el 1 de enero.
+    expect(r).toHaveLength(74);
+    expect(r[0].key).toBe('2026-01-01');
+  });
+
+  it('sin transacciones → un solo punto (hoy) con el saldo inicial', () => {
+    const r = getWealthTimeline([], 500, 3, ref, [], 0);
+    expect(r).toHaveLength(1);
+    expect(r[0].key).toBe('2026-03-15');
+    expect(r[0].cash).toBe(500);
+    expect(r[0].wealth).toBe(500);
+  });
+
+  it('el efectivo acumula por día: cada movimiento afecta desde su fecha', () => {
+    const txs = [t(1000, 'income', '2026-01-10'), t(300, 'variable_expense', '2026-02-05')];
+    const r = getWealthTimeline(txs, 500, 3, ref, [], 0);
+    const by = Object.fromEntries(r.map((p) => [p.key, p]));
+    expect(by['2026-01-10'].cash).toBe(1500);
+    expect(by['2026-02-04'].cash).toBe(1500);
+    expect(by['2026-02-05'].cash).toBe(1200);
+  });
+
+  it('apartar a ahorro mueve efectivo→ahorro ese día sin cambiar el patrimonio', () => {
+    const txs = [t(1000, 'income', '2026-01-10'), t(200, 'savings', '2026-03-08')];
+    const r = getWealthTimeline(txs, 500, 3, ref, [], 200);
+    const by = Object.fromEntries(r.map((p) => [p.key, p]));
+    expect(by['2026-03-07'].cash).toBe(1500);
+    expect(by['2026-03-07'].savings).toBe(0);
+    expect(by['2026-03-07'].wealth).toBe(1500);
+    expect(by['2026-03-08'].cash).toBe(1300);
+    expect(by['2026-03-08'].savings).toBe(200);
+    expect(by['2026-03-08'].wealth).toBe(1500);
+  });
+
+  it('los pagos de tarjeta restan del efectivo desde su fecha; sin fecha → siempre', () => {
+    const txs = [t(1000, 'income', '2026-01-10')];
+    const conFecha = [{ id: 'cc1', payments: [{ id: 'p1', amount: 400, date: '2026-02-15' }] }];
+    const r = getWealthTimeline(txs, 0, 3, ref, conFecha, 0);
+    const by = Object.fromEntries(r.map((p) => [p.key, p]));
+    expect(by['2026-02-14'].cash).toBe(1000);
+    expect(by['2026-02-15'].cash).toBe(600);
+    const sinFecha = [{ id: 'cc1', payments: [{ id: 'p1', amount: 400 }] }];
+    const r2 = getWealthTimeline(txs, 0, 3, ref, sinFecha, 0);
+    expect(r2[0].cash).toBe(600); // primer punto (10 ene): ya descontado
+  });
+
+  it('flujo del mes acumulado hasta cada día (month-to-date) y reinicia por mes', () => {
+    const txs = [t(1, 'income', '2026-01-02'), t(5000, 'income', '2026-03-02'), t(1200, 'variable_expense', '2026-03-09')];
+    const r = getWealthTimeline(txs, 0, 3, ref, [], 0);
+    const by = Object.fromEntries(r.map((p) => [p.key, p]));
+    expect(by['2026-02-20'].income).toBe(0);   // febrero no hereda enero
+    expect(by['2026-03-01'].income).toBe(0);
+    expect(by['2026-03-02'].income).toBe(5000);
+    expect(by['2026-03-08'].expense).toBe(0);
+    expect(by['2026-03-09'].expense).toBe(1200);
+    expect(by['2026-03-15'].expense).toBe(1200);
+  });
+
+  it('wealth descuenta las tarjetas por pagar de cada día', () => {
+    const txs = [t(10000, 'income', '2026-03-02')];
+    const cards = [{ id: 'cc1', cutoffDay: 25, dueDay: 5, openingBalance: 5000, payments: [] }];
+    const r = getWealthTimeline(txs, 0, 3, ref, cards, 0);
+    const last = r[r.length - 1];
+    expect(last.cash).toBe(10000);
+    expect(last.cardsDue).toBe(5000);
+    expect(last.wealth).toBe(5000);
+  });
+
+  it('historial largo con "all" → puntos MENSUALES (clave YYYY-MM), mismos valores que la serie mensual', () => {
+    const txs = [t(1000, 'income', '2024-01-05')];
+    const r = getWealthTimeline(txs, 500, 'all', ref, [], 0);
+    expect(r).toHaveLength(27); // ene 2024 … mar 2026
+    expect(r[0].key).toBe('2024-01');
+    expect(r[r.length - 1].key).toBe('2026-03');
+    expect(r.every((p) => p.d == null)).toBe(true);
+    const mensual = getCumulativeLiquidWealth(txs, 500, 'all', ref, [], 0);
+    expect(r.map((p) => p.wealth)).toEqual(mensual.map((p) => p.wealth));
+  });
+
+  it('rango 12 meses → sigue siendo diario (≤ tope de puntos)', () => {
+    const txs = [t(1000, 'income', '2025-06-20')];
+    const r = getWealthTimeline(txs, 12, 12, ref, [], 0);
+    expect(r).toHaveLength(269); // 20 jun 2025 … 15 mar 2026
+    expect(r.every((p) => p.d != null)).toBe(true);
+  });
+
+  it('los puntos diarios llevan y/m/d y label legible ("15 mar")', () => {
+    const txs = [t(1000, 'income', '2026-03-01')];
+    const r = getWealthTimeline(txs, 0, 3, ref, [], 0);
+    const last = r[r.length - 1];
+    expect(last.y).toBe(2026);
+    expect(last.m).toBe(2);
+    expect(last.d).toBe(15);
+    expect(last.label).toMatch(/^15 /);
+  });
+});
+
+describe('pickHeadPoint', () => {
+  const data = [{ key: 'a' }, { key: 'b' }, { key: 'c' }];
+
+  it('el hover (scrubbing) gana sobre la selección', () => {
+    expect(pickHeadPoint(data, 1, 'c')).toBe(data[1]);
+  });
+
+  it('sin hover, devuelve el punto seleccionado (fijado con click)', () => {
+    expect(pickHeadPoint(data, null, 'b')).toBe(data[1]);
+  });
+
+  it('sin hover ni selección → el último punto (hoy)', () => {
+    expect(pickHeadPoint(data, null, null)).toBe(data[2]);
+  });
+
+  it('selección que ya no existe en la serie → cae al último punto', () => {
+    expect(pickHeadPoint(data, null, 'zz')).toBe(data[2]);
+  });
+
+  it('serie vacía → null', () => {
+    expect(pickHeadPoint([], null, null)).toBeNull();
   });
 });
 
