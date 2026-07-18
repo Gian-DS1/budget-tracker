@@ -8,7 +8,9 @@
 // mismo frame). Solo hay dos momentos orquestados, ambos en GPU y con
 // prefers-reduced-motion respetado (principios de emil-design-eng):
 //  · Entrada: barrido revelador izquierda→derecha (clip-path, 500ms, una vez).
-//  · Cambio de rango: "refoco" blur 3px→0 + opacity (200ms) vía WAAPI.
+//  · Cambio de rango: la línea RECORRE su camino — el trazo se dibuja de
+//    izquierda a derecha (stroke-dashoffset, 600ms), el degradado emerge
+//    detrás y el punto de HOY aparece cuando la línea llega.
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import { ResponsiveContainer, ComposedChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot } from 'recharts';
@@ -53,38 +55,38 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
   // Índice del punto bajo el cursor (scrubbing). null = en reposo.
   const [hoverIdx, setHoverIdx] = useState(null);
 
-  // Los dos momentos de motion del gráfico, ambos por WAAPI sobre el wrapper
-  // (GPU, interrumpible, sin estado extra — recomendación de emil-design-eng):
-  //  · PRIMERA serie (montaje): barrido revelador izquierda→derecha con
-  //    clip-path — el "camino del dinero" se descubre del pasado a hoy.
-  //  · Series SIGUIENTES (cambio de rango 3M/1A/TODO): la línea nueva entra
-  //    desenfocada y "reenfoca" (blur 3px→0 + opacity) en 200ms; clicks
-  //    rápidos entre rangos solo reinician el blur, nunca traban.
+  // El gráfico se "dibuja recorriendo su camino": un frente de revelado avanza de
+  // izquierda a derecha (clip-path inset sobre el wrapper) y la línea + su
+  // degradado van apareciendo a su paso, del pasado hacia hoy. Es el mismo efecto
+  // que la animación nativa de recharts pero sobre NUESTRO div: recharts sustituye
+  // su <path> tras cada commit (queda huérfano si lo animamos directo), mientras
+  // el wrapper es estable → GPU, interrumpible y sin re-renders (emil-design-eng).
+  //  · Montaje: dibujado de entrada.
+  //  · Cambio de rango (3M/1A/TODO): se vuelve a dibujar la nueva serie.
   // Con reduced-motion no hay movimiento: la serie aparece directa.
   const frameRef = useRef(null);
   const isFirstSeriesRef = useRef(true);
   const mountedAtRef = useRef(0);
+  const drawRef = useRef(null);
   useLayoutEffect(() => {
     const el = frameRef.current;
     const isFirst = isFirstSeriesRef.current;
     isFirstSeriesRef.current = false;
     if (!el || reduced) return;
-    if (isFirst) {
-      mountedAtRef.current = performance.now();
-      el.animate(
-        [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
-        { duration: 500, easing: 'cubic-bezier(0.23, 1, 0.32, 1)' },
-      );
-    } else {
-      // La hidratación de los stores recomputa la serie justo tras el montaje;
-      // eso pertenece a la ENTRADA (el barrido sigue corriendo), no a un cambio
-      // de rango: sin refoco durante esa ventana para no ensuciar el barrido.
-      if (performance.now() - mountedAtRef.current < 600) return;
-      el.animate(
-        [{ filter: 'blur(3px)', opacity: 0.7 }, { filter: 'blur(0px)', opacity: 1 }],
-        { duration: 200, easing: 'ease' },
-      );
-    }
+
+    // La hidratación de los stores recomputa la serie justo tras el montaje: eso
+    // sigue siendo la ENTRADA (el dibujado ya está corriendo), no un cambio de
+    // rango, así que no se relanza durante esa ventana para no reiniciar el trazo.
+    if (isFirst) mountedAtRef.current = performance.now();
+    else if (performance.now() - mountedAtRef.current < 600) return;
+
+    // Clicks rápidos entre rangos: reinician el dibujado desde el borde izquierdo
+    // (interrumpible), nunca se acumulan ni traban.
+    if (drawRef.current) drawRef.current.cancel();
+    drawRef.current = el.animate(
+      [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
+      { duration: isFirst ? 650 : 720, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+    );
   }, [data, reduced]);
 
   // Punto fijado con click, si sigue existiendo en la serie (al cambiar de rango
