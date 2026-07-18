@@ -30,7 +30,7 @@ function HeroTip({ active, payload, fmt }) {
   const d = payload[0].payload;
   return (
     <div className="pointer-events-none rounded-full bg-surface-card border border-border-subtle inner-glow shadow-xl px-sm py-[5px] flex items-center gap-xs whitespace-nowrap">
-      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: CHART.primary }} />
+      <span className="w-2 h-2 rounded-full shrink-0" style={{ background: CHART.tertiary }} />
       <span className="font-mono-data text-mono-data text-text-muted uppercase">{d.label} {d.y}</span>
       <span className="font-headline-md text-[12px] tabular-nums text-on-surface">{fmt(d.wealth)}</span>
     </div>
@@ -85,7 +85,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
     if (drawRef.current) drawRef.current.cancel();
     drawRef.current = el.animate(
       [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }],
-      { duration: isFirst ? 650 : 720, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+      { duration: isFirst ? 1000 : 1200, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
     );
   }, [data, reduced]);
 
@@ -120,12 +120,12 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
         style={{ cursor: onSelect ? 'pointer' : 'default' }}
       >
         <defs>
-          {/* Degradado del área (estilo Stitch): primario que se desvanece
+          {/* Degradado del área (estilo Stitch): verde que se desvanece
               hacia abajo — brillo arriba, transparente al llegar al piso. */}
           <linearGradient id="wealthFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={CHART.primaryDeep} stopOpacity={0.32} />
-            <stop offset="55%" stopColor={CHART.primaryDeep} stopOpacity={0.08} />
-            <stop offset="100%" stopColor={CHART.primaryDeep} stopOpacity={0} />
+            <stop offset="0%" stopColor={CHART.tertiaryDeep} stopOpacity={0.32} />
+            <stop offset="55%" stopColor={CHART.tertiaryDeep} stopOpacity={0.08} />
+            <stop offset="100%" stopColor={CHART.tertiaryDeep} stopOpacity={0} />
           </linearGradient>
         </defs>
 
@@ -149,15 +149,15 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
         />
         <Area
           yAxisId="w"
-          type="monotone"
+          type="natural"
           dataKey="wealth"
-          stroke={CHART.primary}
+          stroke={CHART.tertiary}
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
           fill="url(#wealthFill)"
-          dot={<EndDot lastIndex={data.length - 1} color={CHART.primary} />}
-          activeDot={{ r: 5, fill: CHART.primary, stroke: CHART.surface, strokeWidth: 2 }}
+          dot={<EndDot lastIndex={data.length - 1} color={CHART.tertiary} />}
+          activeDot={{ r: 5, fill: CHART.tertiary, stroke: CHART.surface, strokeWidth: 2 }}
           isAnimationActive={false}
         />
         {/* Marcador del punto FIJADO: guía vertical + punto sólido. */}

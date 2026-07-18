@@ -4,6 +4,7 @@ export const CHART = {
   primary:   '#bec2ff',    // --color-primary
   primaryDeep: '#7a85ff',  // --color-primary-container
   tertiary:  '#bdd200',  // --color-tertiary
+  tertiaryDeep: '#8a9900', // --color-tertiary-container
   error:     '#ffb4ab',  // --color-error
   secondary: '#50d8e9',  // --color-secondary
   warning:   '#ffb689',  // --color-accent-warning
