@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getWealthTimeline, pickHeadPoint, getCashShortfall, canAffordPayment, getCardReminders, getHeroMetric } from './selectors';
+import { getCategoryBreakdown, getBudgetUsage, getBudgetPace, getNetWorthSplit, getLiquidCash, getLiquidDelta, getFirstDataMonth, getCumulativeLiquidWealth, getWealthTimeline, pickHeadPoint, getCashShortfall, canAffordPayment, getCardReminders, getHeroMetric, getWealthYDomain } from './selectors';
 
 const cats = [
   { id: 'c1', name: 'Supermercado', color: '#aaa' },
@@ -512,6 +512,38 @@ describe('getWealthTimeline', () => {
     expect(last.m).toBe(2);
     expect(last.d).toBe(15);
     expect(last.label).toMatch(/^15 /);
+  });
+});
+
+describe('getWealthYDomain', () => {
+  it('serie vacía → dominio seguro [0, 1]', () => {
+    expect(getWealthYDomain([])).toEqual([0, 1]);
+  });
+
+  it('agrega aire arriba (12%) y abajo (6%) proporcional al rango', () => {
+    const data = [{ wealth: 100 }, { wealth: 300 }];
+    // rango 200 → +24 sobre el pico (324), −12 bajo el valle (88)
+    expect(getWealthYDomain(data)).toEqual([88, 324]);
+  });
+
+  it('el pico y el valle quedan DENTRO del dominio (no tocan el borde → no se cortan)', () => {
+    const data = [{ wealth: 50 }, { wealth: 1347461 }, { wealth: 900000 }];
+    const [lo, hi] = getWealthYDomain(data);
+    expect(hi).toBeGreaterThan(1347461); // el pico no toca el techo
+    expect(lo).toBeLessThan(50);         // el valle no toca el piso
+  });
+
+  it('serie plana → conserva altura (min < max) usando el valor como base', () => {
+    const data = [{ wealth: 500000 }, { wealth: 500000 }];
+    const [lo, hi] = getWealthYDomain(data);
+    expect(hi).toBeGreaterThan(500000);
+    expect(lo).toBeLessThan(500000);
+  });
+
+  it('ignora valores no numéricos (los trata como 0)', () => {
+    const data = [{ wealth: null }, { wealth: 200 }, { wealth: undefined }];
+    // vals → [0, 200, 0]; rango 200 → [−12, 224]
+    expect(getWealthYDomain(data)).toEqual([-12, 224]);
   });
 });
 

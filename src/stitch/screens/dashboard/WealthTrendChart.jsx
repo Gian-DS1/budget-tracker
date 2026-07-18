@@ -19,7 +19,7 @@ import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
 import MS from '../../MS';
 import { InfoTip } from '../../InfoTip';
-import { getHeroMetric, pickHeadPoint } from './selectors';
+import { getHeroMetric, pickHeadPoint, getWealthYDomain } from './selectors';
 
 const fmt = (n) => formatCurrency(n);
 
@@ -96,6 +96,10 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
   // Lookup clave→label del eje X: O(1) por tick en vez de recorrer la serie.
   const labelByKey = useMemo(() => new Map(data.map((p) => [p.key, p.label])), [data]);
 
+  // Dominio vertical con aire arriba/abajo: el pico no toca el borde ni se corta
+  // aunque la línea suba mucho. Se recalcula al cambiar la serie (rango/datos).
+  const wealthDomain = useMemo(() => getWealthYDomain(data), [data]);
+
   // Clic en cualquier punto del tiempo → lo fija (o lo libera, decide el padre).
   const handleClick = useCallback((state) => {
     if (!onSelect || !state || state.activeTooltipIndex == null) return;
@@ -141,7 +145,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
           interval="preserveStartEnd"
           minTickGap={48}
         />
-        <YAxis yAxisId="w" hide domain={['dataMin', 'dataMax']} />
+        <YAxis yAxisId="w" hide domain={wealthDomain} />
         <Tooltip
           isAnimationActive={false}
           cursor={{ stroke: CHART.outline, strokeWidth: 1, strokeDasharray: '4 4' }}
@@ -169,7 +173,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
         )}
       </ComposedChart>
     </ResponsiveContainer>
-  ), [data, selPoint, onSelect, handleClick, handleMove, handleLeave, labelByKey]);
+  ), [data, selPoint, onSelect, handleClick, handleMove, handleLeave, labelByKey, wealthDomain]);
 
   const hasData = data.some((d) => d.income !== 0 || d.expense !== 0 || d.wealth !== 0 || d.cash !== 0);
   if (!hasData) {

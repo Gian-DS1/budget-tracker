@@ -358,6 +358,30 @@ export function getWealthTimeline(transactions, initialCashBalance, range, refDa
   return out;
 }
 
+// Aire (fracción del rango) que se agrega al dominio vertical de la línea de
+// patrimonio: más arriba que abajo, porque el área se desvanece hacia el piso y
+// el pico necesita espacio para el halo del punto de HOY y el overshoot de la
+// curva 'natural'.
+export const WEALTH_Y_PAD_TOP = 0.12;    // 12% de aire sobre el pico
+export const WEALTH_Y_PAD_BOTTOM = 0.06; // 6% bajo el valle
+
+// Dominio vertical [min, max] de la línea de patrimonio con AIRE arriba y abajo
+// para que NO se corte al subir mucho. Con `[dataMin, dataMax]` el pico queda
+// pegado al borde del área de dibujo y recharts lo recorta: la curva 'natural'
+// sobrepasa el máximo entre puntos (overshoot del spline) y el punto de HOY lleva
+// un halo, así que ambos se cortarían. El margen es proporcional al RANGO real de
+// los datos, de modo que se adapta a cualquier escala (patrimonios chicos o
+// grandes). Serie plana → usa el valor absoluto como base para no colapsar en una
+// línea sin altura. Serie vacía → dominio seguro [0, 1].
+export function getWealthYDomain(data, key = 'wealth') {
+  const vals = (data || []).map((p) => Number(p[key]) || 0);
+  if (vals.length === 0) return [0, 1];
+  const min = Math.min(...vals);
+  const max = Math.max(...vals);
+  const span = (max - min) || Math.abs(max) || 1;
+  return [min - span * WEALTH_Y_PAD_BOTTOM, max + span * WEALTH_Y_PAD_TOP];
+}
+
 // Punto que manda en el encabezado del hero: el que está bajo el cursor
 // (scrubbing) gana; si no hay hover, el punto FIJADO con click (selectedKey);
 // en reposo y sin selección, el último (hoy). Serie vacía → null.
