@@ -1,19 +1,21 @@
 // Hero del Resumen: el "camino del dinero en el tiempo" como LÍNEA única
-// (diseño Stitch · Varvez_Esquema/Dashboard, adaptado al tema): línea suave del
-// color primario con degradado que se desvanece hacia abajo, crosshair punteado,
-// tooltip píldora al hover y punto final con halo (valor de HOY). Scrubbing: el
+// (diseño "Pinging Dot Chart" de 21st.dev, adaptado al tema Stitch): línea
+// DISCONTINUA (4 4) del color tertiary sobre grid horizontal sutil, crosshair
+// punteado, tooltip píldora al hover y punto final con PING (anillo que se
+// expande y se desvanece en bucle: el valor de HOY está "vivo"). Scrubbing: el
 // cursor actualiza el encabezado; CLICK fija un punto (marcador en el gráfico y
 // valores congelados en ese día/mes) y re-click en el mismo punto lo libera.
 // Las INTERACCIONES son instantáneas (sin count-ups; scrubbing/click en el
-// mismo frame). Solo hay dos momentos orquestados, ambos en GPU y con
-// prefers-reduced-motion respetado (principios de emil-design-eng):
-//  · Entrada: barrido revelador izquierda→derecha (clip-path, 500ms, una vez).
+// mismo frame). Momentos de motion, en GPU/SMIL y con prefers-reduced-motion
+// respetado (principios de emil-design-eng):
+//  · Entrada: barrido revelador izquierda→derecha (clip-path, una vez).
 //  · Cambio de rango: la línea RECORRE su camino — el trazo se dibuja de
-//    izquierda a derecha (stroke-dashoffset, 600ms), el degradado emerge
-//    detrás y el punto de HOY aparece cuando la línea llega.
+//    izquierda a derecha y el punto de HOY aparece cuando la línea llega.
+//  · Ping de HOY: anillo infinito en el último punto (SMIL declarativo; con
+//    reduced-motion se sustituye por el halo estático).
 import { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import { ResponsiveContainer, ComposedChart, Area, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot } from 'recharts';
+import { ResponsiveContainer, ComposedChart, Line, CartesianGrid, XAxis, YAxis, Tooltip, ReferenceLine, ReferenceDot } from 'recharts';
 import { formatCurrency } from '../../../utils/formatters';
 import { useI18n } from '../../../contexts/I18nContext';
 import { CHART } from '../../chartTokens';
@@ -37,13 +39,24 @@ function HeroTip({ active, payload, fmt }) {
   );
 }
 
-// Punto final con halo: marca el valor de HOY (último punto). Recharts inyecta
-// cx, cy, index por punto; solo pinta el último (línea limpia sin puntos).
-function EndDot({ cx, cy, index, lastIndex, color }) {
+// Punto final con PING (diseño 21st.dev "Pinging Dot"): marca el valor de HOY
+// (último punto) con un anillo que se expande y desvanece en bucle — SMIL
+// declarativo, cero re-renders. Recharts inyecta cx, cy, index por punto; solo
+// pinta el último (línea limpia sin puntos). En el demo original el ping vive
+// en cada punto; aquí solo en HOY: con series diarias (~90 puntos) sería ruido.
+// Con reduced-motion el anillo no anima: vuelve al halo estático.
+function PingDot({ cx, cy, index, lastIndex, color, reduced }) {
   if (index !== lastIndex || cx == null || cy == null) return null;
   return (
     <g>
-      <circle cx={cx} cy={cy} r={7} fill={color} fillOpacity={0.18} />
+      {reduced ? (
+        <circle cx={cx} cy={cy} r={7} fill={color} fillOpacity={0.18} />
+      ) : (
+        <circle cx={cx} cy={cy} r={4} stroke={color} fill="none" strokeWidth={1.5} opacity={0.8}>
+          <animate attributeName="r" values="4;14" dur="1.5s" repeatCount="indefinite" />
+          <animate attributeName="opacity" values="0.8;0" dur="1.5s" repeatCount="indefinite" />
+        </circle>
+      )}
       <circle cx={cx} cy={cy} r={3.5} fill={color} stroke={CHART.surface} strokeWidth={2} />
     </g>
   );
@@ -56,8 +69,8 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
   const [hoverIdx, setHoverIdx] = useState(null);
 
   // El gráfico se "dibuja recorriendo su camino": un frente de revelado avanza de
-  // izquierda a derecha (clip-path inset sobre el wrapper) y la línea + su
-  // degradado van apareciendo a su paso, del pasado hacia hoy. Es el mismo efecto
+  // izquierda a derecha (clip-path inset sobre el wrapper) y la línea punteada
+  // va apareciendo a su paso, del pasado hacia hoy. Es el mismo efecto
   // que la animación nativa de recharts pero sobre NUESTRO div: recharts sustituye
   // su <path> tras cada commit (queda huérfano si lo animamos directo), mientras
   // el wrapper es estable → GPU, interrumpible y sin re-renders (emil-design-eng).
@@ -117,21 +130,27 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
     <ResponsiveContainer width="100%" height="100%">
       <ComposedChart
         data={data}
-        margin={{ top: 6, right: 4, bottom: 0, left: 4 }}
+        // right 16: el anillo del ping (r máx 14 + trazo) vive en el ÚLTIMO
+        // punto, pegado al borde derecho; el SVG recorta (overflow hidden) y
+        // sin esta reserva el anillo saldría cortado. Arriba/abajo el aire lo
+        // da el dominio (WEALTH_Y_PAD_*: 12% simétrico — HOY puede ser pico o valle).
+        margin={{ top: 6, right: 16, bottom: 0, left: 4 }}
         onClick={handleClick}
         onMouseMove={handleMove}
         onMouseLeave={handleLeave}
         style={{ cursor: onSelect ? 'pointer' : 'default' }}
       >
-        <defs>
-          {/* Degradado del área (estilo Stitch): verde que se desvanece
-              hacia abajo — brillo arriba, transparente al llegar al piso. */}
-          <linearGradient id="wealthFill" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor={CHART.tertiaryDeep} stopOpacity={0.32} />
-            <stop offset="55%" stopColor={CHART.tertiaryDeep} stopOpacity={0.08} />
-            <stop offset="100%" stopColor={CHART.tertiaryDeep} stopOpacity={0} />
-          </linearGradient>
-        </defs>
+        {/* Grid horizontal sutil (diseño 21st.dev): referencias de altura
+            recesivas, sin líneas verticales que compitan con la línea. El eje Y
+            oculto con dominio custom solo emite 2 ticks (los bordes), así que
+            las coordenadas se generan a mano: 4 líneas interiores equiespaciadas. */}
+        <CartesianGrid
+          vertical={false}
+          stroke={CHART.outline}
+          strokeOpacity={0.22}
+          horizontalCoordinatesGenerator={({ offset }) =>
+            Array.from({ length: 4 }, (_, i) => offset.top + (offset.height * (i + 1)) / 5)}
+        />
 
         {/* Eje por `key` (única por punto: 'YYYY-MM-DD' o 'YYYY-MM') para que
             el marcador de selección caiga en el punto exacto aunque el label
@@ -151,16 +170,19 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
           cursor={{ stroke: CHART.outline, strokeWidth: 1, strokeDasharray: '4 4' }}
           content={<HeroTip fmt={fmt} />}
         />
-        <Area
+        {/* Línea DISCONTINUA (4 4) tipo linear — la firma del diseño 21st.dev:
+            sin relleno, el camino punteado lleva la mirada al punto que hace
+            ping en HOY. */}
+        <Line
           yAxisId="w"
-          type="natural"
+          type="linear"
           dataKey="wealth"
           stroke={CHART.tertiary}
-          strokeWidth={2.5}
+          strokeWidth={2}
+          strokeDasharray="4 4"
           strokeLinecap="round"
           strokeLinejoin="round"
-          fill="url(#wealthFill)"
-          dot={<EndDot lastIndex={data.length - 1} color={CHART.tertiary} />}
+          dot={<PingDot lastIndex={data.length - 1} color={CHART.tertiary} reduced={reduced} />}
           activeDot={{ r: 5, fill: CHART.tertiary, stroke: CHART.surface, strokeWidth: 2 }}
           isAnimationActive={false}
         />
@@ -173,7 +195,7 @@ export default function WealthTrendChart({ data, selectedKey, onSelect }) {
         )}
       </ComposedChart>
     </ResponsiveContainer>
-  ), [data, selPoint, onSelect, handleClick, handleMove, handleLeave, labelByKey, wealthDomain]);
+  ), [data, selPoint, onSelect, handleClick, handleMove, handleLeave, labelByKey, wealthDomain, reduced]);
 
   const hasData = data.some((d) => d.income !== 0 || d.expense !== 0 || d.wealth !== 0 || d.cash !== 0);
   if (!hasData) {

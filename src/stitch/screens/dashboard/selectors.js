@@ -359,11 +359,11 @@ export function getWealthTimeline(transactions, initialCashBalance, range, refDa
 }
 
 // Aire (fracción del rango) que se agrega al dominio vertical de la línea de
-// patrimonio: más arriba que abajo, porque el área se desvanece hacia el piso y
-// el pico necesita espacio para el halo del punto de HOY y el overshoot de la
-// curva 'natural'.
+// patrimonio. SIMÉTRICO: el anillo del ping de HOY (r máx 14 + trazo ≈ 15px)
+// necesita el mismo espacio arriba que abajo, porque HOY puede ser el pico
+// (patrimonio subiendo) o el valle (bajando) y el SVG recorta lo que se sale.
 export const WEALTH_Y_PAD_TOP = 0.12;    // 12% de aire sobre el pico
-export const WEALTH_Y_PAD_BOTTOM = 0.06; // 6% bajo el valle
+export const WEALTH_Y_PAD_BOTTOM = 0.12; // 12% bajo el valle
 
 // Dominio vertical [min, max] de la línea de patrimonio con AIRE arriba y abajo
 // para que NO se corte al subir mucho. Con `[dataMin, dataMax]` el pico queda

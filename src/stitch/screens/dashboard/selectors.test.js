@@ -520,10 +520,11 @@ describe('getWealthYDomain', () => {
     expect(getWealthYDomain([])).toEqual([0, 1]);
   });
 
-  it('agrega aire arriba (12%) y abajo (6%) proporcional al rango', () => {
+  it('agrega aire arriba (12%) y abajo (12%) proporcional al rango', () => {
     const data = [{ wealth: 100 }, { wealth: 300 }];
-    // rango 200 → +24 sobre el pico (324), −12 bajo el valle (88)
-    expect(getWealthYDomain(data)).toEqual([88, 324]);
+    // rango 200 → +24 sobre el pico (324), −24 bajo el valle (76). Simétrico:
+    // el anillo del ping de HOY necesita ~15px tanto si HOY es pico como valle.
+    expect(getWealthYDomain(data)).toEqual([76, 324]);
   });
 
   it('el pico y el valle quedan DENTRO del dominio (no tocan el borde → no se cortan)', () => {
@@ -542,8 +543,8 @@ describe('getWealthYDomain', () => {
 
   it('ignora valores no numéricos (los trata como 0)', () => {
     const data = [{ wealth: null }, { wealth: 200 }, { wealth: undefined }];
-    // vals → [0, 200, 0]; rango 200 → [−12, 224]
-    expect(getWealthYDomain(data)).toEqual([-12, 224]);
+    // vals → [0, 200, 0]; rango 200 → [−24, 224]
+    expect(getWealthYDomain(data)).toEqual([-24, 224]);
   });
 });
 
