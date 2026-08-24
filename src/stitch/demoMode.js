@@ -189,17 +189,26 @@ function generateMonthlyTransactions(year, month, baseId) {
   return txList;
 }
 
-// Generar transacciones de enero a junio (6 meses)
-// Enero = 0, Febrero = 1, ..., Junio = 5
+// Generar los últimos 6 meses TERMINANDO en el mes actual.
+//
+// Antes estaban clavados a enero-junio de 2026: pasado junio, el demo abria en
+// un mes sin movimientos (resumen en cero, donut vacio, presupuesto al 0 %) y
+// parecia roto. Al anclarlos a hoy, el demo se mantiene vivo con el paso del
+// tiempo sin tocar el codigo.
 const allTransactions = [];
 let txId = 1;
-for (let month = 0; month < 6; month++) {
-  const monthTxs = generateMonthlyTransactions(2026, month, txId);
+for (let back = 5; back >= 0; back--) {
+  const d = new Date(yearIdx, monthIdx - back, 1);
+  const monthTxs = generateMonthlyTransactions(d.getFullYear(), d.getMonth(), txId);
   allTransactions.push(...monthTxs);
   txId += monthTxs.length;
 }
+// El generador reparte movimientos por todo el mes; en el mes en curso eso deja
+// gastos con fecha futura. Los recortamos para que el mes actual se vea "a la
+// mitad", como el de un usuario real.
+const todayIso = iso(today);
 
-const transactions = allTransactions;
+const transactions = allTransactions.filter((t) => t.date <= todayIso);
 
 const budgets = [
   { id: 'b1', categoryId: catId('Alquiler'), year: yearIdx, month: monthIdx, estimatedAmount: 32000, currency: 'DOP', createdAt: '' },
