@@ -3,11 +3,23 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Faltan variables de entorno de Supabase. Revisa tu archivo .env');
+// ¿Hay credenciales reales? Lo consulta la UI para avisar en vez de fallar en
+// silencio (ver src/stitch/EnvNotice.jsx).
+export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+
+// createClient LANZA si la URL está vacía, y al ser un import de nivel superior
+// se lleva por delante todo el bundle: un clon recién hecho sin .env se quedaba
+// en pantalla blanca, sin pista de qué faltaba. Con estas credenciales inertes
+// la app monta igual, el aviso explica qué configurar y el modo demo (que no
+// toca el backend) sigue siendo navegable.
+const PLACEHOLDER_URL = 'https://placeholder.supabase.co';
+const PLACEHOLDER_KEY = 'placeholder-anon-key';
+
+if (!isSupabaseConfigured) {
+  console.warn('Faltan variables de entorno de Supabase. Copia .env.example a .env y rellénalo.');
 }
 
-export const supabase = createClient(supabaseUrl || '', supabaseAnonKey || '', {
+export const supabase = createClient(supabaseUrl || PLACEHOLDER_URL, supabaseAnonKey || PLACEHOLDER_KEY, {
   auth: {
     // localStorage (no sessionStorage): la SESIÓN debe sobrevivir al cierre del
     // navegador y al apagado de la PC. Mientras el refresh token siga vigente y

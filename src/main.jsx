@@ -5,6 +5,7 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import StitchApp from './stitch/StitchApp.jsx';
 import { AuthProvider } from './contexts/AuthContext';
 import { I18nProvider } from './contexts/I18nContext';
+import EnvNotice from './stitch/EnvNotice.jsx';
 
 // Preconnect al proyecto Supabase: el handshake TLS corre en paralelo con el
 // arranque de React, así el primer getSession()/fetch de datos no lo paga.
@@ -25,6 +26,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <StitchApp />
       </AuthProvider>
     </I18nProvider>
+    <EnvNotice />
     <Analytics />
     <SpeedInsights />
   </React.StrictMode>,

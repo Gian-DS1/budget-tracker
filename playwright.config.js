@@ -9,6 +9,11 @@ import { defineConfig, devices } from '@playwright/test';
 const PORT = 4173;
 const BASE_URL = `http://localhost:${PORT}`;
 
+// Algunos entornos (CI con imagen propia, contenedores) ya traen Chromium
+// instalado y no pueden descargar el que Playwright espera. Si definen
+// PLAYWRIGHT_CHROMIUM_PATH, lo usamos; si no, Playwright usa el suyo.
+const executablePath = process.env.PLAYWRIGHT_CHROMIUM_PATH || undefined;
+
 export default defineConfig({
   testDir: './tests',
   // Falla la build de CI si alguien dejó un test.only.
@@ -23,7 +28,10 @@ export default defineConfig({
   },
 
   projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    {
+      name: 'chromium',
+      use: { ...devices['Desktop Chrome'], launchOptions: { executablePath } },
+    },
   ],
 
   // Arranca la app real (build + preview) antes de los tests y la apaga al final.
