@@ -1,0 +1,62 @@
+name: Reportar un bug
+description: Algo no funciona como debería
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por reportarlo. Si el bug tiene que ver con **tus datos reales**,
+        no pegues capturas con montos o correos: describe el caso con números
+        inventados o reprodúcelo en el modo demo (`npm run dev` → "Ver demo").
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: Qué pasó
+      description: Qué esperabas que ocurriera y qué ocurrió en su lugar.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Pasos para reproducirlo
+      placeholder: |
+        1. Entrar a Presupuesto
+        2. Asignar RD$ 5,000 a "Comida"
+        3. ...
+    validations:
+      required: true
+
+  - type: dropdown
+    id: screen
+    attributes:
+      label: Pantalla
+      options:
+        - Resumen (Dashboard)
+        - Transacciones
+        - Presupuesto
+        - Mis finanzas (tarjetas / ahorros / deudas)
+        - Calendario
+        - Categorías
+        - Ajustes / import / export
+        - Login / onboarding
+        - Otra
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Entorno
+      description: Navegador, sistema operativo y si fue en la PWA instalada.
+      placeholder: "Safari 18, iOS 18, PWA instalada"
+    validations:
+      required: true
+
+  - type: textarea
+    id: console
+    attributes:
+      label: Errores de consola
+      description: Si hay algo en la consola del navegador, pégalo aquí.
+      render: text

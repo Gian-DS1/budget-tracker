@@ -1,0 +1,31 @@
+version: 2
+
+updates:
+  # Dependencias de la app. Agrupadas para no abrir 15 PRs por semana: un PR
+  # para parches/minors (casi siempre mergeable a ciegas si CI pasa) y PRs
+  # individuales solo para majors, que sí necesitan revisión.
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # xlsx se instala desde el CDN oficial de SheetJS (ver README): Dependabot
+      # no puede resolver esa URL como paquete npm.
+      - dependency-name: xlsx
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci

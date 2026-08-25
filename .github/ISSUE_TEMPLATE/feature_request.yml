@@ -1,0 +1,22 @@
+name: Proponer una mejora
+description: Una idea o funcionalidad nueva
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Qué problema resuelve
+      description: El problema real, no la solución. Qué no puedes hacer hoy con FinTrack.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Cómo lo imaginas
+      description: Si ya tienes una idea de la solución, descríbela.
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternativas que consideraste

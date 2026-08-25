@@ -15,11 +15,15 @@
 import { chromium, request as pwRequest } from '@playwright/test';
 import { spawn } from 'node:child_process';
 import { mkdir, rm } from 'node:fs/promises';
+import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
+
+const isWindows = process.platform === 'win32';
 
 const PORT = 4179;
 const BASE_URL = `http://localhost:${PORT}`;
-const OUT_DIR = new URL('../docs/screenshots/', import.meta.url).pathname;
+const OUT_DIR = fileURLToPath(new URL('../docs/screenshots/', import.meta.url));
 const DESKTOP = { width: 1440, height: 960 };
 const MOBILE = { width: 414, height: 896 };
 
@@ -109,13 +113,40 @@ async function enterDemo(page) {
   }
 }
 
-// detached: npm lanza vite en un nieto; sin grupo propio, matar solo a npm deja
-// el preview escuchando en el puerto y la siguiente ejecución falla.
-const preview = spawn(
-  'npm',
-  ['run', 'preview', '--', '--port', String(PORT), '--strictPort'],
-  { stdio: 'inherit', detached: true },
-);
+// npm lanza vite en un nieto, así que hay que matar al árbol completo o el
+// preview se queda escuchando en el puerto y la siguiente ejecución falla. En
+// POSIX eso es un grupo propio (detached + kill al -pid); en Windows no existen
+// los grupos de proceso, se resuelve con `taskkill /T`.
+//
+// `shell` en Windows no es opcional: ahí npm es un .cmd y, desde la corrección
+// de CVE-2024-27980, Node se niega a lanzar archivos por lotes sin shell
+// (spawn('npm') da ENOENT y spawn('npm.cmd') da EINVAL).
+// (Con shell, el comando va como una sola cadena: pasar además un array de
+// args solo concatena sin escapar, y Node avisa de ello — DEP0190.)
+const previewArgs = ['run', 'preview', '--', '--port', String(PORT), '--strictPort'];
+const preview = isWindows
+  ? spawn(`npm ${previewArgs.join(' ')}`, { stdio: 'inherit', shell: true })
+  : spawn('npm', previewArgs, { stdio: 'inherit', detached: true });
+
+// spawn emite 'error' de forma asíncrona (ENOENT, permisos...). Sin handler el
+// proceso muere por un 'error' no capturado y el mensaje real queda enterrado.
+preview.on('error', (err) => {
+  console.error(`No se pudo arrancar \`npm run preview\`: ${err.message}`);
+  process.exit(1);
+});
+
+function stopPreview() {
+  if (preview.exitCode !== null || preview.signalCode !== null) return;
+  if (isWindows) {
+    spawn('taskkill', ['/pid', String(preview.pid), '/T', '/F'], { stdio: 'ignore' });
+    return;
+  }
+  try {
+    process.kill(-preview.pid, 'SIGTERM');
+  } catch {
+    preview.kill('SIGTERM');
+  }
+}
 
 try {
   await waitForServer(BASE_URL);
@@ -154,17 +185,18 @@ try {
     await page.evaluate(() => document.fonts.ready);
     await sleep(2500);
 
-    await page.screenshot({ path: `${OUT_DIR}${name}.png` });
+    await page.screenshot({ path: join(OUT_DIR, `${name}.png`) });
     console.log(`✓ ${name}.png`);
     await context.close();
   }
 
   await browser.close();
+} catch (err) {
+  // Sin esto el script termina con código 0 aunque no haya capturado nada, y
+  // tanto CI como quien lo corre a mano se lo tragan como un éxito.
+  console.error(err);
+  process.exitCode = 1;
 } finally {
   await api?.dispose();
-  try {
-    process.kill(-preview.pid, 'SIGTERM');
-  } catch {
-    preview.kill('SIGTERM');
-  }
+  stopPreview();
 }

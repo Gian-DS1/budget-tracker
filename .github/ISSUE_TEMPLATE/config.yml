@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Probar la app
+    url: https://fintrack-rd.vercel.app
+    about: La versión desplegada, para verla funcionando antes de abrir un issue.
+  - name: Reportar un problema de seguridad
+    url: https://github.com/Gian-DS1/fintrack/security/advisories/new
+    about: No abras un issue público. Usa un advisory privado (ver docs/SECURITY.md).

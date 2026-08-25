@@ -3,6 +3,27 @@
 A summary of the app's security measures and design decisions. Useful for audits
 and for understanding why certain configurations are intentional.
 
+## Reporting a vulnerability
+
+**Please do not open a public issue.** Report it privately through a
+[GitHub security advisory](https://github.com/Gian-DS1/fintrack/security/advisories/new).
+
+Include what you found, how to reproduce it, and what an attacker could reach with
+it. You will get a first reply within a few days; if the issue is confirmed, the
+fix ships to production before any public write-up.
+
+**In scope:** the deployed app at `fintrack-rd.vercel.app`, this repository, the
+`/api` serverless functions, and the RLS policies in `supabase/schema.sql` — in
+particular anything that lets one user read or write another user's data.
+
+**Out of scope:** the demo mode (localhost-only by design, seeds fake data without
+auth), the `anon key` being public (that is intentional and safe under RLS — see
+below), reports from automated scanners with no working proof of concept, and
+vulnerabilities in Supabase or Vercel themselves (report those upstream).
+
+Only the deployed version of `main` is supported; there are no maintained older
+releases.
+
 ## HTTP headers (vercel.json)
 
 Applied at the Vercel edge to every response:

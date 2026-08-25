@@ -7,7 +7,7 @@
 **Personal finance without spreadsheets.** Zero-based budgeting, credit-card cycles,
 debts, savings goals and reminders — multi-currency, bilingual, installable as a PWA.
 
-[![CI](https://github.com/Gian-DS1/fintrack-app/actions/workflows/ci.yml/badge.svg)](https://github.com/Gian-DS1/fintrack-app/actions/workflows/ci.yml)
+[![CI](https://github.com/Gian-DS1/fintrack/actions/workflows/ci.yml/badge.svg)](https://github.com/Gian-DS1/fintrack/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![React 19](https://img.shields.io/badge/React-19-087ea4?logo=react&logoColor=white)](https://react.dev)
 [![Vite 8](https://img.shields.io/badge/Vite-8-646cff?logo=vite&logoColor=white)](https://vite.dev)
@@ -35,6 +35,7 @@ debts, savings goals and reminders — multi-currency, bilingual, installable as
 - [Deployment](#-deployment-vercel)
 - [Performance](#-performance)
 - [Security & privacy](#-security--privacy)
+- [Contributing](#-contributing)
 - [License](#-license)
 
 ---
@@ -107,8 +108,11 @@ to regenerate them from the current commit.
 ## 🏗 Architecture
 
 ```
-fintrack-app/
-├── .github/workflows/    # CI: lint · unit tests · build · E2E
+fintrack/
+├── .github/
+│   ├── workflows/ci.yml  # CI: lint · unit tests · build · E2E
+│   ├── ISSUE_TEMPLATE/   # Bug report and feature request forms
+│   └── dependabot.yml    # Weekly npm updates (grouped) + monthly Actions
 ├── api/                  # Vercel serverless functions (parse-pdf, feedback)
 ├── docs/
 │   ├── SECURITY.md       # Security measures and design decisions
@@ -161,8 +165,8 @@ fintrack-app/
 ### 1. Clone and install
 
 ```bash
-git clone https://github.com/Gian-DS1/fintrack-app.git
-cd fintrack-app
+git clone https://github.com/Gian-DS1/fintrack.git
+cd fintrack
 npm install
 npm run dev      # http://localhost:5173
 ```
@@ -291,6 +295,20 @@ survives the iOS standalone-app browser handoff.
   external **Web3Forms** service; it stores nothing in your database.
 
 Full write-up in [`docs/SECURITY.md`](docs/SECURITY.md).
+
+---
+
+## 🤝 Contributing
+
+Issues and pull requests are welcome. [`CONTRIBUTING.md`](CONTRIBUTING.md) covers
+how to get the app running (no backend needed — the demo mode is enough), what the
+code expects from a change, and the conventions that matter: pure selectors for
+anything that computes money, one Zustand store per domain, both `es` and `en`
+strings for every new label, and an RLS policy for every new table.
+
+Participation is covered by the [Code of Conduct](CODE_OF_CONDUCT.md). Found a
+vulnerability? Don't open a public issue — use a
+[private advisory](https://github.com/Gian-DS1/fintrack/security/advisories/new).
 
 ---
 

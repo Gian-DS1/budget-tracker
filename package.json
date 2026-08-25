@@ -1,5 +1,5 @@
 {
-  "name": "fintrack-app",
+  "name": "fintrack",
   "version": "1.0.0",
   "description": "FinTrack — personal-finance PWA: zero-based budgeting, credit cards, debts and savings goals. React 19 + Vite + Supabase.",
   "private": true,
@@ -8,10 +8,10 @@
   "homepage": "https://fintrack-rd.vercel.app",
   "repository": {
     "type": "git",
-    "url": "https://github.com/Gian-DS1/fintrack-app.git"
+    "url": "https://github.com/Gian-DS1/fintrack.git"
   },
   "bugs": {
-    "url": "https://github.com/Gian-DS1/fintrack-app/issues"
+    "url": "https://github.com/Gian-DS1/fintrack/issues"
   },
   "keywords": [
     "personal-finance",

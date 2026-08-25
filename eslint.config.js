@@ -7,7 +7,7 @@ import { defineConfig, globalIgnores } from 'eslint/config'
 export default defineConfig([
   globalIgnores(['dist', '.agents', '.claude']),
   {
-    files: ['**/*.{js,jsx}'],
+    files: ['**/*.{js,jsx,mjs}'],
     extends: [
       js.configs.recommended,
       reactHooks.configs.flat.recommended,
@@ -19,9 +19,9 @@ export default defineConfig([
     },
   },
   {
-    // Funciones serverless de Vercel y archivos de configuración: corren en
-    // Node, no en el navegador.
-    files: ['api/**/*.js', '**/*.config.js'],
+    // Funciones serverless de Vercel, scripts de build y archivos de
+    // configuración: corren en Node, no en el navegador.
+    files: ['api/**/*.js', 'scripts/**/*.mjs', '**/*.config.js'],
     languageOptions: {
       globals: globals.node,
     },
