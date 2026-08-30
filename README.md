@@ -248,7 +248,7 @@ Both suites, plus lint and the production build, run on every push and pull requ
 
 ---
 
-## ☁️ Deployment (Vercel)
+## ☁ Deployment (Vercel)
 
 1. Import the repo into Vercel.
 2. Add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (Production + Preview).
